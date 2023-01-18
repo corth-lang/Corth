@@ -4,6 +4,7 @@ import subprocess
 
 last_token_id = 0
 basic_tokens = {}
+basic_programs = {}
 
 def create_token_type():
     global last_token_id
@@ -12,57 +13,67 @@ def create_token_type():
     return last_token_id - 1
 
 
-def create_basic_token(name, nasm_code):
+def create_basic_token(name, nasm_code, function):
     assert (name not in basic_tokens), f"{name} was already saved as a basic token"
 
-    basic_tokens[name] = f"    ;; -- {name} --\n" + nasm_code
+    basic_tokens[name] = f"\n    ;; -- {name} --\n" + nasm_code
+    basic_programs[name] = function
     
 
 BASIC_TOKEN = create_token_type()
 PUSH_TOKEN = create_token_type()
+
+BASES = {"b": 2, "o": 8, "x": 16}
+ESCAPES = {"n": "\n", "s": " ", "t": "\t", "q": '"'}
 
 create_basic_token("+", f"""
     pop     rax
     pop     rbx
     add     rax, rbx
     push    rax
-""")
+""", lambda stack: stack.append(stack.pop() + stack.pop()))
 create_basic_token("-", f"""
     pop     rbx
     pop     rax
     sub     rax, rbx
     push    rax
-""")
+""", lambda stack: stack.append(stack.pop() - stack.pop()))
 create_basic_token("dump", f"""
     pop     rdi
     call    dump
-""")
+""", lambda stack: print(stack.pop()))
 create_basic_token("dup", f"""
     pop     rax
     push    rax
     push    rax
-""")
+""", lambda stack: (stack.push(stack[-1])))
 create_basic_token("swp", f"""
     pop     rax
     pop     rbx
     push    rax
     push    rbx
-""")
+""", lambda stack: (stack.insert(-2, stack.pop())))
+create_basic_token("dumpchar", f"""
+    mov     rax, 1
+    mov     rdi, 1
+    mov     rsi, rsp
+    mov     rdx, 1
+    syscall
+""", None)
 
 
 
 class Token:
-    def __init__(self, address, type_, arg=None):
-        self.address = address  # Used for debugging
+    def __init__(self, type_, arg=None):
         self.type = type_
         self.arg = arg
 
     def __repr__(self):
         if self.value is None:
-            return f"[{self.address}] type='{self.type}'"
+            return f"type='{self.type}'"
 
         else:
-            return f"[{self.address}] type='{self.type}' ({self.value})"
+            return f"type='{self.type}' ({self.value})"
 
 
 class Corth:
@@ -72,59 +83,83 @@ class Corth:
     def parse_file(self, file_name):
         self.program.clear()
 
-        line_no = 1
-        char_no = 1
-
         token = ""
-
-        token_line_no = 1
-        token_char_no = 1
         
         with open(file_name) as file:
             while True:
                 char = file.read(1)
 
                 if char == "":
-                    self.create_token(token, file_name, line_no, token_char_no, char_no)
+                    self.create_token(token, file_name)
                     break
 
                 if char in " \n\t":
-                    self.create_token(token, file_name, line_no, token_char_no, char_no)
+                    self.create_token(token, file_name)
                     
                     token = ""
 
-                    if char == "\n":
-                        line_no += 1
-                        char_no = 0
+                elif char == '"':
+                    string = self.create_string(file, '"')
+                    
+                    if token == "":
+                        assert False, "PL type strings are not implemented yet"
+
+                    elif token == "c":
+                        string += "\u0000"
+
+                        for char in string:
+                            self.program.append(Token(PUSH_TOKEN, ord(char)))
+
+                elif char == "'":
+                    assert token == "", "Syntax error"
+                    
+                    self.program.append(Token(PUSH_TOKEN, ord(self.create_string(file, "'"))))
 
                 else:
                     token += char
+                
 
-                char_no += 1
+    def create_string(self, file, end):
+        token = ""
+        escape = False
+        
+        while True:
+            char = file.read(1)
 
-    def create_token(self, token, file_name, line_no, token_char_no, char_no):
+            assert char != "", "Got end of file"
+
+            if escape:
+                token += ESCAPES[char]
+                escape = False
+                continue
+
+            if char == end:
+                return token
+
+            if char == "\\":
+                escape = True
+
+            else:
+                token += char
+                
+
+    def create_token(self, token, file_name):
         if token == "":
             return
         
         if token[0] in "0123456789":
-            if token_char_no == char_no:
-                address = f"in {file_name}, at .{line_no} {char_no}"
+            if token[0] == "0" and len(token) > 1 and token[1] in BASES:
+                base = BASES[token[1]]
 
             else:
-                address = f"in {file_name}, at .{line_no} {token_char_no}-{char_no}"
+                base = 10
 
-            self.program.append(Token(address, PUSH_TOKEN, int(token)))
+            self.program.append(Token(PUSH_TOKEN, int(token, base)))
 
         else:
             assert (token in basic_tokens), f"'{token}' is unknown"
 
-            if token_char_no == char_no:
-                address = f"in {file_name}, at .{line_no} {char_no}"
-
-            else:
-                address = f"in {file_name}, at .{line_no} {token_char_no}-{char_no}"
-
-            self.program.append(Token(address, BASIC_TOKEN, token))
+            self.program.append(Token(BASIC_TOKEN, token))
 
     def simulate_program(self):
         stack = deque()
@@ -134,7 +169,7 @@ class Corth:
                 stack.append(token.arg)
 
             elif token.type is BASIC_TOKEN:
-                assert False, f"Simulating basic tokens is not implemented yet"
+                basic_programs[token.arg](stack)
 
             else:
                 assert False, f"Token type {token.type} is unknown.\nToken: {token}"
@@ -185,6 +220,7 @@ _start:
             if token.type is PUSH_TOKEN:
                 compiled += f"""
     ;; -- PUSH {token.arg} --
+
     mov     rax, {token.arg}
     push    rax
 """

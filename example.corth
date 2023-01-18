@@ -1,1 +1,6 @@
-69 42 dump dump 69 42 swp dump dump
+69 42 dump dump
+69 42 swp dump dump
+0x4C dumpchar
+10 dumpchar
+'L' dumpchar
+'\n' dumpchar

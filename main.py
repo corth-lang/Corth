@@ -18,7 +18,7 @@ def print_tokens():
 def simulate_command():
     program = corth.Corth()
     program.parse_file(args.source)
-    program.simulate_program(args.output)
+    program.simulate_program()
 
 
 def test_command():
