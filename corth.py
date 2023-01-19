@@ -59,8 +59,17 @@ create_basic_token("dumpchar", f"""
     mov     rsi, rsp
     mov     rdx, 1
     syscall
-""", None)
-
+""", lambda stack: print(chr(stack.pop)))
+create_basic_token("inc", f"""
+    pop     rax
+    inc     rax
+    push    rax
+""", lambda stack: stack.append(stack.pop() + 1))
+create_basic_token("dec", f"""
+    pop     rax
+    dec     rax
+    push    rax
+""", lambda stack: stack.append(stack.pop() - 1))
 
 
 class Token:
@@ -69,11 +78,11 @@ class Token:
         self.arg = arg
 
     def __repr__(self):
-        if self.value is None:
+        if self.arg is None:
             return f"type='{self.type}'"
 
         else:
-            return f"type='{self.type}' ({self.value})"
+            return f"type='{self.type}' ({self.arg})"
 
 
 class Corth:
@@ -81,6 +90,8 @@ class Corth:
         self.program = []
 
     def parse_file(self, file_name):
+        # TODO: remake the whole parser
+        
         self.program.clear()
 
         token = ""
