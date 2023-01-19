@@ -1,7 +1,37 @@
-69 42 dump dump
-69 42 swp dump dump
-0x4C dumpchar
-10 dumpchar
-'L' dumpchar
-'\n' dumpchar
+1 if
+  42 dump
+else
+  69 dump
+end
 
+
+/*
+Upcoming:
+
+while
+    condition
+do
+    code
+end
+
+
+/*
+
+  ;; while (0)
+  .L0:
+
+  condition
+
+  ;; do (1)
+  pop     rax
+  cmp     rax, 0
+  je      .L1
+
+  code
+
+  ;; end (0 - 1)
+  jmp .L0
+  .L1:
+
+*/
+*/
