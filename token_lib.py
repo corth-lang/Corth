@@ -30,4 +30,8 @@ KEYWORDS = {
     "if": (IF := enum_lib.step()),
     "end": (END := enum_lib.step()),
     "else": (ELSE := enum_lib.step()),
+    "while": (WHILE := enum_lib.step()),
+    "do": (DO := enum_lib.step()),
+    "inc": (INC := enum_lib.step()),
+    "dec": (DEC := enum_lib.step()),
 }

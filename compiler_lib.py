@@ -4,12 +4,6 @@ import enum_lib
 import token_lib
 
 
-class Level:
-   def __init__(self, level, start):
-      self.level = level
-      self.start = start
-
-
 # TODO: Add type checker
             
 def compile_nasm_program(file_name, program):
@@ -60,55 +54,55 @@ def compile_nasm_program(file_name, program):
 
         for token in program:
             if token.type is token_lib.PUSH8:
-                file.write(f"    ;; -- PUSH {token.arg} --\n\n")
-                file.write(f"    mov     rax, {token.arg}\n")
-                file.write(f"    push    rax\n\n")
+                file.write("    " * len(levels) + f"    ;; -- PUSH {token.arg} --\n\n")
+                file.write("    " * len(levels) + f"    mov     rax, {token.arg}\n")
+                file.write("    " * len(levels) + f"    push    rax\n\n")
 
             elif token.type is token_lib.ADD:
-                file.write(f"    ;; -- ADD --\n\n")
-                file.write(f"    pop     rbx\n")
-                file.write(f"    pop     rax\n")
-                file.write(f"    add     rax, rbx\n")
-                file.write(f"    push    rax\n\n")
+                file.write("    " * len(levels) + f"    ;; -- ADD --\n\n")
+                file.write("    " * len(levels) + f"    pop     rbx\n")
+                file.write("    " * len(levels) + f"    pop     rax\n")
+                file.write("    " * len(levels) + f"    add     rax, rbx\n")
+                file.write("    " * len(levels) + f"    push    rax\n\n")
 
             elif token.type is token_lib.SUB:
-                file.write(f"    ;; -- SUB --\n\n")
-                file.write(f"    pop     rbx\n")
-                file.write(f"    pop     rax\n")
-                file.write(f"    sub     rax, rbx\n")
-                file.write(f"    push    rax\n\n")
+                file.write("    " * len(levels) + f"    ;; -- SUB --\n\n")
+                file.write("    " * len(levels) + f"    pop     rbx\n")
+                file.write("    " * len(levels) + f"    pop     rax\n")
+                file.write("    " * len(levels) + f"    sub     rax, rbx\n")
+                file.write("    " * len(levels) + f"    push    rax\n\n")
 
             elif token.type is token_lib.DUMP:
-                file.write(f"    ;; -- DUMP --\n\n")
-                file.write(f"    pop     rdi\n")
-                file.write(f"    call    dump\n\n")
+                file.write("    " * len(levels) + f"    ;; -- DUMP --\n\n")
+                file.write("    " * len(levels) + f"    pop     rdi\n")
+                file.write("    " * len(levels) + f"    call    dump\n\n")
 
             elif token.type is token_lib.DUMPCHAR:
-                file.write(f"    ;; -- DUMPCHAR --\n\n")
-                file.write(f"    mov     rax, 1\n")
-                file.write(f"    mov     rdi, 1\n")
-                file.write(f"    mov     rsi, rsp\n")
-                file.write(f"    mov     rdx, 1\n")
-                file.write(f"    dec     rsp\n")
-                file.write(f"    syscall\n\n")
+                file.write("    " * len(levels) + f"    ;; -- DUMPCHAR --\n\n")
+                file.write("    " * len(levels) + f"    mov     rax, 1\n")
+                file.write("    " * len(levels) + f"    mov     rdi, 1\n")
+                file.write("    " * len(levels) + f"    mov     rsi, rsp\n")
+                file.write("    " * len(levels) + f"    mov     rdx, 1\n")
+                file.write("    " * len(levels) + f"    add     rsp, 8\n")
+                file.write("    " * len(levels) + f"    syscall\n\n")
 
             elif token.type is token_lib.DUP:
-                file.write(f"    ;; -- DUP --\n\n")
-                file.write(f"    push    QWORD [rsp]\n\n")
+                file.write("    " * len(levels) + f"    ;; -- DUP --\n\n")
+                file.write("    " * len(levels) + f"    push    QWORD [rsp]\n\n")
 
             elif token.type is token_lib.SWP:
-                file.write(f"    ;; -- SWP --\n\n")
-                file.write(f"    pop     rax\n")
-                file.write(f"    xchg    rax, [rsp]\n")
-                file.write(f"    push    rax\n\n")
+                file.write("    " * len(levels) + f"    ;; -- SWP --\n\n")
+                file.write("    " * len(levels) + f"    pop     rax\n")
+                file.write("    " * len(levels) + f"    xchg    rax, [rsp]\n")
+                file.write("    " * len(levels) + f"    push    rax\n\n")
 
             elif token.type is token_lib.IF:
-                file.write(f"    ;; -- IF ({start_level}) --\n\n")
-                file.write(f"    pop     rax\n")
-                file.write(f"    cmp     rax, 0\n")
-                file.write(f"    je      .L{start_level}\n\n")
+                file.write("    " * len(levels) + f"    ;; -- IF ({start_level}) --\n\n")
+                file.write("    " * len(levels) + f"    pop     rax\n")
+                file.write("    " * len(levels) + f"    cmp     rax, 0\n")
+                file.write("    " * len(levels) + f"    je      .L{start_level}\n\n")
 
-                levels.append(Level(start_level, token_lib.IF))  # Save the level
+                levels.append((start_level, token_lib.IF))  # Save the level
                 start_level += 1
 
             elif token.type is token_lib.ELSE:
@@ -118,11 +112,11 @@ def compile_nasm_program(file_name, program):
 
                 assert start is token_lib.IF, f"Invalid syntax, tryed to end '{start}' with ELSE"
                
-                file.write(f"    ;; -- ELSE ({level}, {start_level}) --\n\n")
-                file.write(f"    jmp     .L{start_level}\n")
-                file.write(f"    .L{level}:\n\n")
+                file.write("    " * len(levels) + f"    ;; -- ELSE ({level}, {start_level}) --\n\n")
+                file.write("    " * len(levels) + f"    jmp     .L{start_level}\n")
+                file.write("    " * len(levels) + f"    .L{level}:\n\n")
 
-                levels.append(Level(start_level, token_lib.ELSE))
+                levels.append((start_level, token_lib.ELSE))
                 start_level += 1
 
             elif token.type is token_lib.END:
@@ -131,12 +125,48 @@ def compile_nasm_program(file_name, program):
                 level, start = levels.pop()
 
                 if start in (token_lib.IF, token_lib.ELSE):
-                    file.write(f"    ;; -- ENDIF ({level}) --\n\n")
-                    file.write(f"    .L{level}:\n\n")
+                    file.write("    " * len(levels) + f"    ;; -- ENDIF ({level}) --\n\n")
+                    file.write("    " * len(levels) + f"    .L{level}:\n\n")
+
+                elif start is token_lib.DO:
+                    level2, start2 = levels.pop()
+
+                    assert start2 is token_lib.WHILE, "Invalid syntax"
+                    
+                    file.write("    " * len(levels) + f"    ;; -- ENDWHILE ({level2}, {level}) --\n\n")
+                    file.write("    " * len(levels) + f"    jmp     .L{level2}\n")
+                    file.write("    " * len(levels) + f"    .L{level}:\n\n")
+
+                elif start is token_lib.WHILE:
+                    assert False, f"You probably forgot a do"
 
                 else:
                     assert False, f"Unknown starter for END; got '{start}'"
-                
+
+            elif token.type is token_lib.WHILE:
+                file.write("    " * len(levels) + f"    ;; -- WHILE ({start_level}) --\n\n")
+                file.write("    " * len(levels) + f"    .L{start_level}:\n\n")
+
+                levels.append((start_level, token_lib.WHILE))
+                start_level += 1
+
+            elif token.type is token_lib.DO:
+                file.write("    " * len(levels) + f"    ;; -- DO ({start_level}) --\n\n")
+                file.write("    " * len(levels) + f"    pop     rax\n")
+                file.write("    " * len(levels) + f"    cmp     rax, 0\n")
+                file.write("    " * len(levels) + f"    je      .L{start_level}\n\n")
+
+                levels.append((start_level, token_lib.DO))
+                start_level += 1
+
+            elif token.type is token_lib.INC:
+                file.write("    " * len(levels) + f"    ;; -- INC --\n\n")
+                file.write("    " * len(levels) + f"    inc     QWORD [rsp]\n\n")
+
+            elif token.type is token_lib.DEC:
+                file.write("    " * len(levels) + f"    ;; -- DEC --\n\n")
+                file.write("    " * len(levels) + f"    dec     QWORD [rsp]\n\n")
+               
             else:
                 assert False, f"token_lib.Token type {token.type} is unknown."
 

@@ -25,7 +25,7 @@ def print_tokens():
     print(*program, sep="\n")
         
 
-def debug_parser():
+def debug_parser_command():
     program = parser_lib.parse_file(args.source, True)
     
 
@@ -50,7 +50,7 @@ tokens_parser.set_defaults(func=print_tokens)
 
 debug_parser = subparsers.add_parser("debug-parser", help="Parse a Corth file and show the parsing process")
 debug_parser.add_argument("source", help="Source file name")
-debug_parser.set_defaults(func=debug_parser)
+debug_parser.set_defaults(func=debug_parser_command)
 
 compile_nasm_parser = subparsers.add_parser("compile-nasm", help="Compile a Corth file into a NASM file")
 compile_nasm_parser.add_argument("source", help="Source file name")

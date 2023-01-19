@@ -1,37 +1,9 @@
-1 if
-  42 dump
-else
-  69 dump
-end
-
-
-/*
-Upcoming:
+1
 
 while
-    condition
+    dup 10 -
 do
-    code
+    dup dump
+
+    inc
 end
-
-
-/*
-
-  ;; while (0)
-  .L0:
-
-  condition
-
-  ;; do (1)
-  pop     rax
-  cmp     rax, 0
-  je      .L1
-
-  code
-
-  ;; end (0 - 1)
-  jmp .L0
-  .L1:
-
-*/
-*/
