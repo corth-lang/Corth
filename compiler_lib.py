@@ -166,6 +166,13 @@ def compile_nasm_program(file_name, program):
             elif token.type is token_lib.DEC:
                 file.write("    " * len(levels) + f"    ;; -- DEC --\n\n")
                 file.write("    " * len(levels) + f"    dec     QWORD [rsp]\n\n")
+
+            elif token.type is token_lib.ROT:
+                file.write("    " * len(levels) + f"    ;; -- ROT --\n\n")
+                file.write("    " * len(levels) + f"    mov     rax, [rsp + 16]\n")
+                file.write("    " * len(levels) + f"    xchg    rax, [rsp]\n")
+                file.write("    " * len(levels) + f"    xchg    rax, [rsp + 8]\n")
+                file.write("    " * len(levels) + f"    mov     [rsp + 16], rax\n\n")
                
             else:
                 assert False, f"token_lib.Token type {token.type} is unknown."

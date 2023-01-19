@@ -1,9 +1,52 @@
-1
+/*
+Fibonacci example
+
+a is old
+b is new
+
+Create new numbers:
+dup
+rot
++
+
+i a b
+i a b b
+i b b a
+i b (a+b)
+
+Update index:
+rot
+dec
+dup
+
+do
+
+rot
+rot
+
+i a b
+a b i
+a b (i-1)
+a b (i-1) (i-1)
+a b (i-1)
+b (i-1) a
+(i-1) a b
+*/
+
+
+20 0 1
 
 while
-    dup 10 -
+    // i a b
+    rot dec dup
+    // a b (i-1) (i-1)
 do
+    // a b i
+    rot rot
+
     dup dump
 
-    inc
+    // i a b
+    dup rot +
+    // i b a+b
 end
