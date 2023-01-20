@@ -1,0 +1,19 @@
+/*
+
+BREAK breaks while-do-end loops
+
+*/
+
+0
+
+while
+  1  // Like while(true)
+do
+  dup 10 - if
+  else
+    break
+  end
+
+  dup dump
+  inc
+end
