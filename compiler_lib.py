@@ -5,6 +5,10 @@ import token_lib
 
 
 # TODO: Add type checker
+# TODO: Change the compiler, so that it produces result using the stack
+# TODO: Add booleans (type checker is required)
+# TODO: Add boolean singetons
+# TODO: Add comparison operators
             
 def compile_nasm_program(file_name, program):
     start_level = 0
@@ -58,7 +62,7 @@ def compile_nasm_program(file_name, program):
                 file.write("    " * len(levels) + f"    mov     rax, {token.arg}\n")
                 file.write("    " * len(levels) + f"    push    rax\n\n")
 
-            elif token.type is token_lib.ADD:
+            elif token.type is token_lib.ADD:                
                 file.write("    " * len(levels) + f"    ;; -- ADD --\n\n")
                 file.write("    " * len(levels) + f"    pop     rbx\n")
                 file.write("    " * len(levels) + f"    pop     rax\n")
@@ -77,7 +81,7 @@ def compile_nasm_program(file_name, program):
                 file.write("    " * len(levels) + f"    pop     rdi\n")
                 file.write("    " * len(levels) + f"    call    dump\n\n")
 
-            elif token.type is token_lib.DUMPCHAR:
+            elif token.type is token_lib.DUMPCHAR:                
                 file.write("    " * len(levels) + f"    ;; -- DUMPCHAR --\n\n")
                 file.write("    " * len(levels) + f"    mov     rax, 1\n")
                 file.write("    " * len(levels) + f"    mov     rdi, 1\n")
@@ -110,7 +114,7 @@ def compile_nasm_program(file_name, program):
                
                 level, start = levels.pop()
 
-                assert start is token_lib.IF, f"Invalid syntax, tryed to end '{start}' with ELSE"
+                assert start is token_lib.IF, f"Invalid syntax, tried to end '{start}' with ELSE"
                
                 file.write("    " * len(levels) + f"    ;; -- ELSE ({level}, {start_level}) --\n\n")
                 file.write("    " * len(levels) + f"    jmp     .L{start_level}\n")
@@ -138,7 +142,7 @@ def compile_nasm_program(file_name, program):
                     file.write("    " * len(levels) + f"    .L{level}:\n\n")
 
                 elif start is token_lib.WHILE:
-                    assert False, f"You probably forgot a do"
+                    assert False, f"You probably forgot to add DO (while COND do CODE end)"
 
                 else:
                     assert False, f"Unknown starter for END; got '{start}'"
@@ -177,6 +181,20 @@ def compile_nasm_program(file_name, program):
             elif token.type is token_lib.DROP:
                 file.write("    " * len(levels) + f"    ;; -- DROP -- \n\n")
                 file.write("    " * len(levels) + f"    add     rsp, 8")
+
+            elif token.type is token_lib.BREAK:
+                copy = levels.copy()
+                copy.reverse()
+                
+                for level, start in copy:
+                    if start is token_lib.DO:
+                        break
+
+                else:
+                    assert False, f"BREAK should be used inside WHILE"
+
+                file.write("    " * len(levels) + f"    ;; -- BREAK ({level}) --\n\n")
+                file.write("    " * len(levels) + f"    jmp     .L{level}\n\n")
                
             else:
                 assert False, f"token_lib.Token type {token.type} is unknown."
