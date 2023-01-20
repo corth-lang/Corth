@@ -7,7 +7,7 @@ import log_lib
 
 
 def compile_command():
-    log_lib.command(("python3", "main.py", "compile-nasm", args.source, "-o", "output.asm"))
+    log_lib.command(("python3", "main.py", "compile-nasm", args.source))
     log_lib.command(("nasm", "output.asm", "-f", "elf64", "-o", "output.o"))
     log_lib.command(("ld", "output.o", "-o", args.output))
 
@@ -40,7 +40,7 @@ def test_command():
 
 parser = argparse.ArgumentParser(
     prog="Corth",
-    description="Corth compiler and simulator"
+    description="Corth compiler"
 )
 
 subparsers = parser.add_subparsers(
@@ -59,7 +59,7 @@ debug_parser.set_defaults(func=debug_parser_command)
 
 compile_nasm_parser = subparsers.add_parser("compile-nasm", help="Compile a Corth file into a NASM file")
 compile_nasm_parser.add_argument("source", help="Source file name")
-compile_nasm_parser.add_argument("-o", "--output", help="Output file name", default="output")
+compile_nasm_parser.add_argument("-o", "--output", help="Output file name", default="output.asm")
 compile_nasm_parser.set_defaults(func=compile_nasm_command)
 
 compile_parser = subparsers.add_parser("compile", help="Compile a Corth file into an executable")
