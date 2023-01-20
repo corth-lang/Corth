@@ -195,6 +195,19 @@ def compile_nasm_program(file_name, program):
 
                 file.write("    " * len(levels) + f"    ;; -- BREAK ({level}) --\n\n")
                 file.write("    " * len(levels) + f"    jmp     .L{level}\n\n")
+
+            elif token.type is token_lib.EQUAL:
+                file.write("    " * len(levels) + f"    ;; -- EQUAL --\n\n")
+                file.write("    " * len(levels) + f"    pop     rax\n")
+                file.write("    " * len(levels) + f"    pop     rbx\n")
+                file.write("    " * len(levels) + f"    cmp     rax, rbx\n")
+                file.write("    " * len(levels) + f"    pushf\n")
+                file.write("    " * len(levels) + f"    and     QWORD [rsp], 0x40\n\n")
+
+            elif token.type is token_lib.NOT_EQUAL:
+                file.write("    " * len(levels) + f"    ;; NOT EQUAL --\n\n")
+                file.write("    " * len(levels) + f"    pop     rax\n")
+                file.write("    " * len(levels) + f"    sub     [rsp], rax\n\n")
                
             else:
                 assert False, f"token_lib.Token type {token.type} is unknown."

@@ -1,6 +1,6 @@
 /*
 
-BREAK breaks while-do-end loops
+break example
 
 */
 
@@ -9,8 +9,7 @@ BREAK breaks while-do-end loops
 while
   1  // Like while(true)
 do
-  dup 10 - if
-  else
+  dup 10 = if
     break
   end
 
