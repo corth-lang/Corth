@@ -1,0 +1,38 @@
+/*
+
+Pyramid example
+
+**********
+*********
+********
+*******
+******
+*****
+****
+***
+**
+*
+
+*/
+
+10  // Changing this number will change the size of the pyramid
+
+while
+  dup
+do
+  dup
+
+  while
+    dup
+  do
+    '*' dumpchar
+
+    dec
+  end
+
+  drop
+
+  '\n' dumpchar
+
+  dec
+end
