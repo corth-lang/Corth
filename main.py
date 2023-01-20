@@ -9,9 +9,14 @@ import log_lib
 def compile_command():
     log_lib.command(("python3", "main.py", "compile-nasm", args.source, "-o", "output.asm"))
     log_lib.command(("nasm", "output.asm", "-f", "elf64", "-o", "output.o"))
-    log_lib.command(("rm", "output.asm"))
     log_lib.command(("ld", "output.o", "-o", args.output))
-    log_lib.command(("rm", "output.o"))
+
+    if not args.keep:
+        log_lib.command(("rm", "output.asm"))
+        log_lib.command(("rm", "output.o"))
+
+    if args.run:
+        log_lib.command((f"./{args.output}",))
 
     
 def compile_nasm_command():
@@ -60,6 +65,8 @@ compile_nasm_parser.set_defaults(func=compile_nasm_command)
 compile_parser = subparsers.add_parser("compile", help="Compile a Corth file into an executable")
 compile_parser.add_argument("source", help="Source file name")
 compile_parser.add_argument("-o", "--output", help="Output file name", default="output")
+compile_parser.add_argument("-r", "--run", help="Run after compilation", action="store_true")
+compile_parser.add_argument("-k", "--keep", help="Keep object and NASM files", action="store_true")
 compile_parser.set_defaults(func=compile_command)
 
 test_parser = subparsers.add_parser("test", help="Run unit tests")
