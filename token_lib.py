@@ -35,4 +35,5 @@ KEYWORDS = {
     "inc": (INC := enum_lib.step()),
     "dec": (DEC := enum_lib.step()),
     "rot": (ROT := enum_lib.step()),
+    "drop": (DROP := enum_lib.step()),
 }

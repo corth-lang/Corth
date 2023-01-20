@@ -173,6 +173,10 @@ def compile_nasm_program(file_name, program):
                 file.write("    " * len(levels) + f"    xchg    rax, [rsp]\n")
                 file.write("    " * len(levels) + f"    xchg    rax, [rsp + 8]\n")
                 file.write("    " * len(levels) + f"    mov     [rsp + 16], rax\n\n")
+
+            elif token.type is token_lib.DROP:
+                file.write("    " * len(levels) + f"    ;; -- DROP -- \n\n")
+                file.write("    " * len(levels) + f"    add     rsp, 8")
                
             else:
                 assert False, f"token_lib.Token type {token.type} is unknown."
