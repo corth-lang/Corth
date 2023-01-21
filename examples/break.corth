@@ -7,7 +7,7 @@ break example
 0
 
 while
-  1  // Like while(true)
+  true
 do
   dup 10 = if
     break
@@ -16,3 +16,5 @@ do
   dup dump
   inc
 end
+
+drop

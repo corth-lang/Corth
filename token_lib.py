@@ -38,5 +38,9 @@ KEYWORDS = {
     "drop": (DROP := enum_lib.step()),
     "break": (BREAK := enum_lib.step()),
     "=": (EQUAL := enum_lib.step()),
-    "!=": (NOT_EQUAL := enum_lib.step())
+    "!=": (NOT_EQUAL := enum_lib.step()),
+    "!": (NOT := enum_lib.step()),
+    "false": (FALSE := enum_lib.step()),
+    "true": (TRUE := enum_lib.step()),
 }
+
