@@ -7,7 +7,7 @@ import log_lib
 
 
 def compile_command():
-    log_lib.command(("python3", "main.py", "compile-nasm", args.source))
+    log_lib.command(("python3", "main.py", "compile-nasm", args.source) + (("-d",) if args.debug else ()))
     log_lib.command(("nasm", "output.asm", "-f", "elf64", "-o", "output.o"))
     log_lib.command(("ld", "output.o", "-o", args.output))
 
@@ -22,7 +22,7 @@ def compile_command():
 def compile_nasm_command():
     program = parser_lib.parse_file(args.source)
 
-    compiler_lib.compile_nasm_program(args.output, program)
+    compiler_lib.compile_nasm_program(args.output, program, args.debug)
 
 
 def print_tokens():
@@ -60,6 +60,7 @@ debug_parser.set_defaults(func=debug_parser_command)
 compile_nasm_parser = subparsers.add_parser("compile-nasm", help="Compile a Corth file into a NASM file")
 compile_nasm_parser.add_argument("source", help="Source file name")
 compile_nasm_parser.add_argument("-o", "--output", help="Output file name", default="output.asm")
+compile_nasm_parser.add_argument("-d", "--debug", help="Debug mode", action="store_true")
 compile_nasm_parser.set_defaults(func=compile_nasm_command)
 
 compile_parser = subparsers.add_parser("compile", help="Compile a Corth file into an executable")
@@ -67,6 +68,7 @@ compile_parser.add_argument("source", help="Source file name")
 compile_parser.add_argument("-o", "--output", help="Output file name", default="output")
 compile_parser.add_argument("-r", "--run", help="Run after compilation", action="store_true")
 compile_parser.add_argument("-k", "--keep", help="Keep object and NASM files", action="store_true")
+compile_parser.add_argument("-d", "--debug", help="Debug mode", action="store_true")
 compile_parser.set_defaults(func=compile_command)
 
 test_parser = subparsers.add_parser("test", help="Run unit tests")
