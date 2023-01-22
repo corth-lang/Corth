@@ -42,5 +42,7 @@ KEYWORDS = {
     "!": (NOT := enum_lib.step()),
     "false": (FALSE := enum_lib.step()),
     "true": (TRUE := enum_lib.step()),
+    "qword": (QWORD := enum_lib.step()),
+    "bool": (BOOL := enum_lib.step())
 }
 
