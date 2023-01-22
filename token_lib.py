@@ -20,6 +20,7 @@ PUSH1 = enum_lib.step()
 PUSH2 = enum_lib.step()
 PUSH4 = enum_lib.step()
 PUSH8 = enum_lib.step()
+PUSHSTR = enum_lib.step()
 KEYWORDS = {
     "+": (ADD := enum_lib.step()),
     "-": (SUB := enum_lib.step()),
@@ -43,6 +44,9 @@ KEYWORDS = {
     "false": (FALSE := enum_lib.step()),
     "true": (TRUE := enum_lib.step()),
     "qword": (QWORD := enum_lib.step()),
-    "bool": (BOOL := enum_lib.step())
+    "bool": (BOOL := enum_lib.step()),
+    "addr": (ADDR := enum_lib.step()),
+    "read8": (READ8 := enum_lib.step()),
+    "write8": (WRITE8 := enum_lib.step())
 }
 

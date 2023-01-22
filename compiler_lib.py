@@ -6,14 +6,18 @@ import token_lib
 
 # TODO: Change the compiler, so that it considers types of arguments
 # TODO: Add comparison operators
+# TODO: Add BYTE type
+# TODO: Change BOOL type so that it is 1 bytes, not 4
+# TODO: Add file operations
 
 
 enum_lib.reset()
 QWORD = enum_lib.step()
 BOOL = enum_lib.step()
+ADDR = enum_lib.step()
 
             
-def compile_nasm_program(file_name, program, debug_mode=False):
+def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x4000):
     start_level = 0
     levels = deque()
 
@@ -23,8 +27,8 @@ def compile_nasm_program(file_name, program, debug_mode=False):
         file.write("")
 
     with open(file_name, "a") as file:
-        file.write(f"    global  _start\n")
-        file.write(f"    segment .text\n")
+        file.write(f"global  _start\n")
+        file.write(f"segment .text\n\n")
 
         file.write("dump:\n")
         file.write("    mov     r9, -3689348814741910323\n")
@@ -73,25 +77,21 @@ def compile_nasm_program(file_name, program, debug_mode=False):
                 stack.append(QWORD)
 
             elif token.type is token_lib.ADD:
-                assert stack.pop() is QWORD and stack[-1] is QWORD, "ADD expects two QWORDs"
+                assert stack.pop() in (QWORD, ADDR) and stack[-1] in (QWORD, ADDR), "ADD expects two QWORDs or ADDRs"
                 
                 file.write("    " * len(levels) + f"    ;; -- ADD --\n\n")
-                file.write("    " * len(levels) + f"    pop     rbx\n")
                 file.write("    " * len(levels) + f"    pop     rax\n")
-                file.write("    " * len(levels) + f"    add     rax, rbx\n")
-                file.write("    " * len(levels) + f"    push    rax\n\n")
+                file.write("    " * len(levels) + f"    add     [rsp], rax\n")
 
             elif token.type is token_lib.SUB:
-                assert stack.pop() is QWORD and stack[-1] is QWORD, "SUB expects two QWORDs"
+                assert stack.pop() in (QWORD, ADDR) and stack[-1] in (QWORD, ADDR), "SUB expects two QWORDs or ADDRs"
                 
                 file.write("    " * len(levels) + f"    ;; -- SUB --\n\n")
-                file.write("    " * len(levels) + f"    pop     rbx\n")
                 file.write("    " * len(levels) + f"    pop     rax\n")
-                file.write("    " * len(levels) + f"    sub     rax, rbx\n")
-                file.write("    " * len(levels) + f"    push    rax\n\n")
+                file.write("    " * len(levels) + f"    sub     QWORD [rsp], rax\n")
 
             elif token.type is token_lib.DUMP:
-                assert stack.pop() is QWORD, "DUMP expects a QWORD"
+                assert stack.pop() in (QWORD, ADDR), "DUMP expects a QWORD or an ADDR"
                 
                 file.write("    " * len(levels) + f"    ;; -- DUMP --\n\n")
                 file.write("    " * len(levels) + f"    pop     rdi\n")
@@ -110,8 +110,8 @@ def compile_nasm_program(file_name, program, debug_mode=False):
 
             elif token.type is token_lib.DUP:
                 # TODO: DUP should allow any argument
-                assert stack[-1] is QWORD, "DUP expects a QWORD"
-                stack.append(QWORD)
+                assert stack[-1] in (QWORD, ADDR), "DUP expects a QWORD"
+                stack.append(stack[-1])
                 
                 file.write("    " * len(levels) + f"    ;; -- DUP --\n\n")
                 file.write("    " * len(levels) + f"    push    QWORD [rsp]\n\n")
@@ -314,6 +314,29 @@ def compile_nasm_program(file_name, program, debug_mode=False):
 
                 else:
                     assert False, "Unknown type for BOOL"
+
+            elif token.type is token_lib.ADDR:
+                stack.append(ADDR)
+
+                file.write("    " * len(levels) + f"    ;; -- ADDR --\n\n")
+                file.write("    " * len(levels) + f"    push    memory\n\n")
+
+            elif token.type is token_lib.READ8:
+                assert stack.pop() is ADDR, "READ8 expects an ADDR"
+                stack.append(QWORD)
+
+                file.write("    " * len(levels) + f"    ;; -- READ8 --\n\n")
+                file.write("    " * len(levels) + f"    mov     rax, QWORD [rsp]\n")
+                file.write("    " * len(levels) + f"    mov     rax, QWORD [rax]\n")
+                file.write("    " * len(levels) + f"    mov     [rsp], rax\n\n")
+
+            elif token.type is token_lib.WRITE8:
+                assert stack.pop() is QWORD and stack.pop() is ADDR, "WRITE8 expects an ADDR and a QWORD"
+
+                file.write("    " * len(levels) + f"    ;; -- WRITE8 --\n\n")
+                file.write("    " * len(levels) + f"    pop     rax\n")
+                file.write("    " * len(levels) + f"    pop     rbx\n")
+                file.write("    " * len(levels) + f"    mov     [rbx], rax\n\n")
                
             else:
                 assert False, f"token_lib.Token type {token.type} is unknown."
@@ -321,8 +344,9 @@ def compile_nasm_program(file_name, program, debug_mode=False):
         assert len(levels) == 0, "There were openers that were not closed"
         assert len(stack) == 0, "There were values in the stack"
 
-        file.write("    mov     rax, 60\n")
-        file.write("    mov     rdi, 0\n")
-        file.write("    syscall\n")
+        file.write(f"    mov     rax, 60\n")
+        file.write(f"    mov     rdi, 0\n")
+        file.write(f"    syscall\n\n")
 
-
+        file.write(f"segment .bss\n")
+        file.write(f"    memory: resb {allocate_space}\n")
