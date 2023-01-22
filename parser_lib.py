@@ -29,6 +29,9 @@ EXPECT_HEXADECIMAL_MODE = enum_lib.step()
 HEXADECIMAL_MODE = enum_lib.step()
 EXPECT_BINARY_MODE = enum_lib.step()
 
+STRING_MODE = enum_lib.step()
+STRING_MODE_ESCAPE_MODE = enum_lib.step()
+
 # TODO: Add minus
 # TODO: Add different size numbers
 
@@ -36,12 +39,12 @@ ESCAPES = {
     "n": "\n",
     "s": " ",
     "t": "\t",
-    "q": '"'
+    '"': '"',
+    "'": "'"
 }
 
 
 def parse_file(file_name, debug_mode=False):
-    program = []
     mode = IDLE_MODE
     token = ""
 
@@ -54,8 +57,39 @@ def parse_file(file_name, debug_mode=False):
                 print(f"'{char}' | {str(mode).rjust(2, ' ')} | {token}")
 
             if char == "":
-                assert (mode in (IDLE_MODE, INLINE_COMMENT_MODE, EXPECT_IDLE_MODE)), f"Put at least one space or one newline at the end of the program, mode was '{mode}'"
-                return program
+                if mode in (IDLE_MODE, EXPECT_IDLE_MODE, INLINE_COMMENT_MODE, MULTI_COMMENT_MODE, MULTI_COMMENT_ASTERISK_MODE):
+                    return
+
+                elif mode is KEYWORD:
+                    yield token_lib.Token(token_lib.KEYWORD, token)
+
+                elif mode in (CHAR_MODE, CHAR_ESCAPE_MODE, CHAR_EXPECT_END_MODE):
+                    assert False, "Reached EOF while parsing a char"
+                    
+                elif mode is SLASH_MODE:
+                    yield token_lib.Token(token_lib.KEYWORD, "/")
+
+                elif mode is ZERO_MODE:
+                    yield token_lib.Token(token_lib.PUSH8, 0)
+
+                elif mode is DECIMAL_MODE:
+                    yield token_lib.Token(token_lib.PUSH8, int(token))
+
+                elif mode is BINARY_MODE:
+                    yield token_lib.Token(token_lib.PUSH8, int(token, 2))
+
+                elif mode is EXPECT_BINARY_MODE:
+                    assert False, "Reached EOF while parsing a binary number"
+
+                elif mode is HEXADECIMAL_MODE:
+                    yield token_lib.Token(token_lib.PUSH8, int(token, 16))
+
+                elif mode is EXPECT_HEXADECIMAL_MODE:
+                    assert False, "Reached EOF while parsing a hexadecimal number"
+
+                else:
+                    assert False, f"Reached EOF in mode {mode}"
+                    
 
             if mode is EXPECT_IDLE_MODE:
                 assert char in " \n\t", f"Expected end of token; got '{char}'"
@@ -76,6 +110,10 @@ def parse_file(file_name, debug_mode=False):
                 elif char == "'":
                     mode = CHAR_MODE
 
+                elif char == '"':
+                    mode = STRING_MODE
+                    token = ""
+
                 elif char == "/":
                     mode = SLASH_MODE
 
@@ -85,7 +123,7 @@ def parse_file(file_name, debug_mode=False):
 
             elif mode is ZERO_MODE:
                 if char in " \n\t":
-                    program.append(token_lib.Token(token_lib.PUSH8, 0))
+                    yield token_lib.Token(token_lib.PUSH8, 0)
                     mode = IDLE_MODE
 
                 elif char == "b":
@@ -99,7 +137,7 @@ def parse_file(file_name, debug_mode=False):
 
             elif mode is DECIMAL_MODE:
                 if char in " \n\t":
-                    program.append(token_lib.Token(token_lib.PUSH8, int(token)))
+                    yield token_lib.Token(token_lib.PUSH8, int(token))
                     mode = IDLE_MODE
 
                 elif char in "0123456789":
@@ -134,7 +172,7 @@ def parse_file(file_name, debug_mode=False):
                     token += char
 
                 elif char in " \n\t":
-                    program.append(token_lib.Token(token_lib.PUSH8, int(token, 16)))
+                    yield token_lib.Token(token_lib.PUSH8, int(token, 16))
                     mode = IDLE_MODE
 
                 else:
@@ -144,7 +182,7 @@ def parse_file(file_name, debug_mode=False):
                 if char in " \n\t":
                     assert token in token_lib.KEYWORDS, f"Unknown keyword, '{token}'"
 
-                    program.append(token_lib.Token(token_lib.KEYWORDS[token]))
+                    yield token_lib.Token(token_lib.KEYWORDS[token])
                     mode = IDLE_MODE
 
                 else:
@@ -159,15 +197,15 @@ def parse_file(file_name, debug_mode=False):
                     mode = CHAR_EXPECT_END_MODE
 
             elif mode is CHAR_ESCAPE_MODE:
-                assert char in ESCAPES, f"Unknown escape sequence; \\{char}"
+                assert char in ESCAPES, f"Invalid escape sequence; got \\{char}"
 
                 token = ESCAPES[char]
                 mode = CHAR_EXPECT_END_MODE
 
             elif mode is CHAR_EXPECT_END_MODE:
-                assert (char == "'"), f"Expected ', got '{char}'"
+                assert (char == "'"), f"Only one character expected inside ''"
 
-                program.append(token_lib.Token(token_lib.PUSH8, ord(token)))
+                yield token_lib.Token(token_lib.PUSH8, ord(token))
                 mode = EXPECT_IDLE_MODE
 
             elif mode is SLASH_MODE:
@@ -178,10 +216,10 @@ def parse_file(file_name, debug_mode=False):
                     mode = MULTI_COMMENT_MODE
 
                 elif char in " \n\t":
-                    assert False, "Not implemented yet"
+                    yield token_lib.Token(token_lib.KEYWORD, "/")
 
                 else:
-                    token = "/"
+                    token = "/" + char
                     mode = KEYWORD_MODE
 
             elif mode is INLINE_COMMENT_MODE:
@@ -199,7 +237,22 @@ def parse_file(file_name, debug_mode=False):
                 else:
                     mode = MULTI_COMMENT_MODE
 
+            elif mode is STRING_MODE:
+                if char == '"':
+                    mode = EXPECT_IDLE_MODE
+                    yield token_lib.Token(token_lib.PUSHSTR, token)
+
+                elif char == "\\":
+                    mode = STRING_ESCAPE_MODE
+
+                else:
+                    token += char
+
+            elif mode is STRING_ESCAPE_MODE:
+                assert char in ESCAPES, f"Invalid escape sequence; got \\{char}"
+
+                token += ESCAPES[char]
+                mode = STRING_MODE
+
             else:
                 assert False, f"Mode '{mode}' is unknown"
-
-        return program
