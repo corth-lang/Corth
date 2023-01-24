@@ -18,12 +18,12 @@ Pyramid example
 10  // Changing this number will change the size of the pyramid
 
 while
-  dup
+  dup bool
 do
   dup
 
   while
-    dup
+    dup bool
   do
     '*' dumpchar
 
