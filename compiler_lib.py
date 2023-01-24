@@ -13,6 +13,7 @@ import log_lib
 # TODO: Add include
 # TODO: Add macros
 # TODO: Change dump, dumpchar and sysexit to library macros
+# TODO: Add checks for the stack size for every instruction
 
 
 enum_lib.reset()
@@ -28,17 +29,14 @@ def error(message):
 def error_on_token(token, message):
     error(log_lib.log("ERROR", f"({token.address}) {message}"))
 
-
-def error_if_not(token, condition, message):
-    if not condition:
-        error_on_token(token, message)
-
             
 def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: bool = False, allocate_space: int = 0x4000): 
     start_level = 0
     levels = deque()
 
     stack = deque()
+
+    data = deque()
    
     with open(file_name, "w") as file:
         file.write("")
@@ -440,7 +438,7 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
                 file.write("    " * len(levels) + f"    mov     [rsp], rax\n\n")
 
             elif token.type is token_lib.SYSCALL1:
-                if stack.pop() is not QWORD or stack[-1] is not QWORD:
+                if stack.pop() not in (QWORD, ADDR) or stack[-1] is not QWORD:
                     error_on_token(token, "SYSCALL1 expects two QWORDs")
                     return True
                 
@@ -451,7 +449,7 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
                 file.write("    " * len(levels) + f"    mov     [rsp], rax\n\n")
                 
             elif token.type is token_lib.SYSCALL2:
-                if stack.pop() is not QWORD or stack.pop() is not QWORD or stack[-1] is not QWORD:
+                if stack.pop() not in (QWORD, ADDR) or stack.pop() not in (QWORD, ADDR) or stack[-1] is not QWORD:
                     error_on_token(token, "SYSCALL2 expects three QWORDs")
                     return True
                 
@@ -463,7 +461,7 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
                 file.write("    " * len(levels) + f"    mov     [rsp], rax\n\n")
 
             elif token.type is token_lib.SYSCALL3:
-                if stack.pop() is not QWORD or stack.pop() is not QWORD or stack.pop() is not QWORD or stack[-1] is not QWORD:
+                if stack.pop() not in (QWORD, ADDR) or stack.pop() not in (QWORD, ADDR) or stack.pop() not in (QWORD, ADDR) or stack[-1] is not QWORD:
                     error_on_token(token, "SYSCALL3 expects four QWORDs")
                     return True
                 
@@ -484,6 +482,16 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
                 file.write("    " * len(levels) + f"    mov     rax, 60\n")
                 file.write("    " * len(levels) + f"    pop     rdi\n")
                 file.write("    " * len(levels) + f"    syscall\n\n")
+
+            elif token.type is token_lib.PUSHSTR:
+                file.write("    " * len(levels) + f"    ;; -- PUSHSTR (data_{len(data)}) --\n\n")
+                file.write("    " * len(levels) + f"    push    data_{len(data)}\n")
+                file.write("    " * len(levels) + f"    push    {len(token.arg)}\n\n")
+
+                stack.append(ADDR)
+                stack.append(QWORD)
+                
+                data.append(f"db " + ", ".join(map(str, map(ord, token.arg))))
                
             else:
                 error_on_token(token, f"token_lib.Token type {token.type} is unknown.")
@@ -499,6 +507,11 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
         file.write(f"    mov     rax, 60\n")
         file.write(f"    mov     rdi, 0\n")
         file.write(f"    syscall\n\n")
+
+        file.write(f"segment .data\n")
+
+        for i, command in enumerate(data):
+            file.write(f"    data_{i}: {command}\n")
 
         file.write(f"segment .bss\n")
         file.write(f"    memory: resb {allocate_space}\n")

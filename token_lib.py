@@ -15,6 +15,8 @@ class Token:
             return f"type='{self.type}' ({self.arg})"
 
 
+# TODO: Add syscalls from 0 to 6
+
 # -- TOKEN TYPES --
 enum_lib.reset()
 PUSH1 = enum_lib.step()
@@ -22,12 +24,13 @@ PUSH2 = enum_lib.step()
 PUSH4 = enum_lib.step()
 PUSH8 = enum_lib.step()
 PUSHSTR = enum_lib.step()
+PUSHSTRC = enum_lib.step()
 NAME = enum_lib.step()
 KEYWORDS = {
     "+": (ADD := enum_lib.step()),
     "-": (SUB := enum_lib.step()),
-    "dump": (DUMP := enum_lib.step()),
-    "dumpchar": (DUMPCHAR := enum_lib.step()),
+    "dump": (DUMP := enum_lib.step()),  # Should be removed and remade in Corth
+    "dumpchar": (DUMPCHAR := enum_lib.step()),  # Should be removed and remade in Corth
     "dup": (DUP := enum_lib.step()),
     "swp": (SWP := enum_lib.step()),
     "if": (IF := enum_lib.step()),
@@ -54,6 +57,6 @@ KEYWORDS = {
     "syscall1": (SYSCALL1 := enum_lib.step()),
     "syscall2": (SYSCALL2 := enum_lib.step()),
     "syscall3": (SYSCALL3 := enum_lib.step()),
-    "sysexit": (SYSEXIT := enum_lib.step())
+    "sysexit": (SYSEXIT := enum_lib.step())   # Should be removed and remade in Corth
 }
 
