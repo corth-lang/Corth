@@ -48,7 +48,12 @@ KEYWORDS = {
     "qword": (QWORD := enum_lib.step()),
     "bool": (BOOL := enum_lib.step()),
     "addr": (ADDR := enum_lib.step()),
-    "read8": (READ8 := enum_lib.step()),
-    "write8": (WRITE8 := enum_lib.step()),
+    "load8": (LOAD8 := enum_lib.step()),
+    "store8": (STORE8 := enum_lib.step()),
+    "syscall0": (SYSCALL0 := enum_lib.step()),
+    "syscall1": (SYSCALL1 := enum_lib.step()),
+    "syscall2": (SYSCALL2 := enum_lib.step()),
+    "syscall3": (SYSCALL3 := enum_lib.step()),
+    "sysexit": (SYSEXIT := enum_lib.step())
 }
 
