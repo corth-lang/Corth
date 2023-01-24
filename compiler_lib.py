@@ -1,14 +1,17 @@
 from collections import deque
 
+import typing
 import enum_lib
 import token_lib
+import log_lib
 
 
-# TODO: Change the compiler, so that it considers types of arguments
+# TODO: Create Compiler class
 # TODO: Add comparison operators
 # TODO: Add BYTE type
 # TODO: Change BOOL type so that it is 1 bytes, not 4
 # TODO: Add file operations
+# TODO: Remove all error_if_not's in the compiler
 
 
 enum_lib.reset()
@@ -16,8 +19,21 @@ QWORD = enum_lib.step()
 BOOL = enum_lib.step()
 ADDR = enum_lib.step()
 
+
+def error(message):
+    log_lib.log("ERROR", message)
+
+
+def error_on_token(token, message):
+    error(log_lib.log("ERROR", f"({token.address}) {message}"))
+
+
+def error_if_not(token, condition, message):
+    if not condition:
+        error_on_token(token, message)
+
             
-def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x4000):
+def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: bool = False, allocate_space: int = 0x4000): 
     start_level = 0
     levels = deque()
 
@@ -65,40 +81,54 @@ def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x
         file.write("    ret\n\n")
         file.write("_start:\n")
 
-        for token in program:
+        while True:
+            try:                
+                token = next(program)
+
+            except StopIteration:
+                break
+            
             if debug_mode:
-                print(f"{repr(token).ljust(20, ' ')} | {stack}")
+                log_lib.log("DEBUG", f"{repr(token).ljust(20, ' ')} | {stack}")
             
             if token.type is token_lib.PUSH8:
-                file.write("    " * len(levels) + f"    ;; -- PUSH {token.arg} --\n\n")
+                file.write("    " * len(levels) + f"    ;; -- PUSH8 {token.arg} --\n\n")
                 file.write("    " * len(levels) + f"    mov     rax, {token.arg}\n")
                 file.write("    " * len(levels) + f"    push    rax\n\n")
 
                 stack.append(QWORD)
 
             elif token.type is token_lib.ADD:
-                assert stack.pop() in (QWORD, ADDR) and stack[-1] in (QWORD, ADDR), "ADD expects two QWORDs or ADDRs"
+                if not(stack.pop() in (QWORD, ADDR) and stack[-1] in (QWORD, ADDR)):
+                    error_on_token(token, "ADD expects two QWORDs or ADDRs")
+                    return True
                 
                 file.write("    " * len(levels) + f"    ;; -- ADD --\n\n")
                 file.write("    " * len(levels) + f"    pop     rax\n")
                 file.write("    " * len(levels) + f"    add     [rsp], rax\n")
 
             elif token.type is token_lib.SUB:
-                assert stack.pop() in (QWORD, ADDR) and stack[-1] in (QWORD, ADDR), "SUB expects two QWORDs or ADDRs"
+                if not(stack.pop() in (QWORD, ADDR) and stack[-1] in (QWORD, ADDR)):
+                    error_on_token(token, "SUB expects two QWORDs or ADDRs")
+                    return True
                 
                 file.write("    " * len(levels) + f"    ;; -- SUB --\n\n")
                 file.write("    " * len(levels) + f"    pop     rax\n")
                 file.write("    " * len(levels) + f"    sub     QWORD [rsp], rax\n")
 
             elif token.type is token_lib.DUMP:
-                assert stack.pop() in (QWORD, ADDR), "DUMP expects a QWORD or an ADDR"
+                if not(stack.pop() in (QWORD, ADDR)):
+                    error_on_token(token, "DUMP expects a QWORD or an ADDR")
+                    return True
                 
                 file.write("    " * len(levels) + f"    ;; -- DUMP --\n\n")
                 file.write("    " * len(levels) + f"    pop     rdi\n")
                 file.write("    " * len(levels) + f"    call    dump\n\n")
 
             elif token.type is token_lib.DUMPCHAR:
-                assert stack.pop() is QWORD, "DUMPCHAR expects a QWORD"
+                if not(token, stack.pop() is QWORD):
+                    error_on_token(token, "DUMPCHAR expects a QWORD")
+                    return True
                 
                 file.write("    " * len(levels) + f"    ;; -- DUMPCHAR --\n\n")
                 file.write("    " * len(levels) + f"    mov     rax, 1\n")
@@ -110,7 +140,10 @@ def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x
 
             elif token.type is token_lib.DUP:
                 # TODO: DUP should allow any argument
-                assert stack[-1] in (QWORD, ADDR), "DUP expects a QWORD"
+                if not(stack[-1] in (QWORD, ADDR)):
+                    error_on_token(token, "DUP expects a QWORD")
+                    return True
+                    
                 stack.append(stack[-1])
                 
                 file.write("    " * len(levels) + f"    ;; -- DUP --\n\n")
@@ -118,7 +151,9 @@ def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x
 
             elif token.type is token_lib.SWP:
                 # TODO: SWP should allow any arguments
-                assert stack[-1] is QWORD and stack[-2] is QWORD, "SWP expects two QWORDs"
+                if not (stack[-1] is QWORD and stack[-2] is QWORD):
+                    error_on_token(token, "SWP expects two QWORDs")
+                    return True
                 
                 file.write("    " * len(levels) + f"    ;; -- SWP --\n\n")
                 file.write("    " * len(levels) + f"    pop     rax\n")
@@ -126,22 +161,28 @@ def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x
                 file.write("    " * len(levels) + f"    push    rax\n\n")
 
             elif token.type is token_lib.IF:
-                assert stack.pop() in (QWORD, BOOL), "IF expects a QWORD or a BOOL"
+                if not (stack.pop() is BOOL):
+                    error_on_token(token, "IF expects a BOOL")
+                    return True
                 
                 file.write("    " * len(levels) + f"    ;; -- IF ({start_level}) --\n\n")
-                file.write("    " * len(levels) + f"    pop     rax\n")
-                file.write("    " * len(levels) + f"    test    rax, rax\n")
+                file.write("    " * len(levels) + f"    pop     ax\n")
+                file.write("    " * len(levels) + f"    test    ax, ax\n")
                 file.write("    " * len(levels) + f"    je      .L{start_level}\n\n")
 
                 levels.append((start_level, token_lib.IF, stack.copy()))  # Save the level and a copy of the stack
                 start_level += 1
 
             elif token.type is token_lib.ELSE:
-                assert len(levels), "Invalid syntax"
+                if not len(levels):
+                    error_on_token(token, "Invalid syntax")
+                    return True
                
                 level, start, old_stack = levels.pop()
 
-                assert start is token_lib.IF, f"Invalid syntax, tried to end '{start}' with ELSE"
+                if start is token_lib.IF:
+                    error_on_token(token, f"Invalid syntax, tried to end '{start}' with ELSE")
+                    return True
                
                 file.write("    " * len(levels) + f"    ;; -- ELSE ({level}, {start_level}) --\n\n")
                 file.write("    " * len(levels) + f"    jmp     .L{start_level}\n")
@@ -152,12 +193,16 @@ def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x
                 start_level += 1
 
             elif token.type is token_lib.END:
-                assert len(levels), "Invalid syntax"
+                if not len(levels):
+                    error_on_token(token, "Invalid syntax")
+                    return True
                
                 level, start, old_stack = levels.pop()
 
                 if start in (token_lib.IF, token_lib.ELSE):
-                    assert old_stack == stack, "In an if-end, there should not be any change in stack"
+                    if old_stack != stack:
+                        error_on_token(token, "Stack changed inside an if-end")
+                        return True
                     
                     file.write("    " * len(levels) + f"    ;; -- ENDIF ({level}) --\n\n")
                     file.write("    " * len(levels) + f"    .L{level}:\n\n")
@@ -165,18 +210,25 @@ def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x
                 elif start is token_lib.DO:
                     level2, start2, old_stack2 = levels.pop()
 
-                    assert start2 is token_lib.WHILE, "Invalid syntax"
-                    assert stack == old_stack2, "In a while-end, there should not be any change in stack"
+                    if start2 is not token_lib.WHILE:
+                        error_on_token(token, "Invalid syntax")
+                        return True
+                        
+                    if stack != old_stack2:
+                        error_on_token(token, "Stack change inside a while-end")
+                        return True
                     
                     file.write("    " * len(levels) + f"    ;; -- ENDWHILE ({level2}, {level}) --\n\n")
                     file.write("    " * len(levels) + f"    jmp     .L{level2}\n")
                     file.write("    " * len(levels) + f"    .L{level}:\n\n")
 
                 elif start is token_lib.WHILE:
-                    assert False, f"You probably forgot to add DO (while COND do CODE end)"
+                    error_on_token(token, f"You probably forgot to add DO (while COND do CODE end)")
+                    return True
 
                 else:
-                    assert False, f"Unknown starter for END; got '{start}'"
+                    error_on_token(token, f"Unknown starter for END; got '{start}'")
+                    return True
 
             elif token.type is token_lib.WHILE:                
                 file.write("    " * len(levels) + f"    ;; -- WHILE ({start_level}) --\n\n")
@@ -186,31 +238,39 @@ def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x
                 start_level += 1
 
             elif token.type is token_lib.DO:
-                assert stack.pop() in (QWORD, BOOL), "DO expects a QWORD or a BOOL"
+                if stack.pop() is not BOOL:
+                    error_on_token(token, "DO expects a BOOL")
+                    return True
                 
                 file.write("    " * len(levels) + f"    ;; -- DO ({start_level}) --\n\n")
-                file.write("    " * len(levels) + f"    pop     rax\n")
-                file.write("    " * len(levels) + f"    test    rax, rax\n")
+                file.write("    " * len(levels) + f"    pop     ax\n")
+                file.write("    " * len(levels) + f"    test    ax, ax\n")
                 file.write("    " * len(levels) + f"    je      .L{start_level}\n\n")
 
                 levels.append((start_level, token_lib.DO, None))
                 start_level += 1
 
             elif token.type is token_lib.INC:
-                assert stack[-1] is QWORD, "INC expects a QWORD"
+                if stack[-1] is not QWORD:
+                    error_on_token(token, "INC expects a QWORD")
+                    return True
                 
                 file.write("    " * len(levels) + f"    ;; -- INC --\n\n")
                 file.write("    " * len(levels) + f"    inc     QWORD [rsp]\n\n")
 
             elif token.type is token_lib.DEC:
-                assert stack[-1] is QWORD, "DEC expects a QWORD"
+                if stack[-1] is not QWORD:
+                    error_on_token(token, "DEC expects a QWORD")
+                    return True
                                 
                 file.write("    " * len(levels) + f"    ;; -- DEC --\n\n")
                 file.write("    " * len(levels) + f"    dec     QWORD [rsp]\n\n")
 
             elif token.type is token_lib.ROT:
                 # TODO: ROT should allow any argument
-                assert stack[-1] is QWORD and stack[-2] is QWORD and stack[-3] is QWORD, "ROT expects three QWORDS"
+                if not (stack[-1] is QWORD and stack[-2] is QWORD and stack[-3] is QWORD):
+                    error_on_token(token, "ROT expects three QWORDS")
+                    return True
                 
                 file.write("    " * len(levels) + f"    ;; -- ROT --\n\n")
                 file.write("    " * len(levels) + f"    mov     rax, [rsp + 16]\n")
@@ -220,7 +280,9 @@ def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x
 
             elif token.type is token_lib.DROP:
                 # TODO: DROP should allow any argument
-                assert stack.pop() is QWORD, "DROP expects a QWORD"
+                if stack.pop() is not QWORD:
+                    error_on_token(token, "DROP expects a QWORD")
+                    return True
                 
                 file.write("    " * len(levels) + f"    ;; -- DROP -- \n\n")
                 file.write("    " * len(levels) + f"    add     rsp, 8\n\n")
@@ -234,13 +296,17 @@ def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x
                         break
 
                 else:
-                    assert False, f"BREAK should be used inside WHILE"
+                    error_on_token(token, f"BREAK should be used inside WHILE")
+                    return
                 
                 file.write("    " * len(levels) + f"    ;; -- BREAK ({level}) --\n\n")
                 file.write("    " * len(levels) + f"    jmp     .L{level}\n\n")
 
             elif token.type is token_lib.EQUAL:
-                assert stack.pop() is QWORD and stack.pop() is QWORD, "EQUAL expects two QWORDs"
+                if not (stack.pop() is QWORD and stack.pop() is QWORD):
+                    error_on_token(token, "EQUAL expects two QWORDs")
+                    return True
+                    
                 stack.append(BOOL)
                 
                 file.write("    " * len(levels) + f"    ;; -- EQUAL --\n\n")
@@ -248,23 +314,37 @@ def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x
                 file.write("    " * len(levels) + f"    pop     rbx\n")
                 file.write("    " * len(levels) + f"    sub     rax, rbx\n")
                 file.write("    " * len(levels) + f"    pushf\n")
-                file.write("    " * len(levels) + f"    and     QWORD [rsp], 0x40\n\n")
+                file.write("    " * len(levels) + f"    pop     rax\n")
+                file.write("    " * len(levels) + f"    and     ax, 0x40\n")
+                file.write("    " * len(levels) + f"    push    ax\n\n")
 
             elif token.type is token_lib.NOT_EQUAL:
-                assert stack.pop() is QWORD and stack.pop() is QWORD, "NOT_EQUAL expects two QWORDs"
+                if not (stack.pop() is QWORD and stack.pop() is QWORD):
+                    error_on_token(token, "NOT_EQUAL expects two QWORDs")
+                    return True
+                    
                 stack.append(BOOL)
                 
                 file.write("    " * len(levels) + f"    ;; -- NOT EQUAL --\n\n")
                 file.write("    " * len(levels) + f"    pop     rax\n")
-                file.write("    " * len(levels) + f"    sub     [rsp], rax\n\n")
+                file.write("    " * len(levels) + f"    pop     rbx\n")
+                file.write("    " * len(levels) + f"    sub     rax, rbx\n\n")
+                file.write("    " * len(levels) + f"    pushf\n")
+                file.write("    " * len(levels) + f"    pop     rax\n")
+                file.write("    " * len(levels) + f"    and     ax, 0x40\n")
+                file.write("    " * len(levels) + f"    xor     ax, 0x40\n")
+                file.write("    " * len(levels) + f"    push    ax\n\n")
 
             elif token.type is token_lib.NOT:
-                assert stack.pop() in (QWORD, BOOL), "NOT expects a QWORD or a BOOL"
+                if stack.pop() is not BOOL:
+                    error_on_token(token, "NOT expects a BOOL")
+                    return True
+                
                 stack.append(BOOL)
 
                 file.write("    " * len(levels) + f"    ;; -- NOT --\n\n")
-                file.write("    " * len(levels) + f"    pop     rax\n")
-                file.write("    " * len(levels) + f"    test    rax, rax\n")
+                file.write("    " * len(levels) + f"    pop     ax\n")
+                file.write("    " * len(levels) + f"    test    ax, ax\n")
                 file.write("    " * len(levels) + f"    pushf\n")
                 file.write("    " * len(levels) + f"    and     QWORD [rsp], 0x40\n\n")
 
@@ -272,48 +352,53 @@ def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x
                 stack.append(BOOL)
 
                 file.write("    " * len(levels) + f"    ;; -- FALSE --\n\n")
-                file.write("    " * len(levels) + f"    xor     rax, rax\n")
-                file.write("    " * len(levels) + f"    push    rax\n\n") 
+                file.write("    " * len(levels) + f"    xor     ax, ax\n")
+                file.write("    " * len(levels) + f"    push    ax\n\n") 
 
             elif token.type is token_lib.TRUE:
                 stack.append(BOOL)
 
                 file.write("    " * len(levels) + f"    ;; -- TRUE --\n\n")
-                file.write("    " * len(levels) + f"    mov     rax, 1\n")
-                file.write("    " * len(levels) + f"    push    rax\n\n")
+                file.write("    " * len(levels) + f"    mov     ax, 1\n")
+                file.write("    " * len(levels) + f"    push    ax\n\n")
 
             elif token.type is token_lib.QWORD:
                 old = stack.pop()
+                stack.append(QWORD)
                 
-                if old.type is BOOL:
+                if old is BOOL:
                     # For false, returns 0
                     # For true, returns 0x40 (64)
                     
                     file.write("    " * len(levels) + f"    ;; -- QWORD (BOOL) --\n\n")
-                    file.write("    " * len(levels) + f"    pop     rax\n")
-                    file.write("    " * len(levels) + f"    test    rax, rax\n")
-                    file.write("    " * len(levels) + f"    pushf\n")
-                    file.write("    " * len(levels) + f"    and     QWORD [rsp], 0x40\n\n")
+                    file.write("    " * len(levels) + f"    mov     ax, WORD [rsp]\n")
+                    file.write("    " * len(levels) + f"    push    ax\n\n")
+                    file.write("    " * len(levels) + f"    push    ax\n\n")
+                    file.write("    " * len(levels) + f"    push    ax\n\n")
 
                 else:
-                    assert False, "Unknown type for QWORD"
+                    error_on_token(token, "Unknown type for QWORD")
+                    return True
 
             elif token.type is token_lib.BOOL:
                 old = stack.pop()
-
-                if old.type is QWORD:
+                stack.append(BOOL)
+                
+                if old is QWORD:
                     # For 0, returns false
                     # For anything else, returns true
 
                     file.write("    " * len(levels) + f"    ;; -- BOOL (QWORD) --\n\n")
-                    file.write("    " * len(levels) + f"    pop     rax\n")
-                    file.write("    " * len(levels) + f"    test    rax, rax\n")
-                    file.write("    " * len(levels) + f"    pushf\n")
-                    file.write("    " * len(levels) + f"    and     QWORD [rsp], 0x40\n\n")
-                    file.write("    " * len(levels))
+                    file.write("    " * len(levels) + f"    pop     ax\n")
+                    file.write("    " * len(levels) + f"    or      WORD [rsp], ax\n\n")
+                    file.write("    " * len(levels) + f"    pop     ax\n")
+                    file.write("    " * len(levels) + f"    or      WORD [rsp], ax\n\n")
+                    file.write("    " * len(levels) + f"    pop     ax\n")
+                    file.write("    " * len(levels) + f"    or      WORD [rsp], ax\n\n")
 
                 else:
-                    assert False, "Unknown type for BOOL"
+                    error_on_token(token, "Unknown type for BOOL")
+                    return True
 
             elif token.type is token_lib.ADDR:
                 stack.append(ADDR)
@@ -322,7 +407,10 @@ def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x
                 file.write("    " * len(levels) + f"    push    memory\n\n")
 
             elif token.type is token_lib.READ8:
-                assert stack.pop() is ADDR, "READ8 expects an ADDR"
+                if stack.pop() is not ADDR:
+                    error_on_token(token, "READ8 expects an ADDR")
+                    return True
+                
                 stack.append(QWORD)
 
                 file.write("    " * len(levels) + f"    ;; -- READ8 --\n\n")
@@ -331,7 +419,9 @@ def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x
                 file.write("    " * len(levels) + f"    mov     [rsp], rax\n\n")
 
             elif token.type is token_lib.WRITE8:
-                assert stack.pop() is QWORD and stack.pop() is ADDR, "WRITE8 expects an ADDR and a QWORD"
+                if not (stack.pop() is QWORD and stack.pop() is ADDR):
+                    error_on_token(token, "WRITE8 expects an ADDR and a QWORD")
+                    return True
 
                 file.write("    " * len(levels) + f"    ;; -- WRITE8 --\n\n")
                 file.write("    " * len(levels) + f"    pop     rax\n")
@@ -339,10 +429,15 @@ def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x
                 file.write("    " * len(levels) + f"    mov     [rbx], rax\n\n")
                
             else:
-                assert False, f"token_lib.Token type {token.type} is unknown."
+                error_on_token(token, f"token_lib.Token type {token.type} is unknown.")
 
-        assert len(levels) == 0, "There were openers that were not closed"
-        assert len(stack) == 0, "There were values in the stack"
+        if len(levels):
+            error("There were openers that were not closed")
+            return True
+                               
+        if len(stack):
+            error("There were values in the stack")
+            return True
 
         file.write(f"    mov     rax, 60\n")
         file.write(f"    mov     rdi, 0\n")
@@ -350,3 +445,5 @@ def compile_nasm_program(file_name, program, debug_mode=False, allocate_space=0x
 
         file.write(f"segment .bss\n")
         file.write(f"    memory: resb {allocate_space}\n")
+
+        return False
