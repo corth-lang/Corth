@@ -8,10 +8,11 @@ import log_lib
 
 # TODO: Create Compiler class
 # TODO: Add comparison operators
-# TODO: Add BYTE type
-# TODO: Change BOOL type so that it is 1 bytes, not 4
 # TODO: Add file operations
 # TODO: Remove all error_if_not's in the compiler
+# TODO: Add include
+# TODO: Add macros
+# TODO: Change dump, dumpchar and sysexit to library macros
 
 
 enum_lib.reset()
@@ -99,7 +100,7 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
                 stack.append(QWORD)
 
             elif token.type is token_lib.ADD:
-                if not(stack.pop() in (QWORD, ADDR) and stack[-1] in (QWORD, ADDR)):
+                if stack.pop() not in (QWORD, ADDR) or stack[-1] not in (QWORD, ADDR):
                     error_on_token(token, "ADD expects two QWORDs or ADDRs")
                     return True
                 
@@ -108,7 +109,7 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
                 file.write("    " * len(levels) + f"    add     [rsp], rax\n")
 
             elif token.type is token_lib.SUB:
-                if not(stack.pop() in (QWORD, ADDR) and stack[-1] in (QWORD, ADDR)):
+                if stack.pop() not in (QWORD, ADDR) or stack[-1] not in (QWORD, ADDR):
                     error_on_token(token, "SUB expects two QWORDs or ADDRs")
                     return True
                 
@@ -117,7 +118,7 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
                 file.write("    " * len(levels) + f"    sub     QWORD [rsp], rax\n")
 
             elif token.type is token_lib.DUMP:
-                if not(stack.pop() in (QWORD, ADDR)):
+                if stack.pop() not in (QWORD, ADDR):
                     error_on_token(token, "DUMP expects a QWORD or an ADDR")
                     return True
                 
@@ -126,7 +127,7 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
                 file.write("    " * len(levels) + f"    call    dump\n\n")
 
             elif token.type is token_lib.DUMPCHAR:
-                if not(token, stack.pop() is QWORD):
+                if stack.pop() is not QWORD:
                     error_on_token(token, "DUMPCHAR expects a QWORD")
                     return True
                 
@@ -140,7 +141,7 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
 
             elif token.type is token_lib.DUP:
                 # TODO: DUP should allow any argument
-                if not(stack[-1] in (QWORD, ADDR)):
+                if stack[-1] not in (QWORD, ADDR):
                     error_on_token(token, "DUP expects a QWORD")
                     return True
                     
@@ -151,7 +152,7 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
 
             elif token.type is token_lib.SWP:
                 # TODO: SWP should allow any arguments
-                if not (stack[-1] is QWORD and stack[-2] is QWORD):
+                if stack[-1] is not QWORD or stack[-2] is not QWORD:
                     error_on_token(token, "SWP expects two QWORDs")
                     return True
                 
@@ -161,7 +162,7 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
                 file.write("    " * len(levels) + f"    push    rax\n\n")
 
             elif token.type is token_lib.IF:
-                if not (stack.pop() is BOOL):
+                if stack.pop() is not BOOL:
                     error_on_token(token, "IF expects a BOOL")
                     return True
                 
@@ -268,7 +269,7 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
 
             elif token.type is token_lib.ROT:
                 # TODO: ROT should allow any argument
-                if not (stack[-1] is QWORD and stack[-2] is QWORD and stack[-3] is QWORD):
+                if stack[-1] is not QWORD or stack[-2] is not QWORD or stack[-3] is not QWORD:
                     error_on_token(token, "ROT expects three QWORDS")
                     return True
                 
@@ -406,27 +407,83 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
                 file.write("    " * len(levels) + f"    ;; -- ADDR --\n\n")
                 file.write("    " * len(levels) + f"    push    memory\n\n")
 
-            elif token.type is token_lib.READ8:
+            elif token.type is token_lib.LOAD8:
                 if stack.pop() is not ADDR:
-                    error_on_token(token, "READ8 expects an ADDR")
+                    error_on_token(token, "LOAD8 expects an ADDR")
                     return True
                 
                 stack.append(QWORD)
 
-                file.write("    " * len(levels) + f"    ;; -- READ8 --\n\n")
+                file.write("    " * len(levels) + f"    ;; -- LOAD8 --\n\n")
                 file.write("    " * len(levels) + f"    mov     rax, QWORD [rsp]\n")
                 file.write("    " * len(levels) + f"    mov     rax, QWORD [rax]\n")
                 file.write("    " * len(levels) + f"    mov     [rsp], rax\n\n")
 
-            elif token.type is token_lib.WRITE8:
+            elif token.type is token_lib.STORE8:
                 if not (stack.pop() is QWORD and stack.pop() is ADDR):
-                    error_on_token(token, "WRITE8 expects an ADDR and a QWORD")
+                    error_on_token(token, "STORE8 expects an ADDR and a QWORD")
                     return True
 
-                file.write("    " * len(levels) + f"    ;; -- WRITE8 --\n\n")
+                file.write("    " * len(levels) + f"    ;; -- STORE8 --\n\n")
                 file.write("    " * len(levels) + f"    pop     rax\n")
                 file.write("    " * len(levels) + f"    pop     rbx\n")
                 file.write("    " * len(levels) + f"    mov     [rbx], rax\n\n")
+
+            elif token.type is token_lib.SYSCALL0:
+                if stack[-1] is not QWORD:
+                    error_on_token(token, "SYSCALL0 expects a QWORD")
+                    return True
+                
+                file.write("    " * len(levels) + f"    ;; -- SYSCALL0 --\n\n")
+                file.write("    " * len(levels) + f"    mov     rax, [rsp]\n")
+                file.write("    " * len(levels) + f"    syscall\n")
+                file.write("    " * len(levels) + f"    mov     [rsp], rax\n\n")
+
+            elif token.type is token_lib.SYSCALL1:
+                if stack.pop() is not QWORD or stack[-1] is not QWORD:
+                    error_on_token(token, "SYSCALL1 expects two QWORDs")
+                    return True
+                
+                file.write("    " * len(levels) + f"    ;; -- SYSCALL1 --\n\n")
+                file.write("    " * len(levels) + f"    pop     rdi\n")
+                file.write("    " * len(levels) + f"    mov     rax, [rsp]\n")
+                file.write("    " * len(levels) + f"    syscall\n")
+                file.write("    " * len(levels) + f"    mov     [rsp], rax\n\n")
+                
+            elif token.type is token_lib.SYSCALL2:
+                if stack.pop() is not QWORD or stack.pop() is not QWORD or stack[-1] is not QWORD:
+                    error_on_token(token, "SYSCALL2 expects three QWORDs")
+                    return True
+                
+                file.write("    " * len(levels) + f"    ;; -- SYSCALL2 --\n\n")
+                file.write("    " * len(levels) + f"    pop     rsi\n")
+                file.write("    " * len(levels) + f"    pop     rdi\n")
+                file.write("    " * len(levels) + f"    mov     rax, [rsp]\n")
+                file.write("    " * len(levels) + f"    syscall\n")
+                file.write("    " * len(levels) + f"    mov     [rsp], rax\n\n")
+
+            elif token.type is token_lib.SYSCALL3:
+                if stack.pop() is not QWORD or stack.pop() is not QWORD or stack.pop() is not QWORD or stack[-1] is not QWORD:
+                    error_on_token(token, "SYSCALL3 expects four QWORDs")
+                    return True
+                
+                file.write("    " * len(levels) + f"    ;; -- SYSCALL3 --\n\n")
+                file.write("    " * len(levels) + f"    pop     rdx\n")
+                file.write("    " * len(levels) + f"    pop     rsi\n")
+                file.write("    " * len(levels) + f"    pop     rdi\n")
+                file.write("    " * len(levels) + f"    mov     rax, [rsp]\n")
+                file.write("    " * len(levels) + f"    syscall\n")
+                file.write("    " * len(levels) + f"    mov     [rsp], rax\n\n")
+
+            elif token.type is token_lib.SYSEXIT:
+                if stack.pop() is not QWORD:
+                    error_on_token(token, "SYSEXIT expects a QWORD, the return code")
+                    return True
+
+                file.write("    " * len(levels) + f"    ;; -- SYSEXIT --\n\n")
+                file.write("    " * len(levels) + f"    mov     rax, 60\n")
+                file.write("    " * len(levels) + f"    pop     rdi\n")
+                file.write("    " * len(levels) + f"    syscall\n\n")
                
             else:
                 error_on_token(token, f"token_lib.Token type {token.type} is unknown.")
