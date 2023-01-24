@@ -2,7 +2,8 @@ import enum_lib
 
 
 class Token:
-    def __init__(self, type_, arg=None):
+    def __init__(self, address, type_, arg=None):
+        self.address = address
         self.type = type_
         self.arg = arg
 
@@ -21,6 +22,7 @@ PUSH2 = enum_lib.step()
 PUSH4 = enum_lib.step()
 PUSH8 = enum_lib.step()
 PUSHSTR = enum_lib.step()
+NAME = enum_lib.step()
 KEYWORDS = {
     "+": (ADD := enum_lib.step()),
     "-": (SUB := enum_lib.step()),
@@ -47,6 +49,6 @@ KEYWORDS = {
     "bool": (BOOL := enum_lib.step()),
     "addr": (ADDR := enum_lib.step()),
     "read8": (READ8 := enum_lib.step()),
-    "write8": (WRITE8 := enum_lib.step())
+    "write8": (WRITE8 := enum_lib.step()),
 }
 
