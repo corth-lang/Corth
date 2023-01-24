@@ -189,9 +189,9 @@ def parse_file(debug_mode=False):
 
             if char == "":
                 if mode in (IDLE_MODE, EXPECT_IDLE_MODE, INLINE_COMMENT_MODE, MULTI_COMMENT_MODE, MULTI_COMMENT_ASTERISK_MODE):
-                    return
+                    pass
 
-                elif mode is KEYWORD:
+                elif mode is KEYWORD_MODE:
                     yield get_keyword()
                     
                 elif mode is SLASH_MODE:
@@ -220,6 +220,8 @@ def parse_file(debug_mode=False):
 
                 else:
                     syntax_error(f"Reached EOF in mode {mode}")
+
+                return
                     
 
             if mode is EXPECT_IDLE_MODE:
