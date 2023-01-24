@@ -33,10 +33,15 @@ EXPECT_OCTAL_MODE = enum_lib.step()
 EXPECT_HEXADECIMAL_MODE = enum_lib.step()
 
 STRING_MODE = enum_lib.step()
-STRING_MODE_ESCAPE_MODE = enum_lib.step()
+STRING_ESCAPE_MODE = enum_lib.step()
+STRING_UNICODE1_MODE = enum_lib.step()
+STRING_UNICODE2_MODE = enum_lib.step()
+STRING_UNICODE3_MODE = enum_lib.step()
+STRING_UNICODE4_MODE = enum_lib.step()
 
 # TODO: Add minus
 # TODO: Create Parser class
+# TODO: Add c-strings
 
 ESCAPES = {
     "n": "\n",
@@ -197,10 +202,10 @@ def parse_file(debug_mode=False):
                 elif mode is SLASH_MODE:
                     yield get_keyword()
 
-                elif mode is (BINARY_MODE, ZERO_MODE):
+                elif mode in (BINARY_MODE, ZERO_MODE):
                     yield get_push8(2)
 
-                elif mode in DECIMAL_MODE:
+                elif mode is DECIMAL_MODE:
                     yield get_push8(10)
 
                 elif mode is HEXADECIMAL_MODE:
@@ -378,13 +383,58 @@ def parse_file(debug_mode=False):
                     token += char
 
             elif mode is STRING_ESCAPE_MODE:
-                if char not in ESCAPES:
+                if char == "u":
+                    mode = STRING_UNICODE1_MODE
+                    
+                elif char not in ESCAPES:
                     syntax_error(f"Invalid escape sequence; got \\{char}")
                     token += "*"
+                    mode = STRING_MODE
 
                 else:
                     token += ESCAPES[char]
-                    
+                    mode = STRING_MODE
+
+            elif mode is STRING_UNICODE1_MODE:
+                if char not in HEXADECIMAL_DIGITS:
+                    syntax_error(f"Expected a hexadecimal in UNICODE expression; got {char}")
+                    token += "0"
+
+                else:
+                    token += char
+
+                mode = STRING_UNICODE2_MODE
+
+            elif mode is STRING_UNICODE2_MODE:
+                if char not in HEXADECIMAL_DIGITS:
+                    syntax_error(f"Expected a hexadecimal in UNICODE expression; got {char}")
+                    token += "0"
+
+                else:
+                    token += char
+
+                mode = STRING_UNICODE3_MODE
+
+            elif mode is STRING_UNICODE3_MODE:
+                if char not in HEXADECIMAL_DIGITS:
+                    syntax_error(f"Expected a hexadecimal in UNICODE expression; got {char}")
+                    token += "0"
+
+                else:
+                    token += char
+
+                mode = STRING_UNICODE4_MODE
+
+            elif mode is STRING_UNICODE4_MODE:
+                if char not in HEXADECIMAL_DIGITS:
+                    syntax_error(f"Expected a hexadecimal in UNICODE expression; got {char}")
+                    token += "0"
+
+                else:
+                    token += char
+
+                token = token[:-4] + chr(int(token[-4:], 16))
+                
                 mode = STRING_MODE
 
             else:
