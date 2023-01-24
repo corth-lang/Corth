@@ -7,7 +7,23 @@ import log_lib
 
 
 def compile_command():
-    log_lib.command(("python3", "main.py", "compile-nasm", args.source, "-s", args.space) + (("-d",) if args.debug else ()))
+    parser_lib.file_name = args.source
+    program = iter(tuple(parser_lib.parse_file()))  # Should be calculated, otherwise errors won't be known
+
+    if parser_lib.errors:
+        log_lib.log("INFO", f"There were {parser_lib.errors} parser errors, stopped compilation")
+        return
+
+    else:
+        log_lib.log("INFO", "Successfully parsed")
+
+    if compiler_lib.compile_nasm_program("output.asm", program, args.debug, args.space):
+        log_lib.log("INFO", f"Error on NASM creation, stopped compilation")
+        return
+
+    else:
+        log_lib.log("INFO", "NASM file has been successfully created")
+    
     log_lib.command(("nasm", "output.asm", "-f", "elf64", "-o", "output.o"))
     log_lib.command(("ld", "output.o", "-o", args.output))
 
@@ -17,21 +33,6 @@ def compile_command():
 
     if args.run:
         log_lib.command((f"./{args.output}",))
-
-    
-def compile_nasm_command():
-    program = parser_lib.parse_file(args.source)
-
-    compiler_lib.compile_nasm_program(args.output, program, args.debug, args.space)
-
-
-def print_tokens():
-    program = parser_lib.parse_file(args.source)
-    print(*program, sep="\n")
-        
-
-def debug_parser_command():
-    program = parser_lib.parse_file(args.source, True)
     
 
 def test_command():
@@ -48,21 +49,6 @@ subparsers = parser.add_subparsers(
 )
 
 # TODO: merge print-tokens and debug-parser into debug, and add debug options
-
-tokens_parser = subparsers.add_parser("print-tokens", help="Parse a Corth file and print the tokens")
-tokens_parser.add_argument("source", help="Source file name")
-tokens_parser.set_defaults(func=print_tokens)
-
-debug_parser = subparsers.add_parser("debug-parser", help="Parse a Corth file and show the parsing process")
-debug_parser.add_argument("source", help="Source file name")
-debug_parser.set_defaults(func=debug_parser_command)
-
-compile_nasm_parser = subparsers.add_parser("compile-nasm", help="Compile a Corth file into a NASM file")
-compile_nasm_parser.add_argument("source", help="Source file name")
-compile_nasm_parser.add_argument("-o", "--output", help="Output file name", default="output.asm")
-compile_nasm_parser.add_argument("-d", "--debug", help="Debug mode", action="store_true")
-compile_nasm_parser.add_argument("-s", "--space", help="Allowed memory usage", default="0x4000")
-compile_nasm_parser.set_defaults(func=compile_nasm_command)
 
 compile_parser = subparsers.add_parser("compile", help="Compile a Corth file into an executable")
 compile_parser.add_argument("source", help="Source file name")
