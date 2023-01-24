@@ -1,54 +1,61 @@
 /*
-Fibonacci example
 
-a is old
-b is new
+	Fibonacci example
 
-Create new numbers:
-dup
-rot
-+
+	a is old
+	b is new
 
-i a b
-i a b b
-i b b a
-i b (a+b)
+	Create new numbers:
+	dup
+	rot
+	+
 
-Update index:
-rot
-dec
-dup
+	i a b
+	i a b b
+	i b b a
+	i b (a+b)
 
-do
+	Update index:
+	rot
+	dec
+	dup
 
-rot
-rot
+	do
 
-i a b
-a b i
-a b (i-1)
-a b (i-1) (i-1)
-a b (i-1)
-b (i-1) a
-(i-1) a b
+	rot
+	rot
+
+	i a b
+	a b i
+	a b (i-1)
+	a b (i-1) (i-1)
+	a b (i-1)
+	b (i-1) a
+	(i-1) a b
+
 */
 
 
-20 0 1
+// i a b 
+  20 0 1
 
 while
-    // i a b
+    // stack: i a b
     rot dec dup
-    // a b (i-1) (i-1)
+    // stack: a b (i-1) (i-1)
+
+    bool
 do
-    // a b i
+    // stack: a b (i-1)
     rot rot
+    // stack: (i-1) a b
 
     dup dump
 
-    // i a b
+    // stack: (i-1) a b
     dup rot +
-    // i b a+b
+    // stack: (i-1) b a+b
 end
 
+// Release the wastes
 drop drop drop
