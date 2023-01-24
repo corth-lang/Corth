@@ -7,17 +7,17 @@ import log_lib
 
 
 def compile_command():
-    parser_lib.file_name = args.source
-    program = iter(tuple(parser_lib.parse_file()))  # Should be calculated, otherwise errors won't be known
+    parser = parser_lib.Parser()
+    parser.parse_file(args.source)
 
-    if parser_lib.errors:
+    if parser.errors:
         log_lib.log("INFO", f"There were {parser_lib.errors} parser errors, stopped compilation")
         return
 
     else:
         log_lib.log("INFO", "Successfully parsed")
 
-    if compiler_lib.compile_nasm_program("output.asm", program, args.debug, args.space):
+    if compiler_lib.compile_nasm_program("output.asm", iter(parser.program), args.debug, args.space):
         log_lib.log("INFO", f"Error on NASM creation, stopped compilation")
         return
 
