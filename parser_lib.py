@@ -132,6 +132,9 @@ class Parser:
     def get_keyword(self):
         if self.token in token_lib.KEYWORDS:
             self.program.append(token_lib.Token(self.get_position(), token_lib.KEYWORDS[self.token]))
+
+        elif self.token in token_lib.TYPE_NAMES:
+            self.program.append(token_lib.Token(self.get_position(), token_lib.TYPE, token_lib.TYPE_NAMES[self.token]))
     
         else:
             self.program.append(token_lib.Token(self.get_position(), token_lib.NAME, self.token))
