@@ -1,0 +1,5 @@
+proc sys_EXIT
+    qword-type returns
+in
+    60 swp syscall1 drop
+end

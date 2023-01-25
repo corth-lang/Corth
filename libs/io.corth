@@ -1,0 +1,5 @@
+proc puts
+    qword-type qword-type returns    
+in
+    1 rot rot 1 rot rot syscall3 drop
+end
