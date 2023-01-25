@@ -1,4 +1,5 @@
 import enum_lib
+import data_types_lib
 
 
 class Token:
@@ -26,11 +27,11 @@ PUSH8 = enum_lib.step()
 PUSHSTR = enum_lib.step()
 PUSHSTRC = enum_lib.step()
 NAME = enum_lib.step()
+TYPE = enum_lib.step()
 KEYWORDS = {
     "+": (ADD := enum_lib.step()),
     "-": (SUB := enum_lib.step()),
     "dump": (DUMP := enum_lib.step()),  # Should be removed and remade in Corth
-    "dumpchar": (DUMPCHAR := enum_lib.step()),  # Should be removed and remade in Corth
     "dup": (DUP := enum_lib.step()),
     "swp": (SWP := enum_lib.step()),
     "if": (IF := enum_lib.step()),
@@ -57,6 +58,15 @@ KEYWORDS = {
     "syscall1": (SYSCALL1 := enum_lib.step()),
     "syscall2": (SYSCALL2 := enum_lib.step()),
     "syscall3": (SYSCALL3 := enum_lib.step()),
-    "sysexit": (SYSEXIT := enum_lib.step())   # Should be removed and remade in Corth
+    "include": (INCLUDE := enum_lib.step()),
+    "proc": (PROC := enum_lib.step()),
+    "returns": (RETURNS := enum_lib.step()),
+    "in": (IN := enum_lib.step()),
+}
+TYPE_NAMES = {
+    "word-type": data_types_lib.WORD,
+    "dword-type": data_types_lib.DWORD,
+    "qword-type": data_types_lib.QWORD,
+    "bool-type": data_types_lib.BOOL,
 }
 
