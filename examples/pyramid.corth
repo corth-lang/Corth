@@ -15,26 +15,33 @@ Pyramid example
 
 */
 
-10  // Changing this number will change the size of the pyramid
+include libs/io.corth
 
-while
-  dup bool
-do
-  dup
-
-  while
-    dup bool
-  do
-    '*' dumpchar
-
-    dec
-  end
-
-  drop
-
-  '\n' dumpchar
-
-  dec
+proc main
+    returns qword-type
+in
+    10  // Changing this number will change the size of the pyramid
+    
+    while
+        dup bool
+    do
+        dup
+    
+        while
+            dup bool
+        do
+            "*" puts
+      
+            dec
+        end
+      
+        drop
+      
+	"\n" puts
+      
+        dec
+    end
+    
+    drop
+    0
 end
-
-drop
