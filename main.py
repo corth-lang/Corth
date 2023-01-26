@@ -11,7 +11,7 @@ def compile_command():
     parser.parse_file(args.source)
 
     if parser.errors:
-        log_lib.log("INFO", f"There were {parser_lib.errors} parser errors, stopped compilation")
+        log_lib.log("INFO", f"There were {parser.errors} parser errors, stopped compilation")
         return
 
     else:
