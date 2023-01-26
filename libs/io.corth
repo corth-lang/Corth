@@ -1,5 +1,43 @@
+include libs/sys.corth
+
+
+proc fputs
+    // file-dc    str-ptr    str-len
+    qword-type qword-type qword-type returns
+in
+    SYSWRITE syscall3 drop
+end
+
 proc puts
+    // str-ptr    str-len
     qword-type qword-type returns    
 in
-    1 rot rot 1 rot rot syscall3 drop
+    STDOUT rot rot fputs
+end
+
+proc fputsc
+    // file-dc    str-ptr
+    qword-type qword-type returns
+in
+    while
+        true
+    do
+
+    end
+
+    drop drop
+end
+
+proc fgets
+    // file-dc    str-ptr    str-len
+    qword-type qword-type qword-type returns
+in
+    SYSREAD syscall3 drop
+end
+
+proc gets
+    // str-ptr    str-len
+    qword-type qword-type returns
+in
+    STDIN rot rot fgets
 end

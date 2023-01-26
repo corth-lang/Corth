@@ -1,5 +1,63 @@
-proc sys_EXIT
+// sys.corth
+
+/*
+
+Contains basic system 'macros' and procedures
+
+*/
+
+proc STDIN returns qword-type in 0 end
+proc STDOUT returns qword-type in 1 end
+proc STDERR returns qword-type in 2 end
+
+proc SYSREAD returns qword-type in 0 end
+proc SYSWRITE returns qword-type in 1 end
+proc SYSOPEN returns qword-type in 2 end
+proc SYSCLOSE returns qword-type in 3 end
+proc SYSEXIT returns qword-type in 60 end
+
+proc RD_ONLY returns qword-type in 0 end
+proc WR_ONLY returns qword-type in 1 end
+proc RDWR returns qword-type in 2 end
+
+proc call-sys-exit
+    // ex-code
     qword-type returns
 in
-    60 swp syscall1 drop
+    SYSEXIT syscall1 drop
+end
+
+proc fopen
+    // str-ptr    str-len       mode      flags            file-dc
+    qword-type qword-type qword-type qword-type returns qword-type
+in
+    rot drop SYSOPEN syscall3
+end
+
+proc fopen-read
+    // str-ptr    str-len            file-dc
+    qword-type qword-type returns qword-type
+in
+    RD_ONLY 0 fopen
+end
+
+proc fopen-write
+    // str-ptr    str-len            file-dc
+    qword-type qword-type returns qword-type
+in
+    WR_ONLY 0 fopen
+end
+
+proc fopen-read-write
+    // str-ptr    str-len            file-dc
+    qword-type qword-type returns qword-type
+in
+    RDWR 0 fopen
+end
+
+proc fclose
+    // file-dc
+    qword-type returns
+in
+    SYSCLOSE syscall1 drop
 end
