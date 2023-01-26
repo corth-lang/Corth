@@ -62,6 +62,7 @@ KEYWORDS = {
     "proc": (PROC := enum_lib.step()),
     "returns": (RETURNS := enum_lib.step()),
     "in": (IN := enum_lib.step()),
+    "?stack": (DEBUG_STACK := enum_lib.step()),
 }
 TYPE_NAMES = {
     "word-type": data_types_lib.WORD,
