@@ -51,6 +51,10 @@ ESCAPES = {
     "'": "'"
 }
 
+REPLACE = {
+    "-": "__minus__"
+}
+
 BINARY_DIGITS = "01"
 OCTAL_DIGITS = BINARY_DIGITS + "234567"
 DECIMAL_DIGITS = OCTAL_DIGITS + "89"
@@ -82,19 +86,19 @@ class Parser:
         self.program = []
         
     def get_push2(self, base):
-        number = int(self.token)
+        number = int(self.token, base)
         self.syntax_error_if_not(0 <= number <= 0xFFFF, f"Number with base {base} too big for WORD; got '{self.token}'")
                         
         self.program.append(token_lib.Token(self.get_position(), token_lib.PUSH2, number))
     
     def get_push4(self, base):
-        number = int(self.token)
+        number = int(self.token, base)
         self.syntax_error_if_not(0 <= number <= 0xFFFFFFFF, f"Number with base {base} too big for DWORD; got '{self.token}'")
                         
         self.program.append(token_lib.Token(self.get_position(), token_lib.PUSH4, number))
     
     def get_push8(self, base):
-        number = int(self.token)
+        number = int(self.token, base)
         self.syntax_error_if_not(0 <= number <= 0xFFFFFFFFFFFFFFFF, f"Number with base {base} too big for QWORD; got '{self.token}'")
                         
         self.program.append(token_lib.Token(self.get_position(), token_lib.PUSH8, number))
@@ -106,7 +110,7 @@ class Parser:
             self.mode = EXPECT_IDLE_MODE
     
         else:       
-            self.token += char
+            self.token += self.char
             self.mode = next_mode
     
     def parse_base(self, allowed_digits, base):        
@@ -137,6 +141,9 @@ class Parser:
             self.program.append(token_lib.Token(self.get_position(), token_lib.TYPE, token_lib.TYPE_NAMES[self.token]))
     
         else:
+            for x, y in REPLACE.items():
+                self.token = self.token.replace(x, y)
+                
             self.program.append(token_lib.Token(self.get_position(), token_lib.NAME, self.token))
     
     def syntax_error(self, error):
