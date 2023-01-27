@@ -49,11 +49,11 @@ KEYWORDS = {
     "!": (NOT := enum_lib.step()),
     "false": (FALSE := enum_lib.step()),
     "true": (TRUE := enum_lib.step()),
-    "qword": (QWORD := enum_lib.step()),
-    "bool": (BOOL := enum_lib.step()),
     "addr": (ADDR := enum_lib.step()),
     "load8": (LOAD8 := enum_lib.step()),
     "store8": (STORE8 := enum_lib.step()),
+    "load": (LOAD := enum_lib.step()),
+    "store": (STORE := enum_lib.step()),
     "syscall0": (SYSCALL0 := enum_lib.step()),
     "syscall1": (SYSCALL1 := enum_lib.step()),
     "syscall2": (SYSCALL2 := enum_lib.step()),
@@ -65,9 +65,7 @@ KEYWORDS = {
     "?stack": (DEBUG_STACK := enum_lib.step()),
 }
 TYPE_NAMES = {
-    "word-type": data_types_lib.WORD,
-    "dword-type": data_types_lib.DWORD,
-    "qword-type": data_types_lib.QWORD,
-    "bool-type": data_types_lib.BOOL,
+    "int": data_types_lib.INT,
+    "bool": data_types_lib.BOOL,
 }
 
