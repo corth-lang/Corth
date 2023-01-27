@@ -37,7 +37,7 @@
 
 proc main
 returns
-    qword-type
+    int
 in
     // i a b 
     20 0 1
@@ -47,7 +47,7 @@ in
        	rot dec dup
     	// stack: a b (i-1) (i-1)
 
-	bool
+	0 !=
     do
         // stack: a b (i-1)
 	rot rot

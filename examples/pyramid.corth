@@ -18,17 +18,17 @@ Pyramid example
 include libs/io.corth
 
 proc main
-    returns qword-type
+    returns int
 in
     10  // Changing this number will change the size of the pyramid
     
     while
-        dup bool
+        dup 0 !=
     do
         dup
     
         while
-            dup bool
+            dup 0 !=
         do
             "*" puts
       

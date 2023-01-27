@@ -1,0 +1,16 @@
+include libs/sys.corth
+include libs/io.corth
+
+
+proc main
+    returns int
+in
+    "Hello, what is your name?\n" puts
+    addr getl
+
+    "Hello, " puts
+    addr swp puts
+    "!\n" puts
+    
+    0
+end
