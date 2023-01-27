@@ -24,13 +24,21 @@ def compile_command():
     else:
         log_lib.log("INFO", "NASM file has been successfully created")
     
-    log_lib.command(("nasm", "output.asm", "-f", "elf64", "-o", "output.o"))
-    log_lib.command(("ld", "output.o", "-o", args.output))
+    nasm_return = log_lib.command(("nasm", "./output.asm", "-f", "elf64", "-o", "./output.o")).returncode
+
+    if nasm_return:
+        return
+    
+    ld_return = log_lib.command(("ld", "./output.o", "-o", args.output)).returncode
 
     if not args.keep:
-        log_lib.command(("rm", "output.asm"))
-        log_lib.command(("rm", "output.o"))
+        log_lib.command(("rm", "./output.asm"))
 
+    if ld_return:
+        return
+
+    log_lib.command(("rm", "./output.o"))
+    
     if args.run:
         log_lib.command((f"./{args.output}",))
     
