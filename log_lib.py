@@ -8,7 +8,7 @@ def log(type_, message):
 
         
 def command(command):
-    log("CMD", command)
+    log("CMD", ", ".join(map(repr, command)))
 
     try:
         process = subprocess.run(command)
@@ -23,6 +23,4 @@ def command(command):
         if process.returncode:
             log("ERROR", f"Command returned non-zero return code; got {process.returncode}")
 
-        else:
-            log("INFO", "Successfully executed command")
-
+        return process
