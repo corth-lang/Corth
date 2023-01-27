@@ -1,43 +1,91 @@
+// 
+
 include libs/sys.corth
 
 
 proc fputs
-    // file-dc    str-ptr    str-len
-    qword-type qword-type qword-type returns
+    // file-dc str-ptr str-len
+    int int int returns
 in
     SYSWRITE syscall3 drop
 end
 
 proc puts
-    // str-ptr    str-len
-    qword-type qword-type returns    
+    // str-ptr str-len
+    int int returns    
 in
     STDOUT rot rot fputs
 end
 
-proc fputsc
-    // file-dc    str-ptr
-    qword-type qword-type returns
+proc eputs
+    // str-ptr str-len
+    int int returns
 in
-    while
-        true
-    do
-
-    end
-
-    drop drop
+    STDERR rot rot fputs
 end
 
 proc fgets
-    // file-dc    str-ptr    str-len
-    qword-type qword-type qword-type returns
+    // file-dc str-ptr str-len
+    int int int returns
 in
     SYSREAD syscall3 drop
 end
 
 proc gets
-    // str-ptr    str-len
-    qword-type qword-type returns
+    // str-ptr str-len
+    int int returns
 in
     STDIN rot rot fgets
+end
+
+proc fgetl
+    // file-dc str-ptr -- str-len
+    int int returns int
+in
+    // fd st -> st fd st+0
+    dup rot swp
+
+    while
+        // st fd (st+l) -> st fd (st+l) fd (st+l)
+        swp dup rot dup rot swp
+
+        1 fgets
+        // st fd (st+l)
+
+        dup load dup
+        // st fd (st+l) ch ch
+       
+        '\n' !=
+        // st fd (st+l) ch bool
+    do
+        dup 0 = if
+	    break
+	end
+
+        drop
+        
+        // st fd (st+l)
+        inc
+        // st fd (st+l+1)
+    end
+    
+    drop
+
+    // st fd (st+n) -> st fd (st+n) (st+n) 0
+    dup 0 store
+
+    // st fd (st+n) -> n fd
+    rot - swp
+
+    drop
+
+    // For now, returns an unliked version of string
+    // Will be changed in a future update
+end
+
+proc getl
+    // str-ptr -- str-len
+    int returns int
+in
+    STDIN swp fgetl
 end
