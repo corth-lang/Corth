@@ -1,66 +1,44 @@
 /*
 
-	Fibonacci example
+    ===========================
+    ==== Fibonacci example ====
+    ===========================
 
-	a is old
-	b is new
-
-	Create new numbers:
-	dup
-	rot
-	+
-
-	i a b
-	i a b b
-	i b b a
-	i b (a+b)
-
-	Update index:
-	rot
-	dec
-	dup
-
-	do
-
-	rot
-	rot
-
-	i a b
-	a b i
-	a b (i-1)
-	a b (i-1) (i-1)
-	a b (i-1)
-	b (i-1) a
-	(i-1) a b
+1
+1
+2
+3
+5
+8
+13
+21
+34
+55
+...
 
 */
 
+include libs/io.corth
+
 proc main
-returns
-    int
+    returns int
 in
     // i a b 
     20 0 1
 
     while
-	// stack: i a b
        	rot dec dup
-    	// stack: a b (i-1) (i-1)
 
 	0 !=
     do
-        // stack: a b (i-1)
 	rot rot
-	// stack: (i-1) a b
 
-    	dup dump
+    	dup putu
+	"\n" puts
 
-    	// stack: (i-1) a b
         dup rot +
-        // stack: (i-1) b a+b
     end
     
-    // Release the wastes
     drop drop drop
 
     0
