@@ -27,7 +27,9 @@ For more information about the commands, type:
 - Corth is a concatinative (stack based) language.
 - Programs are compiled into NASM first, then into an executable.
 - Everything can be inlined. The return character is used only to end inline comments and to add the newline character to the strings.
-- Everything in this language can be changed at any time. Use with caution.
+- Indentation and spaces mean nothing to the parser.
+
+- EVERYTHING IN THIS LANGUAGE CAN BE CHANGED AT ANY TIME. USE WITH CAUTION.
 
 ### Numbers:
 
@@ -46,7 +48,7 @@ For more information about the commands, type:
      In Corth, multi-line strings are supported."
 
 - Strings push two numbers, the address and the length of the string.
-- THIS BEHAVIOUR WILL BE CHANGED IN A FUTURE UPDATE! BE CAREFUL.
+- THIS BEHAVIOUR WILL BE CHANGED IN A FUTURE UPDATE! USE WITH CAUTION.
 
 ### Arithmetic operators:
 
@@ -62,18 +64,18 @@ For more information about the commands, type:
 
 - 'inc' increases the last item in the stack once, 'dec' decreases.
 
-### dump:
-
-    34 35 + dump
-
-- 'dump' prints the last item on the stack.
-- THIS WILL BE REMOVED IN A FUTURE UPDATE! BE CAREFUL.
-
 ### Including modules:
 
     include libs/str.corth
 
 - 'include' allows to use external code.
+
+### I/O:
+
+    "Hello, world!\n" puts
+    34 35 + putu " is a nice number.\n" puts
+
+- libs/io.corth contains useful procedures for I/O operations.
 
 ### Procedures:
 
@@ -115,9 +117,9 @@ For more information about the commands, type:
     end
 
     3 4 > if
-      "Your computer is broken." puts
+      "Your computer has virus\n" puts
     else
-      "Your computer is alright, unlike you." puts
+      "Your computer is alright, unlike you\n" puts
     end
 
     "First 10 numbers from 0 are,\n" puts
@@ -141,3 +143,30 @@ For more information about the commands, type:
 - 'if' is used for conditions.
 - 'if' can be used with 'else' for more functionality.
 - 'while' is used for loops, and 'break' can be used to quit the loop early.
+
+### Memory management:
+
+    memory count 8
+    
+    proc increase
+        returns
+    in
+        count dup load8 inc store8
+    end
+
+    proc main
+        returns int
+    in
+        count 0 store8
+
+        increase
+
+        count load8 dump
+
+        0
+    end
+
+- 'memory' is used for allocating global memory.
+- 'load8' loads 8 bytes of data from the address.
+- 'store8' stores 8 bytes of data to the address. (First argument is address and the second is the value to be stored)
+- SYNTAX FOR MEMORY IS A PLACEHOLDER. IT WILL BE CHANGED IN A FUTURE UPDATE. USE WITH CAREFUL.
