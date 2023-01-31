@@ -1,14 +1,14 @@
 // io.corth
 
 include libs/sys.corth
+include libs/memory.corth
 
 
-/*
+//    =======================
+//    == Output procedures ==
+//    =======================
 
-	Output procedures
-
-*/
-
+// == Strings ==
 proc fputs
     // file-dc str-ptr str-len
     int int int returns
@@ -30,19 +30,188 @@ in
     STDERR rot rot fputs
 end
 
-proc fputcs
-    // file-dc str-ptr
-    int int returns
+
+// == C-like strings ==
+proc fputsc
+     // file-dc str-ptr
+     int int returns
 in
-    
+     while
+         dup load 0 !=
+     do
+         dup rot dup rot 1 fputs swp
+         inc
+     end
+     
+     drop drop
 end
 
-/*
+proc putsc
+    // str-ptr
+    int returns
+in
+    STDOUT swp fputsc
+end
 
-	Input procedures
+proc eputsc
+    // str-ptr
+    int returns
+in
+    STDERR swp fputsc
+end
 
-*/
+// == Unsigned decimals ==
+memory putu.buffer 32
 
+proc fputu
+    // file-dc int
+    int int returns
+in
+    putu.buffer 32 +
+
+    while
+        swp 10 /% '0' +
+        rot
+        dec dup
+        rot
+        store
+        swp dup
+        rot swp
+        0 !=
+    do end
+
+    dup putu.buffer
+    swp - 32 +
+    fputs drop
+end
+
+proc putu
+    int returns
+in
+    STDOUT swp fputu
+end
+
+proc eputu
+    int returns
+in
+    STDERR swp fputu
+end
+
+
+// == Binary numbers ==
+// There is a faster algorithm, but it requires bitwise-AND
+
+proc fputb
+    // file-dc int
+    int int returns
+in
+    putu.buffer 32 +
+
+    while
+        swp 2 /% '0' +
+        rot
+        dec dup
+        rot
+        store
+        swp dup
+        rot swp
+        0 !=
+    do end
+
+    dup putu.buffer
+    swp - 32 +
+    fputs drop
+end
+
+proc putb
+    int returns
+in
+    STDOUT swp fputb
+end
+
+proc eputb
+    int returns
+in
+    STDERR swp fputb
+end
+
+
+// == Octal numbers ==
+
+proc fputo
+    // file-dc int
+    int int returns
+in
+    putu.buffer 32 +
+
+    while
+        swp 8 /% '0' +
+        rot
+        dec dup
+        rot
+        store
+        swp dup
+        rot swp
+        0 !=
+    do end
+
+    dup putu.buffer
+    swp - 32 +
+    fputs drop
+end
+
+proc puto
+    int returns
+in
+    STDOUT swp fputo
+end
+
+proc eputo
+    int returns
+in
+    STDERR swp fputo
+end
+
+
+// == Hexadecimal numbers ==
+
+proc fputx
+    // file-dc int
+    int int returns
+in
+    putu.buffer 32 +
+
+    while
+        swp 16 /% dup
+
+        // If the number is less then 10, starts from '0'. Otherwise, starts from '7', which added 10 is 'A'.
+        10 < if '0' else '7' end +
+        
+        rot dec dup rot store swp dup rot swp 0 !=
+    do end
+
+    dup putu.buffer
+    swp - 32 +
+    fputs drop
+end
+
+proc putx
+    int returns
+in
+    STDOUT swp fputx
+end
+
+proc eputx
+    int returns
+in
+    STDERR swp fputx
+end
+
+//    ==========================
+//    ==== Input procedures ====
+//    ==========================
+
+// == Strings ==
 proc fgets
     // file-dc str-ptr str-len
     int int int returns
@@ -57,6 +226,9 @@ in
     STDIN rot rot fgets
 end
 
+
+// == Lines ==
+// This algorithm is unsafe and should not be used
 proc fgetl
     // file-dc str-ptr -- str-len
     int int returns int
@@ -97,9 +269,6 @@ in
     rot - swp
 
     drop
-
-    // For now, returns an unliked version of string
-    // Will be changed in a future update
 end
 
 proc getl
