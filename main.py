@@ -17,7 +17,7 @@ def compile_command():
     else:
         log_lib.log("INFO", "Successfully parsed")
 
-    if compiler_lib.compile_nasm_program("output.asm", iter(parser.program), args.debug, args.space):
+    if compiler_lib.compile_nasm_program("output.asm", iter(parser.program), args.debug):
         log_lib.log("INFO", f"Error on NASM creation, stopped compilation")
         return
 
@@ -27,6 +27,7 @@ def compile_command():
     nasm_return = log_lib.command(("nasm", "./output.asm", "-f", "elf64", "-o", "./output.o")).returncode
 
     if nasm_return:
+        log_lib.log("INFO", f"Error on NASM compilation, stopped compilation")
         return
     
     ld_return = log_lib.command(("ld", "./output.o", "-o", args.output)).returncode
@@ -35,6 +36,7 @@ def compile_command():
         log_lib.command(("rm", "./output.asm"))
 
     if ld_return:
+        log_lib.log("INFO", f"Error on binding, stopped compilation")
         return
 
     log_lib.command(("rm", "./output.o"))
@@ -64,7 +66,6 @@ compile_parser.add_argument("-o", "--output", help="Output file name", default="
 compile_parser.add_argument("-r", "--run", help="Run after compilation", action="store_true")
 compile_parser.add_argument("-k", "--keep", help="Keep object and NASM files", action="store_true")
 compile_parser.add_argument("-d", "--debug", help="Debug mode", action="store_true")
-compile_parser.add_argument("-s", "--space", help="Allowed memory usage", default="0x4000")
 compile_parser.set_defaults(func=compile_command)
 
 test_parser = subparsers.add_parser("test", help="Run unit tests")

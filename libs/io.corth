@@ -1,7 +1,13 @@
-// 
+// io.corth
 
 include libs/sys.corth
 
+
+/*
+
+	Output procedures
+
+*/
 
 proc fputs
     // file-dc str-ptr str-len
@@ -23,6 +29,19 @@ proc eputs
 in
     STDERR rot rot fputs
 end
+
+proc fputcs
+    // file-dc str-ptr
+    int int returns
+in
+    
+end
+
+/*
+
+	Input procedures
+
+*/
 
 proc fgets
     // file-dc str-ptr str-len

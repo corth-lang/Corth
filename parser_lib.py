@@ -60,9 +60,6 @@ OCTAL_DIGITS = BINARY_DIGITS + "234567"
 DECIMAL_DIGITS = OCTAL_DIGITS + "89"
 HEXADECIMAL_DIGITS = DECIMAL_DIGITS + "abcdefABCDEF"
 
-WORD_FORMAT = "wW"
-DWORD_FORMAT = "uU"
-
 BINARY_FORMAT = "bB"
 OCTAL_FORMAT = "oO"
 HEXADECIMAL_FORMAT = "xX"
@@ -84,22 +81,10 @@ class Parser:
         self.errors = 0
 
         self.program = []
-        
-    def get_push2(self, base):
-        number = int(self.token, base)
-        self.syntax_error_if_not(0 <= number <= 0xFFFF, f"Number with base {base} too big for WORD; got '{self.token}'")
-                        
-        self.program.append(token_lib.Token(self.get_position(), token_lib.PUSH2, number))
-    
-    def get_push4(self, base):
-        number = int(self.token, base)
-        self.syntax_error_if_not(0 <= number <= 0xFFFFFFFF, f"Number with base {base} too big for DWORD; got '{self.token}'")
-                        
-        self.program.append(token_lib.Token(self.get_position(), token_lib.PUSH4, number))
     
     def get_push8(self, base):
         number = int(self.token, base)
-        self.syntax_error_if_not(0 <= number <= 0xFFFFFFFFFFFFFFFF, f"Number with base {base} too big for QWORD; got '{self.token}'")
+        self.syntax_error_if_not(0 <= number <= 0xFFFFFFFFFFFFFFFF, f"Number with base {base} too big for int; got '{self.token}'")
                         
         self.program.append(token_lib.Token(self.get_position(), token_lib.PUSH8, number))
     
@@ -120,14 +105,6 @@ class Parser:
     
         elif self.char in allowed_digits:
             self.token += self.char
-    
-        elif self.char in WORD_FORMAT:
-            self.get_push2(10)
-            self.mode = EXPECT_IDLE_MODE
-    
-        elif self.char in DWORD_FORMAT:
-            self.get_push4(10)
-            self.mode = EXPECT_IDLE_MODE
     
         else:
             self.syntax_error(f"Expected {', '.join(allowed_digits)} or EOT; got '{self.char}'")
@@ -272,17 +249,8 @@ class Parser:
                     elif self.char in HEXADECIMAL_FORMAT:
                         self.token = ""
                         self.mode = EXPECT_HEXADECIMAL_MODE
-    
-                    elif self.char in WORD_FORMAT:
-                        self.get_push2(10)
-                        self.mode = EXPECT_IDLE_MODE
-    
-                    elif self.char in DWORD_FORMAT:
-                        self.get_push4(10)
-                        self.mode = EXPECT_IDLE_MODE
-    
                     else:
-                        self.syntax_error(f"Expected EOT, b, o, x, w or u ; got '{self.char}'")
+                        self.syntax_error(f"Expected EOT, b, o or  x; got '{self.char}'")
     
                 elif self.mode is EXPECT_BINARY_MODE:
                     self.expect_base(BINARY_DIGITS, BINARY_MODE)

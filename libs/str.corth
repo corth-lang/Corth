@@ -1,0 +1,67 @@
+proc strc.get-len
+    // strc-ptr -- strc-len
+    int reutrns int
+in
+    0
+    
+    while
+        // (ptr+l) l
+        swp dup load 0 !=
+	// l (ptr+l)
+    do
+        inc swp inc
+	// (ptr+l+1) l+1
+    end
+
+    drop
+end
+
+proc str.to-strc
+    int int returns int
+in
+    /*
+        Because of the way strings work right now, not implemented the way it should be
+        This procedure will be fxed in an upcoming update
+    */
+    
+    drop
+end
+
+proc strc.to-str
+    int returns int int
+in
+    /*
+        Because of the way strings work right now, not implemented the way it should be
+        This procedure will be fxed in an upcoming update
+    */
+    
+    dup str.get-len
+end
+
+/*
+There are two types of strings in Corth
+
+char arrays and C-like strings
+
+char arrays:
+
+    char[]* x
+
+    [cs] [cl]
+     x^
+
+    [c0] [c1] [c2] ... [c+cl]
+    cs^
+
+    x points to the array pointer and right after it comes the length of the array
+    cs points to the first char in the string
+
+C-like strings:
+
+    str* x
+
+    [c0] [c1] [c2] ... [c+len] 00
+     x^
+
+    x points to the first char in the string and the last character is 0x00 (null-char)
+*/

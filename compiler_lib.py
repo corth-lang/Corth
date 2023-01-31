@@ -9,22 +9,44 @@ import data_types_lib
 
 import os
 
+# TODO: Add multiplication
 
-# TODO: Add comparison operators
+# TODO: Add bitwise logic
+
+# TODO: Add boolean logic
+
 # TODO: Add macros
-# TODO: Change dump to a library procedure
-# TODO: Add checks for the stack size for every instruction
-# TODO: Add let
-# TODO: Remake the stack, so that the pointer positions are already compiled
-# TODO: Remake PUSHSTR
-# TODO: Add PUSHSTRC
-# TODO: Allow multiple DO's
+
+# TODO: Remake the stack, so that the pointer positions are already compiled (requires work because calling procedures will dynamically change the stack)
+
+# TODO: Allow multiple DO's (not sure but could be useful)
+
+# TODO: Add logging file specification
+
+# TODO: Add in file nasm macros (would help make the compiler much smaller since the macros will be defined in the libraries instead of the compiler)
+
+# TODO: Change pushf for better performance
+
+# TODO: Add return
+
+# TODO: Make enumerations named so they can be debugged in the console easily
+
+# TODO: Add memory allocation
+
+# TODO: Add let (probably requires memory allocation)
+
+# TODO: Add bin, oct, dec and hex operations or their put versions (in a library, not compiler; requires memory allocations -probably-)
+
+# TODO: Remake PUSHSTR (requires memory allocation)
+
+# TODO: Add PUSHSTRC (requires memory allocation)
 
 
 enum_lib.reset()
 PROCEDURE = enum_lib.step()
 
 # Call stack size is 0x4000
+# Memory size is also 0x4000
 
 # Procedure format: (PROCEDURE, (arguments), (returns))
 
@@ -39,7 +61,6 @@ end
 """
 
 
-
 def error(message):
     log_lib.log("ERROR", message)
 
@@ -48,7 +69,7 @@ def error_on_token(token, message):
     error(f"({token.address}) {message}")
 
             
-def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: bool = False, allocate_space: int = 0x4000): 
+def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: bool = False): 
     data = deque()
     compiled_modules = []
 
@@ -121,7 +142,7 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
             file.write(f"    data_{i}: {command}\n")
     
         file.write(f"segment .bss\n")
-        file.write(f"    memory:     resb {allocate_space}\n")
+        file.write(f"    memory:     resb 0x4000\n")
         file.write(f"    callstack:  resq 0x4000\n")
         file.write(f"    callptr:    resq 1\n")
 
@@ -345,6 +366,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
         elif token.type is token_lib.ADD:
             if (
+                    len(stack) < 2 or
                     stack.pop() is not data_types_lib.INT or
                     stack[-1] is not data_types_lib.INT
             ):
@@ -357,6 +379,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
         elif token.type is token_lib.SUB:
             if (
+                    len(stack) < 2 or
                     stack.pop() is not data_types_lib.INT or
                     stack[-1] is not data_types_lib.INT
             ):
@@ -366,6 +389,24 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    ;; -- SUB --\n\n")
             file.write(f"    pop     rax\n")
             file.write(f"    sub     QWORD [rsp], rax\n")
+
+
+        elif token.type is token_lib.DIVMOD:
+            if (
+                    len(stack) < 2 or
+                    stack[-1] is not data_types_lib.INT or
+                    stack[-1] is not data_types_lib.INT
+            ):
+                error_on_token(token, "DIVMOD expects two INTs")
+                return True
+
+            file.write(f"    ;; -- DIVMOD --\n\n")
+            file.write(f"    xor     rdx, rdx\n")
+            file.write(f"    mov     rbx, [rsp]\n")
+            file.write(f"    mov     rax, [rsp+8]\n")
+            file.write(f"    div     rbx\n")
+            file.write(f"    mov     [rsp+8], rax\n")
+            file.write(f"    mov     [rsp], rdx")
 
         elif token.type is token_lib.DUMP:
             if len(stack) < 1 or stack.pop() is not data_types_lib.INT:
@@ -397,7 +438,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    push    rax\n\n")
 
         elif token.type is token_lib.IF:
-            if stack.pop() is not data_types_lib.BOOL:
+            if len(stack) < 1 or stack.pop() is not data_types_lib.BOOL:
                 error_on_token(token, "IF expects a BOOL")
                 return True
 
@@ -572,7 +613,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                     stack.pop() is not data_types_lib.INT or
                     stack.pop() is not data_types_lib.INT
             ):
-                error_on_token(token, "EQUAL expects two INTs")
+                error_on_token(token, "= expects two INTs")
                 return True
 
             stack.append(data_types_lib.BOOL)
@@ -590,7 +631,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                     stack.pop() is not data_types_lib.INT or
                     stack.pop() is not data_types_lib.INT
             ):
-                error_on_token(token, "NOT_EQUAL expects two INTs")
+                error_on_token(token, "!= expects two INTs")
                 return True
 
             stack.append(data_types_lib.BOOL)
@@ -599,8 +640,70 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    pop     rax\n")
             file.write(f"    sub     [rsp], rax\n\n")
 
+        elif token.type is token_lib.LESS_THAN:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.INT or
+                    stack.pop() is not data_types_lib.INT
+            ):
+                error_on_token(token, "< expects two INTs")
+                return True
+
+            file.write(f"    ;; -- LESS THAN --\n\n")
+            file.write(f"    pop    rax\n")
+            file.write(f"    sub    [rsp], rax\n")
+            file.write(f"    and    [rsp], 0x80\n\n")
+
+        elif token.type is token_lib.GREATER_THAN:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.INT or
+                    stack.pop() is not data_types_lib.INT
+            ):
+                error_on_token(token, "> expects two INTs")
+                return True
+
+            file.write(f"    ;; -- GREATER THAN --\n\n")
+            file.write(f"    pop    rbx\n")
+            file.write(f"    pop    rax")
+            file.write(f"    sub    rbx, rax\n")
+            file.write(f"    and    rbx, 0x80\n")
+            file.write(f"    push   rbx\n\n")
+
+        elif token.type is token_lib.LESS_EQUAL:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.INT or
+                    stack.pop() is not data_types_lib.INT
+            ):
+                error_on_token(token, "<= expects two INTs")
+                return True
+
+            file.write(f"    ;; -- LESS EQUAL --\n\n")
+            file.write(f"    pop    rbx\n")
+            file.write(f"    pop    rax")
+            file.write(f"    sub    rbx, rax\n")
+            file.write(f"    and    rbx, 0x80\n")
+            file.write(f"    xor    rbx, 0x80\n")
+            file.write(f"    push   rbx\n\n")
+
+        elif token.type is token_lib.GREATER_EQUAL:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.INT or
+                    stack.pop() is not data_types_lib.INT
+            ):
+                error_on_token(token, ">= expects two INTs")
+                return True
+
+            file.write(f"    ;; -- GREATER EQUAL --\n\n")
+            file.write(f"    pop    rax\n")
+            file.write(f"    sub    [rsp], rax\n")
+            file.write(f"    and    [rsp], 0x80\n")
+            file.write(f"    xor    [rsp], 0x80\n\n")
+
         elif token.type is token_lib.NOT:
-            if stack.pop() is not data_types_lib.BOOL:
+            if len(stack) < 1 or stack.pop() is not data_types_lib.BOOL:
                 error_on_token(token, "NOT expects a BOOL")
                 return True
 
@@ -644,6 +747,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
         elif token.type is token_lib.STORE8:
             if (
+                    len(stack) < 2 or
                     stack.pop() is not data_types_lib.INT or
                     stack.pop() is not data_types_lib.INT
             ):
@@ -656,7 +760,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    mov     [rbx], rax\n\n")
 
         elif token.type is token_lib.LOAD:
-            if stack[-1] is not data_types_lib.INT:
+            if len(stack) < 1 or stack[-1] is not data_types_lib.INT:
                 error_on_token(token, "LOAD expects a INT")
                 return True
 
@@ -667,7 +771,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    mov     [rsp], rax\n\n")
 
         elif token.type is token_lib.STORE:
-            if stack.pop() is not data_types_lib.INT or stack.pop() is not data_types_lib.INT:
+            if len(stack) < 2 or stack.pop() is not data_types_lib.INT or stack.pop() is not data_types_lib.INT:
                 error_on_token(token, "STORE expects two INTs")
                 return True
 
@@ -677,7 +781,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    mov     [rbx], al\n\n") 
 
         elif token.type is token_lib.SYSCALL0:
-            if stack[-1] is not data_types_lib.INT:
+            if len(stack) < 1 or stack[-1] is not data_types_lib.INT:
                 error_on_token(token, "SYSCALL0 expects a INT")
                 return True
 
@@ -688,6 +792,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
         elif token.type is token_lib.SYSCALL1:
             if (
+                    len(stack) < 2 or
                     stack.pop() is not data_types_lib.INT or
                     stack[-1] is not data_types_lib.INT
             ):
@@ -702,6 +807,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
         elif token.type is token_lib.SYSCALL2:
             if (
+                    len(stack) < 3 or
                     stack.pop() is not data_types_lib.INT or
                     stack.pop() is not data_types_lib.INT or
                     stack[-1] is not data_types_lib.INT
@@ -718,6 +824,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
         elif token.type is token_lib.SYSCALL3:
             if (
+                    len(stack) < 4 or
                     stack.pop() is not data_types_lib.INT or
                     stack.pop() is not data_types_lib.INT or
                     stack.pop() is not data_types_lib.INT or
@@ -747,6 +854,23 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.DEBUG_STACK:
             log_lib.log("DEBUG", f"({token.address}) Reached ?stack")
             print_stack(stack)
+
+        elif token.type is token_lib.SHIFTL32:
+            if len(stack) < 1:
+                erroron_token(token, f"SHIFTL32 expects an INT")
+                return True
+            
+            file.write(f"    ;; -- SHIFTL32 --\n\n")
+            file.write(f"    shl     QWORD [rsp], 32\n\n")
+
+
+        elif token.type is token_lib.SHIFTR32:
+            if len(stack) < 1:
+                error_on_token(token, f"SHIFTR32 expects an INT")
+                return True
+            
+            file.write(f"    ;; -- SHIFTR32 --\n\n")
+            file.write(f"    shr     QWORD [rsp], 32\n\n")
 
         else:
             error_on_token(token, f"Token type {token.type} is unknown.")
