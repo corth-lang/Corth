@@ -10,55 +10,41 @@ import data_types_lib
 import os
 
 # TODO: Add multiplication
-
 # TODO: Add bitwise logic
-
 # TODO: Add boolean logic
 
 # TODO: Add macros
-
 # TODO: Remake the stack, so that the pointer positions are already compiled (requires work because calling procedures will dynamically change the stack)
-
 # TODO: Allow multiple DO's (not sure but could be useful)
 
 # TODO: Add logging file specification
-
 # TODO: Add in file nasm macros (would help make the compiler much smaller since the macros will be defined in the libraries instead of the compiler)
 
 # TODO: Change pushf for better performance
-
 # TODO: Add return
-
 # TODO: Make enumerations named so they can be debugged in the console easily
 
-# TODO: Add memory allocation
-
+# TODO: Add dynamic memory allocation
 # TODO: Add let (probably requires memory allocation)
-
 # TODO: Add bin, oct, dec and hex operations or their put versions (in a library, not compiler; requires memory allocations -probably-)
-
 # TODO: Remake PUSHSTR (requires memory allocation)
-
 # TODO: Add PUSHSTRC (requires memory allocation)
 
+# TODO: Add library search locations
+# TODO: Remove data
+# TODO: Add compile time static execution
+# TODO: Add pointer type and pointer type constant
 
+
+# -- Constant name types --
 enum_lib.reset()
 PROCEDURE = enum_lib.step()
+GLOBAL_MEMORY = enum_lib.step()
+
+global_memory_pointer = 0
 
 # Call stack size is 0x4000
 # Memory size is also 0x4000
-
-# Procedure format: (PROCEDURE, (arguments), (returns))
-
-"""
-proc <name> 
-    <in-types> 
-  returns
-    <out-types> 
-  in
-    <codes>
-end
-"""
 
 
 def error(message):
@@ -81,40 +67,6 @@ def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: 
     with open(file_name, "a") as file:
         file.write(f"segment .text\n\n")
         file.write(f"global _start\n")
-
-        file.write("dump:\n")
-        file.write("    mov     r9, -3689348814741910323\n")
-        file.write("    sub     rsp, 40\n")
-        file.write("    mov     BYTE [rsp+31], 10\n")
-        file.write("    lea     rcx, [rsp+30]\n")
-        file.write(".L2:\n")
-        file.write("    mov     rax, rdi\n")
-        file.write("    lea     r8, [rsp+32]\n")
-        file.write("    mul     r9\n")
-        file.write("    mov     rax, rdi\n")
-        file.write("    sub     r8, rcx\n")
-        file.write("    shr     rdx, 3\n")
-        file.write("    lea     rsi, [rdx+rdx*4]\n")
-        file.write("    add     rsi, rsi\n")
-        file.write("    sub     rax, rsi\n")
-        file.write("    add     eax, 48\n")
-        file.write("    mov     BYTE [rcx], al\n")
-        file.write("    mov     rax, rdi\n")
-        file.write("    mov     rdi, rdx\n")
-        file.write("    mov     rdx, rcx\n")
-        file.write("    sub     rcx, 1\n")
-        file.write("    cmp     rax, 9\n")
-        file.write("    ja      .L2\n")
-        file.write("    lea     rax, [rsp+32]\n")
-        file.write("    mov     edi, 1\n")
-        file.write("    sub     rdx, rax\n")
-        file.write("    xor     eax, eax\n")
-        file.write("    lea     rsi, [rsp+32+rdx]\n")
-        file.write("    mov     rdx, r8\n")
-        file.write("    mov	    rax, 1\n")
-        file.write("    syscall\n")
-        file.write("    add     rsp, 40\n")
-        file.write("    ret\n\n")
 
         file.write("_start:\n")
         file.write("    mov     QWORD [callptr], callstack\n")
@@ -175,9 +127,9 @@ def parse_and_compile_module_or_package(file, path: str, data, names, compiled_m
 
         compiled_modules.append(path)
         
-        file.write(f";; ######## MODULE '{path}' ########\n\n")
+        file.write(f";; ####### MODULE '{path}' ######\n\n")
         found_error = compile_module(file, iter(parser.program), data, names, compiled_modules, debug_mode)
-        file.write(f";; ######## ENDMODULE '{path}' ########\n\n")
+        file.write(f";; ####### ENDMODULE '{path}' ######\n\n")
 
         if found_error:
             error(f"Could not compile module '{path}'")
@@ -193,7 +145,9 @@ def parse_and_compile_module_or_package(file, path: str, data, names, compiled_m
         return True
 
 
-def compile_module(file, program, data: deque, names: dict, compiled_modules: list, debug_mode: bool = False):    
+def compile_module(file, program, data: deque, names: dict, compiled_modules: list, debug_mode: bool = False):
+    global global_memory_pointer
+    
     while True:
         try:                
             token = next(program)
@@ -219,6 +173,37 @@ def compile_module(file, program, data: deque, names: dict, compiled_modules: li
             if found_error:
                 return True
 
+        elif token.type is token_lib.MEMORY:
+            try:
+                memory_name = next(program)
+
+            except StopIteration:
+                error(f"Expected NAME after MEMORY; but no token was found")
+                return True            
+
+            if memory_name.type is not token_lib.NAME:
+                error_on_token(memory_name, f"Expected NAME after MEMORY; got '{token.type}'")
+                return True
+            
+            if memory_name.arg in names:
+                error_on_token(memory_name, f"'{memory_name.arg}' was already defined before as a {names[memory_name.arg][0]}")
+                return True
+            
+            try:
+                memory_size = next(program)
+
+            except StopIteration:
+                error(f"Expected INT after MEMORY NAME; but no token was found")
+                return True            
+
+            if memory_size.type is not token_lib.PUSH8:
+                error_on_token(memory_size, f"Expected INT after MEMORY NAME; got '{token.type}'")
+                return True
+
+            names[memory_name.arg] = GLOBAL_MEMORY, global_memory_pointer
+
+            global_memory_pointer += int(memory_size.arg)
+
         elif token.type is token_lib.PROC:
             try:                
                 procedure_name = next(program)
@@ -236,44 +221,14 @@ def compile_module(file, program, data: deque, names: dict, compiled_modules: li
                 return True
 
             arguments = deque()
-            
-            while True:
-                try:
-                    token = next(program)
 
-                except StopIteration:
-                    error(f"Expected type or RETURNS; but no token was found")
-                    return True
-
-                if token.type is token_lib.TYPE:
-                    arguments.append(token.arg)
-
-                elif token.type is token_lib.RETURNS:
-                    break
-
-                else:
-                    error_on_token(token, f"Expected TYPE or RETURNS; got '{token.type}'")
-                    return True
+            if get_types(program, arguments, token_lib.RETURNS):
+                return True
 
             returns = deque()
-            
-            while True:
-                try:
-                    token = next(program)
 
-                except StopIteration:
-                    error(f"Expected type or IN; but no token was found")
-                    return True
-
-                if token.type is token_lib.TYPE:
-                    returns.append(token.arg)
-
-                elif token.type is token_lib.IN:
-                    break
-
-                else:
-                    error_on_token(token, f"Expected TYPE or IN; got '{token.type}'")
-                    return True
+            if get_types(program, returns, token_lib.IN):
+                return True
 
             names[procedure_name.arg] = PROCEDURE, tuple(arguments), tuple(returns)
 
@@ -288,7 +243,7 @@ def compile_module(file, program, data: deque, names: dict, compiled_modules: li
 
             file.write(f";; ==== PROC '{procedure_name.arg}' ====\n\n")
             file.write(f"proc_{procedure_name.arg}:\n\n")
-            file.write(f"    xchg    rsp, [callptr]\n")
+            file.write(f"    xchg    rsp, [callptr]\n\n")
 
             found_error = compile_procedure(file, program, data, names, arguments, returns, debug_mode)
 
@@ -306,6 +261,26 @@ def compile_module(file, program, data: deque, names: dict, compiled_modules: li
 
     return False
 
+
+def get_types(program, types, end):
+     while True:
+         try:
+             token = next(program)
+
+         except StopIteration:
+             error(f"Expected type or {end}; but no token was found")
+             return True
+
+         if token.type is token_lib.TYPE:
+             types.append(token.arg)
+
+         elif token.type is end:
+             return False
+
+         else:
+             error_on_token(token, f"Expected TYPE or {end}; got '{token.type}'")
+             return True
+         
 
 def print_stack(stack):
     for i, data in enumerate(stack):
@@ -348,10 +323,19 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
                 stack.extend(returns_)
                 
-                file.write(f"    ;; -- CALL {token.arg} --\n\n")                
+                file.write(f"    ;; -- CALL {token.arg} --\n\n")
                 file.write(f"    xchg    rsp, [callptr]\n")
-                file.write(f"    call proc_{token.arg}\n\n")
-                file.write(f"    xchg    rsp, [callptr]\n")
+                file.write(f"    call    proc_{token.arg}\n")
+                file.write(f"    xchg    rsp, [callptr]\n\n")
+
+            elif call_type is GLOBAL_MEMORY:
+                constant, = args
+
+                stack.append(data_types_lib.INT)
+
+                file.write(f"    ;; -- PUSH GLOBAL MEMORY {constant} --\n\n")
+                file.write(f"    mov     rax, memory+{constant}\n")
+                file.write(f"    push    rax\n\n")
 
             else:
                 error_on_token(token, f"Unknown call type; got '{call_type}'")
@@ -408,15 +392,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    mov     [rsp+8], rax\n")
             file.write(f"    mov     [rsp], rdx")
 
-        elif token.type is token_lib.DUMP:
-            if len(stack) < 1 or stack.pop() is not data_types_lib.INT:
-                error_on_token(token, "DUMP expects a INT")
-                return True
-
-            file.write(f"    ;; -- DUMP --\n\n")
-            file.write(f"    pop     rdi\n")
-            file.write(f"    call    dump\n\n")
-
         elif token.type is token_lib.DUP:
             if len(stack) < 1:
                 error_on_token(token, "DUP expects a INT")
@@ -457,7 +432,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             level, start, old_stack = levels.pop()
 
-            if start is token_lib.IF:
+            if start is not token_lib.IF:
                 error_on_token(token, f"Invalid syntax, tried to end '{start}' with ELSE")
                 return True
 
@@ -649,10 +624,12 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                 error_on_token(token, "< expects two INTs")
                 return True
 
+            stack.append(data_types_lib.BOOL)
+
             file.write(f"    ;; -- LESS THAN --\n\n")
             file.write(f"    pop    rax\n")
             file.write(f"    sub    [rsp], rax\n")
-            file.write(f"    and    [rsp], 0x80\n\n")
+            file.write(f"    and    QWORD [rsp], 0x80\n\n")
 
         elif token.type is token_lib.GREATER_THAN:
             if (
@@ -662,6 +639,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             ):
                 error_on_token(token, "> expects two INTs")
                 return True
+
+            stack.append(data_types_lib.BOOL)
 
             file.write(f"    ;; -- GREATER THAN --\n\n")
             file.write(f"    pop    rbx\n")
@@ -678,6 +657,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             ):
                 error_on_token(token, "<= expects two INTs")
                 return True
+
+            stack.append(data_types_lib.BOOL)
 
             file.write(f"    ;; -- LESS EQUAL --\n\n")
             file.write(f"    pop    rbx\n")
@@ -696,11 +677,13 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                 error_on_token(token, ">= expects two INTs")
                 return True
 
+            stack.append(data_types_lib.BOOL)
+
             file.write(f"    ;; -- GREATER EQUAL --\n\n")
             file.write(f"    pop    rax\n")
             file.write(f"    sub    [rsp], rax\n")
-            file.write(f"    and    [rsp], 0x80\n")
-            file.write(f"    xor    [rsp], 0x80\n\n")
+            file.write(f"    and    QWORD [rsp], 0x80\n")
+            file.write(f"    xor    QWORD [rsp], 0x80\n\n")
 
         elif token.type is token_lib.NOT:
             if len(stack) < 1 or stack.pop() is not data_types_lib.BOOL:
@@ -728,12 +711,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    ;; -- TRUE --\n\n")
             file.write(f"    mov     rax, 1\n")
             file.write(f"    push    rax\n\n")
-            
-        elif token.type is token_lib.ADDR:
-            stack.append(data_types_lib.INT)
-
-            file.write(f"    ;; -- ADDR --\n\n")
-            file.write(f"    push    memory\n\n")
 
         elif token.type is token_lib.LOAD8:
             if stack[-1] is not data_types_lib.INT:
@@ -741,8 +718,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                 return True
 
             file.write(f"    ;; -- LOAD8 --\n\n")
-            file.write(f"    mov     rax, INT [rsp]\n")
-            file.write(f"    mov     rax, INT [rax]\n")
+            file.write(f"    mov     rax, QWORD [rsp]\n")
+            file.write(f"    mov     rax, QWORD [rax]\n")
             file.write(f"    mov     [rsp], rax\n\n")
 
         elif token.type is token_lib.STORE8:
@@ -751,7 +728,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                     stack.pop() is not data_types_lib.INT or
                     stack.pop() is not data_types_lib.INT
             ):
-                error_on_token(token, "STORE8 expects an ADDR and a INT")
+                error_on_token(token, "STORE8 expects two INTs")
                 return True
 
             file.write(f"    ;; -- STORE8 --\n\n")

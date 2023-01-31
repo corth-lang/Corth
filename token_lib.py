@@ -16,7 +16,7 @@ class Token:
             return f"type='{self.type}' ({self.arg})"
 
 
-# TODO: Add syscalls from 0 to 6
+# TODO: Add syscalls from 4 to 6
 
 # -- TOKEN TYPES --
 enum_lib.reset()
@@ -71,11 +71,12 @@ KEYWORDS = {
     "true": (TRUE := enum_lib.step()),
 
     # Memory operators
+    "memory": (MEMORY := enum_lib.step()),
     "addr": (ADDR := enum_lib.step()),
-    "load8": (LOAD8 := enum_lib.step()),
-    "store8": (STORE8 := enum_lib.step()),
     "load": (LOAD := enum_lib.step()),
     "store": (STORE := enum_lib.step()),
+    "load8": (LOAD8 := enum_lib.step()),
+    "store8": (STORE8 := enum_lib.step()),
 
     # System calls
     "syscall0": (SYSCALL0 := enum_lib.step()),
@@ -85,7 +86,6 @@ KEYWORDS = {
 
     # Debug tools
     "?stack": (DEBUG_STACK := enum_lib.step()),
-    "dump": (DUMP := enum_lib.step()),  # Should be removed and remade in Corth
 }
 TYPE_NAMES = {
     "int": data_types_lib.INT,
