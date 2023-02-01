@@ -203,7 +203,7 @@ end
 proc main
   returns int
 in
-  1 0 set-nanosleep-time
+  0 100000000 set-nanosleep-time
 
   4 10 set-alive
   5 11 set-alive
