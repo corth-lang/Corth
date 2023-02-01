@@ -34,10 +34,8 @@ EXPECT_HEXADECIMAL_MODE = enum_lib.step()
 
 STRING_MODE = enum_lib.step()
 STRING_ESCAPE_MODE = enum_lib.step()
-STRING_UNICODE1_MODE = enum_lib.step()
-STRING_UNICODE2_MODE = enum_lib.step()
-STRING_UNICODE3_MODE = enum_lib.step()
-STRING_UNICODE4_MODE = enum_lib.step()
+STRING_HEXADECIMAL1_MODE = enum_lib.step()
+STRING_HEXADECIMAL2_MODE = enum_lib.step()
 
 # TODO: Add minus
 # TODO: Create Parser class
@@ -48,7 +46,8 @@ ESCAPES = {
     "s": " ",
     "t": "\t",
     '"': '"',
-    "'": "'"
+    "'": "'",
+    "b": "\b",
 }
 
 REPLACE = {
@@ -342,8 +341,8 @@ class Parser:
                         self.token += self.char
     
                 elif self.mode is STRING_ESCAPE_MODE:
-                    if self.char == "u":
-                        self.mode = STRING_UNICODE1_MODE
+                    if self.char == "x":
+                        self.mode = STRING_HEXADECIMAL1_MODE
                         
                     elif self.char not in ESCAPES:
                         self.syntax_error(f"Invalid escape sequence; got \\{self.char}")
@@ -354,45 +353,25 @@ class Parser:
                         self.token += ESCAPES[self.char]
                         self.mode = STRING_MODE
     
-                elif self.mode is STRING_UNICODE1_MODE:
+                elif self.mode is STRING_HEXADECIMAL1_MODE:
                     if self.char not in HEXADECIMAL_DIGITS:
-                        self.syntax_error(f"Expected a hexadecimal in UNICODE expression; got {self.char}")
+                        self.syntax_error(f"Expected a hexadecimal in string hexadecimal expression; got {self.char}")
                         self.token += "0"
     
                     else:
                         self.token += self.char
     
-                    self.mode = STRING_UNICODE2_MODE
+                    self.mode = STRING_HEXADECIMAL2_MODE
     
-                elif self.mode is STRING_UNICODE2_MODE:
+                elif self.mode is STRING_HEXADECIMAL2_MODE:
                     if self.char not in HEXADECIMAL_DIGITS:
-                        self.syntax_error(f"Expected a hexadecimal in UNICODE expression; got {self.char}")
+                        self.syntax_error(f"Expected a hexadecimal in string hexadecimal expression; got {self.char}")
                         self.token += "0"
     
                     else:
                         self.token += self.char
     
-                    self.mode = STRING_UNICODE3_MODE
-    
-                elif self.mode is STRING_UNICODE3_MODE:
-                    if self.char not in HEXADECIMAL_DIGITS:
-                        self.syntax_error(f"Expected a hexadecimal in UNICODE expression; got {self.char}")
-                        self.token += "0"
-    
-                    else:
-                        self.token += self.char
-    
-                    self.mode = STRING_UNICODE4_MODE
-    
-                elif self.mode is STRING_UNICODE4_MODE:
-                    if self.char not in HEXADECIMAL_DIGITS:
-                        self.syntax_error(f"Expected a hexadecimal in UNICODE expression; got {self.char}")
-                        self.token += "0"
-    
-                    else:
-                        self.token += self.char
-    
-                    self.token = self.token[:-4] + chr(int(self.token[-4:], 16))
+                    self.token = self.token[:-2] + chr(int(self.token[-2:], 16))
                     
                     self.mode = STRING_MODE
     

@@ -1,0 +1,228 @@
+/*
+
+    ==============================
+    ==== Game of Life example ====
+    ==============================
+
+Simulates and renders game of life.
+Requires a console that can handle the reverse line feed character.
+
+*/
+
+include libs/io.corth
+include libs/memory.corth
+
+// ROWS: 16
+// COLS: 16
+
+memory board 256 // ROWS * COLS
+memory old 256
+
+memory row-no 8
+memory col-no 8
+
+memory count 8
+
+proc get-id
+  // row-no col-no -- id
+  int int returns int
+in
+  16 % swp 16 % <<4 +
+end
+
+proc get-ptr
+  // row-no col-no -- ptr
+  int int returns int
+in
+  get-id board +
+end
+
+proc get-old-ptr
+  // row-no col-no -- ptr
+  int int returns int
+in
+  get-id old +
+end 
+
+proc was-alive
+  // row-no col-no -- is-alive
+  int int returns bool
+in
+  get-old-ptr load 0 !=
+end
+
+proc set-alive
+  // row-no col-no --
+  int int returns
+in
+  get-ptr 0xff store
+end
+
+proc set-dead
+  // row-no col-no --
+  int int returns
+in
+  get-ptr 0 store
+end
+
+proc draw-board
+  returns
+in
+  0 while
+     dup 16 <
+  do
+     row-no swp store8
+     
+     0 while
+       dup 16 <
+     do
+       col-no swp store8
+
+       row-no load8 col-no load8 was-alive if "O" else "." end puts
+
+       col-no load8 inc
+     end drop
+
+     "\n" puts
+
+     row-no load8 inc
+  end drop
+end
+
+proc reset-board
+  returns
+in
+  "\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d" puts
+end
+
+proc check-neighbor
+  // row-no col-no
+  int int returns
+in
+  was-alive if
+    count count load8 inc store8
+  end
+end
+
+proc copy-board
+  returns
+in
+  board 256 old memcpy
+end
+
+proc count-neighbors
+  returns
+in
+  count 0 store8
+
+  // north
+  row-no load8 inc
+  col-no load8
+  check-neighbor
+  // north east
+  row-no load8 inc
+  col-no load8 inc
+  check-neighbor
+  // east
+  row-no load8
+  col-no load8 inc
+  check-neighbor
+  // south east
+  row-no load8 dec
+  col-no load8 inc
+  check-neighbor
+  // south
+  row-no load8 dec
+  col-no load8
+  check-neighbor
+  // south west
+  row-no load8 dec
+  col-no load8 dec
+  check-neighbor
+  // west
+  row-no load8
+  col-no load8 dec
+  check-neighbor
+  // north west
+  row-no load8 inc
+  col-no load8 dec
+  check-neighbor
+end
+
+proc update-cell
+  returns
+in
+  count-neighbors
+
+  row-no load8 col-no load8 was-alive if
+    // If the cell is alive
+    // Requires 2 or 3 neighbors to keep being alive
+
+    count load8 2 < if
+      row-no load8 col-no load8 set-dead
+    else
+      count load8 3 > if
+	row-no load8 col-no load8 set-dead
+      end
+    end
+
+  else
+    // If the cell is dead
+    // Requires 3 neighbors to born
+
+    count load8 3 = if
+      row-no load8 col-no load8 set-alive
+    end
+  end
+end
+
+proc update-board
+  returns
+in
+  0 while
+     dup 16 <
+  do
+    row-no swp store8
+
+    0 while
+      dup 16 <
+    do
+       col-no swp store8
+       
+       update-cell
+
+       col-no load8 inc
+    end drop
+
+    row-no load8 inc
+  end drop
+
+  copy-board
+end
+
+proc main
+  returns int
+in
+  1 0 set-nanosleep-time
+
+  4 10 set-alive
+  5 11 set-alive
+  6 9 set-alive
+  6 10 set-alive
+  6 11 set-alive
+  copy-board
+  "\n" puts
+
+  draw-board
+
+  while
+    true
+  do
+    update-board
+    reset-board
+    draw-board
+    nanosleep
+  end
+
+  0
+end

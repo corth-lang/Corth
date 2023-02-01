@@ -14,11 +14,14 @@ proc SYSREAD returns int in 0 end
 proc SYSWRITE returns int in 1 end
 proc SYSOPEN returns int in 2 end
 proc SYSCLOSE returns int in 3 end
+proc SYSNANOSLEEP returns int in 35 end
 proc SYSEXIT returns int in 60 end
 
 proc RD_ONLY returns int in 0 end
 proc WR_ONLY returns int in 1 end
 proc RDWR returns int in 2 end
+
+memory nanosleep-time 16
 
 proc call-sys-exit
     // ex-code
@@ -60,4 +63,24 @@ proc fclose
     int returns
 in
     SYSCLOSE syscall1 drop
+end
+
+proc set-nanosleep-time
+    // seconds nanoseconds
+    int int returns
+in
+    nanosleep-time 8 + swp store8
+    nanosleep-time swp store8
+end
+
+proc get-nanosleep-time
+    // -- seconds nanoseconds
+    returns int int
+in
+    nanosleep-time load8
+    nanosleep-time 8 + load8
+end
+
+proc nanosleep returns in
+    nanosleep-time 0 SYSNANOSLEEP syscall2 drop
 end

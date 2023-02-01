@@ -30,8 +30,12 @@ KEYWORDS = {
     "+": (ADD := enum_lib.step()),
     "-": (SUB := enum_lib.step()),
     "/%": (DIVMOD := enum_lib.step()),
+    "/": (DIV := enum_lib.step()),
+    "%": (MOD := enum_lib.step()),
     "<<32": (SHIFTL32 := enum_lib.step()),
     ">>32": (SHIFTR32 := enum_lib.step()),
+    "<<4": (SHIFTL4 := enum_lib.step()),
+    ">>4": (SHIFTR4 := enum_lib.step()),
 
     # Quick arithmetics
     "inc": (INC := enum_lib.step()),

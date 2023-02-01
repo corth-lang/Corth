@@ -11,11 +11,10 @@ in
     memcpy.src swp store8
 
     0 while
-        dup memcpy.len load <
+        dup memcpy.len load8 <
     do
         dup dup
-	memcpy.dst load8 +
-	swp
+	memcpy.dst load8 + swp
 	memcpy.src load8 + load
 	store
         inc

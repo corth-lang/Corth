@@ -379,7 +379,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             if (
                     len(stack) < 2 or
                     stack[-1] is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack[-2] is not data_types_lib.INT
             ):
                 error_on_token(token, "DIVMOD expects two INTs")
                 return True
@@ -390,6 +390,38 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    mov     rax, [rsp+8]\n")
             file.write(f"    div     rbx\n")
             file.write(f"    mov     [rsp+8], rax\n")
+            file.write(f"    mov     [rsp], rdx\n\n")
+
+        elif token.type is token_lib.DIV:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.INT or
+                    stack[-1] is not data_types_lib.INT
+            ):
+                error_on_token(token, "DIV expects two INTs")
+                return True
+
+            file.write(f"    ;; -- DIV --\n\n")
+            file.write(f"    xor     rdx, rdx\n")
+            file.write(f"    pop     rbx\n")
+            file.write(f"    mov     rax, [rsp]\n")
+            file.write(f"    div     rbx\n")
+            file.write(f"    mov     [rsp], rax\n")
+
+        elif token.type is token_lib.MOD:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.INT or
+                    stack[-1] is not data_types_lib.INT
+            ):
+                error_on_token(token, "MOD expects two INTs")
+                return True
+
+            file.write(f"    ;; -- MOD --\n\n")
+            file.write(f"    xor     rdx, rdx\n")
+            file.write(f"    pop     rbx\n")
+            file.write(f"    mov     rax, [rsp]\n")
+            file.write(f"    div     rbx\n")
             file.write(f"    mov     [rsp], rdx")
 
         elif token.type is token_lib.DUP:
@@ -627,9 +659,11 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             stack.append(data_types_lib.BOOL)
 
             file.write(f"    ;; -- LESS THAN --\n\n")
+            file.write(f"    pop    rbx\n")
             file.write(f"    pop    rax\n")
-            file.write(f"    sub    [rsp], rax\n")
-            file.write(f"    and    QWORD [rsp], 0x80\n\n")
+            file.write(f"    sub    rax, rbx\n")
+            file.write(f"    pushf\n")
+            file.write(f"    and    qword [rsp], 0x80\n\n")
 
         elif token.type is token_lib.GREATER_THAN:
             if (
@@ -644,10 +678,10 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             file.write(f"    ;; -- GREATER THAN --\n\n")
             file.write(f"    pop    rbx\n")
-            file.write(f"    pop    rax")
+            file.write(f"    pop    rax\n")
             file.write(f"    sub    rbx, rax\n")
-            file.write(f"    and    rbx, 0x80\n")
-            file.write(f"    push   rbx\n\n")
+            file.write(f"    pushf\n")
+            file.write(f"    and    qword [rsp], 0x80\n\n")
 
         elif token.type is token_lib.LESS_EQUAL:
             if (
@@ -660,13 +694,13 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             stack.append(data_types_lib.BOOL)
 
-            file.write(f"    ;; -- LESS EQUAL --\n\n")
+            file.write(f"    ;; -- GREATER THAN --\n\n")
             file.write(f"    pop    rbx\n")
-            file.write(f"    pop    rax")
+            file.write(f"    pop    rax\n")
             file.write(f"    sub    rbx, rax\n")
-            file.write(f"    and    rbx, 0x80\n")
-            file.write(f"    xor    rbx, 0x80\n")
-            file.write(f"    push   rbx\n\n")
+            file.write(f"    pushf\n")
+            file.write(f"    and    qword [rsp], 0x80\n")
+            file.write(f"    xor    qword [rsp], 0x80\n\n")
 
         elif token.type is token_lib.GREATER_EQUAL:
             if (
@@ -680,10 +714,12 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             stack.append(data_types_lib.BOOL)
 
             file.write(f"    ;; -- GREATER EQUAL --\n\n")
+            file.write(f"    pop    rbx\n")
             file.write(f"    pop    rax\n")
-            file.write(f"    sub    [rsp], rax\n")
-            file.write(f"    and    QWORD [rsp], 0x80\n")
-            file.write(f"    xor    QWORD [rsp], 0x80\n\n")
+            file.write(f"    sub    rax, rbx\n")
+            file.write(f"    pushf\n")
+            file.write(f"    and    qword [rsp], 0x80\n")
+            file.write(f"    xor    qword [rsp], 0x80\n\n")
 
         elif token.type is token_lib.NOT:
             if len(stack) < 1 or stack.pop() is not data_types_lib.BOOL:
@@ -825,7 +861,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             stack.append(data_types_lib.INT)
             stack.append(data_types_lib.INT)
-
+                
             data.append(f"db " + ", ".join(map(str, map(ord, token.arg))) + ", 0")
 
         elif token.type is token_lib.DEBUG_STACK:
@@ -848,6 +884,22 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             
             file.write(f"    ;; -- SHIFTR32 --\n\n")
             file.write(f"    shr     QWORD [rsp], 32\n\n")
+
+        elif token.type is token_lib.SHIFTL4:
+            if len(stack) < 1:
+                erroron_token(token, f"SHIFTL4 expects an INT")
+                return True
+            
+            file.write(f"    ;; -- SHIFTL4 --\n\n")
+            file.write(f"    shl     QWORD [rsp], 4\n\n")
+
+        elif token.type is token_lib.SHIFTR4:
+            if len(stack) < 1:
+                error_on_token(token, f"SHIFTR4 expects an INT")
+                return True
+            
+            file.write(f"    ;; -- SHIFTR4 --\n\n")
+            file.write(f"    shr     QWORD [rsp], 4\n\n")
 
         else:
             error_on_token(token, f"Token type {token.type} is unknown.")
