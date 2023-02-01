@@ -169,4 +169,4 @@ For more information about the commands, type:
 - 'memory' is used for allocating global memory.
 - 'load8' loads 8 bytes of data from the address.
 - 'store8' stores 8 bytes of data to the address. (First argument is address and the second is the value to be stored)
-- SYNTAX FOR MEMORY IS A PLACEHOLDER. IT WILL BE CHANGED IN A FUTURE UPDATE. USE WITH CAREFUL.
+- SYNTAX FOR MEMORY IS A PLACEHOLDER. IT WILL BE CHANGED IN A FUTURE UPDATE. USE WITH CAUTION.
