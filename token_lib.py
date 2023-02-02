@@ -46,7 +46,7 @@ KEYWORDS = {
     "macro": (MACRO := enum_lib.step()),
     "endmacro": (ENDMACRO := enum_lib.step()),
     "proc": (PROC := enum_lib.step()),
-    "returns": (RETURNS := enum_lib.step()),
+    "--": (RETURNS := enum_lib.step()),
     "in": (IN := enum_lib.step()),
 
     # In procedure keywords

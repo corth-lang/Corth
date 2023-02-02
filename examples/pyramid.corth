@@ -20,7 +20,7 @@
 include libs/io.corth
 
 proc main
-    returns int
+    -- int
 in
     10  // Changing this number will change the size of the pyramid
     

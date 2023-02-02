@@ -21,7 +21,7 @@
 include libs/io.corth
 
 proc main
-    returns int
+    -- int
 in
     // i a b 
     20 0 1

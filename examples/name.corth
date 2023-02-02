@@ -17,7 +17,7 @@ include libs/io.corth
 memory name 32
 
 proc main
-    returns int
+    -- int
 in
     "Hello, what is your name?\n" puts
     name getl
