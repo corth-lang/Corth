@@ -2,40 +2,79 @@ memory memcpy.src 8
 memory memcpy.len 8
 memory memcpy.dst 8
 
+macro get-memcpy.src memcpy.src load8 endmacro
+macro get-memcpy.len memcpy.len load8 endmacro
+macro get-memcpy.dst memcpy.dst load8 endmacro
+
+macro set-memcpy.src memcpy.src swp store8 endmacro
+macro set-memcpy.len memcpy.len swp store8 endmacro
+macro set-memcpy.dst memcpy.dst swp store8 endmacro
+
+macro sizeof(int)  8 endmacro
+macro sizeof(bool) 8 endmacro
+
+macro get
+    // src index
+    // index src
+
+    + load
+endmacro
+
+macro set
+    // src index value
+    // index src value
+
+    rot rot + swp store
+endmacro
+
+macro get8
+    // src index
+    // index src
+
+    + load8
+endmacro
+
+macro set8
+    // src index value
+    // index src value
+
+    rot rot + swp store8
+endmacro
+
 macro memcpy
     // src len dst
     
-    memcpy.dst swp store8
-    memcpy.len swp store8
-    memcpy.src swp store8
+    set-memcpy.dst
+    set-memcpy.len
+    set-memcpy.src
 
     0 while
-        dup memcpy.len load8 <
+        dup get-memcpy.len <
     do
         dup dup
-	memcpy.dst load8 + swp
-	memcpy.src load8 + load
-	store
-        inc
-    end drop
+        get-memcpy.dst swp
+	get-memcpy.src get
+	set
+       
+     inc end drop
 endmacro
 
 macro strcpy
     // src dst
     
-    memcpy.dst swp store8
-    memcpy.src swp store8
+    set-memcpy.dst
+    set-memcpy.src
 
     0 while
-        dup memcpy.src load8 + load 0 !=
+        dup get-memcpy.src get 0 !=
     do
         dup dup
-	memcpy.dst load8 +
-	swp
-	memcpy.src load8 + load
-	store
-        inc
-    end
+        get-memcpy.dst swp
+        get-memcpy.src get
+        set
 
-    memcpy.dst load8 + 0 store
+    inc end
+
+    get-memcpy.dst 0 set
 endmacro
+
