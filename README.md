@@ -98,27 +98,42 @@ For more information about the commands, type:
 ### Procedures:
 
     proc sum
-        int int returns int int int
+        int int returns
     in
-        dup rot dup rot +
-
-        0
+        "Sum of these numbers are: " puts + putu "\n" puts
     end
 
     proc main
         returns int
     in
-        17 52 sum dump dump dump
-	// This should print 69, 52 and 17
+        17 52 sum
     end
 
 - 'proc' defines a procedure, which can be called anywhere in the code.
 - Program starts from the 'main' procedure; if it is not defined, the compiler will return an error.
 
+### Macros:
+
+    macro sayHi
+        // Takes a string, the name
+
+        "Hi, " puts puts "!\n" puts
+    endmacro
+
+    proc main
+        returns int
+    in
+        "Josh" sayHi
+	
+	0
+    end
+
+- 'macro' keyword is used to define macros and 'endmacro' is used to end the definition.
+
 ### Comments:
 
     // This is a line comment, it can also come after code
-    34 35 + dump  // Just like that
+    34 35 + putu  // Just like that
 
     /*
       This is a block comment, also known as multi-line comment.
@@ -145,7 +160,7 @@ For more information about the commands, type:
     while
       dup 10 <
     do
-      dup dump
+      dup putu
       "\n" puts
 
       dup 100 = if
@@ -179,7 +194,7 @@ For more information about the commands, type:
 
         increase
 
-        count load8 dump
+        count load8 putu
 
         0
     end
