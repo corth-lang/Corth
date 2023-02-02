@@ -5,37 +5,34 @@ include libs/memory.corth
 
 
 //    =======================
-//    == Output procedures ==
+//    ==== Output macros ====
 //    =======================
 
+
 // == Strings ==
-proc fputs
+macro fputs
     // file-dc str-ptr str-len
-    int int int returns
-in
+    
     SYSWRITE syscall3 drop
-end
+endmacro
 
-proc puts
+macro puts
     // str-ptr str-len
-    int int returns    
-in
+    
     STDOUT rot rot fputs
-end
+endmacro
 
-proc eputs
+macro eputs
     // str-ptr str-len
-    int int returns
-in
+    
     STDERR rot rot fputs
-end
+endmacro
 
 
 // == C-like strings ==
-proc fputsc
+macro fputsc
      // file-dc str-ptr
-     int int returns
-in
+     
      while
          dup load 0 !=
      do
@@ -44,29 +41,26 @@ in
      end
      
      drop drop
-end
+endmacro
 
-proc putsc
+macro putsc
     // str-ptr
-    int returns
-in
+    
     STDOUT swp fputsc
-end
+endmacro
 
-proc eputsc
+macro eputsc
     // str-ptr
-    int returns
-in
+    
     STDERR swp fputsc
-end
+endmacro
 
 // == Unsigned decimals ==
 memory putu.buffer 32
 
-proc fputu
+macro fputu
     // file-dc int
-    int int returns
-in
+    
     putu.buffer 32 +
 
     while
@@ -83,28 +77,22 @@ in
     dup putu.buffer
     swp - 32 +
     fputs drop
-end
+endmacro
 
-proc putu
-    int returns
-in
+macro putu
     STDOUT swp fputu
-end
+endmacro
 
-proc eputu
-    int returns
-in
+macro eputu
     STDERR swp fputu
-end
+endmacro
 
 
 // == Binary numbers ==
 // There is a faster algorithm, but it requires bitwise-AND
 
-proc fputb
+macro fputb
     // file-dc int
-    int int returns
-in
     putu.buffer 32 +
 
     while
@@ -121,27 +109,22 @@ in
     dup putu.buffer
     swp - 32 +
     fputs drop
-end
+endmacro
 
-proc putb
-    int returns
-in
+macro putb
     STDOUT swp fputb
-end
+endmacro
 
-proc eputb
-    int returns
-in
+macro eputb
     STDERR swp fputb
-end
+endmacro
 
 
 // == Octal numbers ==
 
-proc fputo
+macro fputo
     // file-dc int
-    int int returns
-in
+    
     putu.buffer 32 +
 
     while
@@ -158,27 +141,22 @@ in
     dup putu.buffer
     swp - 32 +
     fputs drop
-end
+endmacro
 
-proc puto
-    int returns
-in
+macro puto
     STDOUT swp fputo
-end
+endmacro
 
-proc eputo
-    int returns
-in
+macro eputo
     STDERR swp fputo
-end
+endmacro
 
 
 // == Hexadecimal numbers ==
 
-proc fputx
+macro fputx
     // file-dc int
-    int int returns
-in
+    
     putu.buffer 32 +
 
     while
@@ -193,46 +171,40 @@ in
     dup putu.buffer
     swp - 32 +
     fputs drop
-end
+endmacro
 
-proc putx
-    int returns
-in
+macro putx
     STDOUT swp fputx
-end
+endmacro
 
-proc eputx
-    int returns
-in
+macro eputx
     STDERR swp fputx
-end
+endmacro
 
-//    ==========================
-//    ==== Input procedures ====
-//    ==========================
+//    ======================
+//    ==== Input macros ====
+//    ======================
 
 // == Strings ==
-proc fgets
+macro fgets
     // file-dc str-ptr str-len
     int int int returns
-in
+    
     SYSREAD syscall3 drop
-end
+endmacro
 
-proc gets
+macro gets
     // str-ptr str-len
-    int int returns
-in
+    
     STDIN rot rot fgets
-end
+endmacro
 
 
 // == Lines ==
 // This algorithm is unsafe and should not be used
-proc fgetl
+macro fgetl
     // file-dc str-ptr -- str-len
-    int int returns int
-in
+    
     // fd st -> st fd st+0
     dup rot swp
 
@@ -269,11 +241,9 @@ in
     rot - swp
 
     drop
-end
+endmacro
 
-proc getl
+macro getl
     // str-ptr -- str-len
-    int returns int
-in
     STDIN swp fgetl
-end
+endmacro

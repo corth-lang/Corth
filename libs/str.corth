@@ -1,42 +1,33 @@
-proc strc.get-len
+macro strc.get-len
     // strc-ptr -- strc-len
-    int reutrns int
-in
-    0
-    
-    while
+
+    0 while
         // (ptr+l) l
         swp dup load 0 !=
 	// l (ptr+l)
     do
-        inc swp inc
+        inc swp
 	// (ptr+l+1) l+1
-    end
+    inc end drop
+endmacro
 
-    drop
-end
-
-proc str.to-strc
-    int int returns int
-in
+macro str.to-strc
     /*
         Because of the way strings work right now, not implemented the way it should be
-        This procedure will be fxed in an upcoming update
+        This macro will be fxed in an upcoming update
     */
     
     drop
-end
+endmacro
 
-proc strc.to-str
-    int returns int int
-in
+macro strc.to-str
     /*
         Because of the way strings work right now, not implemented the way it should be
-        This procedure will be fxed in an upcoming update
+        This macro will be fxed in an upcoming update
     */
     
     dup str.get-len
-end
+endmacro
 
 /*
 There are two types of strings in Corth
@@ -58,7 +49,7 @@ char arrays:
 
 C-like strings:
 
-    str* x
+    str x
 
     [c0] [c1] [c2] ... [c+len] 00
      x^

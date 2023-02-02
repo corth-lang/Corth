@@ -2,10 +2,9 @@ memory memcpy.src 8
 memory memcpy.len 8
 memory memcpy.dst 8
 
-proc memcpy
+macro memcpy
     // src len dst
-    int int int returns
-in
+    
     memcpy.dst swp store8
     memcpy.len swp store8
     memcpy.src swp store8
@@ -19,12 +18,11 @@ in
 	store
         inc
     end drop
-end
+endmacro
 
-proc strcpy
+macro strcpy
     // src dst
-    int int returns
-in
+    
     memcpy.dst swp store8
     memcpy.src swp store8
 
@@ -40,4 +38,4 @@ in
     end
 
     memcpy.dst load8 + 0 store
-end
+endmacro

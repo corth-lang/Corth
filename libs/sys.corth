@@ -1,86 +1,83 @@
-// sys.cortha
+// sys.corth
 
 /*
 
-Contains basic system 'macros' and procedures
+Contains basic system macros
 
 */
 
-proc STDIN returns int in 0 end
-proc STDOUT returns int in 1 end
-proc STDERR returns int in 2 end
+// -- SYSTEM CONSTANTS --
 
-proc SYSREAD returns int in 0 end
-proc SYSWRITE returns int in 1 end
-proc SYSOPEN returns int in 2 end
-proc SYSCLOSE returns int in 3 end
-proc SYSNANOSLEEP returns int in 35 end
-proc SYSEXIT returns int in 60 end
+// MAIN STREAMS
+macro STDIN          0 endmacro
+macro STDOUT         1 endmacro
+macro STDERR         2 endmacro
 
-proc RD_ONLY returns int in 0 end
-proc WR_ONLY returns int in 1 end
-proc RDWR returns int in 2 end
+// SYSCALLS
+macro SYSREAD        0 endmacro
+macro SYSWRITE       1 endmacro
+macro SYSOPEN        2 endmacro
+macro SYSCLOSE       3 endmacro
+macro SYSNANOSLEEP  35 endmacro
+macro SYSEXIT       60 endmacro
+
+// FILE MODES
+macro RD_ONLY        0 endmacro
+macro WR_ONLY        1 endmacro
+macro RDWR           2 endmacro
 
 memory nanosleep-time 16
 
-proc call-sys-exit
+macro call-sys-exit
     // ex-code
-    int returns
-in
+    
     SYSEXIT syscall1 drop
-end
+endmacro
 
-proc fopen
+macro fopen
     // str-ptr mode flags -- file-dc
-    int int int returns int
-in
+
     SYSOPEN syscall3
-end
+endmacro
 
-proc fopen-read
+macro fopen-read
     // str-ptr -- file-dc
-    int returns int
-in
+    
     RD_ONLY 0 fopen
-end
+endmacro
 
-proc fopen-write
+macro fopen-write
     // str-ptr -- file-dc
-    int returns int
-in
+    
     WR_ONLY 0 fopen
-end
+endmacro
 
-proc fopen-read-write
+macro fopen-read-write
     // str-ptr -- file-dc
-    int returns int
-in
+    
     RDWR 0 fopen
-end
+endmacro
 
-proc fclose
+macro fclose
     // file-dc
-    int returns
-in
+    
     SYSCLOSE syscall1 drop
-end
+endmacro
 
-proc set-nanosleep-time
+macro set-nanosleep-time
     // seconds nanoseconds
-    int int returns
-in
+    
     nanosleep-time 8 + swp store8
     nanosleep-time swp store8
-end
+endmacro
 
-proc get-nanosleep-time
+macro get-nanosleep-time
     // -- seconds nanoseconds
-    returns int int
-in
+    
     nanosleep-time load8
     nanosleep-time 8 + load8
-end
+endmacro
 
-proc nanosleep returns in
+macro nanosleep
     nanosleep-time 0 SYSNANOSLEEP syscall2 drop
-end
+endmacro
