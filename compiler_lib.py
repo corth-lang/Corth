@@ -13,7 +13,6 @@ import os
 # TODO: Add bitwise logic
 # TODO: Add boolean logic
 
-# TODO: Add macros
 # TODO: Remake the stack, so that the pointer positions are already compiled (requires work because calling procedures will dynamically change the stack)
 # TODO: Allow multiple DO's (not sure but could be useful)
 
@@ -35,11 +34,14 @@ import os
 # TODO: Add compile time static execution
 # TODO: Add pointer type and pointer type constant
 
+# TODO: Macros should be available everywhere, not just in procedures
+
 
 # -- Constant name types --
 enum_lib.reset()
 PROCEDURE = enum_lib.step()
 GLOBAL_MEMORY = enum_lib.step()
+MACRO = enum_lib.step()
 
 global_memory_pointer = 0
 
@@ -55,7 +57,7 @@ def error_on_token(token, message):
     error(f"({token.address}) {message}")
 
             
-def compile_nasm_program(file_name: str, program: typing.Generator, debug_mode: bool = False): 
+def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = False): 
     data = deque()
     compiled_modules = []
 
@@ -128,7 +130,7 @@ def parse_and_compile_module_or_package(file, path: str, data, names, compiled_m
         compiled_modules.append(path)
         
         file.write(f";; ####### MODULE '{path}' ######\n\n")
-        found_error = compile_module(file, iter(parser.program), data, names, compiled_modules, debug_mode)
+        found_error = compile_module(file, deque(parser.program), data, names, compiled_modules, debug_mode)
         file.write(f";; ####### ENDMODULE '{path}' ######\n\n")
 
         if found_error:
@@ -145,22 +147,22 @@ def parse_and_compile_module_or_package(file, path: str, data, names, compiled_m
         return True
 
 
-def compile_module(file, program, data: deque, names: dict, compiled_modules: list, debug_mode: bool = False):
+def compile_module(file, program: deque, data: deque, names: dict, compiled_modules: list, debug_mode: bool = False):
     global global_memory_pointer
     
     while True:
         try:                
-            token = next(program)
+            token = program.popleft()
 
-        except StopIteration:
+        except IndexError:
             break
 
         if token.type is token_lib.INCLUDE:
             # Get the next token
             try:
-                module_token = next(program)
+                module_token = program.popleft()
 
-            except StopIteration:
+            except IndexError:
                 error_on_token(token, f"Expected name after include")
                 return True
 
@@ -175,9 +177,9 @@ def compile_module(file, program, data: deque, names: dict, compiled_modules: li
 
         elif token.type is token_lib.MEMORY:
             try:
-                memory_name = next(program)
+                memory_name = program.popleft()
 
-            except StopIteration:
+            except IndexError:
                 error(f"Expected NAME after MEMORY; but no token was found")
                 return True            
 
@@ -190,9 +192,9 @@ def compile_module(file, program, data: deque, names: dict, compiled_modules: li
                 return True
             
             try:
-                memory_size = next(program)
+                memory_size = program.popleft()
 
-            except StopIteration:
+            except IndexError:
                 error(f"Expected INT after MEMORY NAME; but no token was found")
                 return True            
 
@@ -204,11 +206,28 @@ def compile_module(file, program, data: deque, names: dict, compiled_modules: li
 
             global_memory_pointer += int(memory_size.arg)
 
+        elif token.type is token_lib.MACRO:
+            try:
+                macro_name = program.popleft()
+
+            except IndexError:
+                error(f"Expected NAME after MACRO; but no token was found")
+
+            macro = deque()
+            
+            if load_macro(program, macro, debug_mode):
+                error_on_token(macro_name, f"Could not load macro")
+                return True
+
+            macro.reverse()
+
+            names[macro_name.arg] = MACRO, macro
+
         elif token.type is token_lib.PROC:
             try:                
-                procedure_name = next(program)
+                procedure_name = program.popleft()
 
-            except StopIteration:
+            except IndexError:
                 error(f"Expected NAME after PROC; but no token was found")
                 return True
 
@@ -265,9 +284,9 @@ def compile_module(file, program, data: deque, names: dict, compiled_modules: li
 def get_types(program, types, end):
      while True:
          try:
-             token = next(program)
+             token = program.popleft()
 
-         except StopIteration:
+         except IndexError:
              error(f"Expected type or {end}; but no token was found")
              return True
 
@@ -287,6 +306,26 @@ def print_stack(stack):
         print(f"{str(i).ljust(2, ' ')} | {data}")
 
 
+def load_macro(program, macro, debug_mode: bool = False):
+    while True:
+        try:
+            token = program.popleft()
+
+        except IndexError:
+            error("Found no ENDMACRO")
+            return True
+
+        if token.type is token_lib.ENDMACRO:
+            return False
+
+        elif token.type is token_lib.MACRO:
+            error_on_token(token, "Right now, creating macros that creates macros is not allowed")
+            return True
+
+        else:
+            macro.append(token)
+
+
 def compile_procedure(file, program, data: deque, names: dict, arguments: tuple, returns: tuple, debug_mode: bool = False):
     start_level = 0
     levels = deque()
@@ -296,9 +335,9 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
     
     while True:
         try:                
-            token = next(program)
+            token = program.popleft()
 
-        except StopIteration:
+        except IndexError:
             error("Found no ENDPROC")
             return True
         
@@ -317,6 +356,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
                 for i, expected in enumerate(arguments_[::-1]):
                     removed = stack.pop()
+                    
                     if removed != expected:
                         error_on_token(token, f"Call arguments are not satisfied; expected '{expected}', got '{removed}'")
                         return True
@@ -336,6 +376,13 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                 file.write(f"    ;; -- PUSH GLOBAL MEMORY {constant} --\n\n")
                 file.write(f"    mov     rax, memory+{constant}\n")
                 file.write(f"    push    rax\n\n")
+
+            elif call_type is MACRO:
+                macro, = args
+
+                file.write("    ;; ==== FROM MACRO '{token.arg}' ====\n\n")
+                program.extendleft(macro)
+                file.write("    ;; ==== END OF MACRO '{token.arg}' ====\n\n")
 
             else:
                 error_on_token(token, f"Unknown call type; got '{call_type}'")

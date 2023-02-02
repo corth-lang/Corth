@@ -1,3 +1,5 @@
+from collections import deque
+
 import sys
 import argparse
 
@@ -17,7 +19,7 @@ def compile_command():
     else:
         log_lib.log("INFO", "Successfully parsed")
 
-    if compiler_lib.compile_nasm_program("output.asm", iter(parser.program), args.debug):
+    if compiler_lib.compile_nasm_program("output.asm", deque(parser.program), args.debug):
         log_lib.log("INFO", f"Error on NASM creation, stopped compilation")
         return
 
