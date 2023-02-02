@@ -23,146 +23,132 @@ memory col-no 8
 
 memory count 8
 
-proc get-id
+// Sets the value of row or column
+macro set-row-no row-no swp store8 endmacro
+macro set-col-no col-no swp store8 endmacro
+
+// Gets the value of row or column
+macro get-row-no row-no load8 endmacro
+macro get-col-no col-no load8 endmacro
+
+macro get-id
   // row-no col-no -- id
-  int int -- int
-in
+
   16 % swp 16 % <<4 +
-end
+endmacro
 
-proc get-ptr
-  // row-no col-no -- ptr
-  int int -- int
-in
-  get-id board +
-end
-
-proc get-old-ptr
-  // row-no col-no -- ptr
-  int int -- int
-in
-  get-id old +
-end 
-
-proc was-alive
+macro was-alive
   // row-no col-no -- is-alive
-  int int -- bool
-in
-  get-old-ptr load 0 !=
-end
 
-proc set-alive
+  get-id old get 0 !=
+endmacro
+
+macro set-alive
   // row-no col-no --
-  int int --
-in
-  get-ptr 0xff store
-end
 
-proc set-dead
+  get-id board 0xff set
+endmacro
+
+macro set-dead
   // row-no col-no --
-  int int --
-in
-  get-ptr 0 store
-end
 
-proc draw-board
-  --
-in
+  get-id board 0 set
+endmacro
+
+macro draw-board
   0 while
      dup 16 <
   do
-     row-no swp store8
+     set-row-no
      
      0 while
        dup 16 <
      do
-       col-no swp store8
+       set-col-no
 
-       row-no load8 col-no load8 was-alive if "O" else "." end puts
+       get-row-no get-col-no was-alive if "O" else "." end puts
 
-       col-no load8 inc
+       get-col-no inc
      end drop
 
      "\n" puts
 
-     row-no load8 inc
+     get-row-no inc
   end drop
-end
+endmacro
 
-proc reset-board
-  --
-in
+macro reset-board
   "\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d" puts
-end
+endmacro
 
-proc check-neighbor
+macro check-neighbor
   // row-no col-no
-  int int --
-in
+
   was-alive if
     count count load8 inc store8
   end
-end
+endmacro
 
-proc copy-board
-  --
-in
+macro copy-board
   board 256 old memcpy
-end
+endmacro
 
-proc count-neighbors
-  --
-in
+macro count-neighbors
   count 0 store8
 
   // north
-  row-no load8 inc
-  col-no load8
+  get-row-no inc
+  get-col-no
   check-neighbor
+  
   // north east
-  row-no load8 inc
-  col-no load8 inc
+  get-row-no inc
+  get-col-no inc
   check-neighbor
+  
   // east
-  row-no load8
-  col-no load8 inc
+  get-row-no
+  get-col-no inc
   check-neighbor
+  
   // south east
-  row-no load8 dec
-  col-no load8 inc
+  get-row-no dec
+  get-col-no inc
   check-neighbor
+  
   // south
-  row-no load8 dec
-  col-no load8
+  get-row-no dec
+  get-col-no 
   check-neighbor
+  
   // south west
-  row-no load8 dec
-  col-no load8 dec
+  get-row-no dec
+  get-col-no dec
   check-neighbor
+  
   // west
-  row-no load8
-  col-no load8 dec
+  get-row-no
+  get-col-no dec
   check-neighbor
+  
   // north west
-  row-no load8 inc
-  col-no load8 dec
+  get-row-no inc
+  get-col-no dec
   check-neighbor
-end
+endmacro
 
-proc update-cell
-  --
-in
+macro update-cell
   count-neighbors
 
-  row-no load8 col-no load8 was-alive if
+  get-row-no get-col-no was-alive if
     // If the cell is alive
     // Requires 2 or 3 neighbors to keep being alive
 
     count load8 2 < if
-      row-no load8 col-no load8 set-dead
+      get-row-no get-col-no set-dead
     else
       count load8 3 > if
-	row-no load8 col-no load8 set-dead
+	get-row-no get-col-no set-dead
       end
     end
 
@@ -171,34 +157,32 @@ in
     // Requires 3 neighbors to born
 
     count load8 3 = if
-      row-no load8 col-no load8 set-alive
+      get-row-no get-col-no set-alive
     end
   end
-end
+endmacro
 
-proc update-board
-  --
-in
+macro update-board
   0 while
-     dup 16 <
+    dup 16 <
   do
-    row-no swp store8
+    set-row-no
 
     0 while
       dup 16 <
     do
-       col-no swp store8
+      set-col-no
        
-       update-cell
+      update-cell
 
-       col-no load8 inc
+      get-col-no inc
     end drop
 
-    row-no load8 inc
+    get-row-no inc
   end drop
 
   copy-board
-end
+endmacro
 
 proc main
   -- int
