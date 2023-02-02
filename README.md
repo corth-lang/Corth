@@ -31,6 +31,25 @@ For more information about the commands, type:
 
 - EVERYTHING IN THIS LANGUAGE CAN BE CHANGED AT ANY TIME. USE WITH CAUTION.
 
+### First program:
+
+    include libs/io.corth
+    
+    proc main 
+      returns int
+    in
+      "Hello, World!\n" puts
+      
+      0
+    end
+    
+- This is a simple program that prints "Hello, World!" when run.
+- 'include' is used to include the library io.corth, which contains some I/O operations like writing to files and the standard output.
+- 'proc' is used to define a procedure. 'main' is where the program starts.
+- 'puts' is used to print a string to the standard output.
+- For more examples, you can check the ./examples/ directory.
+- For more information about these concepts, keep scrolling.
+
 ### Numbers:
 
     34 0b101001 0o205126 0x5729da
@@ -55,13 +74,12 @@ For more information about the commands, type:
     34 35 +
     
     69 27 -
+    
+    68 inc
+    
+    43 dec
 
 - '+' adds the last two items and pushes the result back, '-' subtracts.
-
-    70 dec
-    
-    41 inc
-
 - 'inc' increases the last item in the stack once, 'dec' decreases.
 
 ### Including modules:
