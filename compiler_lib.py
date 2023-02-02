@@ -380,9 +380,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             elif call_type is MACRO:
                 macro, = args
 
-                file.write("    ;; ==== FROM MACRO '{token.arg}' ====\n\n")
                 program.extendleft(macro)
-                file.write("    ;; ==== END OF MACRO '{token.arg}' ====\n\n")
 
             else:
                 error_on_token(token, f"Unknown call type; got '{call_type}'")
@@ -406,7 +404,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             file.write(f"    ;; -- ADD --\n\n")
             file.write(f"    pop     rax\n")
-            file.write(f"    add     [rsp], rax\n")
+            file.write(f"    add     [rsp], rax\n\n")
 
         elif token.type is token_lib.SUB:
             if (
@@ -419,7 +417,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             file.write(f"    ;; -- SUB --\n\n")
             file.write(f"    pop     rax\n")
-            file.write(f"    sub     QWORD [rsp], rax\n")
+            file.write(f"    sub     QWORD [rsp], rax\n\n")
 
 
         elif token.type is token_lib.DIVMOD:
@@ -453,7 +451,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    pop     rbx\n")
             file.write(f"    mov     rax, [rsp]\n")
             file.write(f"    div     rbx\n")
-            file.write(f"    mov     [rsp], rax\n")
+            file.write(f"    mov     [rsp], rax\n\n")
 
         elif token.type is token_lib.MOD:
             if (
@@ -469,7 +467,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    pop     rbx\n")
             file.write(f"    mov     rax, [rsp]\n")
             file.write(f"    div     rbx\n")
-            file.write(f"    mov     [rsp], rdx")
+            file.write(f"    mov     [rsp], rdx\n\n")
 
         elif token.type is token_lib.DUP:
             if len(stack) < 1:
