@@ -30,22 +30,8 @@ import os
 # TODO: Add compile time static execution
 # TODO: Add pointer type and pointer type constant
 
-# TODO: Some operations can be compiled in the compile-time
 # TODO: Change the memory size compilation
-# TODO: Add structs
-
-"""
-struct A
-  int B
-  int C
-end
-
-=
-
-macro A int int endmacro
-macro B 0 endmacro
-macro C 8 endmacro
-"""
+# TODO: Add structs (maybe)
 
 
 # -- Constant name types --
@@ -474,13 +460,63 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             stack.append(data_types_lib.INT)
 
+        elif token.type is token_lib.BAND:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.INT or
+                    stack[-1] is not data_types_lib.INT
+            ):
+                error_on_token(token, "BAND expects two INTs")
+                return True
+
+            file.write(f"    ;; -- BAND --\n\n")
+            file.write(f"    pop     rax\n")
+            file.write(f"    and     [rsp], rax\n\n")
+
+        elif token.type is token_lib.BOR:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.INT or
+                    stack[-1] is not data_types_lib.INT
+            ):
+                error_on_token(token, "BOR expects two INTs")
+                return True
+
+            file.write(f"    ;; -- BOR --\n\n")
+            file.write(f"    pop     rax\n")
+            file.write(f"    or      [rsp], rax\n\n")
+
+        elif token.type is token_lib.BXOR:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.INT or
+                    stack[-1] is not data_types_lib.INT
+            ):
+                error_on_token(token, "BXOR expects two INTs")
+                return True
+
+            file.write(f"    ;; -- BXOR --\n\n")
+            file.write(f"    pop     rax\n")
+            file.write(f"    xor     [rsp], rax\n\n")
+
+        elif token.type is token_lib.BNOT:
+            if (
+                    len(stack) < 1 or
+                    stack[-1] is not data_types_lib.INT
+            ):
+                error_on_token(token, "BNOT expects an INT")
+                return True
+
+            file.write(f"    ;; -- BNOT --\n\n")
+            file.write(f"    not     [rsp]\n\n")
+
         elif token.type is token_lib.ADD:
             if (
                     len(stack) < 2 or
                     stack.pop() is not data_types_lib.INT or
                     stack[-1] is not data_types_lib.INT
             ):
-                error_on_token(token, "ADD expects two INTs or ADDRs")
+                error_on_token(token, "ADD expects two INTs")
                 return True
 
             file.write(f"    ;; -- ADD --\n\n")
