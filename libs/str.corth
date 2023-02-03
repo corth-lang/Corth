@@ -12,47 +12,35 @@ macro strc.get-len
 endmacro
 
 macro str.to-strc
-    /*
-        Because of the way strings work right now, not implemented the way it should be
-        This macro will be fxed in an upcoming update
-    */
-    
     drop
 endmacro
 
 macro strc.to-str
-    /*
-        Because of the way strings work right now, not implemented the way it should be
-        This macro will be fxed in an upcoming update
-    */
-    
     dup str.get-len
 endmacro
 
 /*
-There are two types of strings in Corth
-
-char arrays and C-like strings
+There are two types of strings in Corth: char arrays and C-like strings.
 
 char arrays:
 
-    char[]* x
+    Stack:
+      [cs] [cl]
 
-    [cs] [cl]
-     x^
+    Memory:
+      [c0] [c1] [c2] ... [c+cl]
+       cs^
 
-    [c0] [c1] [c2] ... [c+cl]
-    cs^
-
-    x points to the array pointer and right after it comes the length of the array
-    cs points to the first char in the string
+    cs points to the array pointer and right after it comes the length of the array.
 
 C-like strings:
 
-    str x
+    Stack:
+      [cs]
 
-    [c0] [c1] [c2] ... [c+len] 00
-     x^
+    Memory:
+      [c0] [c1] [c2] ... [c+len] 00
+       cs^
 
-    x points to the first char in the string and the last character is 0x00 (null-char)
+    cs points to the first char in the string and the last character is 0x00 (null-char).
 */
