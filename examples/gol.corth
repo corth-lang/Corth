@@ -7,21 +7,26 @@
 Simulates and renders game of life.
 Requires a console that can handle the reverse line feed character.
 
+ROWS and COLS can be changed to make the board bigger or smaller.
+
+NOTE: There is a bug that if ROWS and COLS are not divisible by each other, algorithm acts weird.
 */
 
 include libs/io.corth
 include libs/memory.corth
 
-// ROWS: 16
-// COLS: 16
+macro ROWS 32 endmacro
+macro COLS 24 endmacro
 
-memory board 256 // ROWS * COLS
-memory old 256
+macro CELLS ROWS COLS * endmacro
 
-memory row-no 8
-memory col-no 8
+memory board CELLS end
+memory old CELLS end
 
-memory count 8
+memory row-no sizeof(int) end
+memory col-no sizeof(int) end
+
+memory count sizeof(int) end
 
 // Sets the value of row or column
 macro set-row-no row-no swp store8 endmacro
@@ -34,7 +39,7 @@ macro get-col-no col-no load8 endmacro
 macro get-id
   // row-no col-no -- id
 
-  16 % swp 16 % <<4 +
+  COLS % swp ROWS % COLS * +
 endmacro
 
 macro was-alive
@@ -57,28 +62,32 @@ endmacro
 
 macro draw-board
   0 while
-     dup 16 <
+    dup ROWS <
   do
-     set-row-no
-     
-     0 while
-       dup 16 <
-     do
-       set-col-no
+    set-row-no
 
-       get-row-no get-col-no was-alive if "O" else "." end puts
+    0 while
+      dup COLS <
+    do
+      set-col-no
 
-       get-col-no inc
-     end drop
+      get-row-no get-col-no was-alive if "O" else "." end puts
 
-     "\n" puts
+      get-col-no inc
+    end drop
 
-     get-row-no inc
-  end drop
+    "\n" puts
+
+    get-row-no
+  inc end drop
 endmacro
 
 macro reset-board
-  "\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d\xc2\x8d" puts
+  0 while
+    dup ROWS <
+  do
+    "\xc2\x8d" puts
+  inc end drop
 endmacro
 
 macro check-neighbor
@@ -90,7 +99,7 @@ macro check-neighbor
 endmacro
 
 macro copy-board
-  board 256 old memcpy
+  board CELLS old memcpy
 endmacro
 
 macro count-neighbors
@@ -164,12 +173,12 @@ endmacro
 
 macro update-board
   0 while
-    dup 16 <
+    dup ROWS <
   do
     set-row-no
 
     0 while
-      dup 16 <
+      dup COLS <
     do
       set-col-no
        
@@ -187,7 +196,7 @@ endmacro
 proc main
   -- int
 in
-  0 100000000 set-nanosleep-time
+  0 50000000 set-nanosleep-time
 
   4 10 set-alive
   5 11 set-alive
@@ -195,6 +204,7 @@ in
   6 10 set-alive
   6 11 set-alive
   copy-board
+
   "\n" puts
 
   draw-board
