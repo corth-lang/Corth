@@ -56,7 +56,7 @@ macro eputsc
 endmacro
 
 // == Unsigned decimals ==
-memory putu.buffer 32
+memory putu.buffer 32 end
 
 macro fputu
     // file-dc int
