@@ -6,6 +6,8 @@ Contains basic system macros
 
 */
 
+include libs/memory.corth
+
 // -- SYSTEM CONSTANTS --
 
 // MAIN STREAMS
@@ -18,7 +20,9 @@ macro SYSREAD        0 endmacro
 macro SYSWRITE       1 endmacro
 macro SYSOPEN        2 endmacro
 macro SYSCLOSE       3 endmacro
+
 macro SYSNANOSLEEP  35 endmacro
+
 macro SYSEXIT       60 endmacro
 
 // FILE MODES
@@ -26,7 +30,7 @@ macro RD_ONLY        0 endmacro
 macro WR_ONLY        1 endmacro
 macro RDWR           2 endmacro
 
-memory nanosleep-time 16
+memory nanosleep-time sizeof(int) 2 * end
 
 macro call-sys-exit
     // ex-code
@@ -67,15 +71,15 @@ endmacro
 macro set-nanosleep-time
     // seconds nanoseconds
     
-    nanosleep-time 8 + swp store8
-    nanosleep-time swp store8
+    nanosleep-time 8 rot set8
+    nanosleep-time 0 set8
 endmacro
 
 macro get-nanosleep-time
     // -- seconds nanoseconds
     
-    nanosleep-time load8
-    nanosleep-time 8 + load8
+    nanosleep-time 0 get8
+    nanosleep-time 8 get8
 endmacro
 
 macro nanosleep
