@@ -37,6 +37,10 @@ KEYWORDS = {
     "%": (MOD := enum_lib.step()),
 
     # Bitwise operators
+    "band": (BAND := enum_lib.step()),
+    "bor": (BOR := enum_lib.step()),
+    "bxor": (BXOR := enum_lib.step()),
+    "bnot": (BNOT := enum_lib.step()),
     "<<32": (SHIFTL32 := enum_lib.step()),
     ">>32": (SHIFTR32 := enum_lib.step()),
     "<<4": (SHIFTL4 := enum_lib.step()),
@@ -48,6 +52,7 @@ KEYWORDS = {
 
     # Outer keywords
     "include": (INCLUDE := enum_lib.step()),
+    "memory": (MEMORY := enum_lib.step()),
     "macro": (MACRO := enum_lib.step()),
     "endmacro": (ENDMACRO := enum_lib.step()),
     "proc": (PROC := enum_lib.step()),
@@ -77,13 +82,14 @@ KEYWORDS = {
     ">=": (GREATER_EQUAL := enum_lib.step()),
 
     # Boolean artihmetic
+    "&": (LAND := enum_lib.step()),  # Not implemented in the compiler yet
+    "|": (LOR := enum_lib.step()),  # Not implemented in the compiler yet
+    "^": (LXOR := enum_lib.step()),  # Not implemented in the compiler yet
     "!": (NOT := enum_lib.step()),
     "false": (FALSE := enum_lib.step()),
     "true": (TRUE := enum_lib.step()),
 
     # Memory operators
-    "memory": (MEMORY := enum_lib.step()),
-    "addr": (ADDR := enum_lib.step()),
     "load": (LOAD := enum_lib.step()),
     "store": (STORE := enum_lib.step()),
     "load8": (LOAD8 := enum_lib.step()),
@@ -96,6 +102,7 @@ KEYWORDS = {
     "syscall3": (SYSCALL3 := enum_lib.step()),
 
     # Debug tools
+    # These don't have an effect on the compiled program, but helps to debug programs
     "?stack": (DEBUG_STACK := enum_lib.step()),
 }
 TYPE_NAMES = {

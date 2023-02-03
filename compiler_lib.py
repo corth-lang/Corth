@@ -9,13 +9,12 @@ import data_types_lib
 
 import os
 
-# TODO: Add bitwise logic
 # TODO: Add boolean logic
 
 # TODO: Remake the stack, so that the pointer positions are already compiled (requires work because calling procedures will dynamically change the stack)
 # TODO: Allow multiple DO's (not sure but could be useful)
 
-# TODO: Add logging file specification
+# TODO: Add logging file specification (or a type of file that can define them)
 # TODO: Add in file nasm macros (would help make the compiler much smaller since the macros will be defined in the libraries instead of the compiler)
 
 # TODO: Change pushf for better performance
@@ -943,6 +942,19 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    test    rax, rax\n")
             file.write(f"    pushf\n")
             file.write(f"    and     QWORD [rsp], 0x40\n\n")
+
+        elif token.type is token_lib.LOR:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.BOOL or
+                    stack[-1] is not data_types_lib.BOOL
+            ):
+                error_on_token(token, "LAND expects two BOOLs")
+                return True
+
+            file.write(f"    ;; -- LOR --\n\n")
+            file.write(f"    pop     rax\n")
+            file.write(f"    or      [rsp], rax\n\n")
 
         elif token.type is token_lib.FALSE:
             stack.append(data_types_lib.BOOL)
