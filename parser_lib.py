@@ -312,10 +312,12 @@ class Parser:
                         self.mode = MULTI_COMMENT_MODE
     
                     elif self.char in END_OF_TOKEN:
-                        get_keyword()
+                        self.get_keyword()
+
+                        self.mode = IDLE_MODE
     
                     else:
-                        self.token = "/" + self.char
+                        self.token += self.char
                         self.mode = KEYWORD_MODE
     
                 elif self.mode is INLINE_COMMENT_MODE:
