@@ -9,7 +9,6 @@ import data_types_lib
 
 import os
 
-# TODO: Add multiplication
 # TODO: Add bitwise logic
 # TODO: Add boolean logic
 
@@ -23,18 +22,30 @@ import os
 # TODO: Add return
 # TODO: Make enumerations named so they can be debugged in the console easily
 
-# TODO: Add dynamic memory allocation
-# TODO: Add let (probably requires memory allocation)
-# TODO: Add bin, oct, dec and hex operations or their put versions (in a library, not compiler; requires memory allocations -probably-)
-# TODO: Remake PUSHSTR (requires memory allocation)
-# TODO: Add PUSHSTRC (requires memory allocation)
+# TODO: Add dynamic memory allocation (or local memory allocation)
+# TODO: Add let (probably requires local memory allocation)
 
 # TODO: Add library search locations
 # TODO: Remove data
 # TODO: Add compile time static execution
 # TODO: Add pointer type and pointer type constant
 
-# TODO: Macros should be available everywhere, not just in procedures
+# TODO: Some operations can be compiled in the compile-time
+# TODO: Change the memory size compilation
+# TODO: Add structs
+
+"""
+struct A
+  int B
+  int C
+end
+
+=
+
+macro A int int endmacro
+macro B 0 endmacro
+macro C 8 endmacro
+"""
 
 
 # -- Constant name types --
@@ -190,21 +201,19 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
             if memory_name.arg in names:
                 error_on_token(memory_name, f"'{memory_name.arg}' was already defined before as a {names[memory_name.arg][0]}")
                 return True
-            
-            try:
-                memory_size = program.popleft()
 
-            except IndexError:
-                error(f"Expected INT after MEMORY NAME; but no token was found")
-                return True            
+            stack = deque()
 
-            if memory_size.type is not token_lib.PUSH8:
-                error_on_token(memory_size, f"Expected INT after MEMORY NAME; got '{token.type}'")
+            if compile_time_execution(program, stack, token_lib.END, names, debug_mode):
+                error_on_token(token, f"Could not compile memory size for '{memory_name.arg}'")
+
+            if len(stack) != 1:
+                error_on_token(memory_size, f"Expected only one INT for memory size")
                 return True
 
             names[memory_name.arg] = GLOBAL_MEMORY, global_memory_pointer
 
-            global_memory_pointer += int(memory_size.arg)
+            global_memory_pointer += stack[0]
 
         elif token.type is token_lib.MACRO:
             try:
@@ -219,6 +228,8 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
                 error_on_token(macro_name, f"Could not load macro")
                 return True
 
+            # When deques' extendleft is called, it reverses the argument deque
+            # Because of that, we reverse it before saving the macro
             macro.reverse()
 
             names[macro_name.arg] = MACRO, macro
@@ -274,6 +285,22 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
                 error(f"Could not compile procedure, '{procedure_name.arg}'")
                 return True
 
+        elif token.type is token_lib.NAME:
+            if token.arg not in names:
+                error_on_token(token, f"'{token.arg}' is undefined")
+                return True
+
+            call_type, *args = names[token.arg]
+
+            if call_type is MACRO:
+                macro, = args
+
+                stack.extendleft(macro)
+
+            else:
+                error_on_token(token, f"Can not call '{token.arg}' here")
+                return True
+
         else:
             error_on_token(token, f"Expected PROC or INCLUDE; got '{token.type}'")
             return True
@@ -296,6 +323,22 @@ def get_types(program, types, end):
          elif token.type is end:
              return False
 
+         elif token.type is NAME:
+            if token.arg not in names:
+                error_on_token(token, f"'{token.arg}' is undefined")
+                return True
+
+            call_type, *args = names[token.arg]
+
+            if call_type is MACRO:
+                macro, = args
+
+                stack.extendleft(macro)
+
+            else:
+                error_on_token(token, f"Can not call '{token.arg}' here")
+                return True
+
          else:
              error_on_token(token, f"Expected TYPE or {end}; got '{token.type}'")
              return True
@@ -308,12 +351,11 @@ def print_stack(stack):
 
 def load_macro(program, macro, debug_mode: bool = False):
     while True:
-        try:
-            token = program.popleft()
-
-        except IndexError:
+        if not program:
             error("Found no ENDMACRO")
             return True
+        
+        token = program.popleft()
 
         if token.type is token_lib.ENDMACRO:
             return False
@@ -326,6 +368,49 @@ def load_macro(program, macro, debug_mode: bool = False):
             macro.append(token)
 
 
+def compile_time_execution(program, stack, end, names, debug_mode: bool = False):
+    while True:
+        if not program:
+            error("Found no ENDMEMORY")
+            return True
+
+        token = program.popleft()
+
+        if token.type is end:
+            return False
+
+        elif token.type is token_lib.NAME:
+            if token.arg not in names:
+                error_on_token(token, f"'{token.arg}' is undefined")
+                return True
+
+            call_type, *args = names[token.arg]
+
+            if call_type is MACRO:
+                macro, = args
+
+                program.extendleft(macro)
+
+            else:
+                error_on_token(token, f"Can not call '{token.arg}' here")
+
+        elif token.type is token_lib.PUSH8:
+            stack.append(token.arg)
+
+        elif token.type is token_lib.ADD:
+            stack.append(stack.pop() + stack.pop())
+
+        elif token.type is token_lib.SUB:
+            stack.append(-stack.pop() + stack.pop())
+
+        elif token.type is token_lib.MUL:
+            stack.append(stack.pop() * stack.pop())
+
+        else:
+            error_on_token(token, f"This operation is not available in compile-time execution")
+            return True
+
+
 def compile_procedure(file, program, data: deque, names: dict, arguments: tuple, returns: tuple, debug_mode: bool = False):
     start_level = 0
     levels = deque()
@@ -334,15 +419,11 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
     stack.extend(arguments)
     
     while True:
-        try:                
-            token = program.popleft()
-
-        except IndexError:
+        if not program:
             error("Found no ENDPROC")
             return True
-        
-        if debug_mode:
-            log_lib.log("DEBUG", f"{repr(token).ljust(20, ' ')} | {stack}")
+
+        token = program.popleft()
 
         if token.type is token_lib.NAME:
             if token.arg not in names:
@@ -419,7 +500,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    pop     rax\n")
             file.write(f"    sub     QWORD [rsp], rax\n\n")
 
-
         elif token.type is token_lib.DIVMOD:
             if (
                     len(stack) < 2 or
@@ -467,6 +547,55 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    pop     rbx\n")
             file.write(f"    mov     rax, [rsp]\n")
             file.write(f"    div     rbx\n")
+            file.write(f"    mov     [rsp], rdx\n\n")
+
+        elif token.type is token_lib.FULLMUL:
+            if (
+                    len(stack) < 2 or
+                    stack[-1] is not data_types_lib.INT or
+                    stack[-2] is not data_types_lib.INT
+            ):
+                error_on_token(token, "FULLMUL expects two INTs")
+                return True
+
+            file.write(f"    ;; -- FULLMUL --\n\n")
+            file.write(f"    xor     rdx, rdx\n")
+            file.write(f"    mov     rbx, [rsp]\n")
+            file.write(f"    mov     rax, [rsp+8]\n")
+            file.write(f"    mul     rbx\n")
+            file.write(f"    mov     [rsp], rax\n")
+            file.write(f"    mov     [rsp+8], rdx\n\n")
+
+        elif token.type is token_lib.MUL:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.INT or
+                    stack[-1] is not data_types_lib.INT
+            ):
+                error_on_token(token, "MUL expects two INTs")
+                return True
+
+            file.write(f"    ;; -- MUL --\n\n")
+            file.write(f"    xor     rdx, rdx\n")
+            file.write(f"    pop     rbx\n")
+            file.write(f"    mov     rax, [rsp]\n")
+            file.write(f"    mul     rbx\n")
+            file.write(f"    mov     [rsp], rax\n\n")
+
+        elif token.type is token_lib.MUL2:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.INT or
+                    stack[-1] is not data_types_lib.INT
+            ):
+                error_on_token(token, "MUL2 expects two INTs")
+                return True
+
+            file.write(f"    ;; -- MUL2 --\n\n")
+            file.write(f"    xor     rdx, rdx\n")
+            file.write(f"    pop     rbx\n")
+            file.write(f"    mov     rax, [rsp]\n")
+            file.write(f"    mul     rbx\n")
             file.write(f"    mov     [rsp], rdx\n\n")
 
         elif token.type is token_lib.DUP:
