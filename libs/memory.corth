@@ -1,6 +1,9 @@
-memory memcpy.src 8
-memory memcpy.len 8
-memory memcpy.dst 8
+macro sizeof(int)  8 endmacro
+macro sizeof(bool) 8 endmacro
+
+memory memcpy.src sizeof(int) end
+memory memcpy.len sizeof(int) end
+memory memcpy.dst sizeof(int) end
 
 macro get-memcpy.src memcpy.src load8 endmacro
 macro get-memcpy.len memcpy.len load8 endmacro
@@ -9,9 +12,6 @@ macro get-memcpy.dst memcpy.dst load8 endmacro
 macro set-memcpy.src memcpy.src swp store8 endmacro
 macro set-memcpy.len memcpy.len swp store8 endmacro
 macro set-memcpy.dst memcpy.dst swp store8 endmacro
-
-macro sizeof(int)  8 endmacro
-macro sizeof(bool) 8 endmacro
 
 macro get
     // src index
