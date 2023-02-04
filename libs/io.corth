@@ -1,5 +1,6 @@
 // io.corth
 
+include libs/core.corth
 include libs/sys.corth
 include libs/memory.corth
 
@@ -56,7 +57,7 @@ macro eputsc
 endmacro
 
 // == Unsigned decimals ==
-memory putu.buffer 32 end
+memory putu.buffer 32 sizeof(char) * end
 
 macro fputu
     // file-dc int
