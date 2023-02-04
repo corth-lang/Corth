@@ -1,5 +1,13 @@
+include libs/core.corth
+include libs/memory.corth
+
+macro str.get-len
+    // ptr len -- len
+    swp drop
+endmacro
+
 macro strc.get-len
-    // strc-ptr -- strc-len
+    // ptr -- len
 
     0 while
         // (ptr+l) l
@@ -12,11 +20,38 @@ macro strc.get-len
 endmacro
 
 macro str.to-strc
+    // ptr len -- ptr
     drop
 endmacro
 
 macro strc.to-str
-    dup str.get-len
+    // ptr -- ptr len
+    dup strc.get-len
+endmacro
+
+macro str.copy
+    // src len dst
+
+    memcpy
+endmacro
+
+macro strc.copy
+    // src dst
+    
+    set-memcpy.dst
+    set-memcpy.src
+
+    0 while
+        dup get-memcpy.src get 0 !=
+    do
+        dup dup
+        get-memcpy.dst swp
+        get-memcpy.src get
+        set
+
+    inc end
+
+    get-memcpy.dst 0 set
 endmacro
 
 /*
