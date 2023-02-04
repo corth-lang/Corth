@@ -145,6 +145,8 @@ For more information about the commands, type:
 
 ### Control flow:
 
+    include libs/io.corth
+
     2 2 + 5 = if
       "Well, math is broken. Nice.\n" puts
     end
@@ -179,7 +181,9 @@ For more information about the commands, type:
 
 ### Memory management:
 
-    memory count 8
+    include libs/core.corth
+
+    memory count sizeof(int) end
     
     proc increase
         returns
@@ -202,4 +206,4 @@ For more information about the commands, type:
 - 'memory' is used for allocating global memory.
 - 'load8' loads 8 bytes of data from the address.
 - 'store8' stores 8 bytes of data to the address. (First argument is address and the second is the value to be stored)
-- SYNTAX FOR MEMORY IS A PLACEHOLDER. IT WILL BE CHANGED IN A FUTURE UPDATE. USE WITH CAUTION.
+- The memory keyword can only be used in the global space, and the size is calculated on the compile time.
