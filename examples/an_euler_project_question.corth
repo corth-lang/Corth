@@ -13,11 +13,29 @@ If x is even, f(x) returns x / 2.
 
 We keep doing that until we reach 1.
 
-Our goal is to find the number with the most amount of steps required to reach 1.
+Our goal is to find the number with the most amount of steps required to reach 1 using that function.
 
-START and END macros define the search ends. Program will print the best it has found until some point.
+START and END macros define the search ends. When START = 1 and END = 1000 the result is,
 
-When START = 1 and END = 
+Found better, 2. This number requires 1 steps
+Found better, 3. This number requires 7 steps
+Found better, 6. This number requires 8 steps
+Found better, 7. This number requires 16 steps
+Found better, 9. This number requires 19 steps
+Found better, 18. This number requires 20 steps
+Found better, 25. This number requires 23 steps
+Found better, 27. This number requires 111 steps
+Found better, 54. This number requires 112 steps
+Found better, 73. This number requires 115 steps
+Found better, 97. This number requires 118 steps
+Found better, 129. This number requires 121 steps
+Found better, 171. This number requires 124 steps
+Found better, 231. This number requires 127 steps
+Found better, 313. This number requires 130 steps
+Found better, 327. This number requires 143 steps
+Found better, 649. This number requires 144 steps
+Found better, 703. This number requires 170 steps
+Found better, 871. This number requires 178 steps
 */
 
 
@@ -25,7 +43,7 @@ include libs/io.corth
 
 
 macro START 1 endmacro
-macro END 1000000 endmacro
+macro END 10000000 endmacro
 
 memory best sizeof(int) end
 
