@@ -1,5 +1,4 @@
-macro sizeof(int)  8 endmacro
-macro sizeof(bool) 8 endmacro
+include libs/core.corth
 
 memory memcpy.src sizeof(int) end
 memory memcpy.len sizeof(int) end
@@ -58,23 +57,3 @@ macro memcpy
        
      inc end drop
 endmacro
-
-macro strcpy
-    // src dst
-    
-    set-memcpy.dst
-    set-memcpy.src
-
-    0 while
-        dup get-memcpy.src get 0 !=
-    do
-        dup dup
-        get-memcpy.dst swp
-        get-memcpy.src get
-        set
-
-    inc end
-
-    get-memcpy.dst 0 set
-endmacro
-
