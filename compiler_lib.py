@@ -68,12 +68,16 @@ def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = Fals
 
         file.write("_start:\n")
         file.write("    mov     QWORD [callptr], callstack\n")
-        file.write("    add     QWORD [callptr], 0x4000\n\n")
+        file.write("    add     QWORD [callptr], 0x4000\n")
+        file.write("    mov     QWORD [local], memory\n\n")
         
         file.write("    xchg    rsp, [callptr]\n")
-        file.write("    call    proc_main\n")
-        file.write("    xchg    rsp, [callptr]\n\n")
-        
+        file.write("    push    CORTH_ENDOFPROGRAM\n")
+        file.write("    push    QWORD [local]\n")
+        file.write("    xchg    rsp, [callptr]\n")
+        file.write("    jmp     PROC_main\n")
+
+        file.write("CORTH_ENDOFPROGRAM:\n")
         file.write("    mov     rax, 60\n")
         file.write("    pop     rdi\n")
         file.write("    syscall\n\n")
@@ -89,7 +93,7 @@ def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = Fals
         file.write(f"segment .data\n")
     
         for i, command in enumerate(data):
-            file.write(f"    data_{i}: {command}\n")
+            file.write(f"    data_{i}: {command}\n") 
     
         file.write(f"segment .bss\n")
 
@@ -100,8 +104,12 @@ def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = Fals
                 size, = args
                 
                 file.write(f"    global_variable_{name}: resb {size}\n")
+
+        # 'memory' is where the local variables are stored.
+        # 'local' points to the first address of the procedure's memory block
+        file.write(f"    memory:     resb 0x4000\n")
+        file.write(f"    local:     resq 1\n")
         
-        file.write(f"    local_memory:   resb 0x4000\n")
         file.write(f"    callstack:  resq 0x4000\n")
         file.write(f"    callptr:    resq 1\n")
 
@@ -109,7 +117,6 @@ def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = Fals
 
 
 def parse_and_compile_module_or_package(file, path: str, data, names, compiled_modules, debug_mode: bool = False):
-     
     if path in compiled_modules:
         if debug_mode:
             log_lib.log("DEBUG", f"Skipping compiling the module or package '{path}'")
@@ -201,7 +208,7 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
                 error_on_token(token, f"Could not compile memory size for '{memory_name.arg}'")
 
             if len(stack) != 1:
-                error_on_token(memory_size, f"Expected only one INT for memory size")
+                error(f"Expected exactly one INT for memory size, at '{memory_name.arg}'")
                 return True
 
             global_variable_size ,= stack
@@ -265,13 +272,15 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
                 return True
 
             file.write(f";; ==== PROC '{procedure_name.arg}' ====\n\n")
-            file.write(f"proc_{procedure_name.arg}:\n\n")
-            file.write(f"    xchg    rsp, [callptr]\n\n")
+            file.write(f"PROC_{procedure_name.arg}:\n\n")
 
             found_error = compile_procedure(file, program, data, names, arguments, returns, debug_mode)
 
             file.write(f"    xchg    rsp, [callptr]\n")
-            file.write(f"    ret\n\n")
+            file.write(f"    pop     QWORD [local]\n")
+            file.write(f"    pop     rax\n")
+            file.write(f"    xchg    rsp, [callptr]\n")
+            file.write(f"    jmp     rax\n\n")
             file.write(f";; ==== ENDPROC '{procedure_name.arg}' ====\n\n")
             
             if found_error:
@@ -316,7 +325,7 @@ def get_types(program, types, end):
          elif token.type is end:
              return False
 
-         elif token.type is NAME:
+         elif token.type is token_lib.NAME:
             if token.arg not in names:
                 error_on_token(token, f"'{token.arg}' is undefined")
                 return True
@@ -364,7 +373,7 @@ def load_macro(program, macro, debug_mode: bool = False):
 def compile_time_execution(program, stack, end, names, debug_mode: bool = False):
     while True:
         if not program:
-            error("Found no ENDMEMORY")
+            error(f"Found no {end}")
             return True
 
         token = program.popleft()
@@ -405,8 +414,13 @@ def compile_time_execution(program, stack, end, names, debug_mode: bool = False)
 
 
 def compile_procedure(file, program, data: deque, names: dict, arguments: tuple, returns: tuple, debug_mode: bool = False):
+    local_memory = {}
+    next_memory = 0
+    
     start_level = 0
     levels = deque()
+
+    call_no = 0
     
     stack = deque()
     stack.extend(arguments)
@@ -419,48 +433,98 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         token = program.popleft()
 
         if token.type is token_lib.NAME:
-            if token.arg not in names:
-                error_on_token(token, f"'{token.arg}' is undefined")
-                return True
+            if token.arg in local_memory:
+                address = local_memory[token.arg]
 
-            call_type, *args = names[token.arg]
-
-            if call_type is PROCEDURE:
-                arguments_, returns_ = args
-
-                for i, expected in enumerate(arguments_[::-1]):
-                    removed = stack.pop()
-                    
-                    if removed != expected:
-                        error_on_token(token, f"Call arguments are not satisfied; expected '{expected}', got '{removed}'")
-                        return True
-
-                stack.extend(returns_)
-                
-                file.write(f"    ;; -- CALL '{token.arg}' --\n\n")
-                file.write(f"    xchg    rsp, [callptr]\n")
-                file.write(f"    call    proc_{token.arg}\n")
-                file.write(f"    xchg    rsp, [callptr]\n\n")
-
-            elif call_type is GLOBAL_VARIABLE_ADDRESS:
                 stack.append(data_types_lib.INT)
 
-                file.write(f"    ;; -- PUSH GLOBAL VARIABLE ADDRESS '{token.arg}' --\n\n")
-                file.write(f"    push    global_variable_{token.arg}\n\n")
+                file.write(f"    ;; -- PUSH LOCAL VARIABLE ADDRESS '{token.arg}' --\n\n")
+                file.write(f"    push    QWORD [local]\n")
 
-            elif call_type is MACRO:
-                macro, = args
+                if address:
+                    file.write(f"    add     QWORD [rsp], {address}\n")
 
-                program.extendleft(macro)
+                file.write(f"\n")
+            
+            elif token.arg in names:
+                call_type, *args = names[token.arg]
+
+                if call_type is PROCEDURE:
+                    arguments_, returns_ = args
+
+                    for i, expected in enumerate(arguments_[::-1]):
+                        removed = stack.pop()
+
+                        if removed != expected:
+                            error_on_token(token, f"Call arguments are not satisfied; expected '{expected}', got '{removed}'")
+                            return True
+
+                    stack.extend(returns_)
+
+                    file.write(f"    ;; -- CALL '{token.arg}' --\n\n")
+                    file.write(f"    xchg    rsp, [callptr]\n")
+                    file.write(f"    push    .R{call_no}\n")
+                    file.write(f"    push    QWORD [local]\n")
+                    file.write(f"    add     QWORD [local], {next_memory}\n")
+                    file.write(f"    xchg    rsp, [callptr]\n")
+                    file.write(f"    jmp     PROC_{token.arg}\n")
+                    file.write(f"    .R{call_no}:\n\n")
+
+                    call_no += 1
+
+                elif call_type is GLOBAL_VARIABLE_ADDRESS:
+                    stack.append(data_types_lib.INT)
+
+                    file.write(f"    ;; -- PUSH GLOBAL VARIABLE ADDRESS '{token.arg}' --\n\n")
+                    file.write(f"    push    global_variable_{token.arg}\n\n")
+
+                elif call_type is MACRO:
+                    macro, = args
+
+                    program.extendleft(macro)
+
+                else:
+                    error_on_token(token, f"Unknown call type; got '{call_type}'")
+                    return True
 
             else:
-                error_on_token(token, f"Unknown call type; got '{call_type}'")
+                error_on_token(token, f"'{token.arg}' is not defined as a local or global variable")
                 return True
+
+        elif token.type is token_lib.MEMORY:
+            try:
+                memory_name = program.popleft()
+
+            except IndexError:
+                error(f"Expected NAME after MEMORY; but no token was found")
+                return True            
+
+            if memory_name.type is not token_lib.NAME:
+                error_on_token(memory_name, f"Expected NAME after MEMORY; got '{token.type}'")
+                return True
+            
+            if memory_name.arg in local_memory:
+                error_on_token(memory_name, f"'Local variable {memory_name.arg}' was already defined before")
+                return True
+
+            new_stack = deque()
+
+            if compile_time_execution(program, new_stack, token_lib.END, names, debug_mode):
+                error_on_token(token, f"Could not compile memory size for '{memory_name.arg}'")
+
+            if len(new_stack) != 1:
+                error(f"Expected exactly one INT for memory size, at '{memory_name.arg}'")
+                return True
+
+            local_variable_size ,= new_stack
+
+            local_memory[memory_name.arg] = next_memory
+            
+            next_memory += local_variable_size
             
         elif token.type is token_lib.PUSH8:
             file.write(f"    ;; -- PUSH8 {token.arg} --\n\n")
-            file.write(f"    mov     rax, {token.arg}\n")
-            file.write(f"    push    rax\n\n")
+            file.write(f"    push    {token.arg}\n\n")
 
             stack.append(data_types_lib.INT)
 
