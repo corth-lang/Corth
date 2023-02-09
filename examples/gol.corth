@@ -15,8 +15,8 @@ NOTE: There is a bug that if ROWS and COLS are not divisible by each other, algo
 include libs/io.corth
 include libs/memory.corth
 
-macro ROWS 32 endmacro
-macro COLS 24 endmacro
+macro ROWS 16 endmacro
+macro COLS 16 endmacro
 
 macro CELLS ROWS COLS * endmacro
 
