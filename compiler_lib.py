@@ -21,11 +21,9 @@ import os
 # TODO: Add return
 # TODO: Make enumerations named so they can be debugged in the console easily
 
-# TODO: Add dynamic memory allocation (or local memory allocation)
 # TODO: Add let (probably requires local memory allocation)
 
 # TODO: Add library search locations
-# TODO: Remove data
 # TODO: Add compile time static execution
 # TODO: Add pointer type and pointer type constant
 
