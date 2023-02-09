@@ -1,17 +1,5 @@
 include libs/core.corth
 
-memory memcpy.src sizeof(int) end
-memory memcpy.len sizeof(int) end
-memory memcpy.dst sizeof(int) end
-
-macro get-memcpy.src memcpy.src load8 endmacro
-macro get-memcpy.len memcpy.len load8 endmacro
-macro get-memcpy.dst memcpy.dst load8 endmacro
-
-macro set-memcpy.src memcpy.src swp store8 endmacro
-macro set-memcpy.len memcpy.len swp store8 endmacro
-macro set-memcpy.dst memcpy.dst swp store8 endmacro
-
 macro get
     // src index
     // index src
@@ -40,20 +28,25 @@ macro set8
     rot rot + swp store8
 endmacro
 
-macro memcpy
-    // src len dst
+proc memcpy
+    // src len dst	
+    int int int --
+in
+    memory src sizeof(int) end
+    memory len sizeof(int) end
+    memory dst sizeof(int) end
     
-    set-memcpy.dst
-    set-memcpy.len
-    set-memcpy.src
+    dst swp store8
+    len swp store8
+    src swp store8
 
     0 while
-        dup get-memcpy.len <
+        dup len load8 <
     do
         dup dup
-        get-memcpy.dst swp
-	get-memcpy.src get
+	dst load8 swp
+	src load8 get
 	set
        
      inc end drop
-endmacro
+end
