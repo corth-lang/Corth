@@ -32,14 +32,14 @@ import os
 # TODO: Change the memory size compilation
 # TODO: Add structs (maybe)
 
+# TODO: Add precompilation, which will allow static execution and different kinds of optimizations
+
 
 # -- Constant name types --
 enum_lib.reset()
 PROCEDURE = enum_lib.step()
-GLOBAL_MEMORY = enum_lib.step()
+GLOBAL_VARIABLE_ADDRESS = enum_lib.step()
 MACRO = enum_lib.step()
-
-global_memory_pointer = 0
 
 # Call stack size is 0x4000
 # Memory size is also 0x4000
@@ -92,7 +92,16 @@ def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = Fals
             file.write(f"    data_{i}: {command}\n")
     
         file.write(f"segment .bss\n")
-        file.write(f"    memory:     resb 0x4000\n")
+
+        for name, data in names.items():
+            call_type, *args = data
+
+            if call_type is GLOBAL_VARIABLE_ADDRESS:
+                size, = args
+                
+                file.write(f"    global_variable_{name}: resb {size}\n")
+        
+        file.write(f"    local_memory:   resb 0x4000\n")
         file.write(f"    callstack:  resq 0x4000\n")
         file.write(f"    callptr:    resq 1\n")
 
@@ -100,6 +109,7 @@ def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = Fals
 
 
 def parse_and_compile_module_or_package(file, path: str, data, names, compiled_modules, debug_mode: bool = False):
+     
     if path in compiled_modules:
         if debug_mode:
             log_lib.log("DEBUG", f"Skipping compiling the module or package '{path}'")
@@ -138,14 +148,12 @@ def parse_and_compile_module_or_package(file, path: str, data, names, compiled_m
 
         return False
 
-    else:
+    else: 
         error(f"Invalid module path, '{path}'")
         return True
 
 
 def compile_module(file, program: deque, data: deque, names: dict, compiled_modules: list, debug_mode: bool = False):
-    global global_memory_pointer
-    
     while True:
         try:                
             token = program.popleft()
@@ -196,9 +204,9 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
                 error_on_token(memory_size, f"Expected only one INT for memory size")
                 return True
 
-            names[memory_name.arg] = GLOBAL_MEMORY, global_memory_pointer
+            global_variable_size ,= stack
 
-            global_memory_pointer += stack[0]
+            names[memory_name.arg] = GLOBAL_VARIABLE_ADDRESS, global_variable_size
 
         elif token.type is token_lib.MACRO:
             try:
@@ -429,19 +437,16 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
                 stack.extend(returns_)
                 
-                file.write(f"    ;; -- CALL {token.arg} --\n\n")
+                file.write(f"    ;; -- CALL '{token.arg}' --\n\n")
                 file.write(f"    xchg    rsp, [callptr]\n")
                 file.write(f"    call    proc_{token.arg}\n")
                 file.write(f"    xchg    rsp, [callptr]\n\n")
 
-            elif call_type is GLOBAL_MEMORY:
-                constant, = args
-
+            elif call_type is GLOBAL_VARIABLE_ADDRESS:
                 stack.append(data_types_lib.INT)
 
-                file.write(f"    ;; -- PUSH GLOBAL MEMORY {constant} --\n\n")
-                file.write(f"    mov     rax, memory+{constant}\n")
-                file.write(f"    push    rax\n\n")
+                file.write(f"    ;; -- PUSH GLOBAL VARIABLE ADDRESS '{token.arg}' --\n\n")
+                file.write(f"    push    global_variable_{token.arg}\n\n")
 
             elif call_type is MACRO:
                 macro, = args
