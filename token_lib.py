@@ -37,10 +37,10 @@ KEYWORDS = {
     "%": (MOD := enum_lib.step()),
 
     # Bitwise operators
-    "band": (BAND := enum_lib.step()),
-    "bor": (BOR := enum_lib.step()),
-    "bxor": (BXOR := enum_lib.step()),
-    "bnot": (BNOT := enum_lib.step()),
+    "&&": (BAND := enum_lib.step()),
+    "||": (BOR := enum_lib.step()),
+    "^^": (BXOR := enum_lib.step()),
+    "!!": (BNOT := enum_lib.step()),
     "<<32": (SHIFTL32 := enum_lib.step()),
     ">>32": (SHIFTR32 := enum_lib.step()),
     "<<4": (SHIFTL4 := enum_lib.step()),
