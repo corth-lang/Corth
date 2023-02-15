@@ -90,6 +90,25 @@ macro eputu
     STDERR swp fputu
 endmacro
 
+// == Signed decimals ==
+macro fputi
+    // int: file-dc int: int
+
+    dup 0x7fffffffffffffff > if
+        neg swp dup "-" fputs swp fputu
+    else
+        fputu
+    end
+endmacro
+
+macro puti
+    STDOUT swp fputi
+endmacro
+
+macro eputi
+    STDERR swp fputi
+endmacro
+
 //    ===============
 //    ==== Input ====
 //    ===============
