@@ -1,3 +1,5 @@
 macro sizeof(int)  8 endmacro
 macro sizeof(bool) 8 endmacro
 macro sizeof(char) 1 endmacro
+
+macro neg !! inc endmacro
