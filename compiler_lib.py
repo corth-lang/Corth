@@ -51,7 +51,7 @@ def error_on_token(token, message):
     error(f"({token.address}) {message}")
 
             
-def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = False): 
+def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = False, allocate_local_memory: int = 0x64000, allocate_callstack: int = 0x64000): 
     data = deque()
     compiled_modules = []
 
@@ -105,10 +105,10 @@ def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = Fals
 
         # 'memory' is where the local variables are stored.
         # 'local' points to the first address of the procedure's memory block
-        file.write(f"    memory:     resb 0x4000\n")
+        file.write(f"    memory:     resb {allocate_local_memory}\n")
         file.write(f"    local:     resq 1\n")
         
-        file.write(f"    callstack:  resq 0x4000\n")
+        file.write(f"    callstack:  resq {allocate_callstack}\n")
         file.write(f"    callptr:    resq 1\n")
 
         return False
@@ -250,12 +250,12 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
 
             arguments = deque()
 
-            if get_types(program, arguments, token_lib.RETURNS):
+            if get_types(program, names, arguments, token_lib.RETURNS):
                 return True
 
             returns = deque()
 
-            if get_types(program, returns, token_lib.IN):
+            if get_types(program, names, returns, token_lib.IN):
                 return True
 
             names[procedure_name.arg] = PROCEDURE, tuple(arguments), tuple(returns)
@@ -308,7 +308,7 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
     return False
 
 
-def get_types(program, types, end):
+def get_types(program, names, types, end):
      while True:
          try:
              token = program.popleft()
@@ -333,7 +333,7 @@ def get_types(program, types, end):
             if call_type is MACRO:
                 macro, = args
 
-                stack.extendleft(macro)
+                program.extendleft(macro)
 
             else:
                 error_on_token(token, f"Can not call '{token.arg}' here")
@@ -451,10 +451,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                     arguments_, returns_ = args
 
                     for i, expected in enumerate(arguments_[::-1]):
-                        removed = stack.pop()
-
-                        if removed != expected:
-                            error_on_token(token, f"Call arguments are not satisfied; expected '{expected}', got '{removed}'")
+                        if not stack or stack.pop() is not expected:
+                            error_on_token(token, f"Call arguments are not satisfied")
                             return True
 
                     stack.extend(returns_)
@@ -522,7 +520,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             
         elif token.type is token_lib.PUSH8:
             file.write(f"    ;; -- PUSH8 {token.arg} --\n\n")
-            file.write(f"    push    {token.arg}\n\n")
+            file.write(f"    mov    rax, {token.arg}\n")
+            file.write(f"    push   rax\n\n")
 
             stack.append(data_types_lib.INT)
 
@@ -574,7 +573,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                 return True
 
             file.write(f"    ;; -- BNOT --\n\n")
-            file.write(f"    not     [rsp]\n\n")
+            file.write(f"    not     QWORD [rsp]\n\n")
 
         elif token.type is token_lib.ADD:
             if (
@@ -714,6 +713,11 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             if len(stack) < 2:
                 error_on_token(token, "SWP expects two arguments")
                 return True
+
+            a = stack.pop()
+            b = stack.pop()
+            stack.append(a)
+            stack.append(b)
 
             file.write(f"    ;; -- SWP --\n\n")
             file.write(f"    pop     rax\n")
@@ -1038,7 +1042,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    push    rax\n\n")
 
         elif token.type is token_lib.LOAD8:
-            if stack[-1] is not data_types_lib.INT:
+            if not len(stack) or stack[-1] is not data_types_lib.INT:
                 error_on_token(token, "LOAD8 expects a INT")
                 return True
 
@@ -1048,11 +1052,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    mov     [rsp], rax\n\n")
 
         elif token.type is token_lib.STORE8:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack.pop() is not data_types_lib.INT
-            ):
+            if len(stack) < 2 or stack.pop() is not data_types_lib.INT or stack.pop() is not data_types_lib.INT:
                 error_on_token(token, "STORE8 expects two INTs")
                 return True
 
@@ -1062,7 +1062,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    mov     [rbx], rax\n\n")
 
         elif token.type is token_lib.LOAD:
-            if len(stack) < 1 or stack[-1] is not data_types_lib.INT:
+            if not len(stack) or stack[-1] is not data_types_lib.INT:
                 error_on_token(token, "LOAD expects a INT")
                 return True
 
