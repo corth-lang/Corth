@@ -51,11 +51,12 @@ def error_on_token(token, message):
     error(f"({token.address}) {message}")
 
             
-def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = False, allocate_local_memory: int = 0x64000, allocate_callstack: int = 0x64000): 
+def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = False, allocate_local_memory: int = 0x40000, allocate_callstack: int = 0x40000):
+    # 'data' stores all of the one use data, 'names' stores the global variables and names
     data = deque()
-    compiled_modules = []
-
     names = {}
+        
+    compiled_modules = []
    
     with open(file_name, "w") as file:
         file.write("")
@@ -70,12 +71,12 @@ def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = Fals
         file.write("    mov     QWORD [local], memory\n\n")
         
         file.write("    xchg    rsp, [callptr]\n")
-        file.write("    push    CORTH_ENDOFPROGRAM\n")
+        file.write("    push    CORTH_endofprogram\n")
         file.write("    push    QWORD [local]\n")
         file.write("    xchg    rsp, [callptr]\n")
         file.write("    jmp     PROC_main\n")
 
-        file.write("CORTH_ENDOFPROGRAM:\n")
+        file.write("CORTH_endofprogram:\n")
         file.write("    mov     rax, 60\n")
         file.write("    pop     rdi\n")
         file.write("    syscall\n\n")
@@ -106,7 +107,7 @@ def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = Fals
         # 'memory' is where the local variables are stored.
         # 'local' points to the first address of the procedure's memory block
         file.write(f"    memory:     resb {allocate_local_memory}\n")
-        file.write(f"    local:     resq 1\n")
+        file.write(f"    local:      resq 1\n")
         
         file.write(f"    callstack:  resq {allocate_callstack}\n")
         file.write(f"    callptr:    resq 1\n")
@@ -214,11 +215,14 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
             names[memory_name.arg] = GLOBAL_VARIABLE_ADDRESS, global_variable_size
 
         elif token.type is token_lib.MACRO:
-            try:
-                macro_name = program.popleft()
+            if len(program) < 1:
+                error_on_token(token, f"Expected NAME after MACRO; but no token was found")
+                return True
 
-            except IndexError:
-                error(f"Expected NAME after MACRO; but no token was found")
+            macro_name = program.popleft()
+
+            if macro_name.type is not token_lib.NAME:
+                error_on_token(macro_name, f"Expected NAME after MACRO")
 
             macro = deque()
             
@@ -251,6 +255,7 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
             arguments = deque()
 
             if get_types(program, names, arguments, token_lib.RETURNS):
+                error_on_token(procedure_name, f"Could not load the type of arguments")
                 return True
 
             returns = deque()
@@ -309,40 +314,40 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
 
 
 def get_types(program, names, types, end):
-     while True:
-         try:
-             token = program.popleft()
+    while True:
+        try:
+            token = program.popleft()
 
-         except IndexError:
-             error(f"Expected type or {end}; but no token was found")
-             return True
+        except IndexError:
+            error(f"Expected type or {end}; but no token was found")
+            return True
 
-         if token.type is token_lib.TYPE:
-             types.append(token.arg)
+        if token.type is token_lib.TYPE:
+            types.append(token.arg)
 
-         elif token.type is end:
-             return False
+        elif token.type is end:
+            return False
 
-         elif token.type is token_lib.NAME:
-            if token.arg not in names:
-                error_on_token(token, f"'{token.arg}' is undefined")
-                return True
+        elif token.type is token_lib.NAME:
+           if token.arg not in names:
+               error_on_token(token, f"'{token.arg}' is undefined")
+               return True
 
-            call_type, *args = names[token.arg]
+           call_type, *args = names[token.arg]
 
-            if call_type is MACRO:
-                macro, = args
+           if call_type is MACRO:
+               macro, = args
 
-                program.extendleft(macro)
+               program.extendleft(macro)
 
-            else:
-                error_on_token(token, f"Can not call '{token.arg}' here")
-                return True
+           else:
+               error_on_token(token, f"Can not call '{token.arg}' here")
+               return True
 
-         else:
-             error_on_token(token, f"Expected TYPE or {end}; got '{token.type}'")
-             return True
-         
+        else:
+            error_on_token(token, f"Expected TYPE or {end}; got '{token.type}'")
+            return True
+
 
 def print_stack(stack):
     for i, data in enumerate(stack):
