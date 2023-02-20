@@ -11,7 +11,7 @@ Hello, Hüseyin!
 */
 
 include libs/sys.corth
-include libs/io.corth
+include libs/linux/io.corth
 
 
 memory name 32 end

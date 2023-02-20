@@ -1,4 +1,4 @@
-include libs/io.corth
+include libs/linux/io.corth
 
 
 proc fib

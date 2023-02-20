@@ -12,7 +12,7 @@ ROWS and COLS can be changed to make the board bigger or smaller.
 NOTE: There is a bug that if ROWS and COLS are not divisible by each other, algorithm acts weird.
 */
 
-include libs/io.corth
+include libs/linux/io.corth
 include libs/memory.corth
 
 macro ROWS 16 endmacro
