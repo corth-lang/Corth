@@ -1,5 +1,7 @@
 include libs/core.corth
 
+macro NULLPTR 0 endmacro
+
 macro get
     // src index
     // index src
