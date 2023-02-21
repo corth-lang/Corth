@@ -36,7 +36,7 @@ For more information about the commands, type:
     include libs/io.corth
     
     proc main 
-      returns int
+      -- int
     in
       "Hello, World!\n" puts
       
@@ -98,7 +98,7 @@ For more information about the commands, type:
 ### Procedures:
 
     proc sum
-        int int returns
+        int int --
     in
         "Sum of these numbers are: " puts + putu "\n" puts
     end
@@ -121,7 +121,7 @@ For more information about the commands, type:
     endmacro
 
     proc main
-        returns int
+        -- int
     in
         "Josh" sayHi
 	
@@ -147,33 +147,37 @@ For more information about the commands, type:
 
     include libs/io.corth
 
-    2 2 + 5 = if
-      "Well, math is broken. Nice.\n" puts
-    end
-
-    3 4 > if
-      "Your computer has virus\n" puts
-    else
-      "Your computer is alright, unlike you\n" puts
-    end
-
-    "First 10 numbers from 0 are,\n" puts
-    0
-    while
-      dup 10 <
-    do
-      dup putu
-      "\n" puts
-
-      dup 100 = if
-        "How!?\n" puts
-	break
+    proc main
+      -- int
+    in
+      2 2 + 5 = if
+	"Well, math is broken. Nice.\n" puts
       end
 
-      inc
-    end
+      3 4 > if
+	"Your computer has virus\n" puts
+      else
+	"Your computer is alright, unlike you\n" puts
+      end
 
-    drop
+      "First 10 numbers from 0 are,\n" puts
+      0
+      while
+	dup 10 <
+      do
+	dup putu
+	"\n" puts
+
+	dup 100 = if
+	  "How!?\n" puts
+	  break
+	end
+
+	inc
+      end
+
+      drop
+    end
 
 - 'if' is used for conditions.
 - 'if' can be used with 'else' for more functionality.
@@ -186,7 +190,7 @@ For more information about the commands, type:
     memory count sizeof(int) end
     
     proc increase
-        returns
+        --
     in
         count dup load8 inc store8
     end
