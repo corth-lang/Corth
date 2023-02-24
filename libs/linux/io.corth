@@ -90,6 +90,7 @@ macro eputu
     STDERR swp fputu
 endmacro
 
+
 // == Signed decimals ==
 macro fputi
     // int: file-dc int: int
@@ -108,6 +109,107 @@ endmacro
 macro eputi
     STDERR swp fputi
 endmacro
+
+
+// == Hexadecimals ==
+macro get-hex-digit
+  // int: int -- int: char
+  // Returns the char number for a hexadecimal digit
+  // 0 -> '0', 1 -> '1' ... 9 -> '9', 10 -> 'a', 11 -> 'b' ... 15 -> 'f'
+  // Argument should be between 0 and 15 (including)
+  dup 9 > if 'W' else '0' end +
+endmacro
+
+proc fputx
+  // int: file-dc int: int
+  int int --
+in
+  memory char sizeof(char) end
+  memory file-dc sizeof(int) end
+
+  swp
+  
+  // Save the file-dc
+  file-dc swp store8
+
+  16 while dup 0 > do
+    swp
+    
+    // Save the char
+    dup 0xf000000000000000 && 0x1000000000000000 / get-hex-digit char swp store
+
+    // Print the char
+    file-dc load8 char 1 fputs
+
+    // Shift the number
+    <<4
+
+    swp dec
+  end drop drop
+end
+
+macro putx
+  // int: int
+  STDOUT swp fputx
+endmacro
+
+macro eputx
+  // int: int
+  STDERR swp fputx
+endmacro
+
+
+// == Unsigned decimals (plus) ==
+// The starting characters are always visible and the ending zeros are removed
+// Also, does not print the first character if it is not 0
+// Used in fixed_numbers.put-fixed
+proc fputu-plus
+  // int: file-dc int: int
+  int int --
+in
+  dup 0 = if
+    drop "0" fputs
+    
+  else
+    memory file-dc sizeof(int) end
+    memory value sizeof(int) end
+  
+    value swp store8
+    file-dc swp store8
+
+    memory buffer 20 sizeof(char) * end
+
+    buffer 20 +
+    
+    while dec value load8 10 % 0 = do
+      value dup load8 10 / store8
+    end
+
+    memory end-of-buffer sizeof(int) end
+    dup end-of-buffer swp store8
+
+    while
+      dup buffer >=
+    do
+      dup value load8 10 /% rot swp '0' + store
+      value swp store8
+      dec
+    end drop
+
+    file-dc load8 buffer inc end-of-buffer load8 buffer - fputs
+  end
+end
+
+macro putu-plus
+  // int: int
+  STDOUT swp fputu-plus
+endmacro
+
+macro eputu-plus
+  // int: int
+  STDERR swp fputu-plus
+endmacro
+
 
 //    ===============
 //    ==== Input ====
