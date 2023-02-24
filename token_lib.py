@@ -15,6 +15,9 @@ class Token:
         else:
             return f"type='{self.type}' ({self.arg})"
 
+    def copy(self):
+        return Token(self.address, self.type, self.arg)
+
 
 # TODO: Add syscalls from 4 to 6
 
@@ -32,9 +35,15 @@ KEYWORDS = {
     "*": (MUL := enum_lib.step()),
     "*2": (MUL2 := enum_lib.step()),
     "**": (FULLMUL := enum_lib.step()),
+    "u*": (UMUL := enum_lib.step()),
+    "u*2": (UMUL2 := enum_lib.step()),
+    "u**": (UFULLMUL := enum_lib.step()),
     "/%": (DIVMOD := enum_lib.step()),
     "/": (DIV := enum_lib.step()),
     "%": (MOD := enum_lib.step()),
+    "u/%": (UDIVMOD := enum_lib.step()),
+    "u/": (UDIV := enum_lib.step()),
+    "u%": (UMOD := enum_lib.step()),
 
     # Bitwise operators
     "&&": (BAND := enum_lib.step()),
