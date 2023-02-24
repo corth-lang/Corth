@@ -9,28 +9,54 @@ import data_types_lib
 
 import os
 
-# TODO: Add boolean logic
-
-# TODO: Remake the stack, so that the pointer positions are already compiled (requires work because calling procedures will dynamically change the stack)
-# TODO: Allow multiple DO's (not sure but could be useful)
-
-# TODO: Add logging file specification (or a type of file that can define them)
-# TODO: Add in file nasm macros (would help make the compiler much smaller since the macros will be defined in the libraries instead of the compiler)
-
-# TODO: Change pushf for better performance
-# TODO: Add return
-# TODO: Make enumerations named so they can be debugged in the console easily
-
-# TODO: Add let (probably requires local memory allocation)
-
 # TODO: Add library search locations
-# TODO: Add compile time static execution
-# TODO: Add pointer type and pointer type constant
+# TODO: Add logging file specification
 
-# TODO: Change the memory size compilation
-# TODO: Add structs (maybe)
+# TODO: Add early return
 
-# TODO: Add precompilation, which will allow static execution and different kinds of optimizations
+# TODO: Add pre-execution, which will allow static execution and different kinds of optimizations (this kinda does not work well with nasm macros)
+# TODO: Add in file nasm macros (would help make the compiler much smaller since the macros will be defined in the libraries instead of the compiler)
+# TODO: Add in-file half-corth (better version of nasm macros that is more useful with pre-execution)
+
+# TODO: Change memory to allow auto deallocation
+# TODO: Add garbage collection (kinda) that will deallocate memory automaticly when not needed (not very useful since auto deallcation but)
+# TODO: Add a keyword that will allow to allocate more than one address (probably 'and')
+
+# TODO: Add 'typedef <name> (<name> <type>). end' (typedef is useful for stack types)
+# TODO: Add 'sizeof <type>'
+# TODO: Add 'cast <type>', which will cast any type to <type> (only if they are the same size)
+# TODO: Add file-descriptor type
+# TODO: Add pointer type and change NULLPTR's type to ptr
+# TODO: Add fixed type
+# TODO: Add complex type
+# TODO: Define land as bool * bool (requires cast)
+# TODO: Add let (requires more advanced typing)
+# TODO: Add string type
+
+# TODO: Make names 'namespacable' (a name 'name' inside a module 'module' should be named 'module:name' when included, parser should be rewritten)
+# TODO: Add from
+
+# TODO: When macros expand, their tokens' address changes for better debugging
+# TODO: Create a function that expend macros
+
+# (probably gonna leave these to the Corth rewrite)
+# TODO: Make enumerations named so they can be debugged in the console easily
+# TODO: Change load to @, load8 to @8, store to ! and store8 to !8
+# TODO: Change the address format of tokens
+# TODO: Remake the stack, so that the pointer positions are already compiled (requires work because calling procedures will dynamically change the stack)
+
+"""
+memory <name> <size> (and <name> <size>). end  // Allocates memory; never deallocates if global, allocates in the end of the procedure if local
+
+memory <name> <size> (and <name> <size>). in   // Allocates memory and defines the name
+  <code>
+end                                            // Frees memory
+
+typedef <name> (<name> <type>). end            // This will only define the type
+cast <type>     // This will cast any type to <type>, without any change in the byte representation
+
+include <name> from <package>
+"""
 
 
 # -- Constant name types --
@@ -157,6 +183,13 @@ def parse_and_compile_module_or_package(file, path: str, data, names, compiled_m
     else: 
         error(f"Invalid module path, '{path}'")
         return True
+
+
+def extend_macro(program: deque, token, macro, debug_mode: bool = False):
+    for module_token in macro:
+        copy_token = module_token.copy()
+        copy_token.address += f"\n    from {token.arg} {token.address}"
+        program.appendleft(copy_token)
 
 
 def compile_module(file, program: deque, data: deque, names: dict, compiled_modules: list, debug_mode: bool = False):
@@ -300,7 +333,7 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
             if call_type is MACRO:
                 macro, = args
 
-                stack.extendleft(macro)
+                extend_macro(program, token, macro, debug_mode)
 
             else:
                 error_on_token(token, f"Can not call '{token.arg}' here")
@@ -338,7 +371,7 @@ def get_types(program, names, types, end):
            if call_type is MACRO:
                macro, = args
 
-               program.extendleft(macro)
+               extend_macro(program, token, macro)
 
            else:
                error_on_token(token, f"Can not call '{token.arg}' here")
@@ -394,7 +427,7 @@ def compile_time_execution(program, stack, end, names, debug_mode: bool = False)
             if call_type is MACRO:
                 macro, = args
 
-                program.extendleft(macro)
+                extend_macro(program, token, macro, debug_mode)
 
             else:
                 error_on_token(token, f"Can not call '{token.arg}' here")
@@ -482,7 +515,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                 elif call_type is MACRO:
                     macro, = args
 
-                    program.extendleft(macro)
+                    extend_macro(program, token, macro, debug_mode)
 
                 else:
                     error_on_token(token, f"Unknown call type; got '{call_type}'")
@@ -619,7 +652,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    xor     rdx, rdx\n")
             file.write(f"    mov     rbx, [rsp]\n")
             file.write(f"    mov     rax, [rsp+8]\n")
-            file.write(f"    div     rbx\n")
+            file.write(f"    idiv    rbx\n")
             file.write(f"    mov     [rsp+8], rax\n")
             file.write(f"    mov     [rsp], rdx\n\n")
 
@@ -636,7 +669,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    xor     rdx, rdx\n")
             file.write(f"    pop     rbx\n")
             file.write(f"    mov     rax, [rsp]\n")
-            file.write(f"    div     rbx\n")
+            file.write(f"    idiv    rbx\n")
             file.write(f"    mov     [rsp], rax\n\n")
 
         elif token.type is token_lib.MOD:
@@ -649,6 +682,55 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                 return True
 
             file.write(f"    ;; -- MOD --\n\n")
+            file.write(f"    xor     rdx, rdx\n")
+            file.write(f"    pop     rbx\n")
+            file.write(f"    mov     rax, [rsp]\n")
+            file.write(f"    idiv    rbx\n")
+            file.write(f"    mov     [rsp], rdx\n\n")
+
+        elif token.type is token_lib.UDIVMOD:
+            if (
+                    len(stack) < 2 or
+                    stack[-1] is not data_types_lib.INT or
+                    stack[-2] is not data_types_lib.INT
+            ):
+                error_on_token(token, "UDIVMOD expects two INTs")
+                return True
+
+            file.write(f"    ;; -- UDIVMOD --\n\n")
+            file.write(f"    xor     rdx, rdx\n")
+            file.write(f"    mov     rbx, [rsp]\n")
+            file.write(f"    mov     rax, [rsp+8]\n")
+            file.write(f"    div     rbx\n")
+            file.write(f"    mov     [rsp+8], rax\n")
+            file.write(f"    mov     [rsp], rdx\n\n")
+
+        elif token.type is token_lib.UDIV:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.INT or
+                    stack[-1] is not data_types_lib.INT
+            ):
+                error_on_token(token, "UDIV expects two INTs")
+                return True
+
+            file.write(f"    ;; -- UDIV --\n\n")
+            file.write(f"    xor     rdx, rdx\n")
+            file.write(f"    pop     rbx\n")
+            file.write(f"    mov     rax, [rsp]\n")
+            file.write(f"    div     rbx\n")
+            file.write(f"    mov     [rsp], rax\n\n")
+
+        elif token.type is token_lib.UMOD:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.INT or
+                    stack[-1] is not data_types_lib.INT
+            ):
+                error_on_token(token, "UMOD expects two INTs")
+                return True
+
+            file.write(f"    ;; -- UMOD --\n\n")
             file.write(f"    xor     rdx, rdx\n")
             file.write(f"    pop     rbx\n")
             file.write(f"    mov     rax, [rsp]\n")
@@ -668,7 +750,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    xor     rdx, rdx\n")
             file.write(f"    mov     rbx, [rsp]\n")
             file.write(f"    mov     rax, [rsp+8]\n")
-            file.write(f"    mul     rbx\n")
+            file.write(f"    imul    rbx\n")
             file.write(f"    mov     [rsp], rax\n")
             file.write(f"    mov     [rsp+8], rdx\n\n")
 
@@ -685,7 +767,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    xor     rdx, rdx\n")
             file.write(f"    pop     rbx\n")
             file.write(f"    mov     rax, [rsp]\n")
-            file.write(f"    mul     rbx\n")
+            file.write(f"    imul    rbx\n")
             file.write(f"    mov     [rsp], rax\n\n")
 
         elif token.type is token_lib.MUL2:
@@ -698,6 +780,55 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                 return True
 
             file.write(f"    ;; -- MUL2 --\n\n")
+            file.write(f"    xor     rdx, rdx\n")
+            file.write(f"    pop     rbx\n")
+            file.write(f"    mov     rax, [rsp]\n")
+            file.write(f"    imul    rbx\n")
+            file.write(f"    mov     [rsp], rdx\n\n")
+            
+        elif token.type is token_lib.UFULLMUL:
+            if (
+                    len(stack) < 2 or
+                    stack[-1] is not data_types_lib.INT or
+                    stack[-2] is not data_types_lib.INT
+            ):
+                error_on_token(token, "UFULLMUL expects two INTs")
+                return True
+
+            file.write(f"    ;; -- UFULLMUL --\n\n")
+            file.write(f"    xor     rdx, rdx\n")
+            file.write(f"    mov     rbx, [rsp]\n")
+            file.write(f"    mov     rax, [rsp+8]\n")
+            file.write(f"    mul     rbx\n")
+            file.write(f"    mov     [rsp], rax\n")
+            file.write(f"    mov     [rsp+8], rdx\n\n")
+
+        elif token.type is token_lib.UMUL:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.INT or
+                    stack[-1] is not data_types_lib.INT
+            ):
+                error_on_token(token, "UMUL expects two INTs")
+                return True
+
+            file.write(f"    ;; -- UMUL --\n\n")
+            file.write(f"    xor     rdx, rdx\n")
+            file.write(f"    pop     rbx\n")
+            file.write(f"    mov     rax, [rsp]\n")
+            file.write(f"    mul     rbx\n")
+            file.write(f"    mov     [rsp], rax\n\n")
+
+        elif token.type is token_lib.UMUL2:
+            if (
+                    len(stack) < 2 or
+                    stack.pop() is not data_types_lib.INT or
+                    stack[-1] is not data_types_lib.INT
+            ):
+                error_on_token(token, "UMUL2 expects two INTs")
+                return True
+
+            file.write(f"    ;; -- UMUL2 --\n\n")
             file.write(f"    xor     rdx, rdx\n")
             file.write(f"    pop     rbx\n")
             file.write(f"    mov     rax, [rsp]\n")
@@ -1025,7 +1156,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                     stack.pop() is not data_types_lib.BOOL or
                     stack[-1] is not data_types_lib.BOOL
             ):
-                error_on_token(token, "LAND expects two BOOLs")
+                error_on_token(token, "LOR expects two BOOLs")
                 return True
 
             file.write(f"    ;; -- LOR --\n\n")
