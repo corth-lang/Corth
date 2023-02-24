@@ -1,0 +1,125 @@
+include libs/core.corth
+
+// negative (1 bit) int-part (31 bits) decimal-part (32 bits)
+
+macro sizeof(fixed) 8 endmacro
+macro fixed int endmacro
+
+
+// CONVERTIONS
+macro int-to-fixed
+  // int: x -- fixed: x
+  <<32
+endmacro
+
+macro fixed-to-int
+  // float: x -- int: x
+  // Removes the decimal part
+  >>32
+endmacro
+
+
+// FIXED -- FIXED macro and procedures
+macro neg-f
+  // fixed: x -- fixed: -x
+  neg
+endmacro
+
+macro inv-f
+  // fixed: x -- fixed: 1/x
+  // Signed invert
+  0xffffffffffffffff swp /
+endmacro
+
+macro uinv-f
+  // fixed: x -- fixed: 1/x
+  // Unsigned invert
+  0xffffffffffffffff swp u/
+endmacro
+
+macro sqr-f
+  // fixed: x -- fixed: x^2
+  dup mul-ff
+endmacro
+
+macro usqr-f
+  // fixed: x -- fixed: x^2
+  dup umul-ff
+endmacro
+
+
+// FIXED FIXED -- FIXED macro and procedures
+macro add-ff
+  // fixed: a fixed: b -- fixed: result
+  +
+endmacro
+
+macro sub-ff
+  // fixed: a fixed: b -- fixed: result
+  -
+endmacro
+
+macro umul-ff
+  // fixed: a fixed: b -- fixed: result
+  // Unsigned multiplication
+  u** >>32 swp <<32 +
+endmacro
+
+macro mul-ff
+  // fixed: a fixed: b -- fixed: result
+  // Signed multiplication
+  ** >>32 swp <<32 +
+endmacro
+
+macro udiv-ff
+  // fixed: a fixed: b -- fixed: result
+  // Unsigned division
+  // a / b = a * (1 / b) = umul-ff(a, uinv-f(b))
+  uinv-f umul-ff  
+endmacro
+
+macro div-ff
+  // fixed: a fixed: b -- fixed: result
+  // Signed division
+  // a / b = a * (1 / b) = mul-ff(a, inv-f(b))
+  inv-f mul-ff  
+endmacro
+
+
+// FIXED INTEGER -- FIXED macro and procedures
+macro add-fi
+  // fixed: a int: b -- fixed: result
+  int-to-fixed add-ff
+endmacro
+
+macro sub-fi
+  // fixed: a int: b -- fixed: result
+  int-to-fixed sub-ff
+endmacro
+
+macro mul-fi
+  // fixed: a int: b -- fixed: result
+  *
+endmacro
+
+macro div-fi
+  // fixed: a int: b -- fixed: result
+  /
+endmacro
+
+
+// These macros uses the putu, putu-plus and puts from the io.corth library
+// Because of that, to use these macros, io.corth should already be included or putu, putu-plus and puts should be defined
+macro put-ufixed
+  // fixed: value
+  dup >>32 putu "." puts <<32 >>32 10000000000000000000 >>32 * putu-plus
+endmacro
+
+macro put-fixed
+  // fixed: value
+  dup 0 < if
+    neg "-" puts put-ufixed
+  else
+    put-ufixed
+  end
+endmacro
