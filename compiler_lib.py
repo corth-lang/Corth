@@ -1,13 +1,13 @@
 from collections import deque
 
+import os
 import typing
+
 import enum_lib
 import token_lib
 import log_lib
 import parser_lib
 import data_types_lib
-
-import os
 
 # TODO: Add library search locations
 # TODO: Add logging file specification
@@ -18,8 +18,6 @@ import os
 # TODO: Add in file nasm macros (would help make the compiler much smaller since the macros will be defined in the libraries instead of the compiler)
 # TODO: Add in-file half-corth (better version of nasm macros that is more useful with pre-execution)
 
-# TODO: Change memory to allow auto deallocation
-# TODO: Add garbage collection (kinda) that will deallocate memory automaticly when not needed (not very useful since auto deallcation but)
 # TODO: Add a keyword that will allow to allocate more than one address (probably 'and')
 
 # TODO: Add 'typedef <name> (<name> <type>). end' (typedef is useful for stack types)
@@ -36,9 +34,6 @@ import os
 # TODO: Make names 'namespacable' (a name 'name' inside a module 'module' should be named 'module:name' when included, parser should be rewritten)
 # TODO: Add from
 
-# TODO: When macros expand, their tokens' address changes for better debugging
-# TODO: Create a function that expend macros
-
 # (probably gonna leave these to the Corth rewrite)
 # TODO: Make enumerations named so they can be debugged in the console easily
 # TODO: Change load to @, load8 to @8, store to ! and store8 to !8
@@ -46,6 +41,32 @@ import os
 # TODO: Remake the stack, so that the pointer positions are already compiled (requires work because calling procedures will dynamically change the stack)
 
 """
+macro <name>
+  <macro>
+endmacro
+
+proc <name>
+  <type>. -- <type>
+in
+  <proc>
+end
+
+<cond> if
+  <do>
+end
+
+<cond> if
+  <do>
+else
+  <else>
+end
+
+while
+  <cond>
+do
+  <do>
+end
+
 memory <name> <size> (and <name> <size>). end  // Allocates memory; never deallocates if global, allocates in the end of the procedure if local
 
 memory <name> <size> (and <name> <size>). in   // Allocates memory and defines the name
@@ -224,7 +245,7 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
 
             except IndexError:
                 error(f"Expected NAME after MEMORY; but no token was found")
-                return True            
+                return True
 
             if memory_name.type is not token_lib.NAME:
                 error_on_token(memory_name, f"Expected NAME after MEMORY; got '{token.type}'")
@@ -236,8 +257,12 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
 
             stack = deque()
 
-            if compile_time_execution(program, stack, token_lib.END, names, debug_mode):
+            if compile_time_execution(program, stack, (token_lib.END,), names, debug_mode):
                 error_on_token(token, f"Could not compile memory size for '{memory_name.arg}'")
+
+            if stack.pop().type is not token_lib.END:
+                error(f"This should have been impossible to reach, probably there is a bug in the compiler")
+                return True
 
             if len(stack) != 1:
                 error(f"Expected exactly one INT for memory size, at '{memory_name.arg}'")
@@ -287,14 +312,17 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
 
             arguments = deque()
 
-            if get_types(program, names, arguments, token_lib.RETURNS):
+            if get_types(program, names, arguments, (token_lib.RETURNS,)):
                 error_on_token(procedure_name, f"Could not load the type of arguments")
                 return True
 
             returns = deque()
 
-            if get_types(program, names, returns, token_lib.IN):
+            if get_types(program, names, returns, (token_lib.IN,)):
                 return True
+
+            arguments.pop()
+            returns.pop()
 
             names[procedure_name.arg] = PROCEDURE, tuple(arguments), tuple(returns)
 
@@ -346,19 +374,20 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
     return False
 
 
-def get_types(program, names, types, end):
+def get_types(program, names, types, ends):
     while True:
         try:
             token = program.popleft()
 
         except IndexError:
-            error(f"Expected type or {end}; but no token was found")
+            error(f"Expected type or {ends}; but no token was found")
             return True
 
         if token.type is token_lib.TYPE:
             types.append(token.arg)
 
-        elif token.type is end:
+        elif token.type in ends:
+            types.append(token.arg)
             return False
 
         elif token.type is token_lib.NAME:
@@ -406,15 +435,16 @@ def load_macro(program, macro, debug_mode: bool = False):
             macro.append(token)
 
 
-def compile_time_execution(program, stack, end, names, debug_mode: bool = False):
+def compile_time_execution(program, stack, ends, names, debug_mode: bool = False):
     while True:
         if not program:
-            error(f"Found no {end}")
+            error(f"Found none of {ends}")
             return True
 
         token = program.popleft()
 
-        if token.type is end:
+        if token.type in ends:
+            stack.append(token)
             return False
 
         elif token.type is token_lib.NAME:
@@ -543,18 +573,38 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             new_stack = deque()
 
-            if compile_time_execution(program, new_stack, token_lib.END, names, debug_mode):
+            if compile_time_execution(program, new_stack, (token_lib.END, token_lib.IN), names, debug_mode):
                 error_on_token(token, f"Could not compile memory size for '{memory_name.arg}'")
 
-            if len(new_stack) != 1:
-                error(f"Expected exactly one INT for memory size, at '{memory_name.arg}'")
+            end = new_stack.pop()
+
+            if end.type is token_lib.END:
+                if len(new_stack) != 1:
+                    error(f"Expected exactly one INT for memory size, at '{memory_name.arg}'")
+                    return True
+
+                local_variable_size ,= new_stack
+
+                local_memory[memory_name.arg] = next_memory
+
+                next_memory += local_variable_size
+
+            elif end.type is token_lib.IN:
+                if len(new_stack) != 1:
+                    error(f"Expected exactly one INT for memory size, at '{memory_name.arg}'")
+                    return True
+
+                local_variable_size ,= new_stack
+
+                local_memory[memory_name.arg] = next_memory
+
+                levels.append((start_level, token_lib.MEMORY, next_memory, memory_name.arg))
+                
+                next_memory += local_variable_size
+
+            else:
+                error("This should have been impossible to reach, probably there is a bug in the compiler")
                 return True
-
-            local_variable_size ,= new_stack
-
-            local_memory[memory_name.arg] = next_memory
-            
-            next_memory += local_variable_size
             
         elif token.type is token_lib.PUSH8:
             file.write(f"    ;; -- PUSH8 {token.arg} --\n\n")
@@ -894,9 +944,11 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
         elif token.type is token_lib.END:                    
             if len(levels):
-                level, start, old_stack = levels.pop()
+                level, start, *args = levels.pop()
 
                 if start in (token_lib.IF, token_lib.ELSE):
+                    old_stack ,= args
+                    
                     if old_stack != stack:
                         error_on_token(token, "Stack changed inside an if-end")
                         return True
@@ -905,6 +957,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                     file.write(f".L{level}:\n\n")
 
                 elif start is token_lib.DO:
+                    old_stack ,= args
+                    
                     level2, start2, old_stack2 = levels.pop()
 
                     if start2 is not token_lib.WHILE:
@@ -928,6 +982,17 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                 elif start is token_lib.WHILE:
                     error_on_token(token, f"You probably forgot to add DO (while COND do CODE end)")
                     return True
+
+                elif start is token_lib.MEMORY:
+                    old_memory, name = args
+                    
+                    next_memory = old_memory
+
+                    if name not in local_memory:
+                        error("Something weird happened")
+                        return True
+
+                    del local_memory[name]
 
                 else:
                     error_on_token(token, f"Unknown starter for END; got '{start}'")
