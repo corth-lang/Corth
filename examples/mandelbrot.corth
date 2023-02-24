@@ -1,0 +1,111 @@
+/*
+
+  Mandelbrot Set Renderer
+
+This example renders the mandelbrot set on the console.
+Since Corth does not have floating point aritmetic (and since its hard), a fixed point number library is used.
+
+*/
+
+
+include libs/linux/io.corth
+include libs/memory.corth
+include libs/math/fixed_point.corth
+include libs/math/complex.corth
+
+
+macro WIDTH 128 endmacro
+macro HEIGHT 64 endmacro
+macro HALF-WIDTH WIDTH 2 / endmacro
+macro HALF-HEIGHT HEIGHT 2 / endmacro
+macro CHARS "          .........--------+++++++======*****????$$$@@%" drop endmacro
+macro MAX-ITERATION 55 endmacro
+
+macro buffer WIDTH HEIGHT * endmacro
+
+
+macro clear-screen
+  0 while dup HEIGHT inc < do
+    "\x8d\xc2" puts
+  inc end drop
+endmacro
+
+
+// Camera position
+memory camera-pos sizeof(comp) end
+
+memory camera-zoom sizeof(fixed) end
+
+
+proc get-iteration
+  comp -- int
+in
+  memory z sizeof(comp) end
+  memory c sizeof(comp) end
+
+  z 0 0 store-complex
+  c rot rot store-complex
+  
+  0 while
+    // Break if reached the max iteration
+    dup MAX-ITERATION dec <
+  do
+    inc
+    
+    // Calculate next Z
+    z dup load-complex sqr-c c load-complex add-cc store-complex
+
+    // Check if |Z| > 2 (|Z|^2 > 4)
+    z load-complex length-c 4 int-to-fixed > if dec break end
+  end
+end
+
+
+// Renders the mandelbrot set
+proc render
+  --
+in
+  memory console-x sizeof(int) end
+  memory console-y sizeof(int) end
+
+  memory number sizeof(comp) end
+
+  // Loop through the 'pixel's
+  0 while dup HEIGHT < do
+    console-y swp store8
+    
+    0 while dup WIDTH < do
+      console-x swp store8
+
+      // Get 'pixel' position
+      console-x load8 HALF-WIDTH - int-to-fixed
+      console-y load8 HALF-HEIGHT - int-to-fixed
+      ff-to-comp camera-zoom load8 mul-cf camera-pos load-complex add-cc
+
+      // Get the iteration
+      get-iteration
+      
+      // Loop through the positions on the screen
+      CHARS + dup 1 puts 1 puts
+      
+    console-x load8 inc end drop
+
+    "|\n" puts
+  console-y load8 inc end drop
+end
+
+
+proc main
+  -- int
+in
+  camera-pos  0x0000000010080100 neg 0x00000000fffe9080 store-complex           // Set camera pos to 0 + 0i
+  camera-zoom 0x0000000100000000 store8  // Set camera zoom to 1/16
+  
+  while true do
+    render
+    clear-screen
+    camera-zoom dup load8 0x00000000fe000000 mul-ff store8
+  end
+  
+  0
+end
