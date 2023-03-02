@@ -1,0 +1,84 @@
+include libs/math/fixed_point.corth
+include libs/math/constants.corth
+
+macro TRI-ITER 27 endmacro
+
+
+proc sin-f
+  // fixed: theta -- fixed: sin(theta)
+  fixed -- fixed
+in
+  memory x sizeof(fixed) end
+  memory sum sizeof(fixed) end
+  memory a sizeof(fixed) end
+  memory i sizeof(int) end
+
+  PI 2 * mod-ff
+  dup dup
+  x swp store8
+  a swp store8
+  sum swp store8
+
+  3 while dup TRI-ITER < do
+    i swp store8
+
+    // a *= -x^2 / (i * (i - 1))
+    a x load8 sqr-f neg-f i load8 div-fi i load8 dec div-fi a load8 mul-ff store8
+
+    // sum += a
+    sum dup load8 a load8 add-ff store8
+
+    i load8 inc inc
+  end drop
+
+  sum load8
+end
+
+proc cos-f
+  // fixed: theta -- fixed: sin(theta)
+  fixed -- fixed
+in
+  memory x sizeof(fixed) end
+  memory sum sizeof(fixed) end
+  memory a sizeof(fixed) end
+  memory i sizeof(int) end
+
+  PI 2 * mod-ff
+  x swp store8
+  a   0x0000000100000000 store8
+  sum 0x0000000100000000 store8
+
+  2 while dup TRI-ITER < do
+    i swp store8
+
+    // a *= -x^2 / (i * (i - 1))
+    a x load8 sqr-f neg-f i load8 div-fi i load8 dec div-fi a load8 mul-ff store8
+
+    // sum += a
+    sum dup load8 a load8 add-ff store8
+
+    i load8 inc inc
+  end drop
+
+  sum load8
+end
+
+macro tan-f
+  // fixed: theta -- fixed: tan(theta)
+  dup sin-f swp cos-f div-ff
+endmacro
+
+macro cot-f
+  // fixed: theta -- fixed: cot(theta)
+  dup cos-f swp sin-f div-ff
+endmacro
+
+macro sec-f
+  // fixed: theta -- fixed: sec(theta)
+  cos-f inv-f
+endmacro
+
+macro csc-f
+  // fixed: theta -- fixed: csc(theta)
+  sin-f inv-f
+endmacro
