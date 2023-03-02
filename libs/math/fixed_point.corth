@@ -50,61 +50,73 @@ endmacro
 
 // FIXED FIXED -- FIXED macro and procedures
 macro add-ff
-  // fixed: a fixed: b -- fixed: result
+  // fixed: a fixed: b -- fixed: a+b
   +
 endmacro
 
 macro sub-ff
-  // fixed: a fixed: b -- fixed: result
+  // fixed: a fixed: b -- fixed: a-b
   -
 endmacro
 
 macro umul-ff
-  // fixed: a fixed: b -- fixed: result
+  // fixed: a fixed: b -- fixed: a*b
   // Unsigned multiplication
   u** >>32 swp <<32 +
 endmacro
 
 macro mul-ff
-  // fixed: a fixed: b -- fixed: result
+  // fixed: a fixed: b -- fixed: a*b
   // Signed multiplication
   ** >>32 swp <<32 +
 endmacro
 
 macro udiv-ff
-  // fixed: a fixed: b -- fixed: result
+  // fixed: a fixed: b -- fixed: a/b
   // Unsigned division
   // a / b = a * (1 / b) = umul-ff(a, uinv-f(b))
   uinv-f umul-ff  
 endmacro
 
 macro div-ff
-  // fixed: a fixed: b -- fixed: result
+  // fixed: a fixed: b -- fixed: a/b
   // Signed division
   // a / b = a * (1 / b) = mul-ff(a, inv-f(b))
   inv-f mul-ff  
 endmacro
 
+macro mod-ff
+  // fixed: a fixed: b -- fixed: a%b
+  // Signed modulus
+  %
+endmacro
+
+macro umod-ff
+  // fixed: a fixed: b -- fixed: a%b
+  // Unsigned modulus
+  u%
+endmacro
+
 
 // FIXED INTEGER -- FIXED macro and procedures
 macro add-fi
-  // fixed: a int: b -- fixed: result
+  // fixed: a int: b -- fixed: a+b
   int-to-fixed add-ff
 endmacro
 
 macro sub-fi
-  // fixed: a int: b -- fixed: result
+  // fixed: a int: b -- fixed: a-b
   int-to-fixed sub-ff
 endmacro
 
 macro mul-fi
-  // fixed: a int: b -- fixed: result
-  *
+  // fixed: a int: b -- fixed: a*b
+  int-to-fixed mul-ff
 endmacro
 
 macro div-fi
-  // fixed: a int: b -- fixed: result
-  /
+  // fixed: a int: b -- fixed: a/b
+  int-to-fixed div-ff
 endmacro
 
 
