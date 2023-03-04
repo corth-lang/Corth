@@ -30,6 +30,7 @@ import parser_lib
 # TODO: Make names 'namespacable' (a name 'name' inside a module 'module' should be named 'module:name' when included, parser should be rewritten)
 # TODO: Add from
 # TODO: Add ELIF
+# TODO: Change the stack format
 
 # (probably gonna leave these to the Corth rewrite)
 # TODO: Make enumerations named so they can be debugged in the console easily
@@ -644,7 +645,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             for name, size in sizes.items():
                 if name in local_memory:
-                    error(f"Local variable '{name}' was already defined")
+                    error_on_token(token, f"Local variable '{name}' was already defined")
                     return True
 
                 local_memory[name] = LOCAL_VARIABLE_ADDRESS, next_memory
@@ -665,11 +666,11 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             
             for var_name in var_names:
                 if not stack:
-                    error(f"There was not enough values in the stack for let to handle")
+                    error_on_token(token, f"There was not enough values in the stack for let to handle")
                     return True
 
                 if var_name in local_memory:
-                    error(f"Local variable '{var_name}' was already defined")
+                    error_on_token(token, f"Local variable '{var_name}' was already defined")
                     return True
 
                 stack.pop()
@@ -961,31 +962,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    mul     rbx\n")
             file.write(f"    mov     [rsp], rdx\n\n")
 
-        elif token.type is token_lib.DUP:
-            if len(stack) < 1:
-                error_on_token(token, "DUP expects a INT")
-                return True
-
-            stack.append(stack[-1])
-
-            file.write(f"    ;; -- DUP --\n\n")
-            file.write(f"    push    QWORD [rsp]\n\n")
-
-        elif token.type is token_lib.SWP:
-            if len(stack) < 2:
-                error_on_token(token, "SWP expects two arguments")
-                return True
-
-            a = stack.pop()
-            b = stack.pop()
-            stack.append(a)
-            stack.append(b)
-
-            file.write(f"    ;; -- SWP --\n\n")
-            file.write(f"    pop     rax\n")
-            file.write(f"    xchg    rax, [rsp]\n")
-            file.write(f"    push    rax\n\n")
-
         elif token.type is token_lib.IF:
             if len(stack) < 1 or stack.pop() is not BOOL_TYPE:
                 error_on_token(token, "IF expects a BOOL")
@@ -1121,27 +1097,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             file.write(f"    ;; -- DEC --\n\n")
             file.write(f"    dec     QWORD [rsp]\n\n")
-
-        elif token.type is token_lib.ROT:
-            if len(stack) < 3:
-                error_on_token(token, "ROT expects three arguments")
-                return True
-
-            file.write(f"    ;; -- ROT --\n\n")
-            file.write(f"    mov     rax, [rsp + 16]\n")
-            file.write(f"    xchg    rax, [rsp]\n")
-            file.write(f"    xchg    rax, [rsp + 8]\n")
-            file.write(f"    mov     [rsp + 16], rax\n\n")
-
-        elif token.type is token_lib.DROP:
-            if len(stack) < 1:
-                error_on_token(token, "DROP expects one argument")
-                return True
-
-            stack.pop()
-
-            file.write(f"    ;; -- DROP -- \n\n")
-            file.write(f"    add     rsp, 8\n\n")
 
         elif token.type is token_lib.BREAK:
             copy = levels.copy()

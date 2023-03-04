@@ -3,3 +3,14 @@ macro sizeof(bool) 8 endmacro
 macro sizeof(char) 1 endmacro
 
 macro neg !! inc endmacro
+
+macro drop  let _x_             in                 end endmacro
+macro dropd let _x_ _y_         in                 end endmacro
+macro dup   let _x_             in _x_ _x_         end endmacro
+macro dupd  let _x_ _y_         in _x_ _y_ _x_ _y_ end endmacro
+macro swp   let _x_ _y_         in _y_ _x_         end endmacro
+macro swpd  let _a_ _b_ _x_ _y_ in _x_ _y_ _a_ _b_ end endmacro
+macro rot   let _x_ _y_ _z_     in _y_ _z_ _x_     end endmacro
+macro arot  let _x_ _y_ _z_     in _z_ _x_ _y_     end endmacro
+macro rot4  let _x_ _y_ _z_ _w_ in _y_ _z_ _w_ _x_ end endmacro
+macro arot4 let _x_ _y_ _z_ _w_ in _w_ _x_ _y_ _z_ end endmacro

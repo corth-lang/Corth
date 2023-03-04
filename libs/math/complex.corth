@@ -26,20 +26,14 @@ proc dup-complex
   // comp: a -- comp: a comp: a'
   comp -- comp comp
 in
-  let xr xi in
-    xr xi
-    xr xi
-  end
+  dupd
 end
 
 proc swp-complex
   // comp: a comp:b -- comp: b comp: a
   comp comp -- comp comp
 in
-  let ar ai br bi in
-    br bi
-    ar ai
-  end
+  swpd
 end
 
 macro load-complex

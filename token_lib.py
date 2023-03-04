@@ -78,12 +78,6 @@ KEYWORDS = {
     "break": (BREAK := enum_lib.step()),
     "let": (LET := enum_lib.step()),
 
-    # Stack operators
-    "dup": (DUP := enum_lib.step()),
-    "swp": (SWP := enum_lib.step()),
-    "rot": (ROT := enum_lib.step()),
-    "drop": (DROP := enum_lib.step()),
-
     # Comparison operators
     "=": (EQUAL := enum_lib.step()),
     "!=": (NOT_EQUAL := enum_lib.step()),
