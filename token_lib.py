@@ -1,5 +1,4 @@
 import enum_lib
-import data_types_lib
 
 
 class Token:
@@ -62,6 +61,7 @@ KEYWORDS = {
     # Outer keywords
     "include": (INCLUDE := enum_lib.step()),
     "memory": (MEMORY := enum_lib.step()),
+    "and": (AND := enum_lib.step()),
     "macro": (MACRO := enum_lib.step()),
     "endmacro": (ENDMACRO := enum_lib.step()),
     "proc": (PROC := enum_lib.step()),
@@ -70,11 +70,13 @@ KEYWORDS = {
 
     # In procedure keywords
     "if": (IF := enum_lib.step()),
+    "elif": (ELIF := enum_lib.step()),
     "end": (END := enum_lib.step()),
     "else": (ELSE := enum_lib.step()),
     "while": (WHILE := enum_lib.step()),
     "do": (DO := enum_lib.step()),
     "break": (BREAK := enum_lib.step()),
+    "let": (LET := enum_lib.step()),
 
     # Stack operators
     "dup": (DUP := enum_lib.step()),
@@ -115,7 +117,7 @@ KEYWORDS = {
     "?stack": (DEBUG_STACK := enum_lib.step()),
 }
 TYPE_NAMES = {
-    "int": data_types_lib.INT,
-    "bool": data_types_lib.BOOL,
+    "int": 0,
+    "bool": 1,
 }
 
