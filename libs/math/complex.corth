@@ -17,34 +17,6 @@ include libs/math/fixed_point.corth
 macro comp fixed fixed endmacro
 macro sizeof(comp) 2 sizeof(fixed) * endmacro
 
-macro load-comp-arg
-  // comp: x
-  // This macro is used to quickly load a complex number to variables
-  // This macro should not be used inside macros
-  
-  memory xr sizeof(fixed) end
-  memory xi sizeof(fixed) end
-
-  xi swp store8
-  xr swp store8
-endmacro
-
-macro load-2-comp-args
-  // comp: a comp: b
-  // This macro is used to quickly load two complex numbers to variables
-  // This macro should not be used inside macros
-  
-  memory ar sizeof(fixed) end
-  memory ai sizeof(fixed) end
-  memory br sizeof(fixed) end
-  memory bi sizeof(fixed) end
-
-  bi swp store8
-  br swp store8
-  ai swp store8
-  ar swp store8
-endmacro
-
 macro ff-to-comp
   // fixed: R fixed: C -- comp: x
   // This macro does nothing, since the representation does not change
@@ -54,20 +26,20 @@ proc dup-complex
   // comp: a -- comp: a comp: a'
   comp -- comp comp
 in
-  load-comp-arg
-
-  xr load8 xi load8
-  xr load8 xi load8
+  let xr xi in
+    xr xi
+    xr xi
+  end
 end
 
 proc swp-complex
   // comp: a comp:b -- comp: b comp: a
   comp comp -- comp comp
 in
-  load-2-comp-args
-
-  br load8 bi load8
-  ar load8 ai load8
+  let ar ai br bi in
+    br bi
+    ar ai
+  end
 end
 
 macro load-complex
@@ -112,14 +84,14 @@ proc sqr-c
   // comp: x -- comp: x^2
   comp -- comp
 in
-  load-comp-arg
+  let xr xi in
+    // Real part
+    xr sqr-f
+    xi sqr-f -
 
-  // Real part
-  xr load8 sqr-f
-  xi load8 sqr-f -
-
-  // Imaginary part
-  xr load8 xi load8 mul-ff 2 mul-fi
+    // Imaginary part
+    xr xi mul-ff 2 mul-fi
+  end
 end
 
 
@@ -138,17 +110,17 @@ proc mul-cc
   // comp: a comp: b -- comp: a*b
   comp comp -- comp
 in
-  load-2-comp-args
+  let ar ai br bi in
+    // Real part
+    // (ar * br - ai * bi)
+    ar br mul-ff
+    ai bi mul-ff sub-ff
 
-  // Real part
-  // (ar * br - ai * bi)
-  ar load8 br load8 mul-ff
-  ai load8 bi load8 mul-ff sub-ff
-
-  // Imaginary part
-  // (ar * bi + ai * br)
-  ar load8 bi load8 mul-ff
-  ai load8 br load8 mul-ff add-ff
+    // Imaginary part
+    // (ar * bi + ai * br)
+    ar bi mul-ff
+    ai br mul-ff add-ff
+  end
 end
 
 macro div-cc

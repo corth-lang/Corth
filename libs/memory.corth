@@ -3,52 +3,50 @@ include libs/core.corth
 macro NULLPTR 0 endmacro
 
 macro get
-    // src index
-    // index src
+  // src index
+  // index src
 
-    + load
+  + load
 endmacro
 
 macro set
-    // src index value
-    // index src value
+  // src index value
+  // index src value
 
-    rot rot + swp store
+  rot rot + swp store
 endmacro
 
 macro get8
-    // src index
-    // index src
+  // src index
+  // index src
 
-    + load8
+  + load8
 endmacro
 
 macro set8
-    // src index value
-    // index src value
+  // src index value
+  // index src value
 
-    rot rot + swp store8
+  rot rot + swp store8
 endmacro
 
 proc memcpy
     // src len dst	
     int int int --
 in
-    memory src sizeof(int) end
-    memory len sizeof(int) end
-    memory dst sizeof(int) end
+  memory src sizeof(int) and
+         len sizeof(int) and
+         dst sizeof(int) in
     
     dst swp store8
     len swp store8
     src swp store8
 
-    0 while
-        dup len load8 <
-    do
-        dup dup
-	dst load8 swp
-	src load8 get
-	set
-       
-     inc end drop
+    0 while dup len load8 < do
+      dup dup
+      dst load8 swp
+      src load8 get set
+    inc end drop
+
+  end
 end

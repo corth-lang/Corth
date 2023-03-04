@@ -12,102 +12,104 @@ include libs/memory.corth
 
 // == Strings ==
 macro fputs
-    // file-dc str-ptr str-len
-    
-    SYSWRITE syscall3 drop
+  // file-dc str-ptr str-len
+
+  SYSWRITE syscall3 drop
 endmacro
 
 macro puts
-    // str-ptr str-len
-    
-    STDOUT rot rot fputs
+  // str-ptr str-len
+
+  STDOUT rot rot fputs
 endmacro
 
 macro eputs
-    // str-ptr str-len
-    
-    STDERR rot rot fputs
+  // str-ptr str-len
+
+  STDERR rot rot fputs
 endmacro
 
 
 // == C-like strings ==
 macro fputsc
-     // file-dc str-ptr
-     
-     while
-         dup load 0 !=
-     do
-         dup rot dup rot 1 fputs swp
-         inc
-     end
-     
-     drop drop
+  // file-dc str-ptr
+
+  while
+    dup load 0 !=
+  do
+    dup rot dup rot 1 fputs swp
+    inc
+  end
+
+  drop drop
 endmacro
 
 macro putsc
-    // str-ptr
-    
-    STDOUT swp fputsc
+  // str-ptr
+
+  STDOUT swp fputsc
 endmacro
 
 macro eputsc
-    // str-ptr
-    
-    STDERR swp fputsc
+  // str-ptr
+  
+  STDERR swp fputsc
 endmacro
 
 
 // == Unsigned decimals ==
 proc fputu
-    // file-dc int
-    int int --
+  // int: file-dc int: int
+  int int --
 in
-    memory buffer 20 sizeof(char) * end
-    
-    buffer 20 +
+  memory buffer 20 sizeof(char) * in
+  
+  buffer 20 +
 
-    while
-        swp 10 /% '0' +
-        rot
-        dec dup
-        rot
-        store
-        swp dup
-        rot swp
-        0 !=
-    do end
+  while
+  swp 10 /% '0' +
+  rot
+  dec dup
+  rot
+  store
+  swp dup
+  rot swp
+  0 !=
+  do end
 
-    dup buffer
-    swp - 20 +
-    fputs drop
+  dup buffer
+  swp - 20 +
+  fputs drop
+
+  end
 end
 
 macro putu
-    STDOUT swp fputu
+  STDOUT swp fputu
 endmacro
 
 macro eputu
-    STDERR swp fputu
+  STDERR swp fputu
 endmacro
 
 
 // == Signed decimals ==
 macro fputi
-    // int: file-dc int: int
+  // int: file-dc int: int
 
-    dup 0x7fffffffffffffff > if
-        neg swp dup "-" fputs swp fputu
-    else
-        fputu
-    end
+  dup 0x7fffffffffffffff > if
+    neg swp dup "-" fputs swp fputu
+  else
+    fputu
+  end
 endmacro
 
 macro puti
-    STDOUT swp fputi
+  STDOUT swp fputi
 endmacro
 
 macro eputi
-    STDERR swp fputi
+  STDERR swp fputi
 endmacro
 
 
@@ -124,28 +126,26 @@ proc fputx
   // int: file-dc int: int
   int int --
 in
-  memory char sizeof(char) end
-  memory file-dc sizeof(int) end
-
   swp
   
-  // Save the file-dc
-  file-dc swp store8
+  let file-dc in
+    memory char sizeof(char) in
+      16 while dup 0 > do
+        swp
 
-  16 while dup 0 > do
-    swp
-    
-    // Save the char
-    dup 0xf000000000000000 && 0x1000000000000000 / get-hex-digit char swp store
+	// Save the char
+	dup 0xf000000000000000 && 0x1000000000000000 / get-hex-digit char swp store
 
-    // Print the char
-    file-dc load8 char 1 fputs
+	// Print the char
+	file-dc char 1 fputs
 
-    // Shift the number
-    <<4
+	// Shift the number
+	<<4
 
-    swp dec
-  end drop drop
+        swp dec
+      end drop drop
+    end
+  end
 end
 
 macro putx
@@ -168,35 +168,32 @@ proc fputu-plus
   int int --
 in
   dup 0 = if
-    drop "0" fputs
-    
-  else
-    memory file-dc sizeof(int) end
-    memory value sizeof(int) end
+  drop "0" fputs
   
-    value swp store8
-    file-dc swp store8
-
-    memory buffer 20 sizeof(char) * end
-
-    buffer 20 +
-    
-    while dec value load8 10 % 0 = do
-      value dup load8 10 / store8
-    end
-
-    memory end-of-buffer sizeof(int) end
-    dup end-of-buffer swp store8
-
-    while
-      dup buffer >=
-    do
-      dup value load8 10 /% rot swp '0' + store
+  else
+    memory value sizeof(int) and
+	 end-of-buffer sizeof(int) and
+	 buffer 20 sizeof(char) * in
       value swp store8
-      dec
-    end drop
 
-    file-dc load8 buffer inc end-of-buffer load8 buffer - fputs
+      let file-dc in
+	buffer 20 +
+
+	while dec value load8 10 % 0 = do
+	  value dup load8 10 / store8
+	end
+
+	dup end-of-buffer swp store8
+
+	while dup buffer >= do
+	  dup value load8 10 /% rot swp '0' + store
+	  value swp store8
+	  dec
+	end drop
+
+	file-dc buffer inc end-of-buffer load8 buffer - fputs
+      end
+    end
   end
 end
 
@@ -211,68 +208,56 @@ macro eputu-plus
 endmacro
 
 
-//    ===============
-//    ==== Input ====
-//    ===============
+//  ===============
+//  ==== Input ====
+//  ===============
 
 // == Strings ==
 macro fgets
-    // file-dc str-ptr str-len
-    
-    SYSREAD syscall3 drop
+  // file-dc str-ptr str-len -- read
+  
+  SYSREAD syscall3
 endmacro
 
 macro gets
-    // str-ptr str-len
-    
-    STDIN rot rot fgets
+  // str-ptr str-len
+  
+  STDIN rot rot fgets
 endmacro
 
 
 // == Lines ==
 // This algorithm is unsafe and should not be used
 macro fgetl
-    // file-dc str-ptr -- str-len
-    
-    // fd st -> st fd st+0
-    dup rot swp
+  // file-dc str-ptr -- str-len
+  dup rot swp
 
-    while
-        // st fd (st+l) -> st fd (st+l) fd (st+l)
-        swp dup rot dup rot swp
+  while
+  swp dup rot dup rot swp
+  1 fgets
+  dup load dup
 
-        1 fgets
-        // st fd (st+l)
+  '\n' !=
+  do
+  dup 0 = if
+    break
+  end
 
-        dup load dup
-        // st fd (st+l) ch ch
-       
-        '\n' !=
-        // st fd (st+l) ch bool
-    do
-        dup 0 = if
-	    break
-	end
+  drop
+  
+  inc
+  end
+  
+  drop
 
-        drop
-        
-        // st fd (st+l)
-        inc
-        // st fd (st+l+1)
-    end
-    
-    drop
+  dup 0 store
 
-    // st fd (st+n) -> st fd (st+n) (st+n) 0
-    dup 0 store
+  rot - swp
 
-    // st fd (st+n) -> n fd
-    rot - swp
-
-    drop
+  drop
 endmacro
 
 macro getl
-    // str-ptr -- str-len
-    STDIN swp fgetl
+  // str-ptr -- str-len
+  STDIN swp fgetl
 endmacro

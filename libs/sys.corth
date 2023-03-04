@@ -33,55 +33,55 @@ macro RDWR           2 endmacro
 memory nanosleep-time sizeof(int) 2 * end
 
 macro call-sys-exit
-    // ex-code
-    
-    SYSEXIT syscall1 drop
+  // ex-code
+  
+  SYSEXIT syscall1 drop
 endmacro
 
 macro fopen
-    // str-ptr mode flags -- file-dc
+  // str-ptr mode flags -- file-dc
 
-    SYSOPEN syscall3
+  SYSOPEN syscall3
 endmacro
 
 macro fopen-read
-    // str-ptr -- file-dc
-    
-    RD_ONLY 0 fopen
+  // str-ptr -- file-dc
+  
+  RD_ONLY 0 fopen
 endmacro
 
 macro fopen-write
-    // str-ptr -- file-dc
-    
-    WR_ONLY 0 fopen
+  // str-ptr -- file-dc
+  
+  WR_ONLY 0 fopen
 endmacro
 
 macro fopen-read-write
-    // str-ptr -- file-dc
-    
-    RDWR 0 fopen
+  // str-ptr -- file-dc
+  
+  RDWR 0 fopen
 endmacro
 
 macro fclose
-    // file-dc
-    
-    SYSCLOSE syscall1 drop
+  // file-dc
+  
+  SYSCLOSE syscall1 drop
 endmacro
 
 macro set-nanosleep-time
-    // seconds nanoseconds
-    
-    nanosleep-time 8 rot set8
-    nanosleep-time 0 set8
+  // seconds nanoseconds
+  
+  nanosleep-time 8 rot set8
+  nanosleep-time 0 set8
 endmacro
 
 macro get-nanosleep-time
-    // -- seconds nanoseconds
-    
-    nanosleep-time 0 get8
-    nanosleep-time 8 get8
+  // -- seconds nanoseconds
+  
+  nanosleep-time 0 get8
+  nanosleep-time 8 get8
 endmacro
 
 macro nanosleep
-    nanosleep-time 0 SYSNANOSLEEP syscall2 drop
+  nanosleep-time 0 SYSNANOSLEEP syscall2 drop
 endmacro
