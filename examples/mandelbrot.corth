@@ -10,7 +10,7 @@ Since Corth does not have floating point aritmetic (and since its hard), a fixed
 
 include libs/linux/io.corth
 include libs/memory.corth
-include libs/math/fixed_point.corth
+include libs/math/fixed64.corth
 include libs/math/complex.corth
 
 
@@ -18,7 +18,7 @@ macro WIDTH 128 endmacro
 macro HEIGHT 64 endmacro
 macro HALF-WIDTH WIDTH 2 / endmacro
 macro HALF-HEIGHT HEIGHT 2 / endmacro
-macro CHARS "          .........--------+++++++======*****????$$$@@%" drop endmacro
+macro CHARS "          .........--------+++++++******=====????$$$@@%" drop endmacro
 macro MAX-ITERATION 55 endmacro
 
 macro buffer WIDTH HEIGHT * endmacro
@@ -31,9 +31,9 @@ macro clear-screen
 endmacro
 
 
-// Camera position
-memory camera-pos sizeof(comp) and
-       camera-zoom sizeof(fixed) end
+// Camera position and zoom
+memory camera-pos  sizeof(comp)    and
+       camera-zoom sizeof(fixed64) end
 
 
 proc get-iteration
@@ -42,7 +42,7 @@ in
   memory z sizeof(comp) and
          c sizeof(comp) in
 
-    z 0 0 store-complex
+    z 0   0   store-complex
     c rot rot store-complex
 
     0 while
@@ -65,7 +65,7 @@ end
 proc render
   --
 in
-  memory number    sizeof(comp) in
+  memory number sizeof(comp) in
     // Loop through the 'pixel's
     0 while dup HEIGHT < do
       let console-y in
@@ -78,8 +78,6 @@ in
 
 	    // Get the iteration
 	    get-iteration
-
-	    // Loop through the positions on the screen
 	    CHARS + dup 1 puts 1 puts
 
             console-x
@@ -98,13 +96,16 @@ end
 proc main
   -- int
 in
-  camera-pos  0x0000000010080100 neg 0x00000000fffe9080 store-complex           // Set camera pos to 0 + 0i
-  camera-zoom 0x0000000100000000 store8                                         // Set camera zoom to 1/16
+  camera-pos  0x0000000010080100 neg 0x00000000fffe9080 store-complex           // Set camera pos to -0.062622129902656 + 0.9999780950616818176i 
+  camera-zoom 0x0000000100000000 store8                                         // Set camera zoom to 1
+
+  0x00000000fe000000 put-fixed
+  "\n" puts
   
   while true do
     render
     clear-screen
-    camera-zoom dup load8 0x00000000fe000000 mul-ff store8
+    camera-zoom dup load8 0x00000000fe000000 mul-ff store8                      // Set camera zoom to 0.9921874997704392704 times itself
   end
   
   0

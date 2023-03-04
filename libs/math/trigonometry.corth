@@ -1,4 +1,4 @@
-include libs/math/fixed_point.corth
+include libs/math/fixed64.corth
 include libs/math/constants.corth
 
 macro TRI-ITER 27 endmacro

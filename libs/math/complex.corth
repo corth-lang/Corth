@@ -12,10 +12,10 @@ NOTE: Unless it is said to be otherwise, all fixed numbers are signed.
 
 */
 
-include libs/math/fixed_point.corth
+include libs/math/fixed64.corth
 
-macro comp fixed fixed endmacro
-macro sizeof(comp) 2 sizeof(fixed) * endmacro
+macro comp fixed64 fixed64 endmacro
+macro sizeof(comp) 2 sizeof(fixed64) * endmacro
 
 macro ff-to-comp
   // fixed: R fixed: C -- comp: x
@@ -54,7 +54,7 @@ endmacro
 
 // COMPLEX -- FIXED macro and procedures
 macro length-c
-  // comp: x -- fixed: length(x)
+  // comp: x -- fixed64: length(x)
   // NOTE: length is unsigned fixed
 
   sqr-f swp sqr-f add-ff
@@ -133,22 +133,22 @@ endmacro
 // COMPLEX FIXED -- COMPLEX macro and procedures
 // NOTE: fixed argument is used as a real number
 macro add-cf
-  // comp: a fixed: b -- comp: a+b
+  // comp: a fixed64: b -- comp: a+b
   rot add-ff swp
 endmacro
 
 macro sub-cf
-  // comp: a fixed: b -- comp: a-b
+  // comp: a fixed64: b -- comp: a-b
   rot sub-ff swp
 endmacro
 
 macro mul-cf
-  // comp: a fixed: b -- comp: a*b
+  // comp: a fixed64: b -- comp: a*b
   dup rot mul-ff rot rot mul-ff swp
 endmacro
 
 macro div-cf
-  // comp: a fixed: b -- comp: a*b
+  // comp: a fixed64: b -- comp: a*b
   dup rot swp div-ff rot rot div-ff swp
 endmacro
 

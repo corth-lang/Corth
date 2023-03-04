@@ -15,47 +15,36 @@ NOTE: There is a bug that if ROWS and COLS are not divisible by each other, algo
 include libs/linux/io.corth
 include libs/memory.corth
 
-macro ROWS 16 endmacro
-macro COLS 16 endmacro
+macro ROWS 64 endmacro
+macro COLS 64 endmacro
 
 macro CELLS ROWS COLS * endmacro
 
 memory board CELLS end
 memory old CELLS end
 
-memory row-no sizeof(int) end
-memory col-no sizeof(int) end
-
 memory count sizeof(int) end
 
-// Sets the value of row or column
-macro set-row-no row-no swp store8 endmacro
-macro set-col-no col-no swp store8 endmacro
-
-// Gets the value of row or column
-macro get-row-no row-no load8 endmacro
-macro get-col-no col-no load8 endmacro
-
 macro get-id
-  // row-no col-no -- id
+  // int: row-no int: col-no -- int: id (r * COLS + c)
 
   COLS % swp ROWS % COLS * +
 endmacro
 
 macro was-alive
-  // row-no col-no -- is-alive
+  // int: row-no int: col-no -- bool: is-alive
 
   get-id old get 0 !=
 endmacro
 
 macro set-alive
-  // row-no col-no --
+  // int: row-no int: col-no --
 
   get-id board 0xff set
 endmacro
 
 macro set-dead
-  // row-no col-no --
+  // int: row-no int: col-no --
 
   get-id board 0 set
 endmacro
@@ -64,21 +53,21 @@ macro draw-board
   0 while
     dup ROWS <
   do
-    set-row-no
+    let row-no in
+      0 while
+	dup COLS <
+      do
+        let col-no in
+	  row-no col-no was-alive if "()" else ".." end puts
 
-    0 while
-      dup COLS <
-    do
-      set-col-no
+	  col-no
+	end
+      inc end drop
 
-      get-row-no get-col-no was-alive if "O" else "." end puts
+      "\n" puts
 
-      get-col-no inc
-    end drop
-
-    "\n" puts
-
-    get-row-no
+      row-no
+    end
   inc end drop
 endmacro
 
@@ -91,7 +80,7 @@ macro reset-board
 endmacro
 
 macro check-neighbor
-  // row-no col-no
+  // int: row-no int: col-no
 
   was-alive if
     count count load8 inc store8
@@ -102,93 +91,77 @@ macro copy-board
   board CELLS old memcpy
 endmacro
 
-macro count-neighbors
-  count 0 store8
-
-  // north
-  get-row-no inc
-  get-col-no
-  check-neighbor
-  
-  // north east
-  get-row-no inc
-  get-col-no inc
-  check-neighbor
-  
-  // east
-  get-row-no
-  get-col-no inc
-  check-neighbor
-  
-  // south east
-  get-row-no dec
-  get-col-no inc
-  check-neighbor
-  
-  // south
-  get-row-no dec
-  get-col-no 
-  check-neighbor
-  
-  // south west
-  get-row-no dec
-  get-col-no dec
-  check-neighbor
-  
-  // west
-  get-row-no
-  get-col-no dec
-  check-neighbor
-  
-  // north west
-  get-row-no inc
-  get-col-no dec
-  check-neighbor
-endmacro
-
-macro update-cell
-  count-neighbors
-
-  get-row-no get-col-no was-alive if
-    // If the cell is alive
-    // Requires 2 or 3 neighbors to keep being alive
-
-    count load8 2 < if
-      get-row-no get-col-no set-dead
-    else
-      count load8 3 > if
-	get-row-no get-col-no set-dead
-      end
-    end
-
-  else
-    // If the cell is dead
-    // Requires 3 neighbors to born
-
-    count load8 3 = if
-      get-row-no get-col-no set-alive
-    end
-  end
-endmacro
-
 macro update-board
   0 while
     dup ROWS <
   do
-    set-row-no
+    let row-no in
+      0 while
+	dup COLS <
+      do
+        let col-no in
+	  count 0 store8
 
-    0 while
-      dup COLS <
-    do
-      set-col-no
-       
-      update-cell
+	  // north
+	  row-no inc col-no
+	  check-neighbor
 
-      get-col-no inc
-    end drop
+	  // north east
+	  row-no inc col-no inc
+	  check-neighbor
 
-    get-row-no inc
-  end drop
+	  // east
+	  row-no col-no inc
+	  check-neighbor
+
+	  // south east
+	  row-no dec col-no inc
+	  check-neighbor
+
+	  // south
+	  row-no dec col-no 
+	  check-neighbor
+
+	  // south west
+	  row-no dec col-no dec
+	  check-neighbor
+
+	  // west
+	  row-no col-no dec
+	  check-neighbor
+
+	  // north west
+	  row-no inc col-no dec
+	  check-neighbor
+
+	  row-no col-no was-alive if
+	    // If the cell is alive
+	    // Requires 2 or 3 neighbors to keep being alive
+
+	    count load8 2 < if
+	      row-no col-no set-dead
+	    else
+	      count load8 3 > if
+		row-no col-no set-dead
+	      end
+	    end
+
+	  else
+	    // If the cell is dead
+	    // Requires 3 neighbors to born
+
+	    count load8 3 = if
+	      row-no col-no set-alive
+	    end
+	  end
+
+	  col-no
+	end
+      inc end drop
+
+      row-no
+    end
+  inc end drop
 
   copy-board
 endmacro

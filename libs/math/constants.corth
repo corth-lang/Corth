@@ -1,4 +1,4 @@
-include libs/math/fixed_point.corth
+include libs/math/fixed64.corth
 
 macro PI 0x3243F6A89 endmacro
 macro E  0x2B7E15162 endmacro
