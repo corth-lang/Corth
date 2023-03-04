@@ -7,7 +7,6 @@ import enum_lib
 import token_lib
 import log_lib
 import parser_lib
-import data_types_lib
 
 # TODO: Add library search locations
 # TODO: Add logging file specification
@@ -18,8 +17,6 @@ import data_types_lib
 # TODO: Add in file nasm macros (would help make the compiler much smaller since the macros will be defined in the libraries instead of the compiler)
 # TODO: Add in-file half-corth (better version of nasm macros that is more useful with pre-execution)
 
-# TODO: Add a keyword that will allow to allocate more than one address (probably 'and')
-
 # TODO: Add 'typedef <name> (<name> <type>). end' (typedef is useful for stack types)
 # TODO: Add 'sizeof <type>'
 # TODO: Add 'cast <type>', which will cast any type to <type> (only if they are the same size)
@@ -28,11 +25,11 @@ import data_types_lib
 # TODO: Add fixed type
 # TODO: Add complex type
 # TODO: Define land as bool * bool (requires cast)
-# TODO: Add let (requires more advanced typing)
 # TODO: Add string type
 
 # TODO: Make names 'namespacable' (a name 'name' inside a module 'module' should be named 'module:name' when included, parser should be rewritten)
 # TODO: Add from
+# TODO: Add ELIF
 
 # (probably gonna leave these to the Corth rewrite)
 # TODO: Make enumerations named so they can be debugged in the console easily
@@ -73,18 +70,44 @@ memory <name> <size> (and <name> <size>). in   // Allocates memory and defines t
   <code>
 end                                            // Frees memory
 
-typedef <name> (<name> <type>). end            // This will only define the type
-cast <type>     // This will cast any type to <type>, without any change in the byte representation
+cast <type>                                    // This will cast any type to <type>, without any change in the byte representation
 
+typedef <name> (<name> <type>). end            // Defines a stack data type
+struct <name> (<name> <type>). end             // Defines a memory data type
+sizeof <name>                                  // Returns the size of the type
+
+
+struct complex
+  fixed real
+  fixed imag
+end
+
+memory a as complex
+memory b as complex
+
+// a -> pointer to that address
+// a.real -> pointer to that address
+
+a.real load8 b.real load8
+
+
+include <name>
 include <name> from <package>
 """
 
 
-# -- Constant name types --
+# -- Call types --
 enum_lib.reset()
 PROCEDURE = enum_lib.step()
 GLOBAL_VARIABLE_ADDRESS = enum_lib.step()
+LOCAL_VARIABLE_ADDRESS = enum_lib.step()
+LET_VARIABLE = enum_lib.step()
 MACRO = enum_lib.step()
+
+# -- Data types --
+enum_lib.reset()
+INT_TYPE = enum_lib.step()
+BOOL_TYPE = enum_lib.step()
 
 # Call stack size is 0x4000
 # Memory size is also 0x4000
@@ -240,37 +263,18 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
                 return True
 
         elif token.type is token_lib.MEMORY:
-            try:
-                memory_name = program.popleft()
+            sizes = {}
 
-            except IndexError:
-                error(f"Expected NAME after MEMORY; but no token was found")
+            if get_memory_size(program, sizes, token_lib.END, names, debug_mode):
+                error_on_token(token, f"Could not compile memory size")
                 return True
 
-            if memory_name.type is not token_lib.NAME:
-                error_on_token(memory_name, f"Expected NAME after MEMORY; got '{token.type}'")
-                return True
-            
-            if memory_name.arg in names:
-                error_on_token(memory_name, f"'{memory_name.arg}' was already defined before as a {names[memory_name.arg][0]}")
-                return True
-
-            stack = deque()
-
-            if compile_time_execution(program, stack, (token_lib.END,), names, debug_mode):
-                error_on_token(token, f"Could not compile memory size for '{memory_name.arg}'")
-
-            if stack.pop().type is not token_lib.END:
-                error(f"This should have been impossible to reach, probably there is a bug in the compiler")
-                return True
-
-            if len(stack) != 1:
-                error(f"Expected exactly one INT for memory size, at '{memory_name.arg}'")
-                return True
-
-            global_variable_size ,= stack
-
-            names[memory_name.arg] = GLOBAL_VARIABLE_ADDRESS, global_variable_size
+            for name, size in sizes.items():
+                if name in names:
+                    error(f"Global variable '{name}' was already defined")
+                    return True
+                
+                names[name] = GLOBAL_VARIABLE_ADDRESS, size
 
         elif token.type is token_lib.MACRO:
             if len(program) < 1:
@@ -329,7 +333,7 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
             if (
                     procedure_name.arg == "main" and (
                         len(returns) != 1 or
-                        returns[0] != data_types_lib.INT
+                        returns[0] != INT_TYPE
                     )
             ):
                 error(f"Procedure main must return exactly one INT")
@@ -376,12 +380,11 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
 
 def get_types(program, names, types, ends):
     while True:
-        try:
-            token = program.popleft()
-
-        except IndexError:
+        if not program:
             error(f"Expected type or {ends}; but no token was found")
             return True
+
+        token = program.popleft()
 
         if token.type is token_lib.TYPE:
             types.append(token.arg)
@@ -411,6 +414,25 @@ def get_types(program, names, types, ends):
             return True
 
 
+def get_names(program, names):
+    while True:
+        if not program:
+            error(f"Expected name or {ends}; but no token was found")
+            return True
+
+        token = program.popleft()
+
+        if token.type is token_lib.NAME:
+            names.append(token.arg)
+
+        elif token.type is token_lib.IN:
+            return False
+
+        else:
+            error_on_token(token, f"Expected NAME or IN, got '{token.type}'")
+            return True
+
+
 def print_stack(stack):
     for i, data in enumerate(stack):
         print(f"{str(i).ljust(2, ' ')} | {data}")
@@ -435,48 +457,82 @@ def load_macro(program, macro, debug_mode: bool = False):
             macro.append(token)
 
 
-def compile_time_execution(program, stack, ends, names, debug_mode: bool = False):
+def get_memory_size(program, sizes, end, names, debug_mode: bool = False):
     while True:
         if not program:
-            error(f"Found none of {ends}")
+            error(f"Expected NAME")
             return True
 
-        token = program.popleft()
+        variable_name = program.popleft().arg
+            
+        stack = deque()
 
-        if token.type in ends:
-            stack.append(token)
-            return False
-
-        elif token.type is token_lib.NAME:
-            if token.arg not in names:
-                error_on_token(token, f"'{token.arg}' is undefined")
+        while True:
+            if not program:
+                error(f"Expected AND or {end}")
                 return True
 
-            call_type, *args = names[token.arg]
+            token = program.popleft()
 
-            if call_type is MACRO:
-                macro, = args
+            if token.type is end:
+                if len(stack) != 1:
+                    error(f"Expected exactly one INT")
+                    return True
 
-                extend_macro(program, token, macro, debug_mode)
+                sizes[variable_name] = stack[0]
+                return False
+
+            elif token.type is token_lib.AND:
+                if len(stack) != 1:
+                    error(f"Expected exactly one INT")
+                    return True
+
+                sizes[variable_name] = stack[0]
+                break
+
+            elif token.type is token_lib.NAME:
+                if token.arg not in names:
+                    error_on_token(token, f"'{token.arg}' is undefined")
+                    return True
+
+                call_type, *args = names[token.arg]
+
+                if call_type is MACRO:
+                    macro, = args
+
+                    extend_macro(program, token, macro, debug_mode)
+
+                else:
+                    error_on_token(token, f"Can not call '{token.arg}' here")
+                    return True
+
+            elif token.type is token_lib.PUSH8:
+                stack.append(token.arg)
+
+            elif token.type is token_lib.ADD:
+                if len(stack) < 2:
+                    error(f"ADD requires two INTs")
+                    return True
+                
+                stack.append(stack.pop() + stack.pop())
+
+            elif token.type is token_lib.SUB:
+                if len(stack) < 2:
+                    error(f"SUB requires two INTs")
+                    return True
+
+                stack.append(-stack.pop() + stack.pop())
+
+            elif token.type is token_lib.MUL:
+                if len(stack) < 2:
+                    error(f"MUL requires two INTs")
+                    return True
+                
+                stack.append(stack.pop() * stack.pop())
 
             else:
-                error_on_token(token, f"Can not call '{token.arg}' here")
-
-        elif token.type is token_lib.PUSH8:
-            stack.append(token.arg)
-
-        elif token.type is token_lib.ADD:
-            stack.append(stack.pop() + stack.pop())
-
-        elif token.type is token_lib.SUB:
-            stack.append(-stack.pop() + stack.pop())
-
-        elif token.type is token_lib.MUL:
-            stack.append(stack.pop() * stack.pop())
-
-        else:
-            error_on_token(token, f"This operation is not available in compile-time execution")
-            return True
+                error_on_token(token, f"This operation is not available in compile-time execution")
+                return True
 
 
 def compile_procedure(file, program, data: deque, names: dict, arguments: tuple, returns: tuple, debug_mode: bool = False):
@@ -498,20 +554,42 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
         token = program.popleft()
 
-        if token.type is token_lib.NAME:
+        if token.type is token_lib.NAME:            
             if token.arg in local_memory:
-                address = local_memory[token.arg]
+                call_type, *args = local_memory[token.arg]
 
-                stack.append(data_types_lib.INT)
+                if call_type is LOCAL_VARIABLE_ADDRESS:
+                    address ,= args
+                    
+                    stack.append(INT_TYPE)
 
-                file.write(f"    ;; -- PUSH LOCAL VARIABLE ADDRESS '{token.arg}' --\n\n")
-                file.write(f"    push    QWORD [local]\n")
+                    file.write(f"    ;; -- PUSH LOCAL VARIABLE ADDRESS '{token.arg}' --\n\n")
+                    file.write(f"    push    QWORD [local]\n")
 
-                if address:
-                    file.write(f"    add     QWORD [rsp], {address}\n")
+                    if address:
+                        file.write(f"    add     QWORD [rsp], {address}\n")
 
-                file.write(f"\n")
-            
+                    file.write(f"\n")
+
+                elif call_type is LET_VARIABLE:
+                    address ,= args
+                    
+                    stack.append(INT_TYPE)
+
+                    file.write(f"    ;; -- PUSH LET VARIABLE '{token.arg}' --\n\n")
+                    file.write(f"    mov    rax, QWORD [local]\n")
+
+                    if address:
+                        file.write(f"    add     rax, {address}\n")
+
+                    file.write(f"    push   QWORD [rax]\n")
+
+                    file.write(f"\n")
+                    
+                else:
+                    error_on_token(token, f"Unknown local call type; got '{call_type}'")
+                    return True
+
             elif token.arg in names:
                 call_type, *args = names[token.arg]
 
@@ -537,7 +615,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                     call_no += 1
 
                 elif call_type is GLOBAL_VARIABLE_ADDRESS:
-                    stack.append(data_types_lib.INT)
+                    stack.append(INT_TYPE)
 
                     file.write(f"    ;; -- PUSH GLOBAL VARIABLE ADDRESS '{token.arg}' --\n\n")
                     file.write(f"    push    global_variable_{token.arg}\n\n")
@@ -548,7 +626,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                     extend_macro(program, token, macro, debug_mode)
 
                 else:
-                    error_on_token(token, f"Unknown call type; got '{call_type}'")
+                    error_on_token(token, f"Unknown global call type; got '{call_type}'")
                     return True
 
             else:
@@ -556,68 +634,66 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                 return True
 
         elif token.type is token_lib.MEMORY:
-            try:
-                memory_name = program.popleft()
+            sizes = {}
 
-            except IndexError:
-                error(f"Expected NAME after MEMORY; but no token was found")
-                return True            
-
-            if memory_name.type is not token_lib.NAME:
-                error_on_token(memory_name, f"Expected NAME after MEMORY; got '{token.type}'")
+            if get_memory_size(program, sizes, token_lib.IN, names, debug_mode):
+                error_on_token(token, f"Could not compile memory size")
                 return True
+
+            levels.append((start_level, token_lib.MEMORY, next_memory, tuple(sizes.keys())))
+
+            for name, size in sizes.items():
+                if name in local_memory:
+                    error(f"Local variable '{name}' was already defined")
+                    return True
+
+                local_memory[name] = LOCAL_VARIABLE_ADDRESS, next_memory
+
+                next_memory += size
+
+        elif token.type is token_lib.LET:
+            var_names = deque()
             
-            if memory_name.arg in local_memory:
-                error_on_token(memory_name, f"'Local variable {memory_name.arg}' was already defined before")
+            if get_names(program, var_names):
                 return True
 
-            new_stack = deque()
+            var_names.reverse()
 
-            if compile_time_execution(program, new_stack, (token_lib.END, token_lib.IN), names, debug_mode):
-                error_on_token(token, f"Could not compile memory size for '{memory_name.arg}'")
+            file.write(f"    ;; -- LET --\n\n")
 
-            end = new_stack.pop()
-
-            if end.type is token_lib.END:
-                if len(new_stack) != 1:
-                    error(f"Expected exactly one INT for memory size, at '{memory_name.arg}'")
+            levels.append((start_level, token_lib.MEMORY, next_memory, var_names))
+            
+            for var_name in var_names:
+                if not stack:
+                    error(f"There was not enough values in the stack for let to handle")
                     return True
 
-                local_variable_size ,= new_stack
-
-                local_memory[memory_name.arg] = next_memory
-
-                next_memory += local_variable_size
-
-            elif end.type is token_lib.IN:
-                if len(new_stack) != 1:
-                    error(f"Expected exactly one INT for memory size, at '{memory_name.arg}'")
+                if var_name in local_memory:
+                    error(f"Local variable '{var_name}' was already defined")
                     return True
 
-                local_variable_size ,= new_stack
-
-                local_memory[memory_name.arg] = next_memory
-
-                levels.append((start_level, token_lib.MEMORY, next_memory, memory_name.arg))
+                stack.pop()
                 
-                next_memory += local_variable_size
+                local_memory[var_name] = LET_VARIABLE, next_memory
 
-            else:
-                error("This should have been impossible to reach, probably there is a bug in the compiler")
-                return True
+                file.write(f"    pop     rax\n")
+                file.write(f"    mov     rbx, [local]\n")
+                file.write(f"    mov     [rbx + {next_memory}], rax\n\n")
+
+                next_memory += 8
             
         elif token.type is token_lib.PUSH8:
             file.write(f"    ;; -- PUSH8 {token.arg} --\n\n")
             file.write(f"    mov    rax, {token.arg}\n")
             file.write(f"    push   rax\n\n")
 
-            stack.append(data_types_lib.INT)
+            stack.append(INT_TYPE)
 
         elif token.type is token_lib.BAND:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "BAND expects two INTs")
                 return True
@@ -629,8 +705,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.BOR:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "BOR expects two INTs")
                 return True
@@ -642,8 +718,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.BXOR:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "BXOR expects two INTs")
                 return True
@@ -655,7 +731,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.BNOT:
             if (
                     len(stack) < 1 or
-                    stack[-1] is not data_types_lib.INT
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "BNOT expects an INT")
                 return True
@@ -666,8 +742,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.ADD:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "ADD expects two INTs")
                 return True
@@ -679,8 +755,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.SUB:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "SUB expects two INTs")
                 return True
@@ -692,8 +768,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.DIVMOD:
             if (
                     len(stack) < 2 or
-                    stack[-1] is not data_types_lib.INT or
-                    stack[-2] is not data_types_lib.INT
+                    stack[-1] is not INT_TYPE or
+                    stack[-2] is not INT_TYPE
             ):
                 error_on_token(token, "DIVMOD expects two INTs")
                 return True
@@ -709,8 +785,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.DIV:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "DIV expects two INTs")
                 return True
@@ -725,8 +801,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.MOD:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "MOD expects two INTs")
                 return True
@@ -741,8 +817,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.UDIVMOD:
             if (
                     len(stack) < 2 or
-                    stack[-1] is not data_types_lib.INT or
-                    stack[-2] is not data_types_lib.INT
+                    stack[-1] is not INT_TYPE or
+                    stack[-2] is not INT_TYPE
             ):
                 error_on_token(token, "UDIVMOD expects two INTs")
                 return True
@@ -758,8 +834,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.UDIV:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "UDIV expects two INTs")
                 return True
@@ -774,8 +850,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.UMOD:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "UMOD expects two INTs")
                 return True
@@ -790,8 +866,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.FULLMUL:
             if (
                     len(stack) < 2 or
-                    stack[-1] is not data_types_lib.INT or
-                    stack[-2] is not data_types_lib.INT
+                    stack[-1] is not INT_TYPE or
+                    stack[-2] is not INT_TYPE
             ):
                 error_on_token(token, "FULLMUL expects two INTs")
                 return True
@@ -807,8 +883,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.MUL:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "MUL expects two INTs")
                 return True
@@ -823,8 +899,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.MUL2:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "MUL2 expects two INTs")
                 return True
@@ -839,8 +915,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.UFULLMUL:
             if (
                     len(stack) < 2 or
-                    stack[-1] is not data_types_lib.INT or
-                    stack[-2] is not data_types_lib.INT
+                    stack[-1] is not INT_TYPE or
+                    stack[-2] is not INT_TYPE
             ):
                 error_on_token(token, "UFULLMUL expects two INTs")
                 return True
@@ -856,8 +932,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.UMUL:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "UMUL expects two INTs")
                 return True
@@ -872,8 +948,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.UMUL2:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "UMUL2 expects two INTs")
                 return True
@@ -911,7 +987,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    push    rax\n\n")
 
         elif token.type is token_lib.IF:
-            if len(stack) < 1 or stack.pop() is not data_types_lib.BOOL:
+            if len(stack) < 1 or stack.pop() is not BOOL_TYPE:
                 error_on_token(token, "IF expects a BOOL")
                 return True
 
@@ -984,15 +1060,12 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                     return True
 
                 elif start is token_lib.MEMORY:
-                    old_memory, name = args
-                    
+                    old_memory, remove_names = args
+
                     next_memory = old_memory
-
-                    if name not in local_memory:
-                        error("Something weird happened")
-                        return True
-
-                    del local_memory[name]
+                    
+                    for name in remove_names:
+                        local_memory.pop(name)
 
                 else:
                     error_on_token(token, f"Unknown starter for END; got '{start}'")
@@ -1021,7 +1094,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             start_level += 1
 
         elif token.type is token_lib.DO:
-            if len(stack) < 1 or stack.pop() is not data_types_lib.BOOL:
+            if len(stack) < 1 or stack.pop() is not BOOL_TYPE:
                 error_on_token(token, "DO expects a BOOL")
                 return True
 
@@ -1034,7 +1107,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             start_level += 1
 
         elif token.type is token_lib.INC:
-            if len(stack) < 1 or stack[-1] is not data_types_lib.INT:
+            if len(stack) < 1 or stack[-1] is not INT_TYPE:
                 error_on_token(token, "INC expects a INT")
                 return True
 
@@ -1042,7 +1115,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    inc     QWORD [rsp]\n\n")
 
         elif token.type is token_lib.DEC:
-            if len(stack) < 1 or stack[-1] is not data_types_lib.INT:
+            if len(stack) < 1 or stack[-1] is not INT_TYPE:
                 error_on_token(token, "DEC expects a INT")
                 return True
 
@@ -1098,13 +1171,13 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.EQUAL:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack.pop() is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack.pop() is not INT_TYPE
             ):
                 error_on_token(token, "= expects two INTs")
                 return True
 
-            stack.append(data_types_lib.BOOL)
+            stack.append(BOOL_TYPE)
 
             file.write(f"    ;; -- EQUAL --\n\n")
             file.write(f"    pop     rax\n")
@@ -1116,13 +1189,13 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.NOT_EQUAL:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack.pop() is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack.pop() is not INT_TYPE
             ):
                 error_on_token(token, "!= expects two INTs")
                 return True
 
-            stack.append(data_types_lib.BOOL)
+            stack.append(BOOL_TYPE)
 
             file.write(f"    ;; -- NOT EQUAL --\n\n")
             file.write(f"    pop     rax\n")
@@ -1131,13 +1204,13 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.LESS_THAN:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack.pop() is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack.pop() is not INT_TYPE
             ):
                 error_on_token(token, "< expects two INTs")
                 return True
 
-            stack.append(data_types_lib.BOOL)
+            stack.append(BOOL_TYPE)
 
             file.write(f"    ;; -- LESS THAN --\n\n")
             file.write(f"    pop    rbx\n")
@@ -1149,13 +1222,13 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.GREATER_THAN:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack.pop() is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack.pop() is not INT_TYPE
             ):
                 error_on_token(token, "> expects two INTs")
                 return True
 
-            stack.append(data_types_lib.BOOL)
+            stack.append(BOOL_TYPE)
 
             file.write(f"    ;; -- GREATER THAN --\n\n")
             file.write(f"    pop    rbx\n")
@@ -1167,13 +1240,13 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.LESS_EQUAL:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack.pop() is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack.pop() is not INT_TYPE
             ):
                 error_on_token(token, "<= expects two INTs")
                 return True
 
-            stack.append(data_types_lib.BOOL)
+            stack.append(BOOL_TYPE)
 
             file.write(f"    ;; -- GREATER THAN --\n\n")
             file.write(f"    pop    rbx\n")
@@ -1186,13 +1259,13 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.GREATER_EQUAL:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack.pop() is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack.pop() is not INT_TYPE
             ):
                 error_on_token(token, ">= expects two INTs")
                 return True
 
-            stack.append(data_types_lib.BOOL)
+            stack.append(BOOL_TYPE)
 
             file.write(f"    ;; -- GREATER EQUAL --\n\n")
             file.write(f"    pop    rbx\n")
@@ -1203,11 +1276,11 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    xor    qword [rsp], 0x80\n\n")
 
         elif token.type is token_lib.NOT:
-            if len(stack) < 1 or stack.pop() is not data_types_lib.BOOL:
+            if len(stack) < 1 or stack.pop() is not BOOL_TYPE:
                 error_on_token(token, "NOT expects a BOOL")
                 return True
 
-            stack.append(data_types_lib.BOOL)
+            stack.append(BOOL_TYPE)
 
             file.write(f"    ;; -- NOT --\n\n")
             file.write(f"    pop     rax\n")
@@ -1218,8 +1291,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.LOR:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.BOOL or
-                    stack[-1] is not data_types_lib.BOOL
+                    stack.pop() is not BOOL_TYPE or
+                    stack[-1] is not BOOL_TYPE
             ):
                 error_on_token(token, "LOR expects two BOOLs")
                 return True
@@ -1229,21 +1302,21 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    or      [rsp], rax\n\n")
 
         elif token.type is token_lib.FALSE:
-            stack.append(data_types_lib.BOOL)
+            stack.append(BOOL_TYPE)
 
             file.write(f"    ;; -- FALSE --\n\n")
             file.write(f"    xor     rax, rax\n")
             file.write(f"    push    rax\n\n") 
 
         elif token.type is token_lib.TRUE:
-            stack.append(data_types_lib.BOOL)
+            stack.append(BOOL_TYPE)
 
             file.write(f"    ;; -- TRUE --\n\n")
             file.write(f"    mov     rax, 1\n")
             file.write(f"    push    rax\n\n")
 
         elif token.type is token_lib.LOAD8:
-            if not len(stack) or stack[-1] is not data_types_lib.INT:
+            if not len(stack) or stack[-1] is not INT_TYPE:
                 error_on_token(token, "LOAD8 expects a INT")
                 return True
 
@@ -1253,7 +1326,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    mov     [rsp], rax\n\n")
 
         elif token.type is token_lib.STORE8:
-            if len(stack) < 2 or stack.pop() is not data_types_lib.INT or stack.pop() is not data_types_lib.INT:
+            if len(stack) < 2 or stack.pop() is not INT_TYPE or stack.pop() is not INT_TYPE:
                 error_on_token(token, "STORE8 expects two INTs")
                 return True
 
@@ -1263,7 +1336,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    mov     [rbx], rax\n\n")
 
         elif token.type is token_lib.LOAD:
-            if not len(stack) or stack[-1] is not data_types_lib.INT:
+            if not len(stack) or stack[-1] is not INT_TYPE:
                 error_on_token(token, "LOAD expects a INT")
                 return True
 
@@ -1274,7 +1347,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    mov     [rsp], rax\n\n")
 
         elif token.type is token_lib.STORE:
-            if len(stack) < 2 or stack.pop() is not data_types_lib.INT or stack.pop() is not data_types_lib.INT:
+            if len(stack) < 2 or stack.pop() is not INT_TYPE or stack.pop() is not INT_TYPE:
                 error_on_token(token, "STORE expects two INTs")
                 return True
 
@@ -1284,7 +1357,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    mov     [rbx], al\n\n") 
 
         elif token.type is token_lib.SYSCALL0:
-            if len(stack) < 1 or stack[-1] is not data_types_lib.INT:
+            if len(stack) < 1 or stack[-1] is not INT_TYPE:
                 error_on_token(token, "SYSCALL0 expects a INT")
                 return True
 
@@ -1296,8 +1369,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.SYSCALL1:
             if (
                     len(stack) < 2 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "SYSCALL1 expects two INTs")
                 return True
@@ -1311,9 +1384,9 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.SYSCALL2:
             if (
                     len(stack) < 3 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
                 ):
                 error_on_token(token, "SYSCALL2 expects three INTs")
                 return True
@@ -1328,10 +1401,10 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.SYSCALL3:
             if (
                     len(stack) < 4 or
-                    stack.pop() is not data_types_lib.INT or
-                    stack.pop() is not data_types_lib.INT or
-                    stack.pop() is not data_types_lib.INT or
-                    stack[-1] is not data_types_lib.INT
+                    stack.pop() is not INT_TYPE or
+                    stack.pop() is not INT_TYPE or
+                    stack.pop() is not INT_TYPE or
+                    stack[-1] is not INT_TYPE
             ):
                 error_on_token(token, "SYSCALL3 expects four INTs")
                 return True
@@ -1349,8 +1422,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    push    data_{len(data)}\n")
             file.write(f"    push    {len(token.arg)}\n\n")
 
-            stack.append(data_types_lib.INT)
-            stack.append(data_types_lib.INT)
+            stack.append(INT_TYPE)
+            stack.append(INT_TYPE)
                 
             data.append(f"db " + ", ".join(map(str, map(ord, token.arg))) + ", 0")
 
