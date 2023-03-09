@@ -1,16 +1,200 @@
+// Names starting with _ are usually supposed to not be used
+
+macro ptr int endmacro
+
+macro sizeof(ptr)  8 endmacro
 macro sizeof(int)  8 endmacro
 macro sizeof(bool) 8 endmacro
 macro sizeof(char) 1 endmacro
 
-macro neg !! inc endmacro
+macro MAX-INT  0x7fffffffffffffff endmacro
+macro MIN-INT  0x8000000000000000 endmacro
+macro MAX-UINT 0xffffffffffffffff endmacro
+macro MIN-UINT 0x0000000000000000 endmacro
 
-macro drop  let _x_             in                 end endmacro
-macro dropd let _x_ _y_         in                 end endmacro
-macro dup   let _x_             in _x_ _x_         end endmacro
-macro dupd  let _x_ _y_         in _x_ _y_ _x_ _y_ end endmacro
-macro swp   let _x_ _y_         in _y_ _x_         end endmacro
-macro swpd  let _a_ _b_ _x_ _y_ in _x_ _y_ _a_ _b_ end endmacro
-macro rot   let _x_ _y_ _z_     in _y_ _z_ _x_     end endmacro
-macro arot  let _x_ _y_ _z_     in _z_ _x_ _y_     end endmacro
-macro rot4  let _x_ _y_ _z_ _w_ in _y_ _z_ _w_ _x_ end endmacro
-macro arot4 let _x_ _y_ _z_ _w_ in _w_ _x_ _y_ _z_ end endmacro
+// int: x -- bool: result
+macro is-pos   0 >  endmacro
+macro is-zero  0 =  endmacro
+macro is-neg   0 <  endmacro
+macro isn-pos  0 <= endmacro
+macro isn-zero 0 != endmacro
+macro isn-neg  0 >= endmacro
+
+macro is-even 2 % is-zero  endmacro
+macro is-odd  2 % isn-zero endmacro
+
+
+// int: x -- int: result
+macro neg    !! inc                endmacro
+macro abs    dup is-neg if neg end endmacro
+macro iabs   dup is-pos if neg end endmacro
+macro sqr    dup *                 endmacro
+macro usqr   dup u*                endmacro
+
+macro get-dec-digit '0' +                         endmacro
+macro get-hex-digit dup 9 > if 'W' else '0' end + endmacro
+
+// Macros below use let, with variable names _a_, _b_, _c_ and _d_. Avoid using those names if going to use those macros.
+// (I mean, what kind of a person uses a variable name like that already but whatever)
+
+macro drop  let _a_             in                 end endmacro
+macro dropd let _a_ _b_         in                 end endmacro
+macro dup   let _a_             in _a_ _a_         end endmacro
+macro dupd  let _a_ _b_         in _a_ _b_ _a_ _b_ end endmacro
+macro swp   let _a_ _b_         in _b_ _a_         end endmacro
+macro swpd  let _a_ _b_ _c_ _d_ in _c_ _d_ _a_ _b_ end endmacro
+macro rot   let _a_ _b_ _c_     in _b_ _c_ _a_     end endmacro
+macro arot  let _a_ _b_ _c_     in _c_ _a_ _b_     end endmacro
+macro rot4  let _a_ _b_ _c_ _d_ in _b_ _c_ _d_ _a_ end endmacro
+macro arot4 let _a_ _b_ _c_ _d_ in _d_ _a_ _b_ _c_ end endmacro
+
+macro min2
+  // int: x int: y -- int: min(x, y)
+  let _a_ _b_ in
+    _a_ _b_ < if _a_ else _b_ end
+  end
+endmacro
+
+macro min3
+  // int: x int: y int: z -- int: min(x, y, z)
+  let _a_ _b_ _c_ in
+    _a_ _b_ < if
+      _a_ _c_ < if _a_ else _c_ end
+    else
+      _b_ _c_ < if _b_ else _c_ end
+    end
+  end
+endmacro
+
+macro max2
+  // int: x int: y -- int: min(x, y)
+  let _a_ _b_ in
+    _a_ _b_ > if _a_ else _b_ end
+  end
+endmacro
+
+macro max3
+  // int: x int: y int: z -- int: min(x, y, z)
+  let _a_ _b_ _c_ in
+    _a_ _b_ > if
+      _a_ _c_ > if _a_ else _c_ end
+    else
+      _b_ _c_ > if _b_ else _c_ end
+    end
+  end
+endmacro
+
+macro sort2
+  // int: x int: y -- int: min(x, y) int: max(x, y)
+  let _a_ _b_ in
+    _a_ _b_ < if
+      _a_ _b_
+    else
+      _b_ _a_
+    end
+  end
+endmacro
+
+// If there was just a tiny amount of optimization, could write using sort2
+// But here we are making a 36 line sorting algoritm
+macro sort3
+  // int: x int: y int: z -- int: min(x, y, z) int: mid(x, y, z) int: max(x, y, z)
+  let _a_ _b_ _c_ in
+    _a_ _b_ < if
+      // x < y
+      _a_ _c_ < if
+        // x < z
+        _a_
+        _b_ _c_ < if
+          // y < z
+          _b_ _c_
+        else
+          // z < y
+          _c_ _b_
+        end
+      else
+        // z < x
+        _c_ _a_ _b_
+      end
+    else
+      // y < x
+      _a_ _c_ < if
+        // x < z
+        _b_ _a_ _c_
+      else
+        // z < x
+        _b_ _c_ < if
+          // y < z
+          _b_ _c_
+        else
+          // z < y
+          _c_ _b_
+        end _a_
+      end
+    end
+  end
+endmacro
+
+macro perm
+  // int: x int: y -- int: P(x, y)
+  // P(x, y) = x! / (x - y)!
+  let _x_ _y_ in
+    _x_ fact _x_ _y_ - fact /
+  end
+endmacro
+
+macro comb
+  // int: x int: y -- int: C(x, y)
+  // C(x, y) = x! / (y! * (x - y)!)
+  let _x_ _y_ in
+    _x_ fact _y_ / _x_ _y_ - /
+  end
+endmacro
+
+// Cool stuff
+
+// Pretty sure that gcd and lcm would work for fixed64 as well, not tested yet though.
+proc _gcd
+  // int: x int: y -- int: gcd(x, y)
+  // x<y must be already ensured otherwise will go in an infinite recursion loop.
+  int int -- int
+in
+  let x y in
+    x 0 = if
+      y
+    else
+      // y%x < x is always true, so no need to sort again
+      y x % x _gcd
+    end
+  end
+end
+
+macro gcd
+  // int: x int: y -- int: gcd(x, y)
+  // Makes sure the numbers are sorted and calls _gcd.
+  sort2 _gcd
+endmacro
+
+macro lcm
+  // int: x int: y -- int: lcd(x, y)
+  // lcm(x, y) * gcd(x, y) = x * y
+  // lcm(x, y) = x * y / gcd(x, y)
+  dupd gcd / *
+endmacro
+
+proc fact
+  // int: x -- int: x!
+  int -- int
+in
+  memory f sizeof(int) in
+    1 f !64
+
+    while dup 1 > do
+      let x in
+        f @64 x * f !64
+      x end
+    dec end drop
+
+    f @64
+  end
+end

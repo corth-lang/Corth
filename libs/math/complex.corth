@@ -17,40 +17,22 @@ include libs/math/fixed64.corth
 macro comp fixed64 fixed64 endmacro
 macro sizeof(comp) 2 sizeof(fixed64) * endmacro
 
-macro ff-to-comp
-  // fixed: R fixed: C -- comp: x
-  // This macro does nothing, since the representation does not change
-endmacro
-
-proc dup-complex
-  // comp: a -- comp: a comp: a'
-  comp -- comp comp
-in
-  dupd
-end
-
-proc swp-complex
-  // comp: a comp:b -- comp: b comp: a
-  comp comp -- comp comp
-in
-  swpd
-end
-
 macro load-complex
-  // int:*address
-  dup load8 swp 8 + load8
+  // ptr: address
+  dup @64 swp 8 + @64
 endmacro
 
 macro store-complex
-  // int:*address comp: x
-  rot dup 8 + rot store8 swp store8
+  // comp: x ptr: address
+  let xr xi addr in
+    xr addr     !64
+    xi addr 8 + !64
+  end
 endmacro
 
 // COMPLEX -- FIXED macro and procedures
-macro length-c
+macro lengths-c
   // comp: x -- fixed64: length(x)
-  // NOTE: length is unsigned fixed
-
   sqr-f swp sqr-f add-ff
 endmacro
 
@@ -58,14 +40,21 @@ endmacro
 // COMPLEX -- COMPLEX macro and procedures
 macro neg-c
   // comp: x -- comp: -x
-  neg
+  let xr xi in
+    xr neg
+    xi neg
+  end
 endmacro
 
 macro inv-c
   // comp: x -- comp: 1/x
   // NOTE: Even though length-c returns unsigned fixed, it is used like it is signed. Because of that, it may return a wrong result for very big complex numbers
-  dup-complex conj-c
-  swp-complex length-c div-cf
+  // 1 / (a + bi) = (a - bi) / (a^2 + b^2) = div-cf(conj-c(x), lengths-c(x))
+  let xr xi in
+    xr xi neg
+    xr sqr-f xi sqr-f add-ff
+    div-fc
+  end
 endmacro
 
 macro conj-c
@@ -92,12 +81,18 @@ end
 // COMPLEX COMPLEX -- COMPLEX macro and procedures
 macro add-cc
   // comp: a comp: b -- comp: a+b
-  rot + rot rot + swp
+  let ar ai br bi in
+    ar br add-ff
+    ai bi add-ff
+  end
 endmacro
 
 macro sub-cc
   // comp: a comp: b -- comp: a-b
-  rot - neg rot rot - swp
+  let ar ai br bi in
+    ar br add-ff
+    ai bi add-ff
+  end
 endmacro
 
 proc mul-cc
@@ -120,6 +115,8 @@ end
 macro div-cc
   // comp: a comp: b -- comp: a/b
   // a / b = a * (1/b) = mul-cc(a, inv-c(b))
+
+  // (a + bi) / (c + di) = (a + bi) * (c - di) / (c^2 + d^2) = ((ac + bd) + (bc - ad)i) / (c^2 + d^2)
   inv-c mul-cc
 endmacro
 
@@ -128,39 +125,57 @@ endmacro
 // NOTE: fixed argument is used as a real number
 macro add-cf
   // comp: a fixed64: b -- comp: a+b
-  rot add-ff swp
+  let xr xi f in
+    xr f add-ff
+    xi
+  end
 endmacro
 
 macro sub-cf
   // comp: a fixed64: b -- comp: a-b
-  rot sub-ff swp
+  let xr xi f in
+    xr f sub-ff
+    xi
+  end
 endmacro
 
 macro mul-cf
   // comp: a fixed64: b -- comp: a*b
-  dup rot mul-ff rot rot mul-ff swp
+  let xr xi f in
+    xr f mul-ff
+    xi f mul-ff
+  end
 endmacro
 
 macro div-cf
   // comp: a fixed64: b -- comp: a*b
-  dup rot swp div-ff rot rot div-ff swp
+  let xr xi f in
+    xr f div-ff
+    xi f div-ff
+  end
 endmacro
 
 
 // This macro uses the putu, putu-plus and puts from the io.corth library
 // Because of that, to use this macro, io.corth should already be included or putu, putu-plus and puts should be defined
-macro put-complex
-  // comp: x
+macro fput-complex
+  // comp: x file-desc: file
+  let xr xi file in
+    // Real part
+    xr file fput-fixed64
 
-  // Real part
-  swp put-fixed
-
-  // Imaginary part
-  dup 0 < if
-    " - " puts neg
-  else
-    " + " puts
+    // Imaginary part
+    xi xi is-neg if
+      neg " - "
+    else
+      " + "
+    end
+    
+    file fputs
+    file fput-fixed64
+    "i" file fputs
   end
-  
-  put-fixed "i" puts
 endmacro
+
+macro put-complex  STDOUT fput-complex endmacro  // comp: comp
+macro eput-complex STDERR fput-complex endmacro  // comp: comp

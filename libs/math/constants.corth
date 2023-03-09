@@ -1,4 +1,6 @@
 include libs/math/fixed64.corth
 
-macro PI 0x3243F6A89 endmacro
-macro E  0x2B7E15162 endmacro
+macro PI          0x03243F6A89 endmacro
+macro E           0x02B7E15162 endmacro
+macro rad-per-deg 0x000477D1A8 endmacro
+macro deg-per-rad 0x394BB834BE endmacro

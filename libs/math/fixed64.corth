@@ -12,18 +12,19 @@ makes a good enough representation for fixed numbers. Most operations can be eas
 
 // negative (1 bit) int-part (31 bits) decimal-part (32 bits)
 
-macro sizeof(fixed64) 8 endmacro
-macro fixed64 int endmacro
+macro fixed64         int endmacro
+
+macro sizeof(fixed64) 8   endmacro
 
 
 // CONVERTIONS
-macro int-to-fixed
-  // int: x -- fixed: x
+macro int-to-fixed64
+  // int: x -- fixed64: x
   <<32
 endmacro
 
-macro fixed-to-int
-  // float: x -- int: x
+macro fixed64-to-int
+  // fixed64: x -- int: x
   // Removes the decimal part
   >>32
 endmacro
@@ -31,113 +32,113 @@ endmacro
 
 // FIXED -- FIXED macro and procedures
 macro neg-f
-  // fixed: x -- fixed: -x
+  // fixed64: x -- fixed64: -x
   neg
 endmacro
 
 macro inv-f
-  // fixed: x -- fixed: 1/x
+  // fixed64: x -- fixed64: 1/x
   // Signed invert
   0xffffffffffffffff swp /
 endmacro
 
 macro uinv-f
-  // fixed: x -- fixed: 1/x
+  // fixed64: x -- fixed64: 1/x
   // Unsigned invert
   0xffffffffffffffff swp u/
 endmacro
 
 macro sqr-f
-  // fixed: x -- fixed: x^2
+  // fixed64: x -- fixed64: x^2
   dup mul-ff
 endmacro
 
 macro usqr-f
-  // fixed: x -- fixed: x^2
+  // fixed64: x -- fixed64: x^2
   dup umul-ff
 endmacro
 
 
 // FIXED FIXED -- FIXED macro and procedures
 macro add-ff
-  // fixed: a fixed: b -- fixed: a+b
+  // fixed64: a fixed64: b -- fixed64: a+b
   +
 endmacro
 
 macro sub-ff
-  // fixed: a fixed: b -- fixed: a-b
+  // fixed64: a fixed64: b -- fixed64: a-b
   -
 endmacro
 
 macro umul-ff
-  // fixed: a fixed: b -- fixed: a*b
+  // fixed64: a fixed64: b -- fixed64: a*b
   // Unsigned multiplication
   u** >>32 swp <<32 +
 endmacro
 
 macro mul-ff
-  // fixed: a fixed: b -- fixed: a*b
+  // fixed64: a fixed64: b -- fixed64: a*b
   // Signed multiplication
   ** >>32 swp <<32 +
 endmacro
 
 macro udiv-ff
-  // fixed: a fixed: b -- fixed: a/b
+  // fixed64: a fixed64: b -- fixed64: a/b
   // Unsigned division
   // a / b = a * (1 / b) = umul-ff(a, uinv-f(b))
   uinv-f umul-ff  
 endmacro
 
 macro div-ff
-  // fixed: a fixed: b -- fixed: a/b
+  // fixed64: a fixed64: b -- fixed64: a/b
   // Signed division
   // a / b = a * (1 / b) = mul-ff(a, inv-f(b))
   inv-f mul-ff  
 endmacro
 
 macro mod-ff
-  // fixed: a fixed: b -- fixed: a%b
+  // fixed64: a fixed64: b -- fixed64: a%b
   // Signed modulus
   %
 endmacro
 
 macro umod-ff
-  // fixed: a fixed: b -- fixed: a%b
+  // fixed64: a fixed64: b -- fixed64: a%b
   // Unsigned modulus
   u%
 endmacro
 
 macro arit-avg
-  // fixed: a fixed: b
+  // fixed64: a fixed64: b
   add-ff 2 div-fi
 endmacro
 
 
 // FIXED INTEGER -- FIXED macro and procedures
 macro add-fi
-  // fixed: a int: b -- fixed: a+b
-  int-to-fixed add-ff
+  // fixed64: a int: b -- fixed64: a+b
+  int-to-fixed64 add-ff
 endmacro
 
 macro sub-fi
-  // fixed: a int: b -- fixed: a-b
-  int-to-fixed sub-ff
+  // fixed64: a int: b -- fixed64: a-b
+  int-to-fixed64 sub-ff
 endmacro
 
 macro mul-fi
-  // fixed: a int: b -- fixed: a*b
-  int-to-fixed mul-ff
+  // fixed64: a int: b -- fixed64: a*b
+  int-to-fixed64 mul-ff
 endmacro
 
 macro div-fi
-  // fixed: a int: b -- fixed: a/b
-  int-to-fixed div-ff
+  // fixed64: a int: b -- fixed64: a/b
+  int-to-fixed64 div-ff
 endmacro
 
 
 // FIXED FIXED FIXED -- FIXED macro and procedures
 macro lin-int
-  // fixed: a fixed: b fixed: l -- fixed: a + (b - a) * l
+  // fixed64: a fixed64: b fixed64: l -- fixed64: a + (b - a) * l
   let a b l in
     a b a sub-ff l mul-ff add-ff
   end
@@ -146,16 +147,30 @@ endmacro
 
 // These macros uses the putu, putu-plus and puts from the io.corth library
 // Because of that, to use these macros, io.corth should already be included or putu, putu-plus and puts should be defined
-macro put-ufixed
-  // fixed: value
-  dup fixed-to-int putu "." puts int-to-fixed fixed-to-int 10000000000000000000 fixed-to-int * putu-plus
-endmacro
-
-macro put-fixed
-  // fixed: value
-  dup 0 < if
-    neg "-" puts put-ufixed
-  else
-    put-ufixed
+macro fput-ufixed64
+  // fixed64: value file-desc: file-desc
+  let x file in
+    x fixed64-to-int                                                      file fputu
+    "."                                                                   file fputs
+    x int-to-fixed64 fixed64-to-int 10000000000000000000 fixed64-to-int * file fputup
   end
 endmacro
+
+macro fput-fixed64
+  // fixed64: value file-desc: file-desc
+  let x file in
+    x x is-neg if
+      neg "-" file fputs
+    end
+
+    dup
+    fixed64-to-int                                                      file fputu
+    "."                                                                 file fputs
+    int-to-fixed64 fixed64-to-int 10000000000000000000 fixed64-to-int * file fputup
+  end
+endmacro
+
+macro put-ufixed64  STDOUT fput-ufixed64 endmacro // fixed64: x
+macro eput-ufixed64 STDERR fput-ufixed64 endmacro // fixed64: x
+macro put-fixed64   STDOUT fput-fixed64  endmacro // fixed64: x
+macro eput-fixed64  STDERR fput-fixed64  endmacro // fixed64: x

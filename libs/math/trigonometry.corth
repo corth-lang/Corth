@@ -5,14 +5,14 @@ macro TRI-ITER 27 endmacro
 
 
 proc sin-f
-  // fixed: theta -- fixed: sin(theta)
-  fixed -- fixed
+  // fixed64: theta -- fixed64: sin(theta)
+  fixed64 -- fixed64
 in
   PI 2 * mod-ff
   
   let x in
-    memory sum sizeof(fixed) and
-           a   sizeof(fixed) and
+    memory sum sizeof(fixed64) and
+           a   sizeof(fixed64) and
            i   sizeof(int)   in
 
       a   x store8
@@ -22,28 +22,28 @@ in
 	i swp store8
 
 	// a *= -x^2 / (i * (i - 1))
-	a x sqr-f neg-f i load8 div-fi i load8 dec div-fi a load8 mul-ff store8
+	a x sqr-f neg-f i @64 div-fi i @64 dec div-fi a @64 mul-ff store8
 
 	// sum += a
-	sum dup load8 a load8 add-ff store8
+	sum dup @64 a @64 add-ff store8
 
-	i load8 inc inc
+	i @64 inc inc
       end drop
 
-      sum load8
+      sum @64
     end
   end
 end
 
 proc cos-f
-  // fixed: theta -- fixed: sin(theta)
-  fixed -- fixed
+  // fixed64: theta -- fixed64: sin(theta)
+  fixed64 -- fixed64
 in
   PI 2 * mod-ff
   
   let x in
-    memory sum sizeof(fixed) and
-    memory a   sizeof(fixed) and
+    memory sum sizeof(fixed64) and
+    memory a   sizeof(fixed64) and
     memory i   sizeof(int)   in
 
       a   0x0000000100000000 store8
@@ -53,35 +53,45 @@ in
 	i swp store8
 
 	// a *= -x^2 / (i * (i - 1))
-	a x load8 sqr-f neg-f i load8 div-fi i load8 dec div-fi a load8 mul-ff store8
+	a x @64 sqr-f neg-f i @64 div-fi i @64 dec div-fi a @64 mul-ff store8
 
 	// sum += a
-	sum dup load8 a load8 add-ff store8
+	sum dup @64 a @64 add-ff store8
 
-	i load8 inc inc
+	i @64 inc inc
       end drop
 
-      sum load8
+      sum @64
     end
   end
 end
 
 macro tan-f
-  // fixed: theta -- fixed: tan(theta)
+  // fixed64: theta -- fixed64: tan(theta)
   dup sin-f swp cos-f div-ff
 endmacro
 
 macro cot-f
-  // fixed: theta -- fixed: cot(theta)
+  // fixed64: theta -- fixed64: cot(theta)
   dup cos-f swp sin-f div-ff
 endmacro
 
 macro sec-f
-  // fixed: theta -- fixed: sec(theta)
+  // fixed64: theta -- fixed64: sec(theta)
   cos-f inv-f
 endmacro
 
 macro csc-f
-  // fixed: theta -- fixed: csc(theta)
+  // fixed64: theta -- fixed64: csc(theta)
   sin-f inv-f
+endmacro
+
+macro deg-to-rad
+  // fixed64: x -- fixed64: y
+  rad-per-deg mul-ff
+endmacro
+
+macro rad-to-deg
+  // fixed64: x -- fixed64: y
+  deg-per-rad mul-ff
 endmacro

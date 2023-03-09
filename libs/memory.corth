@@ -1,52 +1,93 @@
 include libs/core.corth
 
+// This should be changed to ptr type, when ptr type is implemented for real.
+// (Probably never :( )
 macro NULLPTR 0 endmacro
 
 macro get
-  // src index
-  // index src
+  // ptr: src   int: index
+  // int: index ptr: src
 
-  + load
+  + @8
 endmacro
 
 macro set
-  // src index value
-  // index src value
+  // ptr: src   int: index int: value
+  // int: index ptr: src   int: value
 
-  rot rot + swp store
+  arot + !8
 endmacro
 
 macro get8
-  // src index
-  // index src
+  // ptr: src   int: index
+  // int: index ptr: src
 
-  + load8
+  + @64
 endmacro
 
 macro set8
-  // src index value
-  // index src value
+  // ptr: src   int: index int: value
+  // int: index ptr: src   int: value
 
-  rot rot + swp store8
+  arot + !64
 endmacro
 
-proc memcpy
-    // src len dst	
-    int int int --
+proc memcpy8
+  // ptr: src int: len ptr: dst	
+  ptr int ptr --
 in
-  memory src sizeof(int) and
-         len sizeof(int) and
-         dst sizeof(int) in
-    
-    dst swp store8
-    len swp store8
-    src swp store8
-
-    0 while dup len load8 < do
-      dup dup
-      dst load8 swp
-      src load8 get set
+  let src len dst in
+    0 while dup len < do
+      let i in
+        src i + @8 
+        dst i + !8
+      i end
     inc end drop
+  end
+end
 
+proc memcpy64
+  // ptr: src int: len ptr: dst	
+  ptr int ptr --
+in
+  let src len dst in
+    0 while dup len < do
+      let i in
+        src i + @8 
+        dst i + !8
+      i end
+    8 + end drop
+  end
+end
+
+proc memset8
+  // ptr: dst int: len int: val
+  ptr int int --
+in
+  let dst len val in
+    dst len +
+    let fin in
+      dst while dup fin < do
+        let i in
+          val i !8
+        i end
+      inc end drop
+    end
+  end
+end
+
+proc memset64
+  // ptr:*dst int: len int: val
+  ptr int int --
+in
+  let dst len val in
+    dst len +
+    let fin in
+      dst while dup fin < do
+        let i in
+          val i !64
+        i end
+      8 + end drop
+    end
   end
 end
