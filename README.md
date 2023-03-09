@@ -33,7 +33,7 @@ For more information about the commands, type:
 
 ### First program:
 
-    include libs/io.corth
+    include libs/linux_86/io.corth
     
     proc main 
       -- int
@@ -168,7 +168,7 @@ For more information about the commands, type:
 
 ### Control flow:
 
-    include libs/io.corth
+    include libs/linux_x86/io.corth
 
     proc main
       -- int
@@ -206,29 +206,29 @@ For more information about the commands, type:
     proc increase
         --
     in
-        count dup load8 inc store8
+        count @64 inc count !64
     end
 
     proc main
         returns int
     in
-        count 0 store8
+        0 count !64
 
         increase
 
-        count load8 putu
+        count @64 putu
 
         memory x sizeof(int) and
 	       y sizeof(int) in
 	       
-	  x 0 store8
-	  x load8 puti " is before saving x\n" puts
-	  x 420 store8
-	  x load8 puti " is after saving x\n" puts
-	  y 0 store8
-	  y load8 puti " is before saving y\n" puts
-	  y 69 store8
-	  y load8 puti " is after saving y\n" puts
+	  0 x !64
+	  x @64 puti " is before saving x\n" puts
+	  420 x !64
+	  x @64 puti " is after saving x\n" puts
+	  0 y !64
+	  y @64 puti " is before saving y\n" puts
+	  69 y !64
+	  y @64 puti " is after saving y\n" puts
 	end
 
         0
@@ -241,7 +241,7 @@ For more information about the commands, type:
 - 'and' can be used to allocate more data without dealing with a huge chain of 'end's.
 - 'load8' loads 8 bytes of data from the address.
 - 'store8' stores 8 bytes of data to the address. (First argument is address and the second is the value to be stored)
-- The memory keyword can only be used in the global space, and the size is calculated on the compile time.
+- The size of memeory allocated must be calculated in the compile-time.
 
 ### Let:
 
