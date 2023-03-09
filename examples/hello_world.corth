@@ -1,0 +1,7 @@
+include libs/linux_x86/io.corth
+
+proc main
+  -- int
+in
+  "Hello, World!" puts
+0 end
