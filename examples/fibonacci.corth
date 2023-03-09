@@ -23,23 +23,19 @@ include libs/linux/io.corth
 proc main
     -- int
 in
-    // i a b 
-    20 0 1
+  memory a sizeof(int) and
+         b sizeof(int) and
+         i sizeof(int) in
+         
+    10 i !64
 
-    while
-       	rot dec dup
+    1 a !64
+    1 b !64
 
-	0 !=
-    do
-	rot rot
-
-    	dup putu
-	"\n" puts
-
-        dup rot +
+    while true do
+      a @64 putu "\n" puts
+      b @64 dup a @64 + b !64 a !64
     end
     
-    drop drop drop
-
-    0
-end
+  end
+0 end

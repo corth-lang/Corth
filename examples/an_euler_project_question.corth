@@ -39,54 +39,43 @@ Found better, 871. This number requires 178 steps
 */
 
 
-include libs/linux/io.corth
+include libs/linux_x86/io.corth
 
 
-macro START 1 endmacro
-macro END 10000000 endmacro
+macro START 1        endmacro
+macro END   10000000 endmacro
 
-memory best sizeof(int) end
-
-memory n sizeof(int) end
-memory step sizeof(int) end
-
-macro set-best best swp store8 endmacro
-macro set-n       n swp store8 endmacro
-macro set-step step swp store8 endmacro
-
-macro get-best best load8 endmacro
-macro get-n       n load8 endmacro
-macro get-step step load8 endmacro
-
-macro update
-  get-n 2 % 0 = if 
-    get-n 2 / set-n
+macro function
+  // int: x -- int: f(x)
+  dup is-even if 
+    2 /
   else
-    get-n 3 * inc set-n
+    3 * inc
   end
 endmacro
 
 proc main
   -- int
 in
-  START while dup END <= do
-    dup set-n
-    0 set-step
+  memory steps sizeof(int) and
+         best  sizeof(int) in
+    START while dup END <= do
+      dup
+      0 steps !64
 
-    while get-n 1 != do
-      update
-      get-step inc set-step
-    end
+      while dup 1 != do
+        function
+        steps @64 inc steps !64
+      end drop
 
-    get-step get-best > if
-      "Found better, " puts
-      dup putu
-      ". This number requires " puts
-      get-step putu
-      " steps\n" puts
-      get-step set-best
-    end
-  inc end drop
-
-  0
-end
+      steps @64 best @64 > if
+        "Found better, " puts
+        dup putu
+        ". This number requires " puts
+        steps @64 putu
+        " steps\n" puts
+        steps @64 best !64
+      end
+    inc end drop
+  end
+0 end

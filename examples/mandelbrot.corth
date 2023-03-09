@@ -8,10 +8,10 @@ Since Corth does not have floating point aritmetic (and since its hard), a fixed
 */
 
 
-include libs/linux/io.corth
-include libs/memory.corth
-include libs/math/fixed64.corth
+include libs/linux_x86/io.corth
 include libs/math/complex.corth
+include libs/math/fixed64.corth
+include libs/memory.corth
 
 
 macro WIDTH 128 endmacro
@@ -20,8 +20,6 @@ macro HALF-WIDTH WIDTH 2 / endmacro
 macro HALF-HEIGHT HEIGHT 2 / endmacro
 macro CHARS "          .........--------+++++++******=====????$$$@@%" drop endmacro
 macro MAX-ITERATION 55 endmacro
-
-macro buffer WIDTH HEIGHT * endmacro
 
 
 macro clear-screen
@@ -42,20 +40,20 @@ in
   memory z sizeof(comp) and
          c sizeof(comp) in
 
-    z 0   0   store-complex
-    c rot rot store-complex
+    c store-complex
+    0 0 z store-complex
 
     0 while
       // Break if reached the max iteration
       dup MAX-ITERATION dec <
     do
       inc
-
+      
       // Calculate next Z
-      z dup load-complex sqr-c c load-complex add-cc store-complex
+      z load-complex sqr-c c load-complex add-cc z store-complex
 
       // Check if |Z| > 2 (|Z|^2 > 4)
-      z load-complex length-c 4 int-to-fixed > if dec break end
+      z load-complex lengths-c 4 int-to-fixed64 > if dec break end
     end
   end
 end
@@ -72,13 +70,11 @@ in
 	0 while dup WIDTH < do
 	  let console-x in
 	    // Get 'pixel' position
-	    console-x HALF-WIDTH  - int-to-fixed
-	    console-y HALF-HEIGHT - int-to-fixed
-	    ff-to-comp camera-zoom load8 mul-cf camera-pos load-complex add-cc
+	    console-x HALF-WIDTH  - int-to-fixed64
+	    console-y HALF-HEIGHT - int-to-fixed64
+	    camera-zoom @64 mul-cf camera-pos load-complex add-cc
 
-	    // Get the iteration
-	    get-iteration
-	    CHARS + dup 1 puts 1 puts
+	    get-iteration CHARS + dup 1 puts 1 puts
 
             console-x
 	  end
@@ -96,16 +92,15 @@ end
 proc main
   -- int
 in
-  camera-pos  0x0000000010080100 neg 0x00000000fffe9080 store-complex           // Set camera pos to -0.062622129902656 + 0.9999780950616818176i 
-  camera-zoom 0x0000000100000000 store8                                         // Set camera zoom to 1
+  0x0000000010080100 neg 0x00000000fffe9080 camera-pos store-complex  // Set camera pos to -0.062622129902656 + 0.9999780950616818176i 
+  0x0000000100000000 camera-zoom !64                                  // Set camera zoom to 1
 
-  0x00000000fe000000 put-fixed
-  "\n" puts
-  
+  "\n\n" puts
+
   while true do
     render
     clear-screen
-    camera-zoom dup load8 0x00000000fe000000 mul-ff store8                      // Set camera zoom to 0.9921874997704392704 times itself
+    camera-zoom @64 0x00000000fe000000 mul-ff camera-zoom !64                  // Set camera zoom to 0.9921874997704392704 times itself
   end
   
   0

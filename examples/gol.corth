@@ -12,13 +12,15 @@ ROWS and COLS can be changed to make the board bigger or smaller.
 NOTE: There is a bug that if ROWS and COLS are not divisible by each other, algorithm acts weird.
 */
 
-include libs/linux/io.corth
+include libs/linux_x86/io.corth
 include libs/memory.corth
 
-macro ROWS 64 endmacro
-macro COLS 64 endmacro
-
+macro ROWS 16 endmacro
+macro COLS 16 endmacro
 macro CELLS ROWS COLS * endmacro
+
+macro DEAD  0x00 endmacro
+macro ALIVE 0xff endmacro
 
 memory board CELLS end
 memory old CELLS end
@@ -26,7 +28,7 @@ memory old CELLS end
 memory count sizeof(int) end
 
 macro get-id
-  // int: row-no int: col-no -- int: id (r * COLS + c)
+  // int: row-no int: col-no -- int: (r * COLS + c)
 
   COLS % swp ROWS % COLS * +
 endmacro
@@ -34,25 +36,23 @@ endmacro
 macro was-alive
   // int: row-no int: col-no -- bool: is-alive
 
-  get-id old get 0 !=
+  get-id old get isn-zero
 endmacro
 
 macro set-alive
   // int: row-no int: col-no --
 
-  get-id board 0xff set
+  get-id board ALIVE set
 endmacro
 
 macro set-dead
   // int: row-no int: col-no --
 
-  get-id board 0 set
+  get-id board DEAD set
 endmacro
 
 macro draw-board
-  0 while
-    dup ROWS <
-  do
+  0 while dup ROWS < do
     let row-no in
       0 while
 	dup COLS <
@@ -72,9 +72,7 @@ macro draw-board
 endmacro
 
 macro reset-board
-  0 while
-    dup ROWS <
-  do
+  0 while dup ROWS < do
     "\xc2\x8d" puts
   inc end drop
 endmacro
@@ -83,12 +81,16 @@ macro check-neighbor
   // int: row-no int: col-no
 
   was-alive if
-    count count load8 inc store8
+    count @64 inc count !64
   end
 endmacro
 
+macro clear-board
+  board CELLS DEAD memset8
+endmacro
+
 macro copy-board
-  board CELLS old memcpy
+  board CELLS old memcpy8
 endmacro
 
 macro update-board
@@ -100,7 +102,7 @@ macro update-board
 	dup COLS <
       do
         let col-no in
-	  count 0 store8
+	  0 count !64
 
 	  // north
 	  row-no inc col-no
@@ -138,10 +140,10 @@ macro update-board
 	    // If the cell is alive
 	    // Requires 2 or 3 neighbors to keep being alive
 
-	    count load8 2 < if
+	    count @64 2 < if
 	      row-no col-no set-dead
 	    else
-	      count load8 3 > if
+	      count @64 3 > if
 		row-no col-no set-dead
 	      end
 	    end
@@ -150,7 +152,7 @@ macro update-board
 	    // If the cell is dead
 	    // Requires 3 neighbors to born
 
-	    count load8 3 = if
+	    count @64 3 = if
 	      row-no col-no set-alive
 	    end
 	  end
@@ -171,9 +173,11 @@ proc main
 in
   0 50000000 set-nanosleep-time
 
+  clear-board
+  
   4 10 set-alive
   5 11 set-alive
-  6 9 set-alive
+  6 9  set-alive
   6 10 set-alive
   6 11 set-alive
   copy-board
@@ -182,14 +186,18 @@ in
 
   draw-board
 
-  while
-    true
-  do
+  while true do
     update-board
     reset-board
     draw-board
     nanosleep
   end
 
-  0
-end
+  3
+  2 > if
+    1
+  else
+    2
+  end drop
+  
+0 end
