@@ -34,7 +34,6 @@ import parser_lib
 
 # (probably gonna leave these to the Corth rewrite)
 # TODO: Make enumerations named so they can be debugged in the console easily
-# TODO: Change load to @, load8 to @8, store to ! and store8 to !8
 # TODO: Change the address format of tokens
 # TODO: Remake the stack, so that the pointer positions are already compiled (requires work because calling procedures will dynamically change the stack)
 

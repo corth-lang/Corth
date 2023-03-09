@@ -10,6 +10,8 @@ include libs/memory.corth
 
 // -- SYSTEM CONSTANTS --
 
+macro file-desc int endmacro
+
 // MAIN STREAMS
 macro STDIN          0 endmacro
 macro STDOUT         1 endmacro
@@ -33,50 +35,50 @@ macro RDWR           2 endmacro
 memory nanosleep-time sizeof(int) 2 * end
 
 macro call-sys-exit
-  // ex-code
+  // int: exit-code
   
   SYSEXIT syscall1 drop
 endmacro
 
 macro fopen
-  // str-ptr mode flags -- file-dc
+  // int: str-ptr int: mode int: flags -- file-desc: file-desc
 
   SYSOPEN syscall3
 endmacro
 
 macro fopen-read
-  // str-ptr -- file-dc
+  // int: str-ptr -- file-desc: file-desc
   
   RD_ONLY 0 fopen
 endmacro
 
 macro fopen-write
-  // str-ptr -- file-dc
+  // int: str-ptr -- file-desc: file-desc
   
   WR_ONLY 0 fopen
 endmacro
 
 macro fopen-read-write
-  // str-ptr -- file-dc
+  // int: str-ptr -- file-desc: file-desc
   
   RDWR 0 fopen
 endmacro
 
 macro fclose
-  // file-dc
+  // file-desc: file-desc
   
   SYSCLOSE syscall1 drop
 endmacro
 
 macro set-nanosleep-time
-  // seconds nanoseconds
+  // int: seconds int: nanoseconds
   
   nanosleep-time 8 rot set8
   nanosleep-time 0 set8
 endmacro
 
 macro get-nanosleep-time
-  // -- seconds nanoseconds
+  // -- int: seconds int: nanoseconds
   
   nanosleep-time 0 get8
   nanosleep-time 8 get8
