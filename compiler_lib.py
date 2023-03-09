@@ -24,13 +24,13 @@ import parser_lib
 # TODO: Add pointer type and change NULLPTR's type to ptr
 # TODO: Add fixed type
 # TODO: Add complex type
-# TODO: Define land as bool * bool (requires cast)
 # TODO: Add string type
 
 # TODO: Make names 'namespacable' (a name 'name' inside a module 'module' should be named 'module:name' when included, parser should be rewritten)
 # TODO: Add from
 # TODO: Add ELIF
 # TODO: Change the stack format
+# TODO: Change the parameter and variable names in the compiler so that they make sense
 
 # (probably gonna leave these to the Corth rewrite)
 # TODO: Make enumerations named so they can be debugged in the console easily
@@ -65,18 +65,19 @@ do
   <do>
 end
 
-memory <name> <size> (and <name> <size>). end  // Allocates memory; never deallocates if global, allocates in the end of the procedure if local
+memory <name> <size> (and <name> <size>). end  // Globally allocates memory; never deallocates if global
 
-memory <name> <size> (and <name> <size>). in   // Allocates memory and defines the name
+memory <name> <size> (and <name> <size>). in   // Locally allocates memory and defines the name
   <code>
 end                                            // Frees memory
 
+
+// Possible additions
 cast <type>                                    // This will cast any type to <type>, without any change in the byte representation
 
 typedef <name> (<name> <type>). end            // Defines a stack data type
 struct <name> (<name> <type>). end             // Defines a memory data type
 sizeof <name>                                  // Returns the size of the type
-
 
 struct complex
   fixed real
@@ -1288,7 +1289,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    ;; -- STORE8 --\n\n")
             file.write(f"    pop     rax\n")
             file.write(f"    pop     rbx\n")
-            file.write(f"    mov     [rbx], rax\n\n")
+            file.write(f"    mov     [rax], rbx\n\n")
 
         elif token.type is token_lib.LOAD:
             if not len(stack) or stack[-1] is not INT_TYPE:
@@ -1309,7 +1310,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    ;; -- STORE --\n\n")
             file.write(f"    pop     rax\n")
             file.write(f"    pop     rbx\n")
-            file.write(f"    mov     [rbx], al\n\n") 
+            file.write(f"    mov     [rax], bl\n\n") 
 
         elif token.type is token_lib.SYSCALL0:
             if len(stack) < 1 or stack[-1] is not INT_TYPE:
@@ -1380,7 +1381,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             stack.append(INT_TYPE)
             stack.append(INT_TYPE)
                 
-            data.append(f"db " + ", ".join(map(str, map(ord, token.arg))) + ", 0")
+            data.append(f"db " + ", ".join(map(str, map(ord, token.arg + "\x00"))))
 
         elif token.type is token_lib.DEBUG_STACK:
             log_lib.log("DEBUG", f"({token.address}) Reached ?stack")
@@ -1388,7 +1389,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
         elif token.type is token_lib.SHIFTL32:
             if len(stack) < 1:
-                erroron_token(token, f"SHIFTL32 expects an INT")
+                error_on_token(token, f"SHIFTL32 expects an INT")
                 return True
             
             file.write(f"    ;; -- SHIFTL32 --\n\n")
@@ -1405,7 +1406,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
         elif token.type is token_lib.SHIFTL4:
             if len(stack) < 1:
-                erroron_token(token, f"SHIFTL4 expects an INT")
+                error_on_token(token, f"SHIFTL4 expects an INT")
                 return True
             
             file.write(f"    ;; -- SHIFTL4 --\n\n")
