@@ -28,36 +28,6 @@ PUSHSTRC = enum_lib.step()
 NAME = enum_lib.step()
 TYPE = enum_lib.step()
 KEYWORDS = {
-    # Arithmetic operators
-    "+": (ADD := enum_lib.step()),
-    "-": (SUB := enum_lib.step()),
-    "*": (MUL := enum_lib.step()),
-    "*2": (MUL2 := enum_lib.step()),
-    "**": (FULLMUL := enum_lib.step()),
-    "u*": (UMUL := enum_lib.step()),
-    "u*2": (UMUL2 := enum_lib.step()),
-    "u**": (UFULLMUL := enum_lib.step()),
-    "/%": (DIVMOD := enum_lib.step()),
-    "/": (DIV := enum_lib.step()),
-    "%": (MOD := enum_lib.step()),
-    "u/%": (UDIVMOD := enum_lib.step()),
-    "u/": (UDIV := enum_lib.step()),
-    "u%": (UMOD := enum_lib.step()),
-
-    # Bitwise operators
-    "&&": (BAND := enum_lib.step()),
-    "||": (BOR := enum_lib.step()),
-    "^^": (BXOR := enum_lib.step()),
-    "!!": (BNOT := enum_lib.step()),
-    "<<32": (SHIFTL32 := enum_lib.step()),
-    ">>32": (SHIFTR32 := enum_lib.step()),
-    "<<4": (SHIFTL4 := enum_lib.step()),
-    ">>4": (SHIFTR4 := enum_lib.step()),
-
-    # Quick arithmetics
-    "inc": (INC := enum_lib.step()),
-    "dec": (DEC := enum_lib.step()),
-
     # Outer keywords
     "include": (INCLUDE := enum_lib.step()),
     "memory": (MEMORY := enum_lib.step()),
@@ -77,6 +47,38 @@ KEYWORDS = {
     "do": (DO := enum_lib.step()),
     "break": (BREAK := enum_lib.step()),
     "let": (LET := enum_lib.step()),
+    
+    # Arithmetic operators
+    "+": (ADD := enum_lib.step()),
+    "-": (SUB := enum_lib.step()),
+    "inc": (INC := enum_lib.step()),
+    "dec": (DEC := enum_lib.step()),
+
+    # Signed operations
+    "*": (MUL := enum_lib.step()),
+    "*2": (MUL2 := enum_lib.step()),
+    "**": (FULLMUL := enum_lib.step()),
+    "/%": (DIVMOD := enum_lib.step()),
+    "/": (DIV := enum_lib.step()),
+    "%": (MOD := enum_lib.step()),
+
+    # Unsigned operations
+    "u*": (UMUL := enum_lib.step()),
+    "u*2": (UMUL2 := enum_lib.step()),
+    "u**": (UFULLMUL := enum_lib.step()),
+    "u/%": (UDIVMOD := enum_lib.step()),
+    "u/": (UDIV := enum_lib.step()),
+    "u%": (UMOD := enum_lib.step()),
+
+    # Bitwise operators
+    "&&": (BAND := enum_lib.step()),
+    "||": (BOR := enum_lib.step()),
+    "^^": (BXOR := enum_lib.step()),
+    "!!": (BNOT := enum_lib.step()),
+    "<<32": (SHIFTL32 := enum_lib.step()),
+    ">>32": (SHIFTR32 := enum_lib.step()),
+    "<<4": (SHIFTL4 := enum_lib.step()),
+    ">>4": (SHIFTR4 := enum_lib.step()),
 
     # Comparison operators
     "=": (EQUAL := enum_lib.step()),
@@ -95,10 +97,10 @@ KEYWORDS = {
     "true": (TRUE := enum_lib.step()),
 
     # Memory operators
-    "load": (LOAD := enum_lib.step()),
-    "store": (STORE := enum_lib.step()),
-    "load8": (LOAD8 := enum_lib.step()),
-    "store8": (STORE8 := enum_lib.step()),
+    "@8": (LOAD := enum_lib.step()),
+    "!8": (STORE := enum_lib.step()),
+    "@64": (LOAD8 := enum_lib.step()),
+    "!64": (STORE8 := enum_lib.step()),
 
     # System calls
     "syscall0": (SYSCALL0 := enum_lib.step()),
