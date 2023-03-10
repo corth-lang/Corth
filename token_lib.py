@@ -37,6 +37,7 @@ KEYWORDS = {
     "proc": (PROC := enum_lib.step()),
     "--": (RETURNS := enum_lib.step()),
     "in": (IN := enum_lib.step()),
+    "return": (RETURN := enum_lib.step()),
 
     # In procedure keywords
     "if": (IF := enum_lib.step()),

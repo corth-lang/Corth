@@ -345,6 +345,7 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
 
             found_error = compile_procedure(file, program, data, names, arguments, returns, debug_mode)
 
+            file.write(f"    .RETURN:\n")
             file.write(f"    xchg    rsp, [callptr]\n")
             file.write(f"    pop     QWORD [local]\n")
             file.write(f"    pop     rax\n")
@@ -547,6 +548,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
     
     stack = deque()
     stack.extend(arguments)
+
+    returned = False
     
     while True:
         if not program:
@@ -555,7 +558,11 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
         token = program.popleft()
 
-        if token.type is token_lib.NAME:            
+        if token.type is token_lib.NAME:
+            if returned and token.type is not token_lib.END:
+                error_on_token(token, f"This code is impossible to reach")
+                return True
+                
             if token.arg in local_memory:
                 call_type, *args = local_memory[token.arg]
 
@@ -1000,10 +1007,14 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
                 if start in (token_lib.IF, token_lib.ELSE):
                     old_stack ,= args
-                    
-                    if old_stack != stack:
-                        error_on_token(token, "Stack changed inside an if-end")
-                        return True
+
+                    if returned:
+                        stack = old_stack
+                    else:
+                        if old_stack != stack:
+                            error_on_token(token, "Stack changed inside an if-end")
+                            return True
+                            
 
                     file.write(f"    ;; -- ENDIF ({level}) --\n\n")
                     file.write(f".L{level}:\n\n")
@@ -1017,7 +1028,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                         error_on_token(token, "Invalid syntax")
                         return True
 
-                    if stack != old_stack2:
+                    if not returned and stack != old_stack2:
                         error_on_token(token, "Stack changed inside a while-end")
                         log_lib.log("INFO", "Expected")
                         print_stack(old_stack2)
@@ -1049,6 +1060,10 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             else:
                 # End of proc
+                if returned:
+                    error("Returned just before ENDPROC, really?")
+                    return True
+                    
                 if stack == returns:
                     return False
                     
@@ -1061,6 +1076,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                 print_stack(stack)
 
                 return True
+
+            returned = False
 
         elif token.type is token_lib.WHILE:                
             file.write(f"    ;; -- WHILE ({start_level}) --\n\n")
@@ -1102,6 +1119,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             copy = levels.copy()
             copy.reverse()
 
+            returned = True
+
             for level, start, old_stack in copy:
                 if start is token_lib.DO:
                     break
@@ -1122,6 +1141,16 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             file.write(f"    ;; -- BREAK ({level}) --\n\n")
             file.write(f"    jmp     .L{level}\n\n")
+
+        elif token.type is token_lib.RETURN:
+            returned = True
+
+            if returns != stack:
+                error_on_token(token, "Procedure does not obey its returns in pre-return")
+                return True
+
+            file.write(f"    ;; -- RETURN --\n\n")
+            file.write(f"    jmp     .RETURN\n\n")
 
         elif token.type is token_lib.EQUAL:
             if (
