@@ -1,6 +1,6 @@
 include libs/linux_x86/io.corth
 
-// Max length of string +1. If a longer string is used, -may- crash.
+// Max length of string. If a longer string is used, -may- crash.
 // Max length should not be more than 256.
 // UNKNOWN is used to indicate that the value is unknown.
 // Any other number means the value is known and it can be used.
@@ -17,64 +17,66 @@ memory number-of-calls sizeof(int) end
 memory number-of-rembs sizeof(int) end
 
 macro reset-remember
-  number-of-calls 0 store8
+  0 number-of-calls !64
   remember MAX-SIZE sqr UNKNOWN memset8
 endmacro
 
-// Extremely slow, uses recursion not brain.
-// This example shows the extreme need of ELIF.
+// Add and remove has the same costs, otherwise the function would not make sense
+macro IGNORE-COST  0  endmacro
+macro REPLACE-COST 1  endmacro
+macro REMOVE-COST  1  endmacro
+
 proc rec-lev
   // int: len-s1 int: len-s2 -- int: min
   int int -- int
 in
   // Lets say s1 is the string we modify, and s2 is the destination.
   let len1 len2 in
-    len2 MAX-SIZE * len1 + remember +
+    len1 is-zero if
+      len2 IGNORE-COST * return
+    end
+
+    len2 is-zero if
+      len1 IGNORE-COST * return
+    end
+    
+    len2 dec MAX-SIZE * len1 dec + remember +
     // 'address' is the 'remember'ed value's address, if there is one.
     let address in
-      address load
+      address @8 dup
       // 'value' is the 'remember'ed value, if there is one
-      let value in
-        value UNKNOWN = if
-          // There is not a known value at this address  
-          number-of-calls dup load8 inc store8
-          
-          len1 0 = if
-            len2
-          else
-            len2 0 = if
-              len1
-            else
-              ptr1 load8 len1 + dec load
-              ptr2 load8 len2 + dec load
-              = if
-                // Last two characters are the same
-                len1 dec len2 dec rec-lev
-              else
-                // Replace character
-                len1 dec len2 dec rec-lev
+      
+      UNKNOWN != if
+        // There is a known value at this address
+        number-of-rembs @64 inc number-of-rembs !64
 
-                // Remove character
-                len1 dec len2     rec-lev
+        return
+      end drop
 
-                // Add character
-                len1     len2 dec rec-lev
+      // There is not a known value at this address  
+      number-of-calls @64 inc number-of-calls !64
 
-                // Find the minimum required
-                min3 inc
-              end
-            end
-          end
-          
-          // Save that for future use
-          dup address swp store
-        else
-          // There is a known value at this address
-          number-of-rembs dup load8 inc store8
-          
-          value
-        end
+      ptr1 @64 len1 + dec @8
+      ptr2 @64 len2 + dec @8
+      = if
+        // Last characters are the same, ignore
+        len1 dec len2 dec rec-lev IGNORE-COST +
+      else
+        // Replace character
+        len1 dec len2 dec rec-lev REPLACE-COST +
+
+        // Remove character
+        len1 dec len2     rec-lev REMOVE-COST +
+
+        // Add character
+        len1     len2 dec rec-lev REMOVE-COST +
+
+        // Find the minimum required
+        min3
       end
+
+      // Save that for future use
+      dup address !8
     end
   end
 end
@@ -84,16 +86,16 @@ proc main
 in
   reset-remember
 
-  "aaaaaaaaa"
-  "bbbbbbbbb"
+  "aa"
+  "abc"
   
   let _ptr1 len1 _ptr2 len2 in
-    ptr1 _ptr1 store8
-    ptr2 _ptr2 store8
+    _ptr1 ptr1 !64
+    _ptr2 ptr2 !64
     "lev('" puts _ptr1 len1 puts "', '" puts _ptr2 len2 puts "') = " puts
     len1 len2 rec-lev puti "\n" puts
-    "Number of calls = " puts number-of-calls load8 putu "\n" puts
-    "Number of remembers = " puts number-of-rembs load8 putu "\n" puts
+    "Number of calls = " puts number-of-calls @64 putu "\n" puts
+    "Number of remembers = " puts number-of-rembs @64 putu "\n" puts
   end
 
   0
