@@ -191,13 +191,5 @@ in
     reset-board
     draw-board
     nanosleep
-  end
-
-  3
-  2 > if
-    1
-  else
-    2
-  end drop
-  
+  end  
 0 end
