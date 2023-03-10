@@ -2,32 +2,32 @@ include libs/core.corth
 include libs/memory.corth
 
 macro str.get-len
-  // int:*ptr int: len -- int: len
+  // ptr: ptr int: len -- int: len
   swp drop
 endmacro
 
 macro strc.get-len
-  // int:*ptr -- int: len
+  // ptr: ptr -- int: len
 
   0 while
-    swp dup load 0 !=
+    swp dup @8 0 !=
   do
     inc swp
   inc end drop
 endmacro
 
 macro str.to-strc
-  // int:*ptr int: len -- int:*ptr
+  // ptr: ptr int: len -- ptr: ptr
   drop
 endmacro
 
 macro strc.to-str
-  // int:*ptr -- int:*ptr int: len
+  // ptr: ptr -- ptr: ptr int: len
   dup strc.get-len
 endmacro
 
 macro str.copy
-  // int:*src int: len int:*dst
+  // ptr: src int: len ptr: dst
   memcpy
 endmacro
 
