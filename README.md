@@ -120,15 +120,15 @@ For more information about the commands, type:
 ### Procedures:
 
     proc sum
-        int int --
+      int int --
     in
-        "Sum of these numbers are: " puts + putu "\n" puts
+      "Sum of these numbers are: " puts + putu "\n" puts
     end
 
     proc main
-        returns int
+      returns int
     in
-        17 52 sum
+      17 52 sum
     end
 
 - 'proc' defines a procedure, which can be called anywhere in the code.
@@ -138,17 +138,17 @@ For more information about the commands, type:
 ### Macros:
 
     macro sayHi
-        // Takes a string, the name
+      // Takes a string, the name
 
-        "Hi, " puts puts "!\n" puts
+      "Hi, " puts puts "!\n" puts
     endmacro
 
     proc main
-        -- int
+      -- int
     in
-        "Josh" sayHi
-	
-	0
+      "Josh" sayHi
+      
+      0
     end
 
 - 'macro' keyword is used to define macros and 'endmacro' is used to end the definition.
@@ -173,21 +173,21 @@ For more information about the commands, type:
     proc main
       -- int
     in
-	2 2 + 5 = if
-	  "Well, math is broken. Nice.\n" puts // Hopefully wont be printed
-	end
+      2 2 + 5 = if
+        "Well, math is broken. Nice.\n" puts // Hopefully wont be printed
+      end
 
-	3 4 > if
-	  "Your computer has virus\n" puts     // Hopefully wont be printed
-	else
-	  "Your computer is alright\n" puts    // Hopefully will be printed
-	end
+      3 4 > if
+        "Your computer has virus\n" puts     // Hopefully wont be printed
+      else
+        "Your computer is alright\n" puts    // Hopefully will be printed
+      end
 
-	// Count 0-9
-	"First 10 numbers from 0 are,\n" puts
-	0 while dup 10 < do                    // Duplicate the number, and check if it is less then 10
-	  dup putu "\n" puts                   // Print the number
-	inc end drop                           // Increase the number
+      // Count 0-9
+      "First 10 numbers from 0 are,\n" puts
+      0 while dup 10 < do                    // Duplicate the number, and check if it is less then 10
+        dup putu "\n" puts                   // Print the number
+      inc end drop                           // Increase the number
     end
 
 - 'if' is used for conditions, it runs the code after it only if the last item on the stack is true.
@@ -204,34 +204,34 @@ For more information about the commands, type:
     memory count sizeof(int) end
     
     proc increase
-        --
+      --
     in
-        count @64 inc count !64
+      count @64 inc count !64
     end
 
     proc main
-        returns int
+      returns int
     in
-        0 count !64
+      0 count !64
 
-        increase
+      increase
 
-        count @64 putu
+      count @64 putu
 
-        memory x sizeof(int) and
-	       y sizeof(int) in
+      memory x sizeof(int) and
+             y sizeof(int) in
 	       
-	  0 x !64
-	  x @64 puti " is before saving x\n" puts
-	  420 x !64
-	  x @64 puti " is after saving x\n" puts
-	  0 y !64
-	  y @64 puti " is before saving y\n" puts
-	  69 y !64
-	  y @64 puti " is after saving y\n" puts
-	end
+        0 x !64
+        x @64 puti " is before saving x\n" puts
+        420 x !64
+        x @64 puti " is after saving x\n" puts
+        0 y !64
+        y @64 puti " is before saving y\n" puts
+        69 y !64
+        y @64 puti " is after saving y\n" puts
+      end
 
-        0
+      0
     end
 
 - 'memory' is used for allocating global or local memory.
@@ -245,12 +245,9 @@ For more information about the commands, type:
 
 ### Let:
 
-   3 4
-   let x y in
-     x y * x + y -
-   end
-   
-   puti
+     3 4 let x y in
+       x y * x + y -
+     end puti
 
 - 'let' is used to make the stack management easier.
 - When 'let' is reached, the variables are stored with the stack data. These names will be removed from the namescope when end is reached.
