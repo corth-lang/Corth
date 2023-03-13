@@ -4,53 +4,80 @@ include libs/core.corth
 
 Say x is the real value and a is the byte representation of it. Then,
 
-  x = a * 2^32
+  x = a * W       where W = 2^-32
 
-makes a good enough representation for fixed numbers. Most operations can be easily recreated for fixed numbers.
+makes a good enough representation for fixed numbers. Most operations for integers can be easily recreated for fixed numbers with small tweaks.
 
 */
-
-// negative (1 bit) int-part (31 bits) decimal-part (32 bits)
 
 macro fixed64         int endmacro
 
 macro sizeof(fixed64) 8   endmacro
 
+macro whole-part 0x100000000 endmacro
+
 
 // CONVERTIONS
 macro int-to-fixed64
   // int: x -- fixed64: x
-  <<32
+  whole-part *
 endmacro
 
 macro fixed64-to-int
   // fixed64: x -- int: x
-  // Removes the decimal part
-  >>32
+  // Removes the decimal part.
+  whole-part /
 endmacro
 
-
-// FIXED -- FIXED macro and procedures
-macro neg-f
-  // fixed64: x -- fixed64: -x
-  neg
+macro frac
+  // fixed64: x -- fixed64: frac(x)
+  // frac(x) = x - floor(x)
+  // Returns the difference between x and the greatest number that is less than or equal to x.
+  // For negative numbers, the direction does NOT change.
+  // ex. frac(3.47) = 0.47, frac(-3.47) = 0.53
+  whole-part mod-ff
 endmacro
 
-macro inv-f
-  // fixed64: x -- fixed64: 1/x
-  // Signed invert
-  0xffffffffffffffff swp /
+macro inv-frac
+  // fixed64: x -- fixed64: invfrac(x)
+  // invfrac(x) = ceil(x) - x
+  // invfrac(x) = frac(-x)
+  // Returns the difference between x and the least number that is greater than x.
+  // For negative numbers, the direction does NOT change
+  // ex. invfrac(3.47) = 0.53, invfrac(-3.47) = 0.47
+  neg-f frac
 endmacro
 
-macro uinv-f
-  // fixed64: x -- fixed64: 1/x
-  // Unsigned invert
-  0xffffffffffffffff swp u/
+macro floor
+  // fixed64: x -- fixed64: floor(x)
+  // Result is the greatest whole number that is less than x.
+  // floor(x) = x - frac(x)
+  dup frac sub-ff
 endmacro
 
-macro sqr-f
-  // fixed64: x -- fixed64: x^2
-  dup mul-ff
+macro floor-base
+  // fixed64: x fixed64: b -- fixed64: floor(x, b)
+  // floor(x, b) = x - (x mod b)
+  // Result is the greatest number that is less than or equal to x and is divisible by b.
+  let _a_ _b_ in
+    _a_ _a_ _b_ mod-ff sub-ff
+  end
+endmacro
+
+macro ceil
+  // fixed64: x -- fixed64: ceil(x)
+  // Result is the least whole number that is greater than x.
+  dup inv-frac add-ff
+endmacro
+
+macro ceil-base
+  // fixed64: x fixed64: b -- fixed64: ceil(x, b)
+  // ceil(x, b) = x + (x mod b) + b
+  // ceil(x, b) = floor(x, b) + b
+  // Result is the least number that is greater tha nx and is divisible by b.
+  let _a_ _b_ in
+    _a_ _a_ _b_ mod-ff sub-ff _b_ add-ff
+  end
 endmacro
 
 macro usqr-f
@@ -58,58 +85,108 @@ macro usqr-f
   dup umul-ff
 endmacro
 
+macro sqr-f
+  // fixed64: x -- fixed64: x^2
+  dup mul-ff
+endmacro
+
+
+// FIXED -- FIXED macro and procedures
+// a, b and c denotes the bit representations; x, y and z are the real values.
+macro neg-f
+  // fixed64: x -- fixed64: -x
+  // z = cW = -x = -aW
+  // c = -a
+  neg
+endmacro
+
+macro uinv-f
+  // fixed64: x -- fixed64: 1/x
+  // Performs unsigned invert.
+  // z = cW = 1/x = 1/a / W
+  // c = W^2/a
+  // W^2 is 2^64, which can not be represented with 64 bits. But 2^64 - 1 can be, and the result is very good.
+  // W^2 ~ 2^64-1
+  // c = (2^64-1)/a
+  0xffffffffffffffff swp u/
+endmacro
+
+macro inv-f
+  // fixed64: x -- fixed64: 1/x
+  // Performs signed invert.
+  // z = cW = 1/x = 1/a / W
+  // c = W^2/a
+  // W^2 is 2^64, which can not be represented with 64 bits. But 2^64 - 1 can be, and the result is very good.
+  // W^2 ~ 2^64-1
+  // c = (2^64-1)/a
+  0xffffffffffffffff swp /
+endmacro
+
 
 // FIXED FIXED -- FIXED macro and procedures
 macro add-ff
   // fixed64: a fixed64: b -- fixed64: a+b
+  // z = cW = x + y = aW + bW
+  // c = a + b
   +
 endmacro
 
 macro sub-ff
   // fixed64: a fixed64: b -- fixed64: a-b
+  // z = cW = x - y = aW - bW
+  // c = a - b
   -
 endmacro
 
 macro umul-ff
   // fixed64: a fixed64: b -- fixed64: a*b
-  // Unsigned multiplication
-  u** >>32 swp <<32 +
+  // Performs unsigned multiplication.
+  // z = cW = xy = abW^2
+  // c = ab * W
+  u** fixed64-to-int swp int-to-fixed64 +
 endmacro
 
 macro mul-ff
   // fixed64: a fixed64: b -- fixed64: a*b
-  // Signed multiplication
-  ** >>32 swp <<32 +
+  // Performs signed multiplication.
+  // z = cW = xy = abW^2
+  // c = ab * W
+  ** fixed64-to-int swp int-to-fixed64 +
 endmacro
 
 macro udiv-ff
   // fixed64: a fixed64: b -- fixed64: a/b
-  // Unsigned division
-  // a / b = a * (1 / b) = umul-ff(a, uinv-f(b))
+  // Performs unsigned division.
+  // z = cW = x/y = xy^-1
   uinv-f umul-ff  
 endmacro
 
 macro div-ff
   // fixed64: a fixed64: b -- fixed64: a/b
-  // Signed division
-  // a / b = a * (1 / b) = mul-ff(a, inv-f(b))
+  // Performs signed division.
+  // z = cW = x/y = xy^-1
   inv-f mul-ff  
-endmacro
-
-macro mod-ff
-  // fixed64: a fixed64: b -- fixed64: a%b
-  // Signed modulus
-  %
 endmacro
 
 macro umod-ff
   // fixed64: a fixed64: b -- fixed64: a%b
-  // Unsigned modulus
+  // Performs unsigned modulus.
+  // z = cW = x mod y = aW mod bW
+  // c = a mod b
   u%
+endmacro
+
+macro mod-ff
+  // fixed64: a fixed64: b -- fixed64: a%b
+  // Performs signed modulus.
+  // z = cW = x mod y = aW mod bW
+  // c = a mod b
+  %
 endmacro
 
 macro arit-avg
   // fixed64: a fixed64: b
+  // aavg(x, y) = (x + y) / 2
   add-ff 2 div-fi
 endmacro
 
@@ -117,35 +194,58 @@ endmacro
 // FIXED INTEGER -- FIXED macro and procedures
 macro add-fi
   // fixed64: a int: b -- fixed64: a+b
+  // z = cW = x + b = aW + b
+  // c = a + b / W
   int-to-fixed64 add-ff
 endmacro
 
 macro sub-fi
   // fixed64: a int: b -- fixed64: a-b
+  // x = cW = x - b = aW - b
+  // c = a - b / W
   int-to-fixed64 sub-ff
+endmacro
+
+macro umul-fi
+  // fixed64: a int: b -- fixed64: a*b
+  // z = cW = xb = abW
+  // c = ab
+  u*
 endmacro
 
 macro mul-fi
   // fixed64: a int: b -- fixed64: a*b
-  int-to-fixed64 mul-ff
+  // z = cW = xb = abW
+  // c = ab
+  *
+endmacro
+
+macro udiv-fi
+  // fixed64: a int: b -- fixed64: a/b
+  // z = cW = x/b = a/b * W
+  // c = a/b
+  u/
 endmacro
 
 macro div-fi
   // fixed64: a int: b -- fixed64: a/b
-  int-to-fixed64 div-ff
+  // z = cW = x/b = a/b * W
+  // c = a/b
+  /
 endmacro
 
 
 // FIXED FIXED FIXED -- FIXED macro and procedures
 macro lin-int
-  // fixed64: a fixed64: b fixed64: l -- fixed64: a + (b - a) * l
-  let a b l in
-    a b a sub-ff l mul-ff add-ff
+  // fixed64: a fixed64: b fixed64: t -- fixed64: linint(a, b, t)
+  // linint(a, b, t) = a + (b - a) * t
+  let _a_ _b_ _c_ in
+    _a_ _b_ _a_ sub-ff _c_ mul-ff add-ff
   end
 endmacro
 
 
-// These macros uses the putu, putu-plus and puts from the io.corth library
+// These macros use the putu, putu-plus and puts from the io.corth library
 // Because of that, to use these macros, io.corth should already be included or putu, putu-plus and puts should be defined
 macro fput-ufixed64
   // fixed64: value file-desc: file-desc
