@@ -12,6 +12,9 @@ macro MIN-INT  0x8000000000000000 endmacro
 macro MAX-UINT 0xffffffffffffffff endmacro
 macro MIN-UINT 0x0000000000000000 endmacro
 
+macro NOT-A-DIGIT   0x0000000000000001 endmacro
+macro INPUT-TOO-BIG 0x0000000000000002 endmacro
+
 // int: x -- bool: result
 macro is-pos   0 >  endmacro
 macro is-zero  0 =  endmacro
@@ -31,8 +34,10 @@ macro iabs   dup is-pos if neg end endmacro
 macro sqr    dup *                 endmacro
 macro usqr   dup u*                endmacro
 
-macro get-dec-digit '0' +                         endmacro
-macro get-hex-digit dup 9 > if 'W' else '0' end + endmacro
+macro int-to-dec-digit '0' +                         endmacro
+macro int-to-hex-digit dup 9 > if 'W' else '0' end + endmacro
+
+macro dec-digit-to-int '0' -                         endmacro
 
 // Macros below use let, with variable names _a_, _b_, _c_ and _d_. Avoid using those names if going to use those macros.
 // (I mean, what kind of a person uses a variable name like that already but whatever)
@@ -95,8 +100,9 @@ macro sort2
   end
 endmacro
 
-// If there was just a tiny amount of optimization, could write using sort2
-// But here we are making a 36 line sorting algoritm
+// Sorts from least to greatest
+// If there was just a tiny amount of optimization, could write this using sort2
+// But here we are making a 38 line sorting algoritm
 macro sort3
   // int: x int: y int: z -- int: min(x, y, z) int: mid(x, y, z) int: max(x, y, z)
   let _a_ _b_ _c_ in
@@ -135,45 +141,53 @@ macro sort3
   end
 endmacro
 
+// Because of the integer limit, can return wrong results for big numbers.
 macro perm
   // int: x int: y -- int: P(x, y)
-  // P(x, y) = x! / (x - y)!
-  let _x_ _y_ in
-    _x_ fact _x_ _y_ - fact /
+  // P(a, b) = a! / (a-b)! = (a-b) * (a-b+1) * (a-b+2) * ... * (a-1) * a = mul-bet(a-b, a)
+  // NOTE: x >= y must satisfied.
+  let _a_ _b_ in
+    _a_ _b_ - inc _a_ mul-bet
   end
 endmacro
 
+// Because of the integer limit, can return wrong results for big numbers.
+// C(28, n) can be calculated without any problem, but any bigger number may start to cause problems.
 macro comb
   // int: x int: y -- int: C(x, y)
-  // C(x, y) = x! / (y! * (x - y)!)
-  let _x_ _y_ in
-    _x_ fact _y_ / _x_ _y_ - /
+  // C(a, b) = a! / (b! * (a - b)!) = P(a, b) / b! = P(a, a-b) / (a-b)!
+  // y and x-y are sorted, since if c in P(n, c) is bigger, it is faster to calculate it.
+  // NOTE: x >= y must be satisfied.
+  let _a_ _b_ in 
+    _b_ _a_ _b_ - < if
+      // b < (a - b)
+      // C(a, b) = mul-bet(a-b, a) / b!
+      _a_ _b_ - inc _a_ mul-bet 2 _b_ mul-bet /
+    else
+      // b > (a - b)
+      // C(a, b) = mul-bet(b, a) / (a-b)!
+      _b_ inc _a_ mul-bet 2 _a_ _b_ - mul-bet /
+    end
   end
 endmacro
 
 // Cool stuff
 
 // Pretty sure that gcd and lcm would work for fixed64 as well, not tested yet though.
-proc _gcd
+proc gcd
   // int: x int: y -- int: gcd(x, y)
-  // x<y must be already ensured otherwise will go in an infinite recursion loop.
+  // NOTE: x < y must be already satisfied otherwise will go in an infinite recursion loop.
   int int -- int
 in
   let x y in
     x 0 = if
       y
     else
-      // y%x < x is always true, so no need to sort again
-      y x % x _gcd
+      // y%x < x is always true, so no need to sort again.
+      y x % x gcd
     end
   end
 end
-
-macro gcd
-  // int: x int: y -- int: gcd(x, y)
-  // Makes sure the numbers are sorted and calls _gcd.
-  sort2 _gcd
-endmacro
 
 macro lcm
   // int: x int: y -- int: lcd(x, y)
@@ -182,19 +196,28 @@ macro lcm
   dupd gcd / *
 endmacro
 
-proc fact
-  // int: x -- int: x!
-  int -- int
+proc mul-bet
+  // int: x int: y -- int: x * (x+1) * (x+2) * ... * (y-1) * y
+  // For x <= y, multiplies the numbers between (including) x and y.
+  // For y > x, returns 1.
+  // NOTE: For big numbers, the result can lose its precission, because of the integer size limit.
+  int int -- int
 in
-  memory f sizeof(int) in
-    1 f !64
-
-    while dup 1 > do
-      let x in
-        f @64 x * f !64
-      x end
-    dec end drop
-
-    f @64
+  let y in
+    memory m sizeof(int) in
+      1 m !64
+      while dup y <= do
+        dup m @64 * m !64
+      inc end drop
+      m @64
+    end
   end
 end
+
+// Because of the integer limit, the biggest number whose factorial can be calculated without any problem is 20
+// For anything bigger, it is recommended to use full-fact
+macro fact
+  // int: x -- int: x!
+  // x! = 1 * 2 * 3 * ... * (x-1) * x = mul-bet(2, x)
+  2 swp mul-bet
+endmacro
