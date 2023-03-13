@@ -1,0 +1,29 @@
+include libs/linux_x86/io.corth
+
+// This example calculates the factors of the number the user entered
+
+proc main
+  -- int
+in
+  "Enter a number: " puts
+  getu let number in
+    "Factors of " puts number putu " are:\n" puts
+    
+    1 while dup sqr number < do
+      let i in
+        number i % is-zero if
+          i puti " and " puts
+          number i / puti "\n" puts
+        end
+      i end
+    inc end
+
+    let last in
+      last sqr number = if
+        last puti " is the square root of " puts number puti "\n" puts
+      end
+    end
+  end
+
+  0
+end

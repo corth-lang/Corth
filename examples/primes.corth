@@ -1,0 +1,46 @@
+include libs/linux_x86/io.corth
+
+// END is the end of the numbers to check
+// BUFFER-SIZE is the size of buffer that the prime numbers are being stored in. It should be half of END
+macro END 1000000 endmacro
+macro BUFFER-SIZE 500000 endmacro
+
+memory primes-list sizeof(int) BUFFER-SIZE * end
+memory primes-end sizeof(int) end
+
+proc is-prime
+  int -- bool
+in
+  let n in
+    primes-list while dup primes-end @64 < do
+      let i in
+        n i @64 % is-zero if
+          false return
+        end
+
+        i @64 sqr n > if
+          true return
+        end
+      i end
+    8 + end drop
+  end
+  
+  // This is a fake return, it will never be returned but the compiler expects a return value here
+  // To satisfy that, it is used
+  true
+end
+
+proc main
+  -- int
+in
+  primes-list primes-end !64
+  2 while dup END < do
+    let n in
+      n is-prime if
+        n primes-end @64 !64
+        primes-end @64 8 + primes-end !64
+        n puti "\n" puts
+      end
+    n end
+  inc end drop
+0 end
