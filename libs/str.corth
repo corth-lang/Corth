@@ -31,6 +31,34 @@ macro str.copy
   memcpy
 endmacro
 
+proc str.dec-to-int
+  // ptr: src int: len -- int: number
+  // NOTE: If the number is too big, the result will be wrong
+  ptr int -- int
+in
+  memory n sizeof(int) in
+    0 n !64
+
+    let src len in
+      src while dup src - len < do
+        dup @8 let i in
+          i '9' > if
+            NOT-A-DIGIT call-sys-exit
+          end
+
+          i '0' < if
+            NOT-A-DIGIT call-sys-exit
+          end
+
+          i dec-digit-to-int n @64 10 * + n !64
+        end
+      inc end drop
+    end
+
+    n @64
+  end
+end
+
 /*
 ITS RECOMMENDED TO NOT USE THIS LIBRARY
 THIS LIBRARY AND STRING TYPE REQUIRES A TON OF REWORK
