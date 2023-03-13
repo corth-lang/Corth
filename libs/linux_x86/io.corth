@@ -1,7 +1,7 @@
-include libs/core.corth
-include libs/memory.corth
 include libs/linux_x86/sys.corth
-
+include libs/memory.corth
+include libs/core.corth
+include libs/str.corth
 
 //    ================
 //    ==== Output ====
@@ -26,7 +26,7 @@ in
 
       while
         value @64 10 /%
-        get-dec-digit i @64 !8
+        int-to-dec-digit i @64 !8
         i @64 dec i !64
         dup value !64 0 !=
       do end
@@ -58,12 +58,12 @@ in
       16 while dup 0 > do
         let x i in
           // Save the char
-          x 0xf000000000000000 && 0x1000000000000000 / get-hex-digit char !8
+          x 0xf000000000000000 && 0x1000000000000000 / int-to-hex-digit char !8
 
           // Print the char
           char 1 file fputs
           
-          x <<4 i dec
+          x 16 * i dec
         end
       end drop drop
     end
@@ -97,7 +97,7 @@ in
         while dup buffer >= do
           let i in
             value @64 10 /%
-            get-dec-digit i !8
+            int-to-dec-digit i !8
             value !64
           i end
         dec end drop
@@ -107,17 +107,6 @@ in
     end
   end
 end
-
-macro puts   STDOUT fputs  endmacro  // ptr: str-ptr int: str-len
-macro eputs  STDERR fputs  endmacro  // ptr: str-ptr int: str-len
-macro putu   STDOUT fputu  endmacro  // int: int
-macro eputu  STDERR fputu  endmacro  // int: int
-macro puti   STDOUT fputi  endmacro  // int: int
-macro eputi  STDERR fputi  endmacro  // int: int
-macro putx   STDOUT fputx  endmacro  // int: int
-macro eputx  STDERR fputx  endmacro  // int: int
-macro putup  STDOUT fputup endmacro  // int: int
-macro eputup STDERR fputup endmacro  // int: int
 
 //  ===============
 //  ==== Input ====
@@ -131,8 +120,49 @@ macro fgets
   arot SYSREAD syscall3
 endmacro
 
-macro gets
-  // ptr: str-ptr int: str-len -- int: read-bytes
-  
-  STDIN fgets
-endmacro
+// == Unsigned decimals ==
+// 20 bytes are read, since the longest unsigned integer is 20 digits in decimal
+proc fgetu
+  // files-desc: file-desc -- int: read
+  file-desc -- int
+in
+  let file in
+    memory buffer 20 in
+      buffer 20 file fgets dec buffer swp str.dec-to-int
+    end
+  end
+end
+
+// == Signed decimals ==
+// 20 bytes are read, since the least negative number is 19 digits in decimal and requires a minus
+proc fgeti
+  // file-desc: file-desc -- int: read
+  file-desc -- int
+in
+  let file in
+    memory buffer 19 in
+      buffer 20 file fgets dec
+      
+      buffer @8 '-' = if
+        dec buffer inc swp str.dec-to-int neg
+      else
+        buffer swp str.dec-to-int
+      end 
+    end
+  end
+end
+
+macro  puts  STDOUT fputs  endmacro  // ptr: str-ptr int: str-len
+macro eputs  STDERR fputs  endmacro  // ptr: str-ptr int: str-len
+macro  putu  STDOUT fputu  endmacro  // int: int
+macro eputu  STDERR fputu  endmacro  // int: int
+macro  puti  STDOUT fputi  endmacro  // int: int
+macro eputi  STDERR fputi  endmacro  // int: int
+macro  putx  STDOUT fputx  endmacro  // int: int
+macro eputx  STDERR fputx  endmacro  // int: int
+macro  putup STDOUT fputup endmacro  // int: int
+macro eputup STDERR fputup endmacro  // int: int
+
+macro  gets  STDIN  fgets  endmacro  // ptr: str-ptr int: str-len
+macro  getu  STDIN  fgetu  endmacro  // 
+macro  geti  STDIN  fgeti  endmacro  // 
