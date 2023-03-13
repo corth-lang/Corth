@@ -76,10 +76,6 @@ KEYWORDS = {
     "||": (BOR := enum_lib.step()),
     "^^": (BXOR := enum_lib.step()),
     "!!": (BNOT := enum_lib.step()),
-    "<<32": (SHIFTL32 := enum_lib.step()),
-    ">>32": (SHIFTR32 := enum_lib.step()),
-    "<<4": (SHIFTL4 := enum_lib.step()),
-    ">>4": (SHIFTR4 := enum_lib.step()),
 
     # Comparison operators
     "=": (EQUAL := enum_lib.step()),

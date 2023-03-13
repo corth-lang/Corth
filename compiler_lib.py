@@ -11,9 +11,12 @@ import parser_lib
 # TODO: Add library search locations
 # TODO: Add logging file specification
 
-# TODO: Add early return
+# TODO: Add the main parameters as array of char
+
+# TODO: Add negative numbers
 
 # TODO: Add pre-execution, which will allow static execution and different kinds of optimizations (this kinda does not work well with nasm macros)
+# TODO: Change let so that the variables are stored in the registers, not the local memory (might require a bit of work)
 # TODO: Add in file nasm macros (would help make the compiler much smaller since the macros will be defined in the libraries instead of the compiler)
 # TODO: Add in-file half-corth (better version of nasm macros that is more useful with pre-execution)
 
@@ -89,7 +92,7 @@ memory b as complex
 // a -> pointer to that address
 // a.real -> pointer to that address
 
-a.real load8 b.real load8
+a.real @64 b.real @64
 
 
 include <name>
@@ -345,7 +348,7 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
 
             found_error = compile_procedure(file, program, data, names, arguments, returns, debug_mode)
 
-            file.write(f"    .RETURN:\n")
+            file.write(f".RETURN:\n")
             file.write(f"    xchg    rsp, [callptr]\n")
             file.write(f"    pop     QWORD [local]\n")
             file.write(f"    pop     rax\n")
@@ -412,7 +415,7 @@ def get_types(program, names, types, ends):
                return True
 
         else:
-            error_on_token(token, f"Expected TYPE or {end}; got '{token.type}'")
+            error_on_token(token, f"Expected TYPE or {ends}; got '{token.type}'")
             return True
 
 
@@ -588,7 +591,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                     file.write(f"    mov    rax, QWORD [local]\n")
 
                     if address:
-                        file.write(f"    add     rax, {address}\n")
+                        file.write(f"    add    rax, {address}\n")
 
                     file.write(f"    push   QWORD [rax]\n")
 
@@ -1010,11 +1013,12 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
                     if returned:
                         stack = old_stack
+                        returned = False
+                        
                     else:
                         if old_stack != stack:
                             error_on_token(token, "Stack changed inside an if-end")
                             return True
-                            
 
                     file.write(f"    ;; -- ENDIF ({level}) --\n\n")
                     file.write(f".L{level}:\n\n")
@@ -1028,7 +1032,10 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                         error_on_token(token, "Invalid syntax")
                         return True
 
-                    if not returned and stack != old_stack2:
+                    if returned:
+                        error_on_token(token, "Returned between do-end")
+
+                    if stack != old_stack2:
                         error_on_token(token, "Stack changed inside a while-end")
                         log_lib.log("INFO", "Expected")
                         print_stack(old_stack2)
@@ -1076,8 +1083,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                 print_stack(stack)
 
                 return True
-
-            returned = False
 
         elif token.type is token_lib.WHILE:                
             file.write(f"    ;; -- WHILE ({start_level}) --\n\n")
@@ -1414,39 +1419,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
         elif token.type is token_lib.DEBUG_STACK:
             log_lib.log("DEBUG", f"({token.address}) Reached ?stack")
             print_stack(stack)
-
-        elif token.type is token_lib.SHIFTL32:
-            if len(stack) < 1:
-                error_on_token(token, f"SHIFTL32 expects an INT")
-                return True
-            
-            file.write(f"    ;; -- SHIFTL32 --\n\n")
-            file.write(f"    shl     QWORD [rsp], 32\n\n")
-
-
-        elif token.type is token_lib.SHIFTR32:
-            if len(stack) < 1:
-                error_on_token(token, f"SHIFTR32 expects an INT")
-                return True
-            
-            file.write(f"    ;; -- SHIFTR32 --\n\n")
-            file.write(f"    shr     QWORD [rsp], 32\n\n")
-
-        elif token.type is token_lib.SHIFTL4:
-            if len(stack) < 1:
-                error_on_token(token, f"SHIFTL4 expects an INT")
-                return True
-            
-            file.write(f"    ;; -- SHIFTL4 --\n\n")
-            file.write(f"    shl     QWORD [rsp], 4\n\n")
-
-        elif token.type is token_lib.SHIFTR4:
-            if len(stack) < 1:
-                error_on_token(token, f"SHIFTR4 expects an INT")
-                return True
-            
-            file.write(f"    ;; -- SHIFTR4 --\n\n")
-            file.write(f"    shr     QWORD [rsp], 4\n\n")
 
         else:
             error_on_token(token, f"Token type {token.type} is unknown.")
