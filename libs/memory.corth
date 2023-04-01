@@ -32,36 +32,9 @@ macro set8
   arot + !64
 endmacro
 
-proc memcpy8
-  // ptr: src int: len ptr: dst	
-  ptr int ptr --
-in
-  let src len dst in
-    0 while dup len < do
-      let i in
-        src i + @8 
-        dst i + !8
-      i end
-    inc end drop
-  end
-end
-
-proc memcpy64
-  // ptr: src int: len ptr: dst	
-  ptr int ptr --
-in
-  let src len dst in
-    0 while dup len < do
-      let i in
-        src i + @8 
-        dst i + !8
-      i end
-    8 + end drop
-  end
-end
-
 proc memset8
   // ptr: dst int: len int: val
+  // Sets every byte to a certain value between a range in memory
   ptr int int --
 in
   let dst len val in
@@ -77,7 +50,8 @@ in
 end
 
 proc memset64
-  // ptr:*dst int: len int: val
+  // ptr: dst int: len int: val
+  // Sets every 8-bytes to a certain value between a range in memory
   ptr int int --
 in
   let dst len val in
@@ -89,5 +63,87 @@ in
         i end
       8 + end drop
     end
+  end
+end
+
+macro @swp8
+  // ptr: a ptr: b
+  // Swaps two bytes in the memory
+  let _a_ _b_ in
+    _a_ @8 _b_ @8 _a_ !8 _b_ !8
+  end
+endmacro
+
+macro @swp64
+  // ptr: a ptr: b
+  // Swaps two 8-byte values in the memory
+  let _a_ _b_ in
+    _a_ @64 _b_ @64 _a_ !64 _b_ !64
+  end
+endmacro
+
+proc memcpy8
+  // ptr: src ptr: dst int: len 
+  // Copies a part of memory to another location
+  // Bytes are read one-by-one
+  ptr ptr int --
+in
+  let src dst len in
+    0 while dup len < do
+      let i in
+        src i + @8 
+        dst i + !8
+      i end
+    inc end drop
+  end
+end
+
+// memcpy64 only works a bit faster, no other functionality is changed
+// If the length is known to be divisible by 8, it is recommended to use memcpy64
+proc memcpy64
+  // ptr: src ptr: dst int: len
+  // Copies a part of memory to another location
+  // Bytes are read 8-by-8
+  ptr ptr int --
+in
+  let src dst len in
+    0 while dup len < do
+      let i in
+        src i + @8 
+        dst i + !8
+      i end
+    8 + end drop
+  end
+end
+
+proc memswp8
+  // ptr: a ptr: b int: len
+  // Swaps two regions of memory
+  // Swaps one byte per iteration
+  ptr ptr int --
+in
+  let a b len in
+    0 while dup len < do
+      let i in
+        a i + b i + @swp8
+      i end
+    inc end drop
+  end
+end
+
+// memswp64 only works a bit faster, no other functionality is changed
+// If the length is known to be divisible by 8, it is recommended to use memswp64
+proc memswp64
+  // ptr: a ptr: b int: len
+  // Swaps two regions of memory
+  // Swaps 8 bytes per iteration
+  ptr ptr int --
+in
+  let a b len in
+    0 while dup len < do
+      let i in
+        a i + b i + @swp64
+      i end
+    8 + end drop
   end
 end

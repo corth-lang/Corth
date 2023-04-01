@@ -90,7 +90,7 @@ macro clear-board
 endmacro
 
 macro copy-board
-  board CELLS old memcpy8
+  board old CELLS memcpy8
 endmacro
 
 macro update-board
