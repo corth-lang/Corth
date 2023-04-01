@@ -27,6 +27,12 @@ macro SYSNANOSLEEP  35 endmacro
 
 macro SYSEXIT       60 endmacro
 
+macro SYSGETTOD     96 endmacro
+
+macro SYSSETTOD    164 endmacro
+
+macro SYSTIME      201 endmacro
+
 // FILE MODES
 macro RD_ONLY        0 endmacro
 macro WR_ONLY        1 endmacro
@@ -86,4 +92,9 @@ endmacro
 
 macro nanosleep
   nanosleep-time 0 SYSNANOSLEEP syscall2 drop
+endmacro
+
+macro time
+  // -- int: time
+  NULLPTR SYSTIME syscall1
 endmacro
