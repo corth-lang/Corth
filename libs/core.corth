@@ -145,7 +145,7 @@ endmacro
 macro perm
   // int: x int: y -- int: P(x, y)
   // P(a, b) = a! / (a-b)! = (a-b) * (a-b+1) * (a-b+2) * ... * (a-1) * a = mul-bet(a-b, a)
-  // NOTE: x >= y must satisfied.
+  // NOTE: x >= y must be satisfied.
   let _a_ _b_ in
     _a_ _b_ - inc _a_ mul-bet
   end
@@ -215,9 +215,58 @@ in
 end
 
 // Because of the integer limit, the biggest number whose factorial can be calculated without any problem is 20
-// For anything bigger, it is recommended to use full-fact
 macro fact
   // int: x -- int: x!
   // x! = 1 * 2 * 3 * ... * (x-1) * x = mul-bet(2, x)
   2 swp mul-bet
 endmacro
+
+proc ipow
+  // int: x uint: c -- int: x^c
+  // Calculates integer exponents
+  int int -- int
+in
+  memory result sizeof(int) and
+         frag   sizeof(int) and
+         exp    sizeof(int) in
+    exp      !64     
+    frag     !64
+    1 result !64
+
+    while exp @64 isn-zero do
+      exp @64 is-odd if
+        result @64 frag @64 * result !64
+      end
+
+      frag @64 sqr frag !64
+      exp @64 2 u/ exp !64
+    end
+
+    result @64
+  end
+end
+
+proc upow
+  // uint: x uint: c -- uint: x^c
+  // Calculates unsigned integer exponents
+  int int -- int
+in
+  memory result sizeof(int) and
+         frag   sizeof(int) and
+         exp    sizeof(int) in
+    exp      !64     
+    frag     !64
+    1 result !64
+
+    while exp @64 isn-zero do
+      exp @64 is-odd if
+        result @64 frag @64 u* result !64
+      end
+
+      frag @64 usqr frag !64
+      exp @64 2 u/ exp !64
+    end
+
+    result @64
+  end
+end
