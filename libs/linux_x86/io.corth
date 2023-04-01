@@ -127,8 +127,8 @@ proc fgetu
   file-desc -- int
 in
   let file in
-    memory buffer 20 in
-      buffer 20 file fgets dec buffer swp str.dec-to-int
+    memory buffer 21 in
+      buffer 21 file fgets dec buffer swp str.dec-to-int
     end
   end
 end
@@ -140,8 +140,8 @@ proc fgeti
   file-desc -- int
 in
   let file in
-    memory buffer 19 in
-      buffer 20 file fgets dec
+    memory buffer 21 in
+      buffer 21 file fgets dec
       
       buffer @8 '-' = if
         dec buffer inc swp str.dec-to-int neg
