@@ -15,6 +15,8 @@ CHAR_MODE = enum_lib.step()
 CHAR_ESCAPE_MODE = enum_lib.step()
 CHAR_EXPECT_END_MODE = enum_lib.step()
 
+MACRO_ARG_MODE = enum_lib.step()
+
 SLASH_MODE = enum_lib.step()
 INLINE_COMMENT_MODE = enum_lib.step()
 
@@ -51,7 +53,8 @@ ESCAPES = {
 }
 
 REPLACE = {
-    "-": "__minus__"
+    "-": "__minus__",
+    "*": "__asterisk__"
 }
 
 BINARY_DIGITS = "01"
@@ -121,6 +124,9 @@ class Parser:
                 self.token = self.token.replace(x, y)
                 
             self.program.append(token_lib.Token(self.get_position(), token_lib.NAME, self.token))
+
+    def get_macro_arg(self):
+        self.program.append(token_lib.Token(self.get_position(), token_lib.MACRO_ARG, self.token))
     
     def syntax_error(self, error):
         self.errors += 1
@@ -208,6 +214,10 @@ class Parser:
                 elif self.mode is IDLE_MODE:
                     if self.char in END_OF_TOKEN:
                         continue
+
+                    elif self.char == "$":
+                        self.mode = MACRO_ARG_MODE
+                        self.token = "$"
     
                     elif self.char == "0":
                         self.mode = ZERO_MODE
@@ -271,6 +281,15 @@ class Parser:
     
                 elif self.mode is HEXADECIMAL_MODE:
                     self.parse_base(HEXADECIMAL_DIGITS, 16)
+
+                elif self.mode is MACRO_ARG_MODE:
+                    if self.char in END_OF_TOKEN:
+                        self.get_macro_arg()
+
+                        self.mode = IDLE_MODE
+
+                    else:
+                        self.token += self.char
                     
                 elif self.mode is KEYWORD_MODE:
                     if self.char in END_OF_TOKEN:
