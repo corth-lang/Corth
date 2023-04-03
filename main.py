@@ -14,6 +14,7 @@ def compile_command():
 
     if parser.errors:
         log_lib.log("INFO", f"There were {parser.errors} parser errors, stopped compilation")
+        sys.exit(1)
         return
 
     else:
@@ -21,6 +22,7 @@ def compile_command():
 
     if compiler_lib.compile_nasm_program("output.asm", deque(parser.program), args.debug):
         log_lib.log("INFO", f"Error on NASM creation, stopped compilation")
+        sys.exit(1)
         return
 
     else:
@@ -30,6 +32,7 @@ def compile_command():
 
     if nasm_return:
         log_lib.log("INFO", f"Error on NASM compilation, stopped compilation")
+        sys.exit(1)
         return
     
     ld_return = log_lib.command(("ld", "./output.o", "-o", args.output)).returncode
@@ -39,6 +42,7 @@ def compile_command():
 
     if ld_return:
         log_lib.log("INFO", f"Error on binding, stopped compilation")
+        sys.exit(1)
         return
 
     log_lib.command(("rm", "./output.o"))
@@ -48,7 +52,9 @@ def compile_command():
     
 
 def test_command():
-    assert False, "Tests are not implemented yet"
+    import quick_test
+
+    quick_test.quick_test()
 
 
 parser = argparse.ArgumentParser(
