@@ -1,0 +1,132 @@
+include libs/memory.corth
+include libs/core.corth
+
+
+/*
+  To create a queue, an array with the preferred size and a pointer should be created.
+  After that, the queue should be initialized using queue64.init.
+*/
+
+
+macro queue64.init
+  // ptr: queue-start ptr: *queue-length
+
+  0 swp !64 drop
+endmacro
+
+macro queue64.is-empty
+  // ptr: queue-start ptr: *queue-length -- bool: is-empty
+  // return len(queue) == 0
+
+  dropi @64 is-zero
+endmacro
+
+macro queue64 isn-empty
+  // ptr: queue-start ptr: *queue-length -- bool: isn-empty
+  // return len(queue) > 0
+
+  dropi @64 isn-zero
+endmacro
+
+macro queue64.addr-of
+  // int: index ptr: queue-start ptr: *queue-length -- ptr: *queue[index]
+  // return *queue[index]
+
+  drop swp 8 * +
+endmacro
+
+macro queue64.get
+  // int: index ptr: queue-start ptr: *queue-length -- int: value
+  // Gets an item from a queue.
+  // return queue[index]
+  // NOTE: This procedure assumes that the index is valid.
+  
+  queue64.addr-of @64
+endmacro
+
+macro queue64.set
+  // int: value int: index ptr: queue-start ptr: *queue-length
+  // Sets an item on a queue.
+  // queue[index] = value
+  // NOTE: This procedure assumes that the index is valid.
+  
+  queue64.addr-of !64
+endmacro
+
+proc queue64.insert
+  // int: byte-to-insert int: index-to-insert ptr: queue-start ptr: *queue-length
+  int int ptr ptr --
+  // Inserts an item to a queue.
+  // queue.insert(value, index)
+  // NOTE: This procedure assumes that the queue has enough space to insert item.
+in
+  let value index queue-start *queue-length in
+    queue-start index 8 * + dup 8 + *queue-length @64 index - memcpy64i
+    value queue-start index 8 * + !64
+    *queue-length @inc64
+  end
+end
+
+proc queue64.pop
+  // int: index-to-pop ptr: queue-start ptr: *queue-length -- int: value
+  int ptr ptr -- int
+  // Pops an item from a queue.
+  // return queue.pop(index)
+in
+  let index queue-start *queue-length in
+    queue-start index 8 * + let x in
+      x @64
+      x inc x *queue-length @64 index - dec memcpy64i
+    end
+    *queue-length @dec64
+  end
+end
+
+proc queue64.append
+  // int: value ptr: queue-start ptr: *queue-length
+  int ptr ptr --
+  // Appends an item to a queue.
+  // queue.append(value)
+in
+  let value queue-start *queue-length in
+    value queue-start *queue-length @64 8 * + !64
+    *queue-length @inc64
+  end
+end
+
+proc queue64.pop-last
+  // ptr: queue-start ptr: *queue-length -- int: value
+  ptr ptr -- int
+  // Pops the last item from a queue.
+  // return queue.pop_last()
+in
+  let queue-start *queue-length in
+    *queue-length @dec64
+    queue-start *queue-length @64 + @64
+  end
+end
+
+// Requires file-desc, STDOUT, STDERR, puts, putu and putx. An I/O library should be included.
+proc queue64.fput
+  // ptr: queue-start ptr: *queue-length file-desc: file-desc
+  // print(queue)
+  ptr ptr file-desc --
+in
+  let file-desc in
+    @64 let queue-start queue-length in
+      queue-length is-zero if
+        "<EMPTY>\n" puts
+      else
+        0 while dup queue-length < do let index in
+          index file-desc fputu ". " file-desc fputs queue-start index 8 * + @64 file-desc fputx "\n" file-desc fputs
+        index end inc end drop
+      end
+    end
+  end
+end
+macro queue64.put  STDOUT queue64.fput endmacro
+macro queue64.eput STDERR queue64.fput endmacro
+
+/*
+  TODO: Time complexity
+*/
