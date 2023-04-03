@@ -33,7 +33,7 @@ endmacro
 // COMPLEX -- FIXED macro and procedures
 macro lengths-c
   // comp: x -- fixed64: length(x)
-  sqr-f swp sqr-f add-ff
+  sqr-f swp sqr-f +
 endmacro
 
 
@@ -52,7 +52,7 @@ macro inv-c
   // 1 / (a + bi) = (a - bi) / (a^2 + b^2) = div-cf(conj-c(x), lengths-c(x))
   let xr xi in
     xr xi neg
-    xr sqr-f xi sqr-f add-ff
+    xr sqr-f xi sqr-f +
     div-fc
   end
 endmacro
@@ -73,7 +73,7 @@ in
     xi sqr-f -
 
     // Imaginary part
-    xr xi mul-ff 2 mul-fi
+    xr xi mul-ff 2 *
   end
 end
 
@@ -82,16 +82,16 @@ end
 macro add-cc
   // comp: a comp: b -- comp: a+b
   let ar ai br bi in
-    ar br add-ff
-    ai bi add-ff
+    ar br +
+    ai bi +
   end
 endmacro
 
 macro sub-cc
   // comp: a comp: b -- comp: a-b
   let ar ai br bi in
-    ar br add-ff
-    ai bi add-ff
+    ar br +
+    ai bi +
   end
 endmacro
 
@@ -103,12 +103,12 @@ in
     // Real part
     // (ar * br - ai * bi)
     ar br mul-ff
-    ai bi mul-ff sub-ff
+    ai bi mul-ff -
 
     // Imaginary part
     // (ar * bi + ai * br)
     ar bi mul-ff
-    ai br mul-ff add-ff
+    ai br mul-ff +
   end
 end
 
@@ -126,7 +126,7 @@ endmacro
 macro add-cf
   // comp: a fixed64: b -- comp: a+b
   let xr xi f in
-    xr f add-ff
+    xr f +
     xi
   end
 endmacro
@@ -134,7 +134,7 @@ endmacro
 macro sub-cf
   // comp: a fixed64: b -- comp: a-b
   let xr xi f in
-    xr f sub-ff
+    xr f -
     xi
   end
 endmacro
