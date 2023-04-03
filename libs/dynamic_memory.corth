@@ -1,0 +1,126 @@
+// Before this library is included, malloc.ARRAY-SIZE and malloc.AVAIL-QUEUE-SIZE should be defined.
+// Before using any of the procedures or macros, malloc.init should be called.
+
+// Every block is initialized with size as the first item, and with a size of length + 1.
+// Length is the LENGTH of the usable area, and size is the SIZE of the whole group.
+
+// malloc.avail-queue is a sorted queue.
+
+include libs/collections/queue64.corth
+include libs/collections/sorted_queue64.corth
+
+memory malloc.array malloc.ARRAY-SIZE end
+memory malloc.avail-queue-array   malloc.AVAIL-QUEUE-SIZE end
+memory *malloc.avail-queue-length sizeof(int) end
+
+// TODO: malloc.avail-queue should be a heap64, not a queue64
+
+macro malloc.avail-queue malloc.avail-queue-array *malloc.avail-queue-length endmacro
+
+proc malloc.init
+  --
+in
+  malloc.avail-queue queue64.init
+  malloc.array malloc.avail-queue queue64.append
+  malloc.array malloc.ARRAY-SIZE + malloc.array !64
+end
+
+proc malloc.get-size-of-block
+  // ptr: *block -- int: size
+  ptr -- int
+in
+  let *block in
+    *block @64 *block -
+  end
+end
+
+macro malloc.get-length-of-block
+  // ptr: *block -- int: length
+  malloc.get-size-of-block dec
+endmacro
+
+proc malloc.sew
+  --
+  // malloc.sew is not an efficient procedure, and should be removed. But for now to make the malloc and mfree useful, it will be kept.
+in
+  0 while dup *malloc.avail-queue-length @64 < do let i in
+    i malloc.avail-queue queue64.get @64 i inc malloc.avail-queue queue64.get = if
+      i inc malloc.avail-queue queue64.get @64 i malloc.avail-queue queue64.get !64
+      i inc malloc.avail-queue queue64.pop drop
+      i
+    else
+      i inc
+    end
+  end end drop
+end
+
+proc malloc
+  // int: size -- ptr: addr
+  int -- ptr
+  // Allocates memory with a specific size, allows dynamic memory management.
+  // NOTE: Can be unstable or buggy.
+in
+  inc let size in
+    memory available-group sizeof(ptr) and
+           available-size  sizeof(int) and
+           available-id    sizeof(int) in
+
+      // available-id is the ID of queue item that points to the group.
+      // group = queue[id]
+      // size = *group - group
+           
+      NULLPTR            available-group !64
+      0x7fffffffffffffff available-size  !64
+
+      // Find a group with enough space.
+      0 while dup *malloc.avail-queue-length @64 < do let id in
+        id malloc.avail-queue queue64.get let group in
+          group malloc.get-size-of-block let group-size in
+            group-size size >= if
+              // If the group has enough space.
+              group-size available-size @64 < if
+                // If the group is the smallest.
+                group      available-group !64
+                group-size available-size  !64
+                id         available-id    !64
+              end
+            end
+          end
+        end
+      id end inc end drop
+
+      available-group @64 is-null if
+        // Could not find a group with enough size.
+        NULLPTR
+      else
+        size available-size @64 < if
+          // Size was less than available, therefore the group should be split in two.
+          available-group @64 size + available-group @64 !64
+          available-group @64 available-size @64 + available-group @64 @64 !64
+          available-group @64 size + available-id @64 malloc.avail-queue queue64.set
+        else
+          // Size was equal to available, therefore the group should be kept intact.
+          available-id @64 malloc.avail-queue queue64.pop drop
+        end
+        available-group @64
+      end
+    end
+  end
+end
+
+proc mfree
+  // ptr: addr --
+  ptr --
+  // Frees space allocated with malloc.
+  // NOTE: Should not be used with pointers which are not allocated using malloc. This can cause segmentaion fault.
+  // NOTE: Can be unstable or buggy.
+in
+  malloc.avail-queue squeue64.append
+  malloc.sew
+end
+
+macro allocated-space
+  // ptr: addr -- int: size
+  // Returns the allocated space for an object created using malloc.
+  dec malloc.get-length-of-block
+endmacro
