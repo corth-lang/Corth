@@ -27,6 +27,7 @@ PUSHSTR = enum_lib.step()
 PUSHSTRC = enum_lib.step()
 NAME = enum_lib.step()
 TYPE = enum_lib.step()
+MACRO_ARG = enum_lib.step()
 KEYWORDS = {
     # Outer keywords
     "include": (INCLUDE := enum_lib.step()),
