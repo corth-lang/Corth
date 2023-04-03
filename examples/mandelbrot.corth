@@ -20,6 +20,7 @@ macro HALF-WIDTH WIDTH 2 / endmacro
 macro HALF-HEIGHT HEIGHT 2 / endmacro
 macro CHARS "          .........--------+++++++******=====????$$$@@%" drop endmacro
 macro MAX-ITERATION 55 endmacro
+macro BUFFER-SIZE WIDTH 2 * 1 + HEIGHT * endmacro
 
 
 macro clear-screen
@@ -59,49 +60,51 @@ in
 end
 
 
-// Renders the mandelbrot set
 proc render
   --
 in
-  memory number sizeof(comp) in
-    // Loop through the 'pixel's
-    0 while dup HEIGHT < do
-      let console-y in
-	0 while dup WIDTH < do
-	  let console-x in
-	    // Get 'pixel' position
-	    console-x HALF-WIDTH  - int-to-fixed64
-	    console-y HALF-HEIGHT - int-to-fixed64
-	    camera-zoom @64 mul-cf camera-pos load-complex add-cc
+  memory number sizeof(comp) and
+         buffer BUFFER-SIZE  and
+         i      sizeof(ptr)  in
 
-	    get-iteration CHARS + dup 1 puts 1 puts
+    // Screen is buffered, and when the buffer is filled; it is dumped on the screen.
+    buffer i !64
 
-            console-x
-	  end
-        inc end drop
-	
-	console-y
+    0 while dup HEIGHT < do let console-y in
+      console-y HALF-HEIGHT - int-to-fixed64
+      let imag in
+        0 while dup WIDTH < do let console-x in
+          console-x HALF-WIDTH - int-to-fixed64
+          imag camera-zoom @64 mul-cf camera-pos load-complex add-cc
+
+          // Get character
+          get-iteration CHARS + @8 let char in          
+            // Save character to buffer
+            char i @64 !8 i @64 inc i !64
+            char i @64 !8 i @64 inc i !64
+          end
+        console-x end inc end drop
+
+        '\n' i @64 !8 i @64 inc i !64
       end
-      
-      "|\n" puts
-    inc end drop
+    console-y end inc end drop
+
+    buffer BUFFER-SIZE puts
   end
 end
 
 
 proc main
-  -- int
-in
+  int int -- int
+in let argc argv in
   0x0000000010080100 neg 0x00000000fffe9080 camera-pos store-complex  // Set camera pos to -0.062622129902656 + 0.9999780950616818176i 
   0x0000000100000000 camera-zoom !64                                  // Set camera zoom to 1
 
-  "\n\n" puts
+  "\n" puts
 
   while true do
     render
     clear-screen
-    camera-zoom @64 0x00000000fe000000 mul-ff camera-zoom !64                  // Set camera zoom to 0.9921874997704392704 times itself
+    camera-zoom @64 0x00000000fe000000 mul-ff camera-zoom !64         // Set camera zoom to 0.9921874997704392704 times itself
   end
-  
-  0
-end
+end 0 end
