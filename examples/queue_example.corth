@@ -1,0 +1,32 @@
+include libs/linux_x86/io.corth
+include libs/collections/queue64.corth
+include libs/collections/sorted_queue64.corth
+
+
+proc main
+  int int -- int
+in let argc argv in
+  // Create a queue with the capacity of 100 integers
+  memory queue-start   sizeof(int) 100 * and
+         *queue-length sizeof(int)       in
+    queue-start *queue-length queue64.init
+    0x21 queue-start *queue-length queue64.append
+    0x52 queue-start *queue-length queue64.append
+    0x213 0 queue-start *queue-length queue64.insert
+    0x654 0 queue-start *queue-length queue64.insert
+    0x15 queue-start *queue-length queue64.append
+
+    "Unsorted queue:\n" puts
+    queue-start *queue-length queue64.put
+
+    queue-start *queue-length queue64.sort
+
+    "Sorted queue:\n" puts
+    queue-start *queue-length queue64.put
+
+    0x12 queue-start *queue-length squeue64.append
+
+    "Append:\n" puts
+    queue-start *queue-length queue64.put
+  end
+end 0 end
