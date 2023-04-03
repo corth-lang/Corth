@@ -1,24 +1,17 @@
-include libs/linux/io.corth
-
+include libs/linux_x86/io.corth
+include libs/core.corth
 
 proc fib
   int -- int
-in
+in let i in
   // Finds the nth fibonacci number using recursion
 
-  dup 2 <= if
-    drop 1
-  else
-    dec dup dec fib swp fib +
-  end
-end
-
+  i 2 <= if 1 else i dec fib i dec dec fib + end
+end end
 
 proc main
-  -- int
-in
+  int int -- int
+in let argc argv in
   // Find the 10th fibonacci number
   10 fib putu "\n" puts
-
-  0
-end
+end 0 end

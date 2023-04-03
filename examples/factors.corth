@@ -3,8 +3,8 @@ include libs/linux_x86/io.corth
 // This example calculates the factors of the number the user entered
 
 proc main
-  -- int
-in
+  int int -- int
+in let argc argv in
   "Enter a number: " puts
   getu let number in
     "Factors of " puts number putu " are:\n" puts
@@ -24,6 +24,4 @@ in
       end
     end
   end
-
-  0
-end
+end 0 end

@@ -17,33 +17,18 @@
 
 */
 
-include libs/linux/io.corth
+include libs/core.corth
+include libs/linux_x86/io.corth
 
 proc main
-    -- int
-in
-    10  // Changing this number will change the size of the pyramid
-    
-    while
-        dup 0 !=
-    do
-        dup
-    
-        while
-            dup 0 !=
-        do
-            "*" puts
-      
-            dec
-        end
-      
-        drop
-      
-	"\n" puts
-      
-        dec
-    end
-    
-    drop
-    0
-end
+  int int -- int
+in let argc argv in
+  10 while dup isn-zero do
+    dup while dup isn-zero do
+      "*" puts
+    dec end drop
+
+    "\n" puts
+
+  dec end drop
+end 0 end

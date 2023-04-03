@@ -55,8 +55,8 @@ macro function
 endmacro
 
 proc main
-  -- int
-in
+  int int -- int
+in let argc argv in
   memory steps sizeof(int) and
          best  sizeof(int) in
     START while dup END <= do
@@ -78,4 +78,4 @@ in
       end
     inc end drop
   end
-0 end
+end 0 end

@@ -31,8 +31,8 @@ in
 end
 
 proc main
-  -- int
-in
+  int int -- int
+in let argc argv in
   primes-list primes-end !64
   2 while dup END < do
     let n in
@@ -43,4 +43,4 @@ in
       end
     n end
   inc end drop
-0 end
+end 0 end

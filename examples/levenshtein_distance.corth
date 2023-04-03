@@ -82,12 +82,12 @@ in
 end
 
 proc main
-  -- int
-in
+  int int -- int
+in let argc argv in
   reset-remember
 
-  "aa"
-  "abc"
+  "pickle"
+  "pikla"
   
   let _ptr1 len1 _ptr2 len2 in
     _ptr1 ptr1 !64
@@ -97,9 +97,7 @@ in
     "Number of calls = " puts number-of-calls @64 putu "\n" puts
     "Number of remembers = " puts number-of-rembs @64 putu "\n" puts
   end
-
-  0
-end
+end 0 end
 
 /*
 

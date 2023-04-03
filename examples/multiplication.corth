@@ -1,8 +1,8 @@
 include libs/linux_x86/io.corth
 
 proc main
-  -- int
-in
+  int int -- int
+in let argc argv in
   "Enter A: " puts
   geti
   "Enter B: " puts
@@ -11,4 +11,4 @@ in
   let a b in
     a puti " times " puts b puti " is " puts a b * puti "\n" puts
   end
-0 end
+end 0 end

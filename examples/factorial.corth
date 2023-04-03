@@ -4,10 +4,10 @@ include libs/core.corth
 // This example calculates the factorial of the number entered from the user
 
 proc main
-  -- int
-in
+  int int -- int
+in let argc argv in
   "Enter a number: " puts
   getu let number in
     "Factorial of " puts number putu " is " puts number fact putu "\n" puts
   end
-0 end
+end 0 end

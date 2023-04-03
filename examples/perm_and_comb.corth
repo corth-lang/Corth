@@ -1,8 +1,8 @@
 include libs/linux_x86/io.corth
 
 proc main
-  -- int
-in
+  int int -- int
+in let argc argv in
   "Enter A: " puts
   getu
   "Enter B: " puts
@@ -12,4 +12,4 @@ in
     "P(" puts a putu ", " puts b putu ") = " puts a b perm putu "\n" puts
     "C(" puts a putu ", " puts b putu ") = " puts a b comb putu "\n" puts
   end
-0 end
+end 0 end

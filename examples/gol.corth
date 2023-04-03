@@ -169,12 +169,12 @@ macro update-board
 endmacro
 
 proc main
-  -- int
-in
+  int int -- int
+in let argc argv in
   0 50000000 set-nanosleep-time
 
   clear-board
-  
+
   4 10 set-alive
   5 11 set-alive
   6 9  set-alive
@@ -191,5 +191,5 @@ in
     reset-board
     draw-board
     nanosleep
-  end  
-0 end
+  end
+end 0 end
