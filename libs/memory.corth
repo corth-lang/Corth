@@ -55,7 +55,7 @@ proc memset64
   ptr int int --
 in
   let dst len val in
-    dst len +
+    dst len 8 * +
     let fin in
       dst while dup fin < do
         let i in
@@ -66,9 +66,46 @@ in
   end
 end
 
+macro @dec8
+  // ptr: x
+  // Decreases a byte in the memory
+  // *x--
+  let _a_ in
+    _a_ @8 dec _a_ !8
+  end
+endmacro
+
+macro @dec64
+  // ptr: x
+  // Decreases an 8-byte value in the memory
+  // *x--
+  let _a_ in
+    _a_ @64 dec _a_ !64
+  end
+endmacro
+
+macro @inc8
+  // ptr: x
+  // Increases a byte in the memory
+  // *x++
+  let _a_ in
+    _a_ @8 inc _a_ !8
+  end
+endmacro
+
+macro @inc64
+  // ptr: x
+  // Increases an 8-byte value in the memory
+  // *x++
+  let _a_ in
+    _a_ @64 inc _a_ !64
+  end
+endmacro
+
 macro @swp8
   // ptr: a ptr: b
   // Swaps two bytes in the memory
+  // *a, *b = *b, *a
   let _a_ _b_ in
     _a_ @8 _b_ @8 _a_ !8 _b_ !8
   end
@@ -77,6 +114,7 @@ endmacro
 macro @swp64
   // ptr: a ptr: b
   // Swaps two 8-byte values in the memory
+  // *a, *b = *b, *a
   let _a_ _b_ in
     _a_ @64 _b_ @64 _a_ !64 _b_ !64
   end
@@ -109,10 +147,40 @@ in
   let src dst len in
     0 while dup len < do
       let i in
-        src i + @8 
-        dst i + !8
+        src i 8 * + @64
+        dst i 8 * + !64
       i end
     8 + end drop
+  end
+end
+
+proc memcpy8i
+  // ptr: src ptr: dst int: len
+  // Copies a part of memory to another location
+  // Bytes are read one-by-one
+  // The copying is done in reverse order, aka from last item to first item
+  ptr ptr int --
+in
+  let src dst len in
+    len while dup isn-zero do dec let i in
+      src i + @8
+      dst i + !8
+    i end end drop
+  end
+end
+
+proc memcpy64i
+  // ptr: src ptr: dst int: len
+  // Copies a part of memory to another location
+  // Bytes are read 8-by-8
+  // The copying is done in reverse order, aka from last item to first item
+  ptr ptr int --
+in
+  let src dst len in
+    len while dup isn-zero do dec let i in
+      src i 8 * + @64
+      dst i 8 * + !64
+    i end end drop
   end
 end
 
