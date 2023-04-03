@@ -1,0 +1,28 @@
+include libs/linux_x86/io.corth
+
+macro malloc.ARRAY-SIZE      0x40 endmacro
+macro malloc.AVAIL-QUEUE-SIZE 0x10  endmacro
+include libs/dynamic_memory.corth
+
+proc main
+  int int -- int
+in let argc argv in
+  malloc.init
+
+  0xf malloc let a in "a: " puts a putx "\n" puts
+    0xf malloc let b in "b: " puts b putx "\n" puts
+      0xf malloc let c in "c: " puts c putx "\n" puts
+        0xf malloc let d in "d: " puts d putx "\n" puts
+          "freeing b\n" puts
+          b mfree
+          0xf malloc let e in "e: " puts e putx "\n" puts
+            "freeing c\n" puts
+            c mfree
+            0xf malloc let f in "f: " puts f putx "\n" puts
+            end
+          end
+        end
+      end
+    end
+  end
+end 0 end
