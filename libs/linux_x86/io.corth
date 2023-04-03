@@ -37,8 +37,10 @@ in
 end
 
 // == Signed decimals ==
-macro fputi
-  // int: int file-desc: file-desc 
+proc fputi
+  // int: int file-desc: file-desc
+  int file-desc --
+in
   let file in
     dup is-neg if
       neg
@@ -46,7 +48,7 @@ macro fputi
     end
     file fputu
   end
-endmacro
+end
 
 // == Hexadecimals ==
 proc fputx
@@ -121,7 +123,7 @@ macro fgets
 endmacro
 
 // == Unsigned decimals ==
-// 20 bytes are read, since the longest unsigned integer is 20 digits in decimal
+// 21 bytes are read, since the longest unsigned integer is 21 digits in decimal
 proc fgetu
   // files-desc: file-desc -- int: read
   file-desc -- int
@@ -134,7 +136,7 @@ in
 end
 
 // == Signed decimals ==
-// 20 bytes are read, since the least negative number is 19 digits in decimal and requires a minus
+// 21 bytes are read, since the least negative number is 20 digits in decimal and requires a minus
 proc fgeti
   // file-desc: file-desc -- int: read
   file-desc -- int
@@ -163,6 +165,6 @@ macro eputx  STDERR fputx  endmacro  // int: int
 macro  putup STDOUT fputup endmacro  // int: int
 macro eputup STDERR fputup endmacro  // int: int
 
-macro  gets  STDIN  fgets  endmacro  // ptr: str-ptr int: str-len
-macro  getu  STDIN  fgetu  endmacro  // 
-macro  geti  STDIN  fgeti  endmacro  // 
+macro  gets  STDIN  fgets  endmacro  // ptr: str-ptr int: str-len file-desc: file-desc -- int: read-bytes 
+macro  getu  STDIN  fgetu  endmacro  // file-desc: file-desc -- int: read
+macro  geti  STDIN  fgeti  endmacro  // file-desc: file-desc -- int: read
