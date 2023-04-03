@@ -4,7 +4,7 @@ include libs/math/constants.corth
 macro TRI-ITER 27 endmacro
 
 
-proc sin-f
+proc sin
   // fixed64: theta -- fixed64: sin(theta)
   fixed64 -- fixed64
 in
@@ -13,7 +13,7 @@ in
   let x in
     memory sum sizeof(fixed64) and
            a   sizeof(fixed64) and
-           i   sizeof(int)   in
+           i   sizeof(int)     in
 
       a   x store8
       sum x store8
@@ -35,7 +35,7 @@ in
   end
 end
 
-proc cos-f
+proc cos
   // fixed64: theta -- fixed64: sin(theta)
   fixed64 -- fixed64
 in
@@ -44,7 +44,7 @@ in
   let x in
     memory sum sizeof(fixed64) and
     memory a   sizeof(fixed64) and
-    memory i   sizeof(int)   in
+    memory i   sizeof(int)     in
 
       a   0x0000000100000000 store8
       sum 0x0000000100000000 store8
@@ -66,24 +66,32 @@ in
   end
 end
 
-macro tan-f
-  // fixed64: theta -- fixed64: tan(theta)
-  dup sin-f swp cos-f div-ff
+macro tan
+  // fixed64: x -- fixed64: tan(x)
+  // tan(x) = sin(x) / cos(x)
+  let _a_ in
+    _a_ sin _a_ cos div-ff
+  end
 endmacro
 
-macro cot-f
+macro cot
   // fixed64: theta -- fixed64: cot(theta)
-  dup cos-f swp sin-f div-ff
+  // cot(x) = cos(x) / sin(x)
+  let _a_ in
+    _a_ cos _a_ sin div-ff
+  end
 endmacro
 
-macro sec-f
-  // fixed64: theta -- fixed64: sec(theta)
-  cos-f inv-f
+macro sec
+  // fixed64: x -- fixed64: sec(x)
+  // sec(x) = 1 / cos(x)
+  cos inv-f
 endmacro
 
-macro csc-f
-  // fixed64: theta -- fixed64: csc(theta)
-  sin-f inv-f
+macro csc
+  // fixed64: x -- fixed64: csc(x)
+  // csc(x) = 1 / sin(x)
+  sin inv-f
 endmacro
 
 macro deg-to-rad
