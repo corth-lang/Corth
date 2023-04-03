@@ -12,8 +12,8 @@ macro MIN-INT  0x8000000000000000 endmacro
 macro MAX-UINT 0xffffffffffffffff endmacro
 macro MIN-UINT 0x0000000000000000 endmacro
 
-macro NOT-A-DIGIT   0x0000000000000001 endmacro
-macro INPUT-TOO-BIG 0x0000000000000002 endmacro
+macro NOT-A-DIGIT      0x0000000000000001 endmacro
+macro INPUT-TOO-BIG    0x0000000000000002 endmacro
 
 // int: x -- bool: result
 macro is-pos   0 >  endmacro
@@ -23,9 +23,11 @@ macro isn-pos  0 <= endmacro
 macro isn-zero 0 != endmacro
 macro isn-neg  0 >= endmacro
 
+macro is-null  NULLPTR =  endmacro
+macro isn-null NULLPTR != endmacro
+
 macro is-even 2 % is-zero  endmacro
 macro is-odd  2 % isn-zero endmacro
-
 
 // int: x -- int: result
 macro neg    !! inc                endmacro
@@ -44,6 +46,7 @@ macro dec-digit-to-int '0' -                         endmacro
 
 macro drop  let _a_             in                 end endmacro
 macro dropd let _a_ _b_         in                 end endmacro
+macro dropi let _a_ _b_         in _b_             end endmacro
 macro dup   let _a_             in _a_ _a_         end endmacro
 macro dupd  let _a_ _b_         in _a_ _b_ _a_ _b_ end endmacro
 macro swp   let _a_ _b_         in _b_ _a_         end endmacro
@@ -52,6 +55,9 @@ macro rot   let _a_ _b_ _c_     in _b_ _c_ _a_     end endmacro
 macro arot  let _a_ _b_ _c_     in _c_ _a_ _b_     end endmacro
 macro rot4  let _a_ _b_ _c_ _d_ in _b_ _c_ _d_ _a_ end endmacro
 macro arot4 let _a_ _b_ _c_ _d_ in _d_ _a_ _b_ _c_ end endmacro
+
+macro is-range  let _a_ _b_ _c_ in _a_ _b_ < if false else _a_ _c_ > if false else true  end end end endmacro // int: x int: min int: max -- bool: x in [min, max]
+macro isn-range let _a_ _b_ _c_ in _a_ _b_ < if true  else _a_ _c_ > if true  else false end end end endmacro // int: x int: min int: max -- bool: x in [min, max]
 
 macro min2
   // int: x int: y -- int: min(x, y)
