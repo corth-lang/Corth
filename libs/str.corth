@@ -1,6 +1,8 @@
 include libs/core.corth
 include libs/memory.corth
 
+macro str ptr int endmacro
+
 macro str.get-len
   // ptr: ptr int: len -- int: len
   swp drop
@@ -29,6 +31,14 @@ endmacro
 macro str.copy
   // ptr: src int: len ptr: dst
   memcpy
+endmacro
+
+macro str.range
+  // ptr: src int: len int: start int: end -- ptr: src' int: len'
+  let _src_ _len_ _start_ _end_ in
+    _src_ _start_ +
+    _end_ _start_ -
+  end
 endmacro
 
 proc str.dec-to-int
