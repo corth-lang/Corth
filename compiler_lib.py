@@ -11,6 +11,8 @@ import parser_lib
 # TODO: Add library search locations
 # TODO: Add logging file specification
 
+# TODO: Add macro compile-time expansion condition
+
 # TODO: Add the main parameters as array of char
 
 # TODO: Add negative numbers
@@ -198,7 +200,7 @@ def parse_and_compile_module_or_package(file, path: str, data, names, compiled_m
     
     if os.path.isdir(path):
         for item in os.listdir(path):
-            parse_and_compile_module_or_package(file, path + item, data, names, compiled_modules, debug_mode)
+            parse_and_compile_module_or_package(file, os.path.join(path, item), data, names, compiled_modules, debug_mode)
 
         return False
     
@@ -334,14 +336,19 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
 
             names[procedure_name.arg] = PROCEDURE, tuple(arguments), tuple(returns)
 
-            if (
-                    procedure_name.arg == "main" and (
-                        len(returns) != 1 or
-                        returns[0] != INT_TYPE
-                    )
-            ):
-                error(f"Procedure main must return exactly one INT")
-                return True
+            if procedure_name.arg == "main":
+                if (len(arguments) != 2 or
+                    arguments[0] != INT_TYPE or
+                    arguments[1] != INT_TYPE):
+                  
+                    error(f"Procedure main must except exactly two INTs")
+                    return True
+
+                if (len(returns) != 1 or
+                    returns[0] != INT_TYPE):
+                    
+                    error(f"Procedure main must return exactly one INT")
+                    return True
 
             file.write(f";; ==== PROC '{procedure_name.arg}' ====\n\n")
             file.write(f"PROC_{procedure_name.arg}:\n\n")
@@ -1003,6 +1010,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             levels.append((start_level, token_lib.ELSE, stack))  # Add the new stack, no need to copy
             stack = old_stack  # And change the stack to the new one
             start_level += 1
+
+            returned = False
 
         elif token.type is token_lib.END:                    
             if len(levels):
