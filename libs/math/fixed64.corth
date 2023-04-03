@@ -72,11 +72,11 @@ endmacro
 
 macro ceil-base
   // fixed64: x fixed64: b -- fixed64: ceil(x, b)
-  // ceil(x, b) = x + (x mod b) + b
+  // ceil(x, b) = x + (-x mod b)
   // ceil(x, b) = floor(x, b) + b
   // Result is the least number that is greater tha nx and is divisible by b.
   let _a_ _b_ in
-    _a_ _a_ _b_ mod-ff sub-ff _b_ add-ff
+    _a_ _a_ neg _b_ mod-ff add-ff
   end
 endmacro
 
@@ -240,7 +240,7 @@ macro lin-int
   // fixed64: a fixed64: b fixed64: t -- fixed64: linint(a, b, t)
   // linint(a, b, t) = a + (b - a) * t
   let _a_ _b_ _c_ in
-    _a_ _b_ _a_ sub-ff _c_ mul-ff add-ff
+    _b_ _a_ sub-ff _c_ mul-ff _a_ add-ff
   end
 endmacro
 
@@ -270,7 +270,7 @@ macro fput-fixed64
   end
 endmacro
 
-macro put-ufixed64  STDOUT fput-ufixed64 endmacro // fixed64: x
+macro  put-ufixed64 STDOUT fput-ufixed64 endmacro // fixed64: x
 macro eput-ufixed64 STDERR fput-ufixed64 endmacro // fixed64: x
-macro put-fixed64   STDOUT fput-fixed64  endmacro // fixed64: x
+macro  put-fixed64  STDOUT fput-fixed64  endmacro // fixed64: x
 macro eput-fixed64  STDERR fput-fixed64  endmacro // fixed64: x
