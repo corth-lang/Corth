@@ -8,40 +8,6 @@ import token_lib
 import log_lib
 import parser_lib
 
-# TODO: Add library search locations
-# TODO: Add logging file specification
-
-# TODO: Add macro compile-time expansion condition
-
-# TODO: Add the main parameters as array of char
-
-# TODO: Add negative numbers
-
-# TODO: Add pre-execution, which will allow static execution and different kinds of optimizations (this kinda does not work well with nasm macros)
-# TODO: Change let so that the variables are stored in the registers, not the local memory (might require a bit of work)
-# TODO: Add in file nasm macros (would help make the compiler much smaller since the macros will be defined in the libraries instead of the compiler)
-# TODO: Add in-file half-corth (better version of nasm macros that is more useful with pre-execution)
-
-# TODO: Add 'typedef <name> (<name> <type>). end' (typedef is useful for stack types)
-# TODO: Add 'sizeof <type>'
-# TODO: Add 'cast <type>', which will cast any type to <type> (only if they are the same size)
-# TODO: Add file-descriptor type
-# TODO: Add pointer type and change NULLPTR's type to ptr
-# TODO: Add fixed type
-# TODO: Add complex type
-# TODO: Add string type
-
-# TODO: Make names 'namespacable' (a name 'name' inside a module 'module' should be named 'module:name' when included, parser should be rewritten)
-# TODO: Add from
-# TODO: Add ELIF
-# TODO: Change the stack format
-# TODO: Change the parameter and variable names in the compiler so that they make sense
-
-# (probably gonna leave these to the Corth rewrite)
-# TODO: Make enumerations named so they can be debugged in the console easily
-# TODO: Change the address format of tokens
-# TODO: Remake the stack, so that the pointer positions are already compiled (requires work because calling procedures will dynamically change the stack)
-
 """
 macro <name>
   <macro>
