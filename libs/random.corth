@@ -1,13 +1,14 @@
 include libs/core.corth
+include libs/memory.corth
 
 memory rng-seed sizeof(int) end
 
 macro rand64
   // -- int: next
-  // The result integer is in the range [0, 2^64) with the step size of 1
+  // The result integer is in the range [0, 2^64) with the step size of 1.
   
   // -- fixed64: next
-  // The result fixed64 is in the range [0, 2^32) with the step size of 2^-32
+  // The result fixed64 is in the range [0, 2^32) with the step size of 2^-32.
   rng-seed @64
   18446744073709551557 u** + 23 +
   let x in
@@ -15,14 +16,14 @@ macro rand64
   end 
 endmacro
 
-// If precompilation gets added to the compiler, this procedure will lose its meaning and rand-unif-range will be as efficient as this function
-// But until that day, this function will be more efficient for ranges of [0, b)
+// If precompilation gets added to the compiler, this procedure will lose its meaning and rand-unif-range will be as efficient as this function.
+// But until that day, this function will be more efficient for ranges of [0, b).
 macro rand-unif
   // int: x -- int: uniform(x)
-  // Returns a number in the range [0, x) with the step size of 1
+  // Returns a number in the range [0, x) with the step size of 1.
   
   // fixed64: x -- fixed64: uniform(x)
-  // Returns a number in the range [0, x) with the step size of 2^-32
+  // Returns a number in the range [0, x) with the step size of 2^-32.
   
   // uniform(x) = rand64 % x
   let _b_ in
@@ -32,13 +33,46 @@ endmacro
 
 macro rand-unif-range
   // int: a int: b -- int: uniform-range(a, b)
-  // Returns a number in the range [a, b) with the step size of 1
+  // Returns a number in the range [a, b) with the step size of 1.
 
   // fixed64: a fixed64: b -- fixed64: uniform(a, b)
-  // Returns a number in the range [a, b) with the step size of 2^-32
+  // Returns a number in the range [a, b) with the step size of 2^-32.
   
   // uniform-range(a, b) = a + uniform(b - a)
   let _b_ _c_ in
     rand64 _c_ _b_ - % _b_ +
   end
 endmacro
+
+proc shuffle8
+  // ptr: container int: length --
+  ptr int --
+  // Shuffles a container that has 1-byte items using Fisher-Yates algortihm.
+in let array-ptr array-length in
+  array-length while dec dup isn-zero do let i in
+    i inc rand-unif let j in
+      array-ptr i +
+      array-ptr j +
+      let x y in
+        x @8 y @8 x !8 y !8
+      end
+    end
+  i end end drop
+end end
+
+proc shuffle64
+  // ptr: container int: length --
+  ptr int --
+  // Shuffles a container that has 8-byte items using Fisher-Yates algortihm.
+  // Runs with O(n) time complexity.
+in let array-ptr array-length in
+  array-length while dec dup isn-zero do let i in
+    i inc rand-unif let j in
+      array-ptr i 8 * +
+      array-ptr j 8 * +
+      let x y in
+        x @64 y @64 x !64 y !64
+      end
+    end
+  i end end drop
+end end
