@@ -8,6 +8,7 @@
 
 - It is not preferred to defined a procedure in one line. Instead, it is recommended to split the lines to 'proc' keyword, types, 'in' keyword, behaviour, 'end' keyword.
 
+
     proc <name>
       //// Shows the type and names of the parameters and outputs for descriptivity. Nothing else should be here.
       //// If there is no output, '--' can be not used.
@@ -26,15 +27,19 @@
       ...
     end
 
+
 - If parameters are named using 'let', 'let' can be put on the same line as 'in' of procedure definition.
+
 
     proc <name>
       ...
     in let <name> <name> in
       ...
     end end
+    
 
 - If the procedure is the 'main' procedure, the following pattern is preferred.
+
 
     proc main
       //// No argument name description is required.
@@ -44,16 +49,20 @@
     in let argc argv in
       ...
     end 0 end
+    
 
 - Even if it does not make a difference, it is recommended to use the right type for descriptions, and not its equivalent.
+
 
     proc <name>
       //// Don't use int if it is a pointer, or int if it is an unsigned integer. Use the right names even though ptr or uint expands to a single int.
       // ptr: start int: length
       ptr int --
     ...
+    
 
 - It is recommended to split the lines of behaviour so that no line depends to another (or, the dependency is minimalized). This way it is easy to see which command generates values and which one uses that value.
+
 
     ...
     //// Don't do:
@@ -67,7 +76,9 @@
     //// This line does not depend on another line to fill or clean the stack.
     ...
 
+
 - *./libs/core.corth* offers some stack management macros, which can help in many cases. However, if stack operations are complex; it is recommended to use 'let' since that way the program will be more efficient and simpler to understand.
+
 
     //// Don't do:
     proc to-dynamic
@@ -94,8 +105,10 @@
       end
     end end
     //// This code minimizes useless memory references, and is easy to understand.
-    
+
+
 - But it is also important to not overuse 'let' since there are already macros that does some of its job.
+
 
     //// Dont do:
     let obj in
@@ -107,9 +120,11 @@
     dup mlength to-dynamic
     //// This code uses 'dup', which makes the code much shorter.
 
+
 ### Macros:
 
 - If the macro defines a behaviour and is as simple as several tokens and does not contain any name definitions, it can be defined in one line. In this case, the input and outputs should be commented in the same line and after the macro definition.
+
 
     //// A description of the macro.
     // Does ...
@@ -118,25 +133,33 @@
     // NOTE: Can cause ...
     macro <name> ... endmacro // <type>: <name> <type>: <name> ... -- <type>: <name> <type>: <name> ...
 
+
 - If the macro defines 'let' variables, their name should start and end with underscores (_). This helps to make sure that they are not reused in the code that uses them.
 
+
     macro dup let _a_ in _a_ _a_ end endmacro  
-    
+
+
 - If macros with similar patterns are defined together, the tokens can be aligned for easier readabilty.
+
 
     macro dup let _a_     in _a_ _a_ end endmacro
     macro swp let _a_ _b_ in _b_ _a_ end endmacro
 
+
 - If the macro is used to define a constant, no input or output description is required.
+
 
     macro PI          0x03243F6A89 endmacro
     macro E           0x02B7E15162 endmacro
     macro rad-per-deg 0x000477D1A8 endmacro
     macro deg-per-rad 0x394BB834BE endmacro
 
+
 ### 'for' loops:
 
 - If a 'for' loop is required, it can be created using a standard pattern.
+
 
     //// This defines a 'for' loop that starts from <start>, and increases until <end>.
     //// If <end> is less than <start>, 'dec' and '<' should be replaced with 'inc' and '>'.
@@ -144,14 +167,17 @@
     <start> while dup <end> < do
       ...
     inc end drop
+    
 
 - The variable can be named with a 'let' statement. But instead of using a new line, 'let' statement can be kept in the 'while-do' line.
+
 
     //// Loop from <start> to <end>, and names that as <var>.
     <start> while dup <end> < do let <var> in
       ...
     <var> end inc end drop
     //// "<var> inc end end drop" whould also work.
+
 
 ### Comparing:
 
