@@ -1,7 +1,7 @@
 # Standards used to write the Corth libraries:
 
 - Since Corth is a very chaotic looking language, to make writing and reading code easier, some standards are used (Even though some libraries may not exactly obey them).
-- It is preferred to use 2-space indentaion.
+- It is preferred to use 2-space indentaion. But it is okay to use 1 or 4-space indentation as well (but God please, don't use 3 or 5, or 8).
 - Even though these are recommended by me, you can obviously use your preferred way of writing. These are just some possible guidelines that can help to write better code.
 
 ### Procedures:
@@ -179,6 +179,46 @@
         //// "<var> inc end end drop" whould also work.
 
 
-### Comparing:
+### 'do-while' loops:
 
-- It is recommended to use is-zero, isn-zero, is-pos... (or is-null and isn-null for pointers) from *./libs/core.corth* instead of '0 =', even though they mean the exact same thing. This is important, because in the case of an update to the language the way '=' works might change and '0 =' may not work as efficient as possible anymore. In that case, 'is-zero' would also be updated to compare in the most efficient way possible. This applies to many macros in that library.
+- A 'while' loop can also be used as a 'do-while' loop using a standard pattern.
+
+
+        //// This defines a 'while' loop that runs a code and after, checks whether a condition is true.
+        //// Because of the syntax of Corth language, any commands can be written inside 'while-do' or 'do-end'.
+        while
+          <code>
+        <condition> do end
+        //// <code> will run at least once.
+
+
+### A better general understanding of 'while':
+
+- 'while' loop does not work the exact same way it usually does in other languages.
+
+
+        //// In Corth, 'while' keyword is used only as a jump tag. When an 'end' of 'while' is reached, it jumps directly back to 'while' which allows loops. 'do' is the actual code that checks the condition.
+        while //// This is where 'end' jumps to.
+        
+          //// This part is run BEFORE condition is checked. This is why it can be used for 'do-while' loops.
+          <code> ...
+
+          //// This is the condition. Note that this is just a part of the code above, that returns a bool for 'do'. Because of that, condition could definititly be returned before other codes are run.
+          <condition> ...
+          
+        do    //// Check if the value is true and if not; jump to the location AFTER 'end', breaking the loop.
+        
+          //// This code will run AFTER condition is checked. This part can also contain 'break', which (just like do) jumps to the location after 'end'.
+          <code>...
+          
+        end   //// Jump back to 'while'.
+        
+        //// This is the location 'do' and 'break' jumps.
+
+
+- It should be noted that after 'end' is reached, program will jump to 'while'. This is why stack must be the same, since otherwise the stack would grow or shrink at every iteration which would cause very big problems.
+
+
+### Standardization:
+
+- It is recommended to use is-zero, isn-zero, is-pos... (or is-null and isn-null for pointers) from *./libs/core.corth* instead of their exact meanings, even though they mean the exact same thing. This is important, because in the case of an update to the language the way '=' works might change and '0 =' may not work as efficient as possible anymore (or not even work). In that case, 'is-zero' would also be updated to compare in the most efficient way possible.
