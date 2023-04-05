@@ -132,10 +132,10 @@ For more information about the commands, type:
     end
 
     proc main
-      returns int
-    in
+      int int -- int
+    in let argc argv in
       17 52 sum
-    end
+    end 0 end
 
 - 'proc' defines a procedure, which can be called anywhere in the code.
 - 'return' can be used to early return from a procedure, but the stack must match with the procedure's output layout.
@@ -157,7 +157,7 @@ For more information about the commands, type:
     end 0 end
 
 - 'macro' keyword is used to define macros and 'endmacro' is used to end the definition.
-- Macros expand at compile time, allowing simplifying code.
+- Macros expand at compile time, allowing simplifying and compressing code.
 - Macros are only compiled after expanding, so any comppile time error that would be caused by a macro is not detected before expansion.
 - Using 'let' inside a macro is usually a bad idea, although some library macros are designed that way (like *dup*, *swp* or *rot*). If the code requires let; either change that macro to a procedure, or name the let variable with names that starts and ends with underscores (_).
 
