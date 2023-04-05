@@ -1,0 +1,75 @@
+include libs/memory.corth
+
+/*
+  This library adds simple dynamic memory management utilities.
+  malloc and mlength is required for some macro and procedures.
+*/
+
+proc dresize-up
+  // ptr: x int: length -- ptr: y
+  ptr int -- ptr
+  // Resizes x and creates a new dynamicly-placed collection.
+  // New length must be greater than the older, otherwise undefined behaviour may be observed.
+in let old length in
+  // Create a new object
+  length malloc
+  let new in
+    old new old mlength memcpy8 new
+  end
+end end
+
+proc dresize-down
+  // ptr: x int: length -- ptr: y
+  ptr int -- ptr
+  // Resizes x and creates a new dynamicly-placed collection.
+  // New length must be less than the older, otherwise undefined behaviour may be observed.
+in let old length in
+  // Create a new object
+  length malloc
+  let new in
+    old new length memcpy8 new
+  end
+end end
+
+proc dresize
+  // ptr: x int: length -- ptr: y
+  ptr int -- ptr
+  // Resizes x and creates a new dynamicly-placed collection.
+in let old length in
+  // Create a new object
+  length malloc
+  let new in
+    old new length old mlength min2 memcpy8 new
+  end
+end end
+
+macro dcopy
+  // ptr: x -- ptr: y
+  // Copies a dynamicly-placed collection.
+  dup mlength to-dynamic
+endmacro
+
+proc to-dynamic
+  // ptr: start int: length -- ptr: x
+  ptr int -- ptr
+  // Creates a dynamicly-placed collection from a static collection.
+in let start length in
+  length malloc let new in
+    new isn-null if
+      start new length memcpy8
+    end
+  end
+end end
+
+proc djoin
+  // ptr: a ptr: b -- ptr: join(a, b)
+  ptr ptr -- ptr
+  // Joins two dynamicly-placed collections.
+in let a-start b-start in
+  a-start mlength b-start mlength let a-length b-length in
+    a-length b-length + malloc let result in
+      a-start result            a-length memcpy8
+      b-start result a-length + b-length memcpy8
+    result end
+  end
+end end
