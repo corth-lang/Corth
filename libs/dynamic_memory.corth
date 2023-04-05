@@ -13,8 +13,6 @@ memory malloc.array malloc.ARRAY-SIZE end
 memory malloc.avail-queue-array   malloc.AVAIL-QUEUE-SIZE end
 memory *malloc.avail-queue-length sizeof(int) end
 
-// TODO: malloc.avail-queue should be a heap64, not a queue64
-
 macro malloc.avail-queue malloc.avail-queue-array *malloc.avail-queue-length endmacro
 
 proc malloc.init
@@ -36,12 +34,12 @@ end
 
 macro malloc.get-length-of-block
   // ptr: *block -- int: length
-  malloc.get-size-of-block dec
+  malloc.get-size-of-block 8 -
 endmacro
 
 proc malloc.sew
   --
-  // malloc.sew is not an efficient procedure, and should be removed. But for now to make the malloc and mfree useful, it will be kept.
+  // malloc.sew is not an efficient procedure, and should be removed. But for now, to make malloc and mfree useful, it will be kept.
 in
   0 while dup *malloc.avail-queue-length @64 < do let i in
     i malloc.avail-queue queue64.get @64 i inc malloc.avail-queue queue64.get = if
@@ -55,12 +53,12 @@ in
 end
 
 proc malloc
-  // int: size -- ptr: addr
+  // int: length -- ptr: addr
   int -- ptr
   // Allocates memory with a specific size, allows dynamic memory management.
   // NOTE: Can be unstable or buggy.
 in
-  inc let size in
+  8 + let size in
     memory available-group sizeof(ptr) and
            available-size  sizeof(int) and
            available-id    sizeof(int) in
@@ -69,8 +67,8 @@ in
       // group = queue[id]
       // size = *group - group
            
-      NULLPTR            available-group !64
-      0x7fffffffffffffff available-size  !64
+      NULLPTR available-group !64
+      MAX-INT available-size  !64
 
       // Find a group with enough space.
       0 while dup *malloc.avail-queue-length @64 < do let id in
@@ -102,7 +100,7 @@ in
           // Size was equal to available, therefore the group should be kept intact.
           available-id @64 malloc.avail-queue queue64.pop drop
         end
-        available-group @64
+        available-group @64 8 +
       end
     end
   end
@@ -115,12 +113,12 @@ proc mfree
   // NOTE: Should not be used with pointers which are not allocated using malloc. This can cause segmentaion fault.
   // NOTE: Can be unstable or buggy.
 in
-  malloc.avail-queue squeue64.append
+  8 - malloc.avail-queue squeue64.append
   malloc.sew
 end
 
-macro allocated-space
-  // ptr: addr -- int: size
-  // Returns the allocated space for an object created using malloc.
-  dec malloc.get-length-of-block
+macro mlength
+  // ptr: addr -- int: length
+  // Returns the length of an object created using malloc.
+  8 - malloc.get-length-of-block
 endmacro
