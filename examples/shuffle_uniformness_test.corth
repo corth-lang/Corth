@@ -9,7 +9,7 @@ proc print-array
 in let array-start array-length in
   "[ " puts
   0 while dup array-length < do let i in
-    array-start i 8 * + @64 putu " , " puts
+    array-start i 8 * + @64 putu " " puts
   i end inc end drop
   " ]" puts
 end end
@@ -19,26 +19,28 @@ proc main
 in let argc argv in
   time rng-seed !64
 
-  memory array sizeof(int) 10 * in
-    0 array      !64
-    1 array 8  + !64
-    2 array 16 + !64
-    3 array 24 + !64 
-    4 array 32 + !64
-    5 array 40 + !64
-    6 array 48 + !64
-    7 array 56 + !64
-    8 array 64 + !64
-    9 array 72 + !64
+  memory array sizeof(int) 12 * in
+    0  array      !64
+    1  array 8  + !64
+    2  array 16 + !64
+    3  array 24 + !64 
+    4  array 32 + !64
+    5  array 40 + !64
+    6  array 48 + !64
+    7  array 56 + !64
+    8  array 64 + !64
+    9  array 72 + !64
+    10 array 80 + !64
+    11 array 88 + !64
 
-    "Start: " puts array 10 print-array "\n" puts
+    "Start: " puts array 12 print-array "\n" puts
     
     "Shuffling...\n" puts
 
-    array 10 shuffle64
+    array 12 shuffle64
 
     "Done.\n" puts
 
-    "End: " puts array 10 print-array "\n" puts
+    "End: " puts array 12 print-array "\n" puts
   end
 end 0 end
