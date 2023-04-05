@@ -3,6 +3,10 @@ include libs/core.corth
 
 
 /*
+  Queue library for Corth.
+  
+  Queues are static-placed collections with static-capacity that allow appending and popping items from it.
+
   To create a queue, an array with the preferred size and a pointer should be created.
   After that, the queue should be initialized using queue64.init.
 */
@@ -74,9 +78,12 @@ proc queue64.pop
   // return queue.pop(index)
 in
   let index queue-start *queue-length in
-    queue-start index 8 * + let x in
-      x @64
-      x inc x *queue-length @64 index - dec memcpy64i
+    queue-start index 8 * + let page-addr in
+      // Return the value at page address
+      page-addr @64
+
+      // Move the contents to the left
+      page-addr 8 + page-addr *queue-length @64 index - dec memcpy64i
     end
     *queue-length @dec64
   end
@@ -109,8 +116,9 @@ end
 // Requires file-desc, STDOUT, STDERR, puts, putu and putx. An I/O library should be included.
 proc queue64.fput
   // ptr: queue-start ptr: *queue-length file-desc: file-desc
-  // print(queue)
   ptr ptr file-desc --
+  // Prints the queue in a listed manner.
+  // print(queue)
 in
   let file-desc in
     @64 let queue-start queue-length in
