@@ -1,14 +1,17 @@
 # Corth
-A programming language made with inspiration of Porth, which is a programming language made with inspiration of Forth.
+A stack based programming language I designed based on Forth. 
 
-parser_lib.py contains the parser, which returns a list of tokens.
+The idea to make such a programming language came from the [Porth programming language](https://gitlab.com/tsoding/porth) series of [Tsoding Daily channel](https://www.youtube.com/@TsodingDaily).
 
-compiler_lib.py contains the compiler, which creates the NASM program.
+- *./parser_lib.py* contains the parser, which returns a list of tokens.
+- *./compiler_lib.py* contains the compiler, which creates the NASM program.
+- *./main.py* allows the usage of command-line for easy access.
+- *./quick_test.py* allows to quickly test compiling every example from *./examples/*.
+- *./todo.md* is a TODO list for future plans on the project.
+- *./libs/* directory contains some libraries written in Corth.
+- *./examples/* directory contains some examples written in Corth.
 
-main.py allows the usage of command-line for easy access.
-
-For now, the language is made in Python. Later, it will be rewritten in itself.
-Because of that, you will need Python in your machine. (>=Python3.7 because of the f-strings)
+For now, the language and tools are made in Python (>=Python3.7 because of the f-strings). As the project evolves, these tools will be rewritten in Corth.
 
 
 ## How to use the compiler?
@@ -16,6 +19,8 @@ Because of that, you will need Python in your machine. (>=Python3.7 because of t
 To compile a Corth program to an executable, type this in a command-line in the Corth folder.
 
     python3 main.py compile <source>
+
+If there are no compile errors, this command will create an executable named *./output*. To change the output path, use '-o'.
 
 For more information about the commands, type:
 
@@ -27,8 +32,8 @@ For more information about the commands, type:
 - Corth is a concatinative (stack based) language.
 - Programs are compiled into NASM first, then into an executable.
 - Everything can be inlined. The return character is used only to end inline comments and to add the newline character to the strings.
-- Indentation and spaces mean nothing to the parser.
-
+- Indentation and spaces are removed during parsing so they can be used.
+- Names can contain any character except whitespace (space, tab or newline); but can not start with a decimal digit, a dollar sign, single or double quote.
 - EVERYTHING IN THIS LANGUAGE CAN BE CHANGED AT ANY TIME. USE WITH CAUTION.
 
 ### First program:
@@ -36,18 +41,17 @@ For more information about the commands, type:
     include libs/linux_86/io.corth
     
     proc main 
-      -- int
-    in
+      int int -- int
+    in let argc argv in
       "Hello, World!\n" puts
-      
-      0
-    end
+    end 0 end
     
 - This is a simple program that prints "Hello, World!" when run.
-- 'include' is used to include the library io.corth, which contains some I/O operations like writing to files and the standard output.
-- 'proc' is used to define a procedure. 'main' is where the program starts.
+- '[include](#include)' is used to include the library io.corth, which contains some I/O operations like writing to files and the standard output.
+- '[let](#let)' is used to 'name' values. In this example, the parameters are named.
+- '[procedures](#procedures)' is used to define a procedure. 'main' is where the program starts.
 - 'puts' is used to print a string to the standard output.
-- For more examples, you can check the ./examples/ directory.
+- For more examples, you can check the *./examples/* directory.
 - For more information about these concepts, keep scrolling.
 
 ### Numbers:
@@ -60,9 +64,9 @@ For more information about the commands, type:
     '\n'
 
 - Numbers push an integer type to the stack.
-- Different bases are possible: binary, octal, decimal and hexadecimal. These can be used with 0b, 0o and 0x.
-- Putting a character between '' causes it to be interpreted as its ASCII value.
-- Escapes are supported in characters.
+- Binary, octal and hexadecimal numbers are allowed. These can be used with 0b, 0o and 0x.
+- Putting a character between single quotes ('') causes it to be interpreted as a *character*, which returns its ASCII value.
+- Escapes such as *\n* are supported in characters.
 
 ### Strings:
 
@@ -72,7 +76,7 @@ For more information about the commands, type:
      In Corth, multi-line strings are supported."
 
 - Strings push two numbers, the address and the length of the string.
-- THIS BEHAVIOUR WILL BE CHANGED IN A FUTURE UPDATE! USE WITH CAUTION.
+- Strings are defined in the *data* part in the NASM compiler, so they can be modified at run-time (even though that is not recommended).
 
 ### Arithmetic operators:
 
@@ -85,13 +89,15 @@ For more information about the commands, type:
 
 - '+' adds the last two items and pushes the result back, '-' subtracts, '*' multiplies and '/' divides.
 - 'inc' increases the last item in the stack once, 'dec' decreases.
+- 'inc' is slightly faster than '1 +'.
 
 ### Including modules:
 
     include libs/str.corth
 
 - 'include' allows to use external code.
-- ./libs/ directory contains some useful libraries like core.corth or str.corth.
+- *./libs/* directory contains some useful libraries like core.corth or str.corth.
+- Path can be both a file or a directory which will cause the compiler to include every file under that directory.
 
 ### Stack operations:
   
@@ -101,21 +107,21 @@ For more information about the commands, type:
     1 2 3 rot  // stack is now  2  3  1
     1 2 3 arot // stack is now  3  1  2
 
-- ./libs/core.corth contains some basic stack operations.
+- *./libs/core.corth* contains some basic stack operations.
 - 'drop' removes the last item from the stack.
 - 'dup' duplicates the last item in the stack.
 - 'swp' swaps the places of the last two items.
 - 'rot' rotates the places of the last 3 items, by moving the first added to the last position.
 - 'arot' does the exact opposite of what 'rot' does.
-- If possible, it is recommended to use 'let' instead of those since these are already 'let' macros.
-- There are some others, but it is recommended to check ./libs/core.corth for more information since they are a bit more complex.
+- These operations are macros defined using [let](#let), with names starting with underscore (_). For hard to manage stack operations, it is recommended to use 'let' instead.
+- There are some others, but it is recommended to check *./libs/core.corth* for more information since they are a bit more complex.
 
 ### I/O:
 
     "Hello, world!\n" puts
     34 35 + putu " is a nice number.\n" puts
 
-- ./libs/io.corth contains useful procedures for I/O operations like reading and writing to streams.
+- *./libs/io.corth* contains useful procedures for I/O operations like reading and writing to streams.
 
 ### Procedures:
 
@@ -132,8 +138,9 @@ For more information about the commands, type:
     end
 
 - 'proc' defines a procedure, which can be called anywhere in the code.
+- 'return' can be used to early return from a procedure, but the stack must match with the procedure's output layout.
 - Program starts from the 'main' procedure; if it is not defined, the compiler will return an error.
-- If the procedure does not require recursion or macro, it is probably a better idea to use a macro.
+- If the code does not require recursion and is simple, it might be better to use a macro depending on the exact requirements.
 
 ### Macros:
 
@@ -144,14 +151,21 @@ For more information about the commands, type:
     endmacro
 
     proc main
-      -- int
-    in
+      int int -- int
+    in let argc argv in
       "Josh" sayHi
-      
-      0
-    end
+    end 0 end
 
 - 'macro' keyword is used to define macros and 'endmacro' is used to end the definition.
+- Macros expand at compile time, allowing simplifying code.
+- Macros are only compiled after expanding, so any comppile time error that would be caused by a macro is not detected before expansion.
+- Using 'let' inside a macro is usually a bad idea, although some library macros are designed that way (like *dup*, *swp* or *rot*). If the code requires let; either change that macro to a procedure, or name the let variable with names that starts and ends with underscores (_).
+
+### Name scopes:
+
+- If a name is defined globally (for example with 'memory'), it can be reached from anywhere meaning any procedure in and out of the same file.
+- If a name is defined locally in a procedure, it can only be reached within that procedure. 
+- Two global or two local variables can not have the same name, but if a local and a global variable have the same name, the local one will be reachable until it is removed from the scope.
 
 ### Comments:
 
@@ -159,11 +173,8 @@ For more information about the commands, type:
     34 35 + putu  // Just like that
 
     /*
-      This is a block comment, also known as multi-line comment.
-      This is still in comment.
-      And it still is.
-      This can also come after code, but I am too lazy to write an example for that.
-      Code can come after that comment, too.
+      This is a block comment, aka a multi-line comment.
+      Block comments can span several lines.
     */
 
 ### Control flow:
@@ -171,8 +182,8 @@ For more information about the commands, type:
     include libs/linux_x86/io.corth
 
     proc main
-      -- int
-    in
+      int int -- int
+    in let argc argv in
       2 2 + 5 = if
         "Well, math is broken. Nice.\n" puts // Hopefully wont be printed
       end
@@ -188,14 +199,16 @@ For more information about the commands, type:
       0 while dup 10 < do                    // Duplicate the number, and check if it is less then 10
         dup putu "\n" puts                   // Print the number
       inc end drop                           // Increase the number
-    end
+    end 0 end
 
 - 'if' is used for conditions, it runs the code after it only if the last item on the stack is true.
 - 'if' can be used with 'else' for more functionality, which runs only if the bool is false.
-- If 'if' is used without an 'else', the stack must not change between 'if' and 'end' since otherwise it will create an ambiguity of what the stack will be.
-- If 'if' is used with an 'else', the stack change between 'if' and 'else' must be the same for the code between 'else' and 'end'.
 - Because of the way this language works, the 'if-else' statement can be used as ternary operator.
 - 'while' is used for loops, and 'break' can be used to quit the loop early.
+- If 'if' is used without an 'else', the stack must not change between 'if' and 'end' since otherwise it will create an ambiguity of what the stack will be after that part.
+- If 'if' is used with an 'else', the stack change between 'if' and 'else' must be the same for the code between 'else' and 'end'.
+- Stack must not change between 'while' and 'end'.
+- Even though parser does not care for indentation, it is still a good idea to indent since in Corth these operations can get very hard to understand very quickly.
 
 ### Memory management:
 
@@ -210,8 +223,8 @@ For more information about the commands, type:
     end
 
     proc main
-      returns int
-    in
+      int int -- int
+    in let argc argv in
       0 count !64
 
       increase
@@ -230,18 +243,16 @@ For more information about the commands, type:
         69 y !64
         y @64 puti " is after saving y\n" puts
       end
-
-      0
-    end
+    end 0 end
 
 - 'memory' is used for allocating global or local memory.
-- When called a variable name; the address is returned, NOT the value.
-- When used globally, 'memory' allocates memory that can be used from everywhere, even before the definition.
-- But when used locally, 'in' should be added. 'end' will where the memory reserved will be allocated, and the names will be deleted.
+- When a variable name is called; the address is returned, NOT the value.
+- When used globally, 'memory' allocates memory that can be used from everywhere after definition.
+- But when used locally, 'in' should be added. 'end' shows the location where the memory reserved will be deallocated, and the names will be deleted.
 - 'and' can be used to allocate more data without dealing with a huge chain of 'end's.
-- 'load8' loads 8 bytes of data from the address.
-- 'store8' stores 8 bytes of data to the address. (First argument is address and the second is the value to be stored)
-- The size of memeory allocated must be calculated in the compile-time.
+- '@64' loads 8 bytes of data from the address.
+- '!64' stores 8 bytes of data to the address. (First argument is the value to be stored and the second is the address)
+- The size of memeory allocated must be calculated in the compile-time. Because of that, dynamic objects can not be created without a dynamic memory manager. *./libs/dynamic_memory.corth* can be used to  dynamicly allocate space.
 
 ### Let:
 
@@ -251,4 +262,4 @@ For more information about the commands, type:
 
 - 'let' is used to make the stack management easier.
 - When 'let' is reached, the variables are stored with the stack data. These names will be removed from the namescope when end is reached.
-- When any 'let' variable is called, it directly returns its value, unlike a 'memory' variable.
+- When any 'let' variable is called, it directly returns its value, unlike a 'memory' variable which returns its address. Because of that, let variables are read-only, since they can only be written only once at the declaration.
