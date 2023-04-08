@@ -80,18 +80,17 @@ For more information about the commands, type:
 
 ### Arithmetic operators:
 
-    34 35 +
-    69 27 -
-    68 inc
-    43 dec
-    3 23 *
-    60 5 /
+    34 35 + // stack is now 69
+    69 27 - // stack is now 42
+    68 inc  // stack is now 69
+    43 dec  // stack is now 42
+    3 23 *  // stack is now 69
+    85 2 /  // stack is now 42
 
 - '+' adds the last two items and pushes the result back, '-' subtracts, '*' multiplies and '/' divides.
-- 'inc' increases the last item in the stack once, 'dec' decreases.
-- 'inc' is slightly faster than '1 +'.
+- 'inc' and 'dec' are macros defined as '1 +' and '1 -' in *./libs/core.corth*. They can be used to increase or decrease a number once.
 
-### Including modules:
+### Include:
 
     include libs/str.corth
 
@@ -210,7 +209,17 @@ For more information about the commands, type:
 - Stack must not change between 'while' and 'end'.
 - Even though parser does not care for indentation, it is still a good idea to indent since in Corth these operations can get very hard to understand very quickly.
 
-### Memory management:
+### Let:
+
+     3 4 let x y in
+       x y * x + y -
+     end puti
+
+- 'let' is used to make the stack management easier.
+- When 'let' is reached, the variables are stored with the stack data. These names will be removed from the namescope when end is reached.
+- When any 'let' variable is called, it directly returns its value, unlike a 'memory' variable which returns its address. Because of that, let variables are read-only, since they can only be written only once at the declaration.
+
+### Static memory management:
 
     include libs/core.corth
 
@@ -252,14 +261,22 @@ For more information about the commands, type:
 - 'and' can be used to allocate more data without dealing with a huge chain of 'end's.
 - '@64' loads 8 bytes of data from the address.
 - '!64' stores 8 bytes of data to the address. (First argument is the value to be stored and the second is the address)
-- The size of memeory allocated must be calculated in the compile-time. Because of that, dynamic objects can not be created without a dynamic memory manager. *./libs/dynamic_memory.corth* can be used to  dynamicly allocate space.
+- 'memory' keyword allocates the memory at compile-time; because of that, a dynamic memory manager is required.
 
-### Let:
+### Dynamic memory management:
 
-     3 4 let x y in
-       x y * x + y -
-     end puti
+    include libs/dynamic/malloc.corth
 
-- 'let' is used to make the stack management easier.
-- When 'let' is reached, the variables are stored with the stack data. These names will be removed from the namescope when end is reached.
-- When any 'let' variable is called, it directly returns its value, unlike a 'memory' variable which returns its address. Because of that, let variables are read-only, since they can only be written only once at the declaration.
+    100 malloc let buffer in
+      buffer while dup buffer 100 + < do let addr in
+        0x67 addr !8
+      addr end inc end drop
+
+      buffer mfree
+    end
+
+- *libs/dynamic/* directory contains some dynamic memory management utilities, like malloc or djoin.
+
+### Collections:
+
+- *libs/collections/* directory contains different kinds of data structures.
