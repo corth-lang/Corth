@@ -4,103 +4,75 @@ include libs/core.corth
 // (Probably never :( )
 macro NULLPTR 0 endmacro
 
-macro get
-  // ptr: src   int: index
-  // int: index ptr: src
+proc memcmp8
+  // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: a==b
+  ptr int ptr int -- bool
+  // Checks if two collections are equal.
+in let a-start a-length b-start b-length in
+  a-length b-length != if
+    false return
+  end
 
-  + @8
-endmacro
+  0 while dup a-length < do let i in
+    a-start i + @8 b-start i + @8 != if
+      false return
+    end
+  i end inc end drop
+end true end
 
-macro set
-  // ptr: src   int: index int: value
-  // int: index ptr: src   int: value
+proc memcmp64
+  // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: a==b
+  ptr int ptr int -- bool
+  // Checks if two collections are equal.
+in let a-start a-length b-start b-length in
+  a-length b-length != if
+    false return
+  end
 
-  arot + !8
-endmacro
-
-macro get8
-  // ptr: src   int: index
-  // int: index ptr: src
-
-  + @64
-endmacro
-
-macro set8
-  // ptr: src   int: index int: value
-  // int: index ptr: src   int: value
-
-  arot + !64
-endmacro
+  0 while dup a-length < do let i in
+    a-start i 8 * + @64 b-start i 8 * + @8 != if
+      false return
+    end
+  i end inc end drop
+end true end
 
 proc memset8
-  // ptr: dst int: len int: val
-  // Sets every byte to a certain value between a range in memory
+  // ptr: start int: length int: value
   ptr int int --
-in
-  let dst len val in
-    dst len +
-    let fin in
-      dst while dup fin < do
-        let i in
-          val i !8
-        i end
-      inc end drop
-    end
+  // Sets every item in a collection to a value.
+in let start length value in
+  start length +
+  let finish in
+    start while dup finish < do
+      let i in
+        value i !8
+      i end
+    inc end drop
   end
-end
+end end
 
 proc memset64
-  // ptr: dst int: len int: val
-  // Sets every 8-bytes to a certain value between a range in memory
+  // ptr: start int: length int: value
   ptr int int --
-in
-  let dst len val in
-    dst len 8 * +
-    let fin in
-      dst while dup fin < do
-        let i in
-          val i !64
-        i end
-      8 + end drop
-    end
+  // Sets every item in a collection to a value.
+in let start length value in
+  start length 8 * +
+  let finish in
+    start while dup finish < do
+      let i in
+        value i !64
+      i end
+    8 + end drop
   end
-end
+end end
 
-macro @dec8
-  // ptr: x
-  // Decreases a byte in the memory
-  // *x--
-  let _a_ in
-    _a_ @8 dec _a_ !8
-  end
-endmacro
+// Decreases a value in the memory (*-- operator)
+macro @dec8  let _a_ in _a_ @8  dec _a_ !8  end endmacro // ptr: x
+macro @dec64 let _a_ in _a_ @64 dec _a_ !64 end endmacro // ptr: x
 
-macro @dec64
-  // ptr: x
-  // Decreases an 8-byte value in the memory
-  // *x--
-  let _a_ in
-    _a_ @64 dec _a_ !64
-  end
-endmacro
-
-macro @inc8
-  // ptr: x
-  // Increases a byte in the memory
-  // *x++
-  let _a_ in
-    _a_ @8 inc _a_ !8
-  end
-endmacro
-
-macro @inc64
-  // ptr: x
-  // Increases an 8-byte value in the memory
-  // *x++
-  let _a_ in
-    _a_ @64 inc _a_ !64
-  end
-endmacro
+// Increases a value in the memory (*++ operator)
+macro @inc8  let _a_ in _a_ @8  inc _a_ !8  end endmacro // ptr: x
+macro @inc64 let _a_ in _a_ @64 inc _a_ !64 end endmacro // ptr: x
 
 macro @swp8
   // ptr: a ptr: b
