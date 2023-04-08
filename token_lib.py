@@ -42,7 +42,6 @@ KEYWORDS = {
 
     # In procedure keywords
     "if": (IF := enum_lib.step()),
-    "elif": (ELIF := enum_lib.step()),
     "end": (END := enum_lib.step()),
     "else": (ELSE := enum_lib.step()),
     "while": (WHILE := enum_lib.step()),
@@ -53,8 +52,6 @@ KEYWORDS = {
     # Arithmetic operators
     "+": (ADD := enum_lib.step()),
     "-": (SUB := enum_lib.step()),
-    "inc": (INC := enum_lib.step()),
-    "dec": (DEC := enum_lib.step()),
 
     # Signed operations
     "*": (MUL := enum_lib.step()),
@@ -80,17 +77,9 @@ KEYWORDS = {
 
     # Comparison operators
     "=": (EQUAL := enum_lib.step()),
-    "!=": (NOT_EQUAL := enum_lib.step()),
     "<": (LESS_THAN := enum_lib.step()),
-    ">": (GREATER_THAN := enum_lib.step()),
-    "<=": (LESS_EQUAL := enum_lib.step()),
-    ">=": (GREATER_EQUAL := enum_lib.step()),
 
-    # Boolean artihmetic
-    "&": (LAND := enum_lib.step()),  # Not implemented in the compiler yet
-    "|": (LOR := enum_lib.step()),  # Not implemented in the compiler yet
-    "^": (LXOR := enum_lib.step()),  # Not implemented in the compiler yet
-    "!": (NOT := enum_lib.step()),
+    # Boolean singletons
     "false": (FALSE := enum_lib.step()),
     "true": (TRUE := enum_lib.step()),
 

@@ -963,21 +963,28 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                 error_on_token(token, "Invalid syntax")
                 return True
 
-            level, start, old_stack = levels.pop()
+            level, start, *args = levels.pop()
 
             if start is not token_lib.IF:
                 error_on_token(token, f"Invalid syntax, tried to end '{start}' with ELSE")
                 return True
 
+            old_stack ,= args
+
             file.write(f"    ;; -- ELSE ({level}, {start_level}) --\n\n")
             file.write(f"    jmp     .L{start_level}\n")
             file.write(f".L{level}:\n\n")
 
-            levels.append((start_level, token_lib.ELSE, stack))  # Add the new stack, no need to copy
-            stack = old_stack  # And change the stack to the new one
-            start_level += 1
+            if returned:
+                levels.append((start_level, token_lib.ELSE, None))  # Indicate that the condition can not return any output, since it already returned.
 
-            returned = False
+                returned = False
+
+            else:
+                levels.append((start_level, token_lib.ELSE, stack))  # Return the stack to check later.
+                
+            stack = old_stack  # And change the stack to the old one
+            start_level += 1
 
         elif token.type is token_lib.END:                    
             if len(levels):
@@ -991,7 +998,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                         returned = False
                         
                     else:
-                        if old_stack != stack:
+                        if old_stack is not None and  old_stack != stack:
                             error_on_token(token, "Stack changed inside an if-end")
                             return True
 
@@ -1001,11 +1008,13 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                 elif start is token_lib.DO:
                     old_stack ,= args
                     
-                    level2, start2, old_stack2 = levels.pop()
+                    level2, start2, *args2 = levels.pop()
 
                     if start2 is not token_lib.WHILE:
                         error_on_token(token, "Invalid syntax")
                         return True
+                    
+                    old_stack2 ,= args2
 
                     if returned:
                         error_on_token(token, "Returned between do-end")
@@ -1079,22 +1088,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             levels.append((start_level, token_lib.DO, stack.copy()))
             start_level += 1
 
-        elif token.type is token_lib.INC:
-            if len(stack) < 1 or stack[-1] is not INT_TYPE:
-                error_on_token(token, "INC expects a INT")
-                return True
-
-            file.write(f"    ;; -- INC --\n\n")
-            file.write(f"    inc     QWORD [rsp]\n\n")
-
-        elif token.type is token_lib.DEC:
-            if len(stack) < 1 or stack[-1] is not INT_TYPE:
-                error_on_token(token, "DEC expects a INT")
-                return True
-
-            file.write(f"    ;; -- DEC --\n\n")
-            file.write(f"    dec     QWORD [rsp]\n\n")
-
         elif token.type is token_lib.BREAK:
             copy = levels.copy()
             copy.reverse()
@@ -1150,21 +1143,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    pushf\n")
             file.write(f"    and     QWORD [rsp], 0x40\n")
 
-        elif token.type is token_lib.NOT_EQUAL:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack.pop() is not INT_TYPE
-            ):
-                error_on_token(token, "!= expects two INTs")
-                return True
-
-            stack.append(BOOL_TYPE)
-
-            file.write(f"    ;; -- NOT EQUAL --\n\n")
-            file.write(f"    pop     rax\n")
-            file.write(f"    sub     [rsp], rax\n\n")
-
         elif token.type is token_lib.LESS_THAN:
             if (
                     len(stack) < 2 or
@@ -1182,88 +1160,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    sub    rax, rbx\n")
             file.write(f"    pushf\n")
             file.write(f"    and    qword [rsp], 0x80\n\n")
-
-        elif token.type is token_lib.GREATER_THAN:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack.pop() is not INT_TYPE
-            ):
-                error_on_token(token, "> expects two INTs")
-                return True
-
-            stack.append(BOOL_TYPE)
-
-            file.write(f"    ;; -- GREATER THAN --\n\n")
-            file.write(f"    pop    rbx\n")
-            file.write(f"    pop    rax\n")
-            file.write(f"    sub    rbx, rax\n")
-            file.write(f"    pushf\n")
-            file.write(f"    and    qword [rsp], 0x80\n\n")
-
-        elif token.type is token_lib.LESS_EQUAL:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack.pop() is not INT_TYPE
-            ):
-                error_on_token(token, "<= expects two INTs")
-                return True
-
-            stack.append(BOOL_TYPE)
-
-            file.write(f"    ;; -- GREATER THAN --\n\n")
-            file.write(f"    pop    rbx\n")
-            file.write(f"    pop    rax\n")
-            file.write(f"    sub    rbx, rax\n")
-            file.write(f"    pushf\n")
-            file.write(f"    and    qword [rsp], 0x80\n")
-            file.write(f"    xor    qword [rsp], 0x80\n\n")
-
-        elif token.type is token_lib.GREATER_EQUAL:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack.pop() is not INT_TYPE
-            ):
-                error_on_token(token, ">= expects two INTs")
-                return True
-
-            stack.append(BOOL_TYPE)
-
-            file.write(f"    ;; -- GREATER EQUAL --\n\n")
-            file.write(f"    pop    rbx\n")
-            file.write(f"    pop    rax\n")
-            file.write(f"    sub    rax, rbx\n")
-            file.write(f"    pushf\n")
-            file.write(f"    and    qword [rsp], 0x80\n")
-            file.write(f"    xor    qword [rsp], 0x80\n\n")
-
-        elif token.type is token_lib.NOT:
-            if len(stack) < 1 or stack.pop() is not BOOL_TYPE:
-                error_on_token(token, "NOT expects a BOOL")
-                return True
-
-            stack.append(BOOL_TYPE)
-
-            file.write(f"    ;; -- NOT --\n\n")
-            file.write(f"    pop     rax\n")
-            file.write(f"    test    rax, rax\n")
-            file.write(f"    pushf\n")
-            file.write(f"    and     QWORD [rsp], 0x40\n\n")
-
-        elif token.type is token_lib.LOR:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not BOOL_TYPE or
-                    stack[-1] is not BOOL_TYPE
-            ):
-                error_on_token(token, "LOR expects two BOOLs")
-                return True
-
-            file.write(f"    ;; -- LOR --\n\n")
-            file.write(f"    pop     rax\n")
-            file.write(f"    or      [rsp], rax\n\n")
 
         elif token.type is token_lib.FALSE:
             stack.append(BOOL_TYPE)
