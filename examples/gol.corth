@@ -4,6 +4,8 @@
     ==== Game of Life example ====
     ==============================
 
+IMPORTANT NOTE: DOES NOT WORK RIGHT NOW
+
 Simulates and renders game of life.
 Requires a console that can handle the reverse line feed character.
 
@@ -36,19 +38,19 @@ endmacro
 macro was-alive
   // int: row-no int: col-no -- bool: is-alive
 
-  get-id old get isn-zero
+  get-id old + @8 isn-zero
 endmacro
 
 macro set-alive
   // int: row-no int: col-no --
 
-  get-id board ALIVE set
+  ALIVE get-id board + !8
 endmacro
 
 macro set-dead
   // int: row-no int: col-no --
 
-  get-id board DEAD set
+  DEAD get-id board + !8
 endmacro
 
 macro draw-board
