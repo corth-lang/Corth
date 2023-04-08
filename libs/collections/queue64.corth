@@ -113,28 +113,6 @@ in
   end
 end
 
-// Requires file-desc, STDOUT, STDERR, puts, putu and putx. An I/O library should be included.
-proc queue64.fput
-  // ptr: queue-start ptr: *queue-length file-desc: file-desc
-  ptr ptr file-desc --
-  // Prints the queue in a listed manner.
-  // print(queue)
-in
-  let file-desc in
-    @64 let queue-start queue-length in
-      queue-length is-zero if
-        "<EMPTY>\n" puts
-      else
-        0 while dup queue-length < do let index in
-          index file-desc fputu ". " file-desc fputs queue-start index 8 * + @64 file-desc fputx "\n" file-desc fputs
-        index end inc end drop
-      end
-    end
-  end
-end
-macro queue64.put  STDOUT queue64.fput endmacro
-macro queue64.eput STDERR queue64.fput endmacro
-
 /*
-  TODO: Time complexity
+  TODO: Time complexity.
 */
