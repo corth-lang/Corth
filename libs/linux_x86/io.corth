@@ -8,13 +8,12 @@ include libs/str.corth
 //    ================
 
 
-// == Strings ==
 macro fputs arot SYSWRITE syscall3 drop endmacro // ptr: str-ptr int: str-len file-desc: file-desc
 
-// == Unsigned decimals ==
 proc fputu
   // int: int file-desc: file-desc 
   int file-desc --
+  // Prints an unsigned integer to a file stream.
 in
   let file in
     memory buffer 20          and
@@ -36,10 +35,10 @@ in
   end
 end
 
-// == Signed decimals ==
 proc fputi
   // int: int file-desc: file-desc
   int file-desc --
+  // Prints a signed integer to a file stream.
 in
   let file in
     dup is-neg if
@@ -50,7 +49,6 @@ in
   end
 end
 
-// == Hexadecimals ==
 proc fputx
   // int: int file-desc: file-desc
   int file-desc --
@@ -72,13 +70,12 @@ in
   end
 end
 
-// == Unsigned decimals (plus) ==
-// The starting characters are always visible and the ending zeros are removed
-// Also, does not print the first character if it is not 0
-// Used in fixed64.put-fixed
 proc fputup
   // int: int file-desc: file-desc 
   int int --
+  // The starting characters are always visible and the ending zeros are removed.
+  // Also, does not print the first character if it is not 0.
+  // Used in fixed64.put-fixed.
 in
   let file in
     dup is-zero if
@@ -109,24 +106,19 @@ in
     end
   end
 end
+  
 
 //  ===============
 //  ==== Input ====
 //  ===============
 
-// == Strings ==
-// Read bytes can be used to check if the reading operation was successful or not
-macro fgets
-  // ptr: str-ptr int: str-len file-desc: file-desc -- int: read-bytes 
-  
-  arot SYSREAD syscall3
-endmacro
+// Read bytes can be used to check if the reading operation was successful or not.
+macro fgets arot SYSREAD syscall3 endmacro // ptr: str-ptr int: str-len file-desc: file-desc -- int: read-bytes 
 
-// == Unsigned decimals ==
-// 21 bytes are read, since the longest unsigned integer is 21 digits in decimal
 proc fgetu
   // files-desc: file-desc -- int: read
   file-desc -- int
+  // 21 bytes are read, since the longest unsigned integer is 21 digits in decimal.
 in
   let file in
     memory buffer 21 in
@@ -135,11 +127,10 @@ in
   end
 end
 
-// == Signed decimals ==
-// 21 bytes are read, since the least negative number is 20 digits in decimal and requires a minus
 proc fgeti
   // file-desc: file-desc -- int: read
   file-desc -- int
+  // 21 bytes are read, since the least negative number is 20 digits in decimal and requires a minus.
 in
   let file in
     memory buffer 21 in
@@ -165,6 +156,8 @@ macro eputx  STDERR fputx  endmacro  // int: int
 macro  putup STDOUT fputup endmacro  // int: int
 macro eputup STDERR fputup endmacro  // int: int
 
+// Reads the specified amount of bytes from a file stream.
+// Moves the file pointer.
 macro  gets  STDIN  fgets  endmacro  // ptr: str-ptr int: str-len file-desc: file-desc -- int: read-bytes 
 macro  getu  STDIN  fgetu  endmacro  // file-desc: file-desc -- int: read
 macro  geti  STDIN  fgeti  endmacro  // file-desc: file-desc -- int: read
