@@ -5,6 +5,7 @@ include libs/memory.corth
   malloc and mlength is required for some macro and procedures.
 */
 
+
 proc dresize-up
   // ptr: x int: length -- ptr: y
   ptr int -- ptr
@@ -17,6 +18,7 @@ in let old length in
     old new old mlength memcpy8 new
   end
 end end
+
 
 proc dresize-down
   // ptr: x int: length -- ptr: y
@@ -31,6 +33,7 @@ in let old length in
   end
 end end
 
+
 proc dresize
   // ptr: x int: length -- ptr: y
   ptr int -- ptr
@@ -43,23 +46,26 @@ in let old length in
   end
 end end
 
+
 macro dcopy
   // ptr: x -- ptr: y
   // Copies a dynamicly-placed collection.
   dup mlength to-dynamic
 endmacro
 
+
 proc to-dynamic
   // ptr: start int: length -- ptr: x
   ptr int -- ptr
-  // Creates a dynamicly-placed collection from a static collection.
+  // Creates a dynamicly-placed collection from a static or dynamic collection.
 in let start length in
   length malloc let new in
     new isn-null if
       start new length memcpy8
-    end
+    end new
   end
 end end
+
 
 proc djoin
   // ptr: a ptr: b -- ptr: join(a, b)
@@ -71,5 +77,16 @@ in let a-start b-start in
       a-start result            a-length memcpy8
       b-start result a-length + b-length memcpy8
     result end
+  end
+end end
+
+
+proc add-null
+  // ptr: x -- ptr: x + {0}
+  ptr -- ptr
+  // Copies a dynamicly-placed collection, with a null-char at the end.
+in let old in
+  old old mlength inc to-dynamic let new in
+    0 new old mlength + !8 new
   end
 end end
