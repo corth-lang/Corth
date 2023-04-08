@@ -72,11 +72,11 @@ compile_parser = subparsers.add_parser("compile", help="Compile a Corth file int
 compile_parser.add_argument("source", help="Source file name")
 compile_parser.add_argument("-o", "--output", help="Output file name", default="output")
 compile_parser.add_argument("-r", "--run", help="Run after compilation", action="store_true")
-compile_parser.add_argument("-k", "--keep", help="Keep object and NASM files", action="store_true")
+compile_parser.add_argument("-k", "--keep", help="Keep the NASM file", action="store_true")
 compile_parser.add_argument("-d", "--debug", help="Debug mode", action="store_true")
 compile_parser.set_defaults(func=compile_command)
 
-test_parser = subparsers.add_parser("test", help="Run unit tests")
+test_parser = subparsers.add_parser("quick-test", help="Try to compile every example and print the errors")
 test_parser.set_defaults(func=test_command)
 
 args = parser.parse_args()
