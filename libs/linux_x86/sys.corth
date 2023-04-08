@@ -58,48 +58,61 @@ macro fseek
   SYSLSEEK syscall3
 endmacro
 
+macro ftell
+  // file-desc: file-desc -- int: file-pointer
+  // Returns the position of the file pointer.
+  0 SEEK-CUR fseek
+endmacro
+
+macro flength
+  // file-desc: file-desc -- int: length
+  // Returns the length of the file.
+  // NOTE: Moves the file pointer to the end; so to not lose information, file pointer should be saved before.
+  0 SEEK-END fseek
+endmacro
+
 macro fopen
   // int: str-ptr int: mode int: flags -- file-desc: file-desc
-
+  // Opens a file stream with the specified mode.
   SYSOPEN syscall3
 endmacro
 
 macro fopen-read
   // int: str-ptr -- file-desc: file-desc
-  
+  // Opens a file stream in read mode.
   RD-ONLY 0 fopen
 endmacro
 
 macro fopen-write
   // int: str-ptr -- file-desc: file-desc
-  
+  // Opens a file stream in write mode.
   WR-ONLY 0 fopen
 endmacro
 
 macro fopen-read-write
   // int: str-ptr -- file-desc: file-desc
-  
+  // Opens a file stream in read and write mode.
   RDWR 0 fopen
 endmacro
 
 macro fclose
   // file-desc: file-desc
-  
+  // Closes a file stream.
   SYSCLOSE syscall1 drop
 endmacro
 
 macro set-nanosleep-time
   // int: seconds int: nanoseconds
   
-  nanosleep-time 8 rot set8
-  nanosleep-time 0 set8
+  nanosleep-time 0 + !64
+  nanosleep-time 8 + !64
 endmacro
 
 macro get-nanosleep-time
   // -- int: seconds int: nanoseconds
   
-  nanosleep-time 0 get8
-  nanosleep-time 8 get8
+  nanosleep-time 0 + @64
+  nanosleep-time 8 + @64
 endmacro
 
 macro nanosleep
