@@ -16,6 +16,7 @@
 - Remove malloc.sew and remake malloc.free.
 - Remake queue64.sort and implement quick sort.
 - Add mmap and remake malloc and mfree using mmap.
+- I/O macro and procedures should be rewritten for performance reasons.
 
 ## Other:
 
