@@ -1,0 +1,192 @@
+// Type IDs
+macro NULL-TYPE      0 endmacro
+macro NAME-TYPE      1 endmacro
+macro INTEGER-TYPE   2 endmacro
+macro KEYWORD-TYPE   3 endmacro
+macro INTRINSIC-TYPE 4 endmacro
+macro STRING-TYPE    5 endmacro
+macro TYPE-TYPE      6 endmacro
+
+// Type strings
+macro NULL-TYPE-STR      "null"      endmacro
+macro NAME-TYPE-STR      "name"      endmacro
+macro INTEGER-TYPE-STR   "integer"   endmacro
+macro KEYWORD-TYPE-STR   "keyword"   endmacro
+macro INTRINSIC-TYPE-STR "intrinsic" endmacro
+macro STRING-TYPE-STR    "string"    endmacro
+macro TYPE-TYPE-STR      "type"      endmacro
+macro UNKNOWN-TYPE-STR   "<unknown>" endmacro
+
+// Keyword IDs
+macro KEYWORD-UNKNOWN  0  endmacro
+macro KEYWORD-MACRO    1  endmacro
+macro KEYWORD-ENDMACRO 2  endmacro
+macro KEYWORD-PROC     3  endmacro 
+macro KEYWORD-RETURNS  4  endmacro
+macro KEYWORD-IN       5  endmacro
+macro KEYWORD-END      6  endmacro
+macro KEYWORD-RETURN   7  endmacro
+macro KEYWORD-MEMORY   8  endmacro
+macro KEYWORD-AND      9  endmacro
+macro KEYWORD-LET      10 endmacro
+macro KEYWORD-IF       11 endmacro
+macro KEYWORD-ELSE     12 endmacro
+macro KEYWORD-WHILE    13 endmacro
+macro KEYWORD-DO       14 endmacro
+macro KEYWORD-BREAK    15 endmacro
+macro KEYWORD-INCLUDE  16 endmacro
+
+// Keyword strings
+macro KEYWORD-UNKNOWN-STR  "<unknown>" endmacro
+macro KEYWORD-MACRO-STR    "macro"     endmacro
+macro KEYWORD-ENDMACRO-STR "endmacro"  endmacro
+macro KEYWORD-PROC-STR     "proc"      endmacro
+macro KEYWORD-END-STR      "end"       endmacro
+macro KEYWORD-RETURN-STR   "return"    endmacro
+macro KEYWORD-RETURNS-STR  "--"        endmacro
+macro KEYWORD-MEMORY-STR   "memory"    endmacro
+macro KEYWORD-AND-STR      "and"       endmacro
+macro KEYWORD-IN-STR       "in"        endmacro
+macro KEYWORD-LET-STR      "let"       endmacro
+macro KEYWORD-IF-STR       "if"        endmacro
+macro KEYWORD-ELSE-STR     "else"      endmacro
+macro KEYWORD-WHILE-STR    "while"     endmacro
+macro KEYWORD-DO-STR       "do"        endmacro
+macro KEYWORD-BREAK-STR    "break"     endmacro
+macro KEYWORD-INCLUDE-STR  "include"   endmacro
+
+// Intrinsic IDs
+macro INTRINSIC-ADD      0  endmacro
+macro INTRINSIC-SUB      1  endmacro
+macro INTRINSIC-MUL      2  endmacro
+macro INTRINSIC-MUL2     3  endmacro
+macro INTRINSIC-FULLMUL  4  endmacro
+macro INTRINSIC-DIV      5  endmacro
+macro INTRINSIC-MOD      6  endmacro
+macro INTRINSIC-DIVMOD   7  endmacro
+macro INTRINSIC-UMUL     8  endmacro
+macro INTRINSIC-UMUL2    9  endmacro
+macro INTRINSIC-UFULLMUL 10 endmacro
+macro INTRINSIC-UDIV     11 endmacro
+macro INTRINSIC-UMOD     12 endmacro
+macro INTRINSIC-UDIVMOD  13 endmacro
+macro INTRINSIC-BAND     14 endmacro
+macro INTRINSIC-BOR      15 endmacro
+macro INTRINSIC-BXOR     16 endmacro
+macro INTRINSIC-BNOT     17 endmacro
+macro INTRINSIC-EQUAL    18 endmacro
+macro INTRINSIC-LESS     19 endmacro
+macro INTRINSIC-TRUE     20 endmacro
+macro INTRINSIC-FALSE    21 endmacro
+macro INTRINSIC-LOAD8    22 endmacro
+macro INTRINSIC-STORE8   23 endmacro
+macro INTRINSIC-LOAD64   24 endmacro
+macro INTRINSIC-STORE64  25 endmacro
+macro INTRINSIC-SYSCALL0 26 endmacro
+macro INTRINSIC-SYSCALL1 27 endmacro
+macro INTRINSIC-SYSCALL2 28 endmacro
+macro INTRINSIC-SYSCALL3 29 endmacro
+macro INTRINSIC-SYSCALL4 30 endmacro
+macro INTRINSIC-SYSCALL5 31 endmacro
+macro INTRINSIC-SYSCALL6 32 endmacro
+macro INTRINSIC-UNKNOWN  33 endmacro  // TODO: This should be 0.
+
+// Intrinsic strings
+macro INTRINSIC-UNKNOWN-STR  "<unknown>" endmacro
+macro INTRINSIC-ADD-STR      "+"         endmacro
+macro INTRINSIC-SUB-STR      "-"         endmacro
+macro INTRINSIC-MUL-STR      "*"         endmacro
+macro INTRINSIC-MUL2-STR     "*2"        endmacro
+macro INTRINSIC-FULLMUL-STR  "**"        endmacro
+macro INTRINSIC-DIV-STR      "/"         endmacro
+macro INTRINSIC-MOD-STR      "%"         endmacro
+macro INTRINSIC-DIVMOD-STR   "/%"        endmacro
+macro INTRINSIC-UMUL-STR     "u*"        endmacro
+macro INTRINSIC-UMUL2-STR    "u*2"       endmacro
+macro INTRINSIC-UFULLMUL-STR "u**"       endmacro
+macro INTRINSIC-UDIV-STR     "u/"        endmacro
+macro INTRINSIC-UMOD-STR     "u%"        endmacro
+macro INTRINSIC-UDIVMOD-STR  "u/%"       endmacro
+macro INTRINSIC-BAND-STR     "&&"        endmacro
+macro INTRINSIC-BOR-STR      "||"        endmacro
+macro INTRINSIC-BXOR-STR     "^^"        endmacro
+macro INTRINSIC-BNOT-STR     "!!"        endmacro
+macro INTRINSIC-EQUAL-STR    "="         endmacro
+macro INTRINSIC-LESS-STR     "<"         endmacro
+macro INTRINSIC-TRUE-STR     "true"      endmacro
+macro INTRINSIC-FALSE-STR    "false"     endmacro
+macro INTRINSIC-LOAD8-STR    "@8"        endmacro
+macro INTRINSIC-STORE8-STR   "!8"        endmacro
+macro INTRINSIC-LOAD64-STR   "@64"       endmacro
+macro INTRINSIC-STORE64-STR  "!64"       endmacro
+macro INTRINSIC-SYSCALL0-STR "syscall0"  endmacro
+macro INTRINSIC-SYSCALL1-STR "syscall1"  endmacro
+macro INTRINSIC-SYSCALL2-STR "syscall2"  endmacro
+macro INTRINSIC-SYSCALL3-STR "syscall3"  endmacro
+macro INTRINSIC-SYSCALL4-STR "syscall4"  endmacro
+macro INTRINSIC-SYSCALL5-STR "syscall5"  endmacro
+macro INTRINSIC-SYSCALL6-STR "syscall6"  endmacro
+
+// Type IDs
+macro TYPE-INT  1 endmacro
+macro TYPE-BOOL 2 endmacro
+
+// Type strings
+macro TYPE-INT-STR  "int"  endmacro
+macro TYPE-BOOL-STR "bool" endmacro
+
+proc fput-type
+  // int: type file-desc: file-desc
+  int file-desc --
+  // Prints a type.
+in let type file in
+       type NULL-TYPE      = if NULL-TYPE-STR      file fputs
+  else type NAME-TYPE      = if NAME-TYPE-STR      file fputs
+  else type INTEGER-TYPE   = if INTEGER-TYPE-STR   file fputs
+  else type KEYWORD-TYPE   = if KEYWORD-TYPE-STR   file fputs
+  else type INTRINSIC-TYPE = if INTRINSIC-TYPE-STR file fputs
+  else type STRING-TYPE    = if STRING-TYPE-STR    file fputs
+  else type TYPE-TYPE      = if TYPE-TYPE-STR      file fputs
+  else                          UNKNOWN-TYPE-STR   file fputs
+  end end end end end end end
+end end
+
+proc fput-keyword
+  // int: keyword file-desc: file-desc
+  int file-desc --
+in let keyword file in
+       keyword KEYWORD-INCLUDE  = if KEYWORD-INCLUDE-STR  file fputs
+  else keyword KEYWORD-MACRO    = if KEYWORD-MACRO-STR    file fputs
+  else keyword KEYWORD-ENDMACRO = if KEYWORD-ENDMACRO-STR file fputs
+  else keyword KEYWORD-PROC     = if KEYWORD-PROC-STR     file fputs
+  else keyword KEYWORD-RETURNS  = if KEYWORD-END-STR      file fputs
+  else keyword KEYWORD-IN       = if KEYWORD-RETURN-STR   file fputs
+  else keyword KEYWORD-END      = if KEYWORD-RETURNS-STR  file fputs
+  else keyword KEYWORD-RETURN   = if KEYWORD-MEMORY-STR   file fputs
+  else keyword KEYWORD-MEMORY   = if KEYWORD-AND-STR      file fputs
+  else keyword KEYWORD-AND      = if KEYWORD-IN-STR       file fputs
+  else keyword KEYWORD-LET      = if KEYWORD-LET-STR      file fputs
+  else keyword KEYWORD-IF       = if KEYWORD-IF-STR       file fputs
+  else keyword KEYWORD-ELSE     = if KEYWORD-ELSE-STR     file fputs
+  else keyword KEYWORD-WHILE    = if KEYWORD-WHILE-STR    file fputs
+  else keyword KEYWORD-DO       = if KEYWORD-DO-STR       file fputs
+  else keyword KEYWORD-BREAK    = if KEYWORD-BREAK-STR     file fputs
+  else                               KEYWORD-UNKNOWN-STR  file fputs
+  end end end end end end end end end end end end end end end end end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
