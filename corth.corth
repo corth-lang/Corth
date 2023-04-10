@@ -8,6 +8,8 @@ include libs/dynamic/utils.corth
 
 include libs/memory.corth
 
+include libs/collections/queue64.corth
+
 macro CHAR-NULL      0  endmacro
 macro CHAR-NEWLINE   10 endmacro
 macro CHAR-ESCAPE    27 endmacro
@@ -23,9 +25,11 @@ include enums.corth
 
 
 // TODO: Make not hard-coded
-macro FILE-NAME "examples/hello_world.corth" dec endmacro
+macro FILE-NAME "example.corth" dec endmacro
 
 macro TOKEN-MAX-LENGTH 0x4000 endmacro
+macro MACRO-MAX-TOKENS 0x4000 endmacro
+macro PROC-MAX-IO 0x100 endmacro
 
 
 proc fread
@@ -133,6 +137,8 @@ end end
 proc skip-line
   // file-desc: file-desc ptr: line-no ptr: char-no file-desc: log-stream --
   file-desc ptr ptr file-desc --
+  // Moves the file pointer until it passes a newline, or EOF is reached.
+  // Keeps track of the line and char number as the bytes are read.
 in let file line-no char-no log-stream in
   line-no @inc64
   0 char-no !64
@@ -152,6 +158,8 @@ end end
 proc skip-block-comment
   // file-desc: file-desc ptr: line-no ptr: char-np file-desc: log-stream --
   file-desc ptr ptr file-desc --
+  // Moves the file pointer until it passes a block comment end, or EOF is reached.
+  // Keeps track of the line and char number as the bytes are read.
 in let file line-no char-no log-stream in
   memory char 1 in
     while true do
@@ -198,12 +206,12 @@ in let file-name file start-line start-char start-at line-no char-no buffer buff
     else buffer buffer-size KEYWORD-MACRO-STR      memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-MACRO      true
     else buffer buffer-size KEYWORD-ENDMACRO-STR   memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-ENDMACRO   true
     else buffer buffer-size KEYWORD-PROC-STR       memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-PROC       true
-    else buffer buffer-size KEYWORD-END-STR        memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-RETURNS    true
-    else buffer buffer-size KEYWORD-RETURN-STR     memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-IN         true
-    else buffer buffer-size KEYWORD-RETURNS-STR    memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-END        true
-    else buffer buffer-size KEYWORD-MEMORY-STR     memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-RETURN     true
-    else buffer buffer-size KEYWORD-AND-STR        memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-MEMORY     true
-    else buffer buffer-size KEYWORD-IN-STR         memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-AND        true
+    else buffer buffer-size KEYWORD-END-STR        memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-END        true
+    else buffer buffer-size KEYWORD-RETURN-STR     memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-RETURN     true
+    else buffer buffer-size KEYWORD-RETURNS-STR    memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-RETURNS    true
+    else buffer buffer-size KEYWORD-MEMORY-STR     memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-MEMORY     true
+    else buffer buffer-size KEYWORD-AND-STR        memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-AND        true
+    else buffer buffer-size KEYWORD-IN-STR         memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-IN         true
     else buffer buffer-size KEYWORD-LET-STR        memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-LET        true
     else buffer buffer-size KEYWORD-IF-STR         memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-IF         true
     else buffer buffer-size KEYWORD-ELSE-STR       memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-ELSE       true
@@ -375,9 +383,9 @@ end end
 
 
 proc compile-file
-  // ptr: source-name file-desc: output-file file-desc: log-stream
-  ptr file-desc file-desc -- 
-in let source-name output-file log-stream in
+  // ptr: source-name file-desc: output-file ptr: libraries-queue-array ptr: libraries-queue-length file-desc: log-stream
+  ptr file-desc ptr ptr file-desc -- 
+in let source-name output-file libraries-queue-array libraries-queue-length log-stream in
   source-name add-null let c-source-name in
     c-source-name fopen-read c-source-name mfree
   end
@@ -408,8 +416,10 @@ in let source-name output-file log-stream in
               // -------- 'include' keyword --------
               // TODO: Create a function to include.
               // TODO: Allow including packages.
+              // TODO: Add library search locations.
+              // TODO: Add pragma once.
 
-              // Get next token, which should be the include path.
+              // Get the next token, which should be the include path.
               source-name source line-no char-no log-stream get-next-token ! if
                 LOG.ERR log-stream fputs "Reached EOF while expecting an include path.\n" log-stream fputs
                 token-address log-stream fput-here
@@ -418,34 +428,161 @@ in let source-name output-file log-stream in
 
               let path-token-type path-token-address path-token-arg in
                 path-token-type NAME-TYPE != if
-                  LOG.ERR log-stream fputs "Expected a 'name' for path after 'include', got '" log-stream fputs path-token-arg log-stream fput-keyword "'.\n" log-stream fputs
+                  LOG.ERR log-stream fputs "Expected a 'name' for path after 'include', got '" log-stream fputs path-token-type log-stream fput-type "'.\n" log-stream fputs
                   path-token-address log-stream fput-here
                   1 call-sys-exit
                 end
                 
-                path-token-arg output-file log-stream compile-file
+                path-token-arg output-file libraries-queue-array libraries-queue-length log-stream compile-file
               end
               
             else token-arg KEYWORD-MEMORY  = if
               // -------- 'memory' keyword --------
-              // TODO: Implement global memory.
-              LOG.TODO log-stream fputs "'memory' is not implemented yet.\n" log-stream fputs
-              token-address log-stream fput-here
-              1 call-sys-exit
+
+              // Get the next token, which sould be the include path.
+              source-name source line-no char-no log-stream get-next-token ! if
+                LOG.ERR log-stream fputs "Reached EOF while expecting a global variable name.\n" log-stream fputs
+                token-address log-stream fput-here
+                1 call-sys-exit
+              end
+
+              let variable-name-token-type variable-name-token-address variable-name-token-arg in
+                variable-name-token-type NAME-TYPE != if
+                  LOG.ERR log-stream fputs "Expected a 'name' for global variable name after 'memory', got '" log-stream fputs variable-name-token-type log-stream fput-type "'.\n" log-stream fputs
+                  variable-name-token-address log-stream fput-here
+                  1 call-sys-exit
+                end
+
+                // TODO: Implement the size calculation part.
+              end
               
             else token-arg KEYWORD-MACRO   = if
               // -------- 'macro' keyword --------
-              // TODO: Implement macros.
-              LOG.TODO log-stream fputs "'macro' is not implemented yet.\n" log-stream fputs
-              token-address log-stream fput-here
-              1 call-sys-exit
+
+              // Get the next token, which should be the name of the macro.
+              source-name source line-no char-no log-stream get-next-token ! if
+                LOG.ERR log-stream fputs "Reached EOF while expecting a macro name.\n" log-stream fputs
+                token-address log-stream fput-here
+                1 call-sys-exit
+              end
+
+              let macro-name-token-type macro-name-token-address macro-name-token-arg in
+                macro-name-token-type NAME-TYPE != if
+                  LOG.ERR log-stream fputs "Expected a 'name' for macro name after 'macro', got '" log-stream fputs macro-name-token-arg log-stream fput-type "'.\n" log-stream fputs
+                  macro-name-token-address log-stream fput-here
+                  1 call-sys-exit
+                end
+
+                // macro-tokens-array and macro-tokens-length are used to create a QUEUE for macro tokens.
+                memory macro-tokens-array  MACRO-MAX-TOKENS sizeof(int) * and
+                       macro-tokens-length sizeof(int)                    in
+                       
+                  while true do
+                    // Get next tokens, until an 'endmacro' is found.
+                    source-name source line-no char-no log-stream get-next-token ! if
+                      LOG.ERR log-stream fputs "Reached EOF while expecting an 'endmacro' in macro '" log-stream fputs macro-name-token-arg macro-name-token-arg mlength log-stream fputs "'.\n" log-stream fputs
+                      token-address log-stream fput-here
+                      1 call-sys-exit
+                    end
+
+                    let macro-new-token-type macro-new-token-address macro-new-token-arg in
+                      macro-tokens-length MACRO-MAX-TOKENS - 3 < if
+                        LOG.ERR log-stream fputs "Macro '" log-stream fputs macro-name-token-arg macro-name-token-arg mlength log-stream fputs "' is longer than MACRO-MAX-TOKENS, stopping execution.\n" log-stream fputs
+                        token-address log-stream fput-here
+                        1 call-sys-exit
+                      end
+
+                      macro-new-token-type KEYWORD-TYPE = if
+                        // TODO: Save the macro
+                        break
+                      end
+                      
+                      macro-new-token-type    macro-tokens-array macro-tokens-length queue64.append
+                      macro-new-token-address macro-tokens-array macro-tokens-length queue64.append
+                      macro-new-token-arg     macro-tokens-array macro-tokens-length queue64.append
+                    end
+                  end
+                end
+              end
               
             else token-arg KEYWORD-PROC    = if
               // -------- 'proc' keyword --------
-              // TODO: Implement procedures.
-              LOG.TODO log-stream fputs "'proc' is not implemented yet.\n" log-stream fputs
-              token-address log-stream fput-here
-              1 call-sys-exit
+
+              // Get the next token, which should be the name of the procedure.
+              source-name source line-no char-no log-stream get-next-token ! if
+                LOG.ERR log-stream fputs "Reached EOF while expecting a procedure name.\n" log-stream fputs
+                token-address log-stream fput-here
+                1 call-sys-exit
+              end
+
+              let proc-name-token-type proc-name-token-address proc-name-token-arg in
+                proc-name-token-type NAME-TYPE != if
+                  "Expected a 'name' for procedure name after 'proc', got " log-stream fputs proc-name-token-type log-stream fput-type "'.\n" log-stream fputs
+                  proc-name-token-type log-stream fput-here
+                  1 call-sys-exit
+                end
+
+                // macro-tokens-array and macro-tokens-length are used to create a QUEUE for macro tokens.
+                memory inputs-array   sizeof(int) PROC-MAX-IO * and
+                       inputs-length  sizeof(int)               and
+                       outputs-array  sizeof(int) PROC-MAX-IO * and
+                       outputs-length sizeof(int)               in
+
+                  while true do
+                    source-name source line-no char-no log-stream get-next-token ! if
+                      LOG.ERR log-stream fputs "Reached EOF while expecting procedure input type.\n" log-stream fputs
+                      token-address log-stream fput-here
+                      1 call-sys-exit
+                    end
+
+                    let input-token-type input-token-address input-token-arg in
+                      input-token-type KEYWORD-TYPE = if
+                        input-token-arg KEYWORD-RETURNS != if
+                          LOG.ERR log-stream fputs "Unexpected keyword while expecting input type, got '" log-stream fputs input-token-arg log-stream fput-keyword "'.\n" log-stream fputs
+                          token-address log-stream fput-here
+                          1 call-sys-exit
+                        end
+
+                        break
+                      else input-token-type TYPE-TYPE = if
+                        // TODO: Check if the input queue was filled.
+                        input-token-arg inputs-array inputs-length queue64.append
+                      else
+                        "Expected a 'type' for input type, got '" log-stream fputs input-token-type log-stream fput-type "'.\n" log-stream fputs
+                        input-token-address log-stream fput-here
+                        1 call-sys-exit
+                      end end
+                    end
+                  end
+
+                  while true do
+                    source-name source line-no char-no log-stream get-next-token ! if
+                      LOG.ERR log-stream fputs "Reached EOF while expecting procedure output type.\n" log-stream fputs
+                      token-address log-stream fput-here
+                      1 call-sys-exit
+                    end
+
+                    let output-token-type output-token-address output-token-arg in
+                      output-token-type KEYWORD-TYPE = if
+                        output-token-arg KEYWORD-IN != if
+                          LOG.ERR log-stream fputs "Unexpected keyword while expecting output type, got '" log-stream fputs output-token-arg log-stream fput-keyword "'.\n" log-stream fputs
+                          token-address log-stream fput-here
+                          1 call-sys-exit
+                        end
+
+                        break
+                      else output-token-type TYPE-TYPE = if
+                        // TODO: Check if the output queue was filled.
+                        output-token-arg outputs-array outputs-length queue64.append
+                      else
+                        "Expected a 'type' for output type, got '" log-stream fputs output-token-type log-stream fput-type "'.\n" log-stream fputs
+                        output-token-address log-stream fput-here
+                        1 call-sys-exit
+                      end end
+                    end
+                  end
+                end
+              end
               
             else
               LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
@@ -475,11 +612,34 @@ in let argc argv in
 
   // Make file name dynamic.
   FILE-NAME inc to-dynamic let file-name in
+    // Check if the file is opened successfully.
     file-name is-null if
       "There is not enough space for file-name\n" puts
       1 call-sys-exit
     end
 
-    file-name STDOUT STDERR compile-file
+    memory libraries-queue-array  sizeof(int) 0x100 * and
+           libraries-queue-length sizeof(int)         in
+
+      0 libraries-queue-length !64
+           
+      file-name STDOUT libraries-queue-array libraries-queue-length STDERR compile-file
+    end
   end
 end 0 end
+
+
+/*
+
+Name definitions:
+
+  Public:
+    Global variables
+    Macros
+    Procedures
+
+  Private:
+    Local variables
+    Let variables
+    
+*/
