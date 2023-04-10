@@ -1,0 +1,15 @@
+macro great-macro
+  1234 putu
+endmacro
+
+macro asd endmacro
+
+memory global-var 
+
+proc main
+  int int -- int
+in let argc argv in
+  memory var sizeof(int) in
+    "Hello World!" puts
+  end
+end 0 end
