@@ -1094,7 +1094,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             returned = True
 
-            for level, start, old_stack in copy:
+            for level, start, *args in copy:
                 if start is token_lib.DO:
                     break
 
