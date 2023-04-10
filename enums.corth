@@ -21,7 +21,7 @@ macro UNKNOWN-TYPE-STR   "<unknown>" endmacro
 macro KEYWORD-UNKNOWN  0  endmacro
 macro KEYWORD-MACRO    1  endmacro
 macro KEYWORD-ENDMACRO 2  endmacro
-macro KEYWORD-PROC     3  endmacro 
+macro KEYWORD-PROC     3  endmacro
 macro KEYWORD-RETURNS  4  endmacro
 macro KEYWORD-IN       5  endmacro
 macro KEYWORD-END      6  endmacro
@@ -159,18 +159,18 @@ in let keyword file in
   else keyword KEYWORD-MACRO    = if KEYWORD-MACRO-STR    file fputs
   else keyword KEYWORD-ENDMACRO = if KEYWORD-ENDMACRO-STR file fputs
   else keyword KEYWORD-PROC     = if KEYWORD-PROC-STR     file fputs
-  else keyword KEYWORD-RETURNS  = if KEYWORD-END-STR      file fputs
-  else keyword KEYWORD-IN       = if KEYWORD-RETURN-STR   file fputs
-  else keyword KEYWORD-END      = if KEYWORD-RETURNS-STR  file fputs
-  else keyword KEYWORD-RETURN   = if KEYWORD-MEMORY-STR   file fputs
-  else keyword KEYWORD-MEMORY   = if KEYWORD-AND-STR      file fputs
-  else keyword KEYWORD-AND      = if KEYWORD-IN-STR       file fputs
+  else keyword KEYWORD-END      = if KEYWORD-END-STR      file fputs
+  else keyword KEYWORD-RETURN   = if KEYWORD-RETURN-STR   file fputs
+  else keyword KEYWORD-RETURNS  = if KEYWORD-RETURNS-STR  file fputs
+  else keyword KEYWORD-MEMORY   = if KEYWORD-MEMORY-STR   file fputs
+  else keyword KEYWORD-AND      = if KEYWORD-AND-STR      file fputs
+  else keyword KEYWORD-IN       = if KEYWORD-IN-STR       file fputs
   else keyword KEYWORD-LET      = if KEYWORD-LET-STR      file fputs
   else keyword KEYWORD-IF       = if KEYWORD-IF-STR       file fputs
   else keyword KEYWORD-ELSE     = if KEYWORD-ELSE-STR     file fputs
   else keyword KEYWORD-WHILE    = if KEYWORD-WHILE-STR    file fputs
   else keyword KEYWORD-DO       = if KEYWORD-DO-STR       file fputs
-  else keyword KEYWORD-BREAK    = if KEYWORD-BREAK-STR     file fputs
+  else keyword KEYWORD-BREAK    = if KEYWORD-BREAK-STR    file fputs
   else                               KEYWORD-UNKNOWN-STR  file fputs
   end end end end end end end end end end end end end end end end end
 end
