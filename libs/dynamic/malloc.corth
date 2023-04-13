@@ -11,20 +11,44 @@ include libs/collections/sorted_queue64.corth
 
 memory malloc.array malloc.ARRAY-SIZE end
 memory malloc.avail-queue-array   malloc.AVAIL-QUEUE-SIZE end
-memory *malloc.avail-queue-length sizeof(int) end
+memory malloc.avail-queue-length sizeof(int) end
 
-macro malloc.avail-queue malloc.avail-queue-array *malloc.avail-queue-length endmacro
+macro malloc.avail-queue malloc.avail-queue-array malloc.avail-queue-length endmacro
+
+
+proc debug-dynamic-memory
+  --
+  // Prints the segments of the memory for debug purposes.
+in
+  "Reached debug-dynamic-memory.\n" puts
+  "--------------------\n" puts
+  "Available segments:\n" puts
+  0 while dup malloc.avail-queue-length @64 < do let i in
+    i puti ". 0x" puts i malloc.avail-queue queue64.get putx "\n" puts
+  i end inc end drop
+  "--------------------\n" puts
+  "Segments:\n" puts
+  malloc.array while dup malloc.array malloc.ARRAY-SIZE + < do let group in
+    "Segment at 0x" puts group putx ", points to 0x" puts group @64 putx "\n" puts
+    "Status: " puts group malloc.avail-queue-array malloc.avail-queue-array malloc.avail-queue-length @64 8 * + sorted64.available if "Free" else "Occupied" end puts drop "\n" puts
+    "Size: " puts group @64 group - puti " (" puts group @64 group - 8 - puti " usable)\n" puts
+  group @64 end end drop
+  "--------------------\n" puts
+  "End of debug-dynamic-memory.\n" puts
+end
+
 
 proc malloc.init
   --
 in
-  malloc.avail-queue queue64.init
+  0 malloc.avail-queue-length !64
   malloc.array malloc.avail-queue queue64.append
   malloc.array malloc.ARRAY-SIZE + malloc.array !64
 end
 
+
 proc malloc.get-size-of-block
-  // ptr: *block -- int: size
+  // ptr: block -- int: size
   ptr -- int
 in
   let *block in
@@ -32,16 +56,18 @@ in
   end
 end
 
+
 macro malloc.get-length-of-block
-  // ptr: *block -- int: length
+  // ptr: block -- int: length
   malloc.get-size-of-block 8 -
 endmacro
+
 
 proc malloc.sew
   --
   // malloc.sew is not an efficient procedure, and should be removed. But for now, to make malloc and mfree useful, it will be kept.
 in
-  0 while dup *malloc.avail-queue-length @64 < do let i in
+  0 while dup malloc.avail-queue-length @64 < do let i in
     i malloc.avail-queue queue64.get @64 i inc malloc.avail-queue queue64.get = if
       i inc malloc.avail-queue queue64.get @64 i malloc.avail-queue queue64.get !64
       i inc malloc.avail-queue queue64.pop drop
@@ -52,6 +78,7 @@ in
   end end drop
 end
 
+
 proc malloc
   // int: length -- ptr: addr
   int -- ptr
@@ -59,6 +86,10 @@ proc malloc
   // NOTE: Can be unstable or buggy.
 in
   8 + let size in
+    size 8 - isn-pos if
+      NULLPTR return
+    end
+    
     memory available-group sizeof(ptr) and
            available-size  sizeof(int) and
            available-id    sizeof(int) in
@@ -71,10 +102,10 @@ in
       MAX-INT available-size  !64
 
       // Find a group with enough space.
-      0 while dup *malloc.avail-queue-length @64 < do let id in
+      0 while dup malloc.avail-queue-length @64 < do let id in
         id malloc.avail-queue queue64.get let group in
           group malloc.get-size-of-block let group-size in
-            group-size size >= if
+            group-size size 8 + >= group-size size = | if
               // If the group has enough space.
               group-size available-size @64 < if
                 // If the group is the smallest.
@@ -106,16 +137,26 @@ in
   end
 end
 
+
 proc mfree
   // ptr: addr --
   ptr --
   // Frees space allocated with malloc.
   // NOTE: Should not be used with pointers which are not allocated using malloc. This can cause segmentaion fault.
   // NOTE: Can be unstable or buggy.
-in
-  8 - malloc.avail-queue squeue64.append
-  malloc.sew
-end
+in 8 - let group in
+  group malloc.avail-queue-array malloc.avail-queue-array malloc.avail-queue-length @64 8 * + sorted64.available if
+    // If that group was already specified as free.
+    "Tried to mfree an already mfreed address\n" eputs
+    100 call-sys-exit drop
+  else
+    malloc.avail-queue-array - 8 / let index in
+      group index malloc.avail-queue queue64.insert
+    end
+    malloc.sew
+  end
+end end
+
 
 macro mlength
   // ptr: addr -- int: length
