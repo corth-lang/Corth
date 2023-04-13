@@ -4,6 +4,8 @@ include libs/dynamic/utils.corth
 
 include enums.corth
 
+macro sizeof(address) 56 endmacro
+
 macro ADDR.FILE  0  endmacro
 macro ADDR.START 8  endmacro
 macro ADDR.END   32 endmacro
@@ -23,11 +25,16 @@ macro LOG.LINE  "\x1b[0;37m"                     endmacro
 
 
 proc generate-address
-  // ptr: file-name int: start-line int: start-char int: start-at int: end-line int: end-char int: end-at -- ptr: address
-  ptr int int int int int int -- ptr
+  // ptr: file-name int: start-line int: start-char int: start-at int: end-line int: end-char int: end-at file-desc: log-stream -- ptr: address
+  ptr int int int int int int file-desc -- ptr
   // Returns a dynamicly-placed object to store the address of token.
-in
-  56 malloc let address in
+in let log-stream in
+  sizeof(address) malloc let address in
+    address is-null if
+      LOG.ERR log-stream fputs "'malloc' failed while generating address.\n" log-stream fputs LOG.RESET log-stream fputs
+      1 call-sys-exit
+    end
+
     // Store the arguments.
     address ADDR.END   + POS.AT   + !64
     address ADDR.END   + POS.CHAR + !64
@@ -37,10 +44,10 @@ in
     address ADDR.START + POS.LINE + !64
     address ADDR.FILE  + !64
 
-    // Return token.
+    // Return the address.
     address
   end
-end
+end end
 
 
 proc fput-position
