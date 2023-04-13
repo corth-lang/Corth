@@ -116,8 +116,8 @@ end
 macro fgets arot SYSREAD syscall3 endmacro // ptr: str-ptr int: str-len file-desc: file-desc -- int: read-bytes 
 
 proc fgetu
-  // files-desc: file-desc -- int: read
-  file-desc -- int
+  // files-desc: file-desc -- int: read bool: success
+  file-desc -- int bool
   // 21 bytes are read, since the longest unsigned integer is 21 digits in decimal.
 in
   let file in
@@ -128,19 +128,23 @@ in
 end
 
 proc fgeti
-  // file-desc: file-desc -- int: read
-  file-desc -- int
+  // file-desc: file-desc -- int: read bool: success
+  file-desc -- int bool
   // 21 bytes are read, since the least negative number is 20 digits in decimal and requires a minus.
 in
   let file in
     memory buffer 21 in
-      buffer 21 file fgets dec
-      
-      buffer @8 '-' = if
-        dec buffer inc swp str.dec-to-int neg
-      else
-        buffer swp str.dec-to-int
-      end 
+      buffer 21 file fgets let read in
+        buffer @8 '-' = if
+          buffer inc read 2 - str.dec-to-int if
+            neg true
+          else
+            neg false
+          end
+        else
+          buffer read dec str.dec-to-int
+        end
+      end
     end
   end
 end
