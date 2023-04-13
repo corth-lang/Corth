@@ -1,0 +1,43 @@
+include libs/memory.corth
+include libs/core.corth
+
+/*
+
+  This library includes some algorithms that can be used for sorted arrays.
+
+*/
+
+proc sorted64.available
+  // int: value ptr: start ptr: end -- ptr: lower-bound bool: found
+  int ptr ptr -- ptr bool
+  // Finds where the value could be placed using binary search, so that the array could stay sorted.
+  // Returns if the value was found in the array.
+in
+  memory lower sizeof(ptr) and
+         upper sizeof(ptr) in
+
+    upper !64
+    lower !64
+
+    lower @64 8 % let offset in
+      let value in
+        0 while dup 10 < do
+          lower @64 upper @64 = if
+            drop lower @64 false return
+          end
+
+          lower @64 upper @64 + 2 / offset - 8 lower-base offset + let middle in
+            middle @64 value = if
+              drop middle
+              true return
+            else middle @64 value < if
+              middle 8 + lower !64
+            else
+              middle upper !64
+            end end
+          end
+        inc end drop
+      end
+    end
+  end
+0 false end  // dummy return
