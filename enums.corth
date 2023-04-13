@@ -1,21 +1,20 @@
 // Type IDs
-macro NULL-TYPE      0 endmacro
-macro NAME-TYPE      1 endmacro
-macro INTEGER-TYPE   2 endmacro
-macro KEYWORD-TYPE   3 endmacro
-macro INTRINSIC-TYPE 4 endmacro
-macro STRING-TYPE    5 endmacro
+macro TYPE-UNKNOWN   0 endmacro
+macro TYPE-NAME      1 endmacro
+macro TYPE-INTEGER   2 endmacro
+macro TYPE-KEYWORD   3 endmacro
+macro TYPE-INTRINSIC 4 endmacro
+macro TYPE-STRING    5 endmacro
 macro TYPE-TYPE      6 endmacro
 
 // Type strings
-macro NULL-TYPE-STR      "null"      endmacro
-macro NAME-TYPE-STR      "name"      endmacro
-macro INTEGER-TYPE-STR   "integer"   endmacro
-macro KEYWORD-TYPE-STR   "keyword"   endmacro
-macro INTRINSIC-TYPE-STR "intrinsic" endmacro
-macro STRING-TYPE-STR    "string"    endmacro
+macro TYPE-UNKNOWN-STR   "null"      endmacro
+macro TYPE-NAME-STR      "name"      endmacro
+macro TYPE-INTEGER-STR   "integer"   endmacro
+macro TYPE-KEYWORD-STR   "keyword"   endmacro
+macro TYPE-INTRINSIC-STR "intrinsic" endmacro
+macro TYPE-STRING-STR    "string"    endmacro
 macro TYPE-TYPE-STR      "type"      endmacro
-macro UNKNOWN-TYPE-STR   "<unknown>" endmacro
 
 // Keyword IDs
 macro KEYWORD-UNKNOWN  0  endmacro
@@ -92,7 +91,6 @@ macro INTRINSIC-SYSCALL6 32 endmacro
 macro INTRINSIC-UNKNOWN  33 endmacro  // TODO: This should be 0.
 
 // Intrinsic strings
-macro INTRINSIC-UNKNOWN-STR  "<unknown>" endmacro
 macro INTRINSIC-ADD-STR      "+"         endmacro
 macro INTRINSIC-SUB-STR      "-"         endmacro
 macro INTRINSIC-MUL-STR      "*"         endmacro
@@ -126,6 +124,7 @@ macro INTRINSIC-SYSCALL3-STR "syscall3"  endmacro
 macro INTRINSIC-SYSCALL4-STR "syscall4"  endmacro
 macro INTRINSIC-SYSCALL5-STR "syscall5"  endmacro
 macro INTRINSIC-SYSCALL6-STR "syscall6"  endmacro
+macro INTRINSIC-UNKNOWN-STR  "<unknown>" endmacro
 
 // Type IDs
 macro TYPE-INT  1 endmacro
@@ -140,15 +139,14 @@ proc fput-type
   int file-desc --
   // Prints a type.
 in let type file in
-       type NULL-TYPE      = if NULL-TYPE-STR      file fputs
-  else type NAME-TYPE      = if NAME-TYPE-STR      file fputs
-  else type INTEGER-TYPE   = if INTEGER-TYPE-STR   file fputs
-  else type KEYWORD-TYPE   = if KEYWORD-TYPE-STR   file fputs
-  else type INTRINSIC-TYPE = if INTRINSIC-TYPE-STR file fputs
-  else type STRING-TYPE    = if STRING-TYPE-STR    file fputs
+       type TYPE-NAME      = if TYPE-NAME-STR      file fputs
+  else type TYPE-INTEGER   = if TYPE-INTEGER-STR   file fputs
+  else type TYPE-KEYWORD   = if TYPE-KEYWORD-STR   file fputs
+  else type TYPE-INTRINSIC = if TYPE-INTRINSIC-STR file fputs
+  else type TYPE-STRING    = if TYPE-STRING-STR    file fputs
   else type TYPE-TYPE      = if TYPE-TYPE-STR      file fputs
-  else                          UNKNOWN-TYPE-STR   file fputs
-  end end end end end end end
+  else                          TYPE-UNKNOWN-STR   file fputs
+  end end end end end end
 end end
 
 proc fput-keyword
@@ -175,18 +173,45 @@ in let keyword file in
   end end end end end end end end end end end end end end end end end
 end
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+proc fput-intrinsic
+  // int: intrinsic file-desc: file-desc
+  int file-desc --
+in let intrinsic file in
+       intrinsic INTRINSIC-ADD      = if INTRINSIC-ADD-STR      file fputs
+  else intrinsic INTRINSIC-SUB      = if INTRINSIC-SUB-STR      file fputs
+  else intrinsic INTRINSIC-MUL      = if INTRINSIC-MUL-STR      file fputs
+  else intrinsic INTRINSIC-MUL2     = if INTRINSIC-MUL2-STR     file fputs
+  else intrinsic INTRINSIC-FULLMUL  = if INTRINSIC-FULLMUL-STR  file fputs
+  else intrinsic INTRINSIC-DIV      = if INTRINSIC-DIV-STR      file fputs
+  else intrinsic INTRINSIC-MOD      = if INTRINSIC-MOD-STR      file fputs
+  else intrinsic INTRINSIC-DIVMOD   = if INTRINSIC-DIVMOD-STR   file fputs
+  else intrinsic INTRINSIC-UMUL     = if INTRINSIC-UMUL-STR     file fputs
+  else intrinsic INTRINSIC-UMUL2    = if INTRINSIC-UMUL2-STR    file fputs
+  else intrinsic INTRINSIC-UFULLMUL = if INTRINSIC-UFULLMUL-STR file fputs
+  else intrinsic INTRINSIC-UDIV     = if INTRINSIC-UDIV-STR     file fputs
+  else intrinsic INTRINSIC-UMOD     = if INTRINSIC-UMOD-STR     file fputs
+  else intrinsic INTRINSIC-UDIVMOD  = if INTRINSIC-UDIVMOD-STR  file fputs
+  else intrinsic INTRINSIC-BAND     = if INTRINSIC-BAND-STR     file fputs
+  else intrinsic INTRINSIC-BOR      = if INTRINSIC-BOR-STR      file fputs
+  else intrinsic INTRINSIC-BXOR     = if INTRINSIC-BXOR-STR     file fputs
+  else intrinsic INTRINSIC-BNOT     = if INTRINSIC-BNOT-STR     file fputs
+  else intrinsic INTRINSIC-EQUAL    = if INTRINSIC-EQUAL-STR    file fputs
+  else intrinsic INTRINSIC-LESS     = if INTRINSIC-LESS-STR     file fputs
+  else intrinsic INTRINSIC-TRUE     = if INTRINSIC-TRUE-STR     file fputs
+  else intrinsic INTRINSIC-FALSE    = if INTRINSIC-FALSE-STR    file fputs
+  else intrinsic INTRINSIC-LOAD8    = if INTRINSIC-LOAD8-STR    file fputs
+  else intrinsic INTRINSIC-STORE8   = if INTRINSIC-STORE8-STR   file fputs
+  else intrinsic INTRINSIC-LOAD64   = if INTRINSIC-LOAD64-STR   file fputs
+  else intrinsic INTRINSIC-STORE64  = if INTRINSIC-STORE64-STR  file fputs
+  else intrinsic INTRINSIC-SYSCALL0 = if INTRINSIC-SYSCALL0-STR file fputs
+  else intrinsic INTRINSIC-SYSCALL1 = if INTRINSIC-SYSCALL1-STR file fputs
+  else intrinsic INTRINSIC-SYSCALL2 = if INTRINSIC-SYSCALL2-STR file fputs
+  else intrinsic INTRINSIC-SYSCALL3 = if INTRINSIC-SYSCALL3-STR file fputs
+  else intrinsic INTRINSIC-SYSCALL4 = if INTRINSIC-SYSCALL4-STR file fputs
+  else intrinsic INTRINSIC-SYSCALL5 = if INTRINSIC-SYSCALL5-STR file fputs
+  else intrinsic INTRINSIC-SYSCALL6 = if INTRINSIC-SYSCALL6-STR file fputs
+  else                                   INTRINSIC-UNKNOWN-STR  file fputs
+  end end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end end
+end
 
