@@ -92,19 +92,12 @@ in let old in
 end end
 
 
-macro dmemcmp8
-  // ptr: a ptr: b -- bool: *a==*b
-  // Compares two dynamicly-placed collection.
-  let _a_ _b_ in
-    _a_ _a_ mlength _b_ _b_ mlength memcmp8
-  end
-endmacro
+// These macros compare two dynamicly-placed collections.
+// See memeq8, memeq64, memlt8 and memlt64 from ./libs/memory.corth.
 
 
-macro dmemcmp64
-  // ptr: a ptr: b -- bool: *a==*b
-  // Compares two dynamicly-placed collection.
-  let _a_ _b_ in
-    _a_ _a_ mlength 8 / _b_ _b_ mlength 8 / memcmp64
-  end
-endmacro
+// ptr: a ptr: b -- bool: cmp(a, b)
+macro dmemeq8  let _a_ _b_ in _a_ _a_ mlength     _b_ _b_ mlength     memeq8  end endmacro
+macro dmemeq64 let _a_ _b_ in _a_ _a_ mlength 8 / _b_ _b_ mlength 8 / memeq64 end endmacro
+macro dmemlt8  let _a_ _b_ in _a_ _a_ mlength     _b_ _b_ mlength     memlt8  end endmacro
+macro dmemlt64 let _a_ _b_ in _a_ _a_ mlength 8 / _b_ _b_ mlength 8 / memlt64 end endmacro
