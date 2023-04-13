@@ -41,36 +41,132 @@ macro str.range
   end
 endmacro
 
-proc str.dec-to-int
-  // ptr: src int: len -- int: number
-  // NOTE: If the number is too big, the result will be wrong
-  ptr int -- int
+proc str.hex-to-int
+  // ptr: start int: length -- int: number bool: correct
+  ptr int -- int bool
+  // Converts a character array of hexadecimal number to an integer.
+  // If the conversion can not be done, returns 0.
+  // NOTE: If the number is too big, the result will be wrong.
 in
-  memory n sizeof(int) in
-    0 n !64
+  memory number sizeof(int) in
+    0 number !64
 
-    let src len in
-      src while dup src - len < do
-        dup @8 let i in
-          i '9' > if
-            NOT-A-DIGIT call-sys-exit
-          end
-
-          i '0' < if
-            NOT-A-DIGIT call-sys-exit
-          end
-
-          i dec-digit-to-int n @64 10 * + n !64
-        end
-      inc end drop
+    let start length in
+      start while dup start length + < do let i in
+        i @8 '0' '9' is-range if
+          i @8 '0' - number @64 16 * + number !64
+        else i @8 'a' 'f' is-range if
+          i @8 'a' - number @64 16 * + number !64
+        else i @8 'A' 'F' is-range if
+          i @8 'A' - number @64 16 * + number !64
+        else
+          0 false return
+        end end end
+      i end inc end drop
     end
 
-    n @64
+    number @64 true
   end
 end
 
+proc str.dec-to-int
+  // ptr: start int: length -- int: number bool: correct
+  ptr int -- int bool
+  // Converts a character array of decimal number to an integer.
+  // If the conversion can not be done, returns 0.
+  // NOTE: If the number is too big, the result will be wrong.
+in
+  memory number sizeof(int) in
+    0 number !64
+
+    let start length in
+      start while dup start length + < do let i in
+        i @8 '0' '9' is-range if
+          i @8 '0' - number @64 10 * + number !64
+        else
+          0 false return
+        end
+      i end inc end drop
+    end
+
+    number @64 true
+  end
+end
+
+proc str.oct-to-int
+  // ptr: start int: length -- int: number bool: correct
+  ptr int -- int bool
+  // Converts a character array of octal number to an integer.
+  // If the conversion can not be done, returns 0.
+  // NOTE: If the number is too big, the result will be wrong.
+in
+  memory number sizeof(int) in
+    0 number !64
+
+    let start length in
+      start while dup start length + < do let i in
+        i @8 '0' '7' is-range if
+          i @8 '0' - number @64 8 * + number !64
+        else
+          0 false return
+        end
+      i end inc end drop
+    end
+
+    number @64 true
+  end
+end
+
+proc str.bin-to-int
+  // ptr: start int: length -- int: number bool: correct
+  ptr int -- int bool
+  // Converts a character array of binary number to an integer.
+  // If the conversion can not be done, returns 0.
+  // NOTE: If the number is too big, the result will be wrong.
+in
+  memory number sizeof(int) in
+    0 number !64
+
+    let start length in
+      start while dup start length + < do let i in
+        i @8 '0' '1' is-range if
+          i @8 '0' - number @64 8 * + number !64
+        else
+          0 false return
+        end
+      i end inc end drop
+    end
+
+    number @64 true
+  end
+end
+
+proc str.to-int
+  // ptr: start int: length -- int: number bool: correct
+  ptr int -- int bool
+  // Converts a character array of any base (binary, octal, decimal, hexadecimal) to an integer..
+  // If the conversion can not be done, returns 0.
+  // NOTE: If the number is too big, the result will be wrong.
+in let start length in
+  start @8 '0' = if
+    start inc @8 let base in
+      base 'x' = if
+        start 2 + length 2 - str.hex-to-int
+      else base 'o' = if
+        start 2 + length 2 - str.oct-to-int
+      else base 'b' = if
+        start 2 + length 2 - str.bin-to-int
+      else
+        start length str.dec-to-int
+      end end end
+    end
+  else
+    start length str.dec-to-int
+  end
+end end
+
 /*
-ITS RECOMMENDED TO NOT USE THIS LIBRARY
+IT IS RECOMMENDED TO NOT USE THIS LIBRARY
 THIS LIBRARY AND STRING TYPE REQUIRES A TON OF REWORK
 
 There are two types of strings in Corth: char arrays and C-like strings.
