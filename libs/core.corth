@@ -18,9 +18,9 @@ macro NOT-A-DIGIT      0x0000000000000001 endmacro
 macro INPUT-TOO-BIG    0x0000000000000002 endmacro
 
 macro >  swp < endmacro
-macro >= < ! endmacro
-macro <= > ! endmacro
-macro != = ! endmacro
+macro >= < !   endmacro
+macro <= > !   endmacro
+macro != = !   endmacro
 
 // int: x -- bool: f(x)
 macro is-pos   0 >  endmacro
@@ -76,6 +76,25 @@ macro mirr  let _a_ _b_ _c_     in _c_ _b_ _a_     end endmacro
 
 macro is-range  let _a_ _b_ _c_ in _a_ _b_ < if false else _c_ _a_ < if false else true  end end end endmacro // int: x int: min int: max -- bool: x in [min, max]
 macro isn-range let _a_ _b_ _c_ in _a_ _b_ < if true  else _c_ _a_ < if true  else false end end end endmacro // int: x int: min int: max -- bool: x in [min, max]
+
+macro lower-base
+  // int: x int: b -- int: lower-base(x, b)
+  // Returns the largest number that is less than or equal to x and is divisible by b.
+  // lower-base(x, b) = x - (x % b)
+  let _a_ _b_ in
+    _a_ _a_ _b_ % -
+  end
+endmacro
+
+macro upper-base
+  // int: x int: b -- int: upper-base(x, b)
+  // Returns the smallest number that is greater than x and is divisible by b.
+  // upper-base(x, b) = x + ((-x) % b)
+  // upper-base(x, b) = lower-base(x, b) + b
+  let _a_ _b_ in
+    _a_ _a_ neg _b_ % +
+  end
+endmacro
 
 macro min2
   // int: x int: y -- int: min(x, y)
