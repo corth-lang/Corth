@@ -1,10 +1,8 @@
-include libs/linux_x86/io.corth
+// include libs/linux_x86/io.corth
 
 macro great-macro
   1234 putu
 endmacro
-
-macro asd endmacro
 
 
 memory global-var 100 end
@@ -12,5 +10,6 @@ memory global-var 100 end
 proc main
   int int -- int
 in
-  34 17 18 + + !!
+  1 "Hello, World!
+" 1 syscall3
 end
