@@ -55,7 +55,7 @@ proc fput-position
   ptr file-desc --
   // Prints a position.
 in let position file in
-  position POS.LINE + @64 file fputu ":" file fputs position POS.CHAR + @64 file fputu
+  position POS.LINE + @64 file fputu ":" file fputs position POS.CHAR + @64 file fputu " (" file fputs position POS.AT + @64 file fputu ")" file fputs
 end end
 
 
