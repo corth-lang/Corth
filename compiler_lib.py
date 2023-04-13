@@ -93,7 +93,7 @@ def error_on_token(token, message):
     error(f"({token.address}) {message}")
 
             
-def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = False, allocate_local_memory: int = 0x40000, allocate_callstack: int = 0x40000):
+def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = False, allocate_local_memory: int = 0x4000000, allocate_callstack: int = 0x4000000):
     # 'data' stores all of the one use data, 'names' stores the global variables and names
     data = deque()
     names = {}
@@ -1096,6 +1096,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             for level, start, *args in copy:
                 if start is token_lib.DO:
+                    old_stack ,= args
                     break
 
             else:
