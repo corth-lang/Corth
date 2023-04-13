@@ -1,14 +1,15 @@
 include libs/linux_x86/io.corth
 include libs/linux_x86/sys.corth
 
-macro malloc.ARRAY-SIZE       262144 endmacro
-macro malloc.AVAIL-QUEUE-SIZE 64     endmacro
+macro malloc.ARRAY-SIZE           0x10000 endmacro
+macro malloc.AVAIL-QUEUE-SIZE     0x1000  endmacro
 include libs/dynamic/malloc.corth
 include libs/dynamic/utils.corth
 
 include libs/memory.corth
 
 include libs/collections/queue64.corth
+include libs/collections/str_map64.corth
 
 macro CHAR-NULL      0  endmacro
 macro CHAR-NEWLINE   10 endmacro
@@ -25,11 +26,22 @@ include enums.corth
 
 
 // TODO: Make not hard-coded
-macro FILE-NAME "example.corth" dec endmacro
+macro SOURCE-NAME "./example.corth" endmacro
+macro OUTPUT-NAME "./o.asm" endmacro
 
-macro TOKEN-MAX-LENGTH 0x4000 endmacro
-macro MACRO-MAX-TOKENS 0x4000 endmacro
-macro PROC-MAX-IO 0x100 endmacro
+macro GLOBALS-MAX-COUNT   0x4000 endmacro
+macro MACROS-MAX-COUNT    0x4000 endmacro
+macro TOKEN-MAX-LENGTH    0x4000 endmacro
+macro MACRO-MAX-TOKENS    0x4000 endmacro
+macro LIBRARIES-MAX-COUNT 0x4000 endmacro
+macro PROC-MAX-IO         0x1000 endmacro
+macro STACK-MAX-ITEMS     0x100  endmacro
+macro LOCAL-MEMORY-SIZE   0X4000 endmacro
+macro CALL-STACK-SIZE     0x4000 endmacro
+
+macro TYPE-REAL-STACK     0 endmacro
+macro TYPE-INT-CONSTANT   1 endmacro
+macro TYPE-BOOL-CONSTANT  2 endmacro
 
 
 proc fread
@@ -74,7 +86,7 @@ in let file line-no char-no in
 end false end  // dummy return
 
 
-proc lex-next-token
+proc parse-next-token
   // file-desc: file-desc ptr: line-no ptr: char-no ptr: buffer ptr: buffer-end file-desc: log-stream --
   file-desc ptr ptr ptr ptr file-desc --
   // Gets the next token string before any newline or space and fills a buffer.
@@ -103,7 +115,7 @@ in let file line-no char-no buffer buffer-end log-stream in
 end end
 
 
-proc lex-next-string
+proc parse-next-string
   // file-desc: file-desc ptr: line-no ptr: char-no ptr: buffer ptr: buffer-end file-desc: log-stream --
   file-desc ptr ptr ptr ptr file-desc --
   // Gets the next string before a double quote.
@@ -197,74 +209,73 @@ proc create-name-token
   // TODO: Implement intrinsic keywords.
 in let file-name file start-line start-char start-at line-no char-no buffer buffer-end log-stream in
   // Get full token.
-  file line-no char-no buffer buffer-end log-stream lex-next-token
+  file line-no char-no buffer buffer-end log-stream parse-next-token
 
   buffer-end @64 buffer - let buffer-size in
     // Check if the token is a keyword.
     // I hate my life.
-         buffer buffer-size KEYWORD-INCLUDE-STR    memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-INCLUDE    true
-    else buffer buffer-size KEYWORD-MACRO-STR      memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-MACRO      true
-    else buffer buffer-size KEYWORD-ENDMACRO-STR   memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-ENDMACRO   true
-    else buffer buffer-size KEYWORD-PROC-STR       memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-PROC       true
-    else buffer buffer-size KEYWORD-END-STR        memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-END        true
-    else buffer buffer-size KEYWORD-RETURN-STR     memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-RETURN     true
-    else buffer buffer-size KEYWORD-RETURNS-STR    memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-RETURNS    true
-    else buffer buffer-size KEYWORD-MEMORY-STR     memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-MEMORY     true
-    else buffer buffer-size KEYWORD-AND-STR        memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-AND        true
-    else buffer buffer-size KEYWORD-IN-STR         memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-IN         true
-    else buffer buffer-size KEYWORD-LET-STR        memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-LET        true
-    else buffer buffer-size KEYWORD-IF-STR         memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-IF         true
-    else buffer buffer-size KEYWORD-ELSE-STR       memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-ELSE       true
-    else buffer buffer-size KEYWORD-WHILE-STR      memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-WHILE      true
-    else buffer buffer-size KEYWORD-DO-STR         memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-DO         true
-    else buffer buffer-size KEYWORD-BREAK-STR      memcmp8 if KEYWORD-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-BREAK      true
+         buffer buffer-size KEYWORD-INCLUDE-STR    memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-INCLUDE    true
+    else buffer buffer-size KEYWORD-MACRO-STR      memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-MACRO      true
+    else buffer buffer-size KEYWORD-ENDMACRO-STR   memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-ENDMACRO   true
+    else buffer buffer-size KEYWORD-PROC-STR       memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-PROC       true
+    else buffer buffer-size KEYWORD-END-STR        memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-END        true
+    else buffer buffer-size KEYWORD-RETURN-STR     memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-RETURN     true
+    else buffer buffer-size KEYWORD-RETURNS-STR    memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-RETURNS    true
+    else buffer buffer-size KEYWORD-MEMORY-STR     memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-MEMORY     true
+    else buffer buffer-size KEYWORD-AND-STR        memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-AND        true
+    else buffer buffer-size KEYWORD-IN-STR         memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-IN         true
+    else buffer buffer-size KEYWORD-LET-STR        memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-LET        true
+    else buffer buffer-size KEYWORD-IF-STR         memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-IF         true
+    else buffer buffer-size KEYWORD-ELSE-STR       memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-ELSE       true
+    else buffer buffer-size KEYWORD-WHILE-STR      memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-WHILE      true
+    else buffer buffer-size KEYWORD-DO-STR         memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-DO         true
+    else buffer buffer-size KEYWORD-BREAK-STR      memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-BREAK      true
     
     // I still hate my life.
-    else buffer buffer-size INTRINSIC-ADD-STR      memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-ADD      true
-    else buffer buffer-size INTRINSIC-SUB-STR      memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-SUB      true
-    else buffer buffer-size INTRINSIC-MUL-STR      memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-MUL      true
-    else buffer buffer-size INTRINSIC-MUL2-STR     memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-MUL2     true
-    else buffer buffer-size INTRINSIC-FULLMUL-STR  memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-FULLMUL  true
-    else buffer buffer-size INTRINSIC-DIV-STR      memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-DIV      true
-    else buffer buffer-size INTRINSIC-MOD-STR      memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-MOD      true
-    else buffer buffer-size INTRINSIC-DIVMOD-STR   memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-DIVMOD   true
-    else buffer buffer-size INTRINSIC-UMUL-STR     memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-UMUL     true
-    else buffer buffer-size INTRINSIC-UMUL2-STR    memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-UMUL2    true
-    else buffer buffer-size INTRINSIC-UFULLMUL-STR memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-UFULLMUL true
-    else buffer buffer-size INTRINSIC-UDIV-STR     memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-UDIV     true
-    else buffer buffer-size INTRINSIC-UMOD-STR     memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-UMOD     true
-    else buffer buffer-size INTRINSIC-UDIVMOD-STR  memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-UDIVMOD  true
-    else buffer buffer-size INTRINSIC-BAND-STR     memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-BAND     true
-    else buffer buffer-size INTRINSIC-BOR-STR      memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-BOR      true
-    else buffer buffer-size INTRINSIC-BXOR-STR     memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-BXOR     true
-    else buffer buffer-size INTRINSIC-BNOT-STR     memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-BNOT     true
-    else buffer buffer-size INTRINSIC-EQUAL-STR    memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-EQUAL    true
-    else buffer buffer-size INTRINSIC-LESS-STR     memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-LESS     true
-    else buffer buffer-size INTRINSIC-TRUE-STR     memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-TRUE     true
-    else buffer buffer-size INTRINSIC-FALSE-STR    memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-FALSE    true
-    else buffer buffer-size INTRINSIC-LOAD8-STR    memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-LOAD8    true
-    else buffer buffer-size INTRINSIC-STORE8-STR   memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-STORE8   true
-    else buffer buffer-size INTRINSIC-LOAD64-STR   memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-LOAD64   true
-    else buffer buffer-size INTRINSIC-STORE64-STR  memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-STORE64  true
-    else buffer buffer-size INTRINSIC-SYSCALL0-STR memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-SYSCALL0 true
-    else buffer buffer-size INTRINSIC-SYSCALL1-STR memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-SYSCALL1 true
-    else buffer buffer-size INTRINSIC-SYSCALL2-STR memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-SYSCALL2 true
-    else buffer buffer-size INTRINSIC-SYSCALL3-STR memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-SYSCALL3 true
-    else buffer buffer-size INTRINSIC-SYSCALL4-STR memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-SYSCALL4 true
-    else buffer buffer-size INTRINSIC-SYSCALL5-STR memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-SYSCALL5 true
-    else buffer buffer-size INTRINSIC-SYSCALL6-STR memcmp8 if INTRINSIC-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-SYSCALL6 true
+    else buffer buffer-size INTRINSIC-ADD-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-ADD      true
+    else buffer buffer-size INTRINSIC-SUB-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SUB      true
+    else buffer buffer-size INTRINSIC-MUL-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-MUL      true
+    else buffer buffer-size INTRINSIC-MUL2-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-MUL2     true
+    else buffer buffer-size INTRINSIC-FULLMUL-STR  memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-FULLMUL  true
+    else buffer buffer-size INTRINSIC-DIV-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-DIV      true
+    else buffer buffer-size INTRINSIC-MOD-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-MOD      true
+    else buffer buffer-size INTRINSIC-DIVMOD-STR   memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-DIVMOD   true
+    else buffer buffer-size INTRINSIC-UMUL-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-UMUL     true
+    else buffer buffer-size INTRINSIC-UMUL2-STR    memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-UMUL2    true
+    else buffer buffer-size INTRINSIC-UFULLMUL-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-UFULLMUL true
+    else buffer buffer-size INTRINSIC-UDIV-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-UDIV     true
+    else buffer buffer-size INTRINSIC-UMOD-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-UMOD     true
+    else buffer buffer-size INTRINSIC-UDIVMOD-STR  memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-UDIVMOD  true
+    else buffer buffer-size INTRINSIC-BAND-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-BAND     true
+    else buffer buffer-size INTRINSIC-BOR-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-BOR      true
+    else buffer buffer-size INTRINSIC-BXOR-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-BXOR     true
+    else buffer buffer-size INTRINSIC-BNOT-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-BNOT     true
+    else buffer buffer-size INTRINSIC-EQUAL-STR    memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-EQUAL    true
+    else buffer buffer-size INTRINSIC-LESS-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-LESS     true
+    else buffer buffer-size INTRINSIC-TRUE-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-TRUE     true
+    else buffer buffer-size INTRINSIC-FALSE-STR    memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-FALSE    true
+    else buffer buffer-size INTRINSIC-LOAD8-STR    memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-LOAD8    true
+    else buffer buffer-size INTRINSIC-STORE8-STR   memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-STORE8   true
+    else buffer buffer-size INTRINSIC-LOAD64-STR   memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-LOAD64   true
+    else buffer buffer-size INTRINSIC-STORE64-STR  memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-STORE64  true
+    else buffer buffer-size INTRINSIC-SYSCALL0-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SYSCALL0 true
+    else buffer buffer-size INTRINSIC-SYSCALL1-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SYSCALL1 true
+    else buffer buffer-size INTRINSIC-SYSCALL2-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SYSCALL2 true
+    else buffer buffer-size INTRINSIC-SYSCALL3-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SYSCALL3 true
+    else buffer buffer-size INTRINSIC-SYSCALL4-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SYSCALL4 true
+    else buffer buffer-size INTRINSIC-SYSCALL5-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SYSCALL5 true
+    else buffer buffer-size INTRINSIC-SYSCALL6-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SYSCALL6 true
     
-    else buffer buffer-size TYPE-INT-STR           memcmp8 if TYPE-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address TYPE-INT           true
-    else buffer buffer-size TYPE-BOOL-STR          memcmp8 if TYPE-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address TYPE-BOOL          true
+    else buffer buffer-size TYPE-INT-STR           memeq8 if TYPE-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address TYPE-INT           true
+    else buffer buffer-size TYPE-BOOL-STR          memeq8 if TYPE-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address TYPE-BOOL          true
     else
       // Return token type, address and argument.
-      NAME-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address buffer buffer-size to-dynamic true
+      TYPE-NAME file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address buffer buffer-size to-dynamic true
 
     // This is nightmare fuel.
-    end end end end end end end end end end end end end end end
-    end end end end end end end end end end end end end end end
-    end end end end end end end end end end end end end end end
-    end end end end end end
+    end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end 
+    end end end end end end end end end end end end end end end end end
   end
 end end
 
@@ -274,12 +285,14 @@ proc get-next-token
   ptr file-desc ptr ptr file-desc -- int ptr int bool
   // Generates a token and returns.
   // NOTE: If there is no token available, every other parameter is either NULLPTR or invalid.
+  // TODO: Create a new queue for the saved tokens when a macro is called.
+  // TODO: Change this procedure so that it returns the next saved token, if there is one.
 in let file-name file line-no char-no log-stream in
   memory buffer     TOKEN-MAX-LENGTH and
          buffer-end sizeof(int)      in
 
     file line-no char-no strip-file if
-      NULL-TYPE NULLPTR 0 false return
+      TYPE-UNKNOWN NULLPTR 0 false return
     end
     
     buffer buffer-end !64
@@ -293,10 +306,20 @@ in let file-name file line-no char-no log-stream in
         // TODO: Add bases.
 
         // Get full token.
-        file line-no char-no buffer buffer-end log-stream lex-next-token
+        file line-no char-no buffer buffer-end log-stream parse-next-token
 
-        // Return token type, address and argument.
-        INTEGER-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address buffer buffer-end @64 buffer - str.dec-to-int true
+        TYPE-INTEGER file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address
+        
+        buffer buffer-end @64 buffer - str.to-int ! if
+          drop
+          LOG.ERR log-stream fputs "Could not convert integer.\n" log-stream fputs LOG.RESET log-stream fputs
+          log-stream fput-here
+          1 call-sys-exit
+          drop
+          TYPE-UNKNOWN NULLPTR 0 false return // dummy return
+        end
+
+        true
         
       else buffer @8 CHAR-SQUOTE = if
         // -------- Characters --------
@@ -326,7 +349,7 @@ in let file-name file line-no char-no log-stream in
           end
 
           // Return token type, address and argument.
-          INTEGER-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address character true
+          TYPE-INTEGER file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address character true
         end
         
       else buffer @8 CHAR-DQUOTE = if
@@ -336,21 +359,22 @@ in let file-name file line-no char-no log-stream in
         buffer-end @dec64
 
         // Get full string.
-        file line-no char-no buffer buffer-end log-stream lex-next-string
+        file line-no char-no buffer buffer-end log-stream parse-next-string
 
         // Return token type, address and argument.
-        STRING-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address buffer buffer-end @64 buffer - to-dynamic true
+        TYPE-STRING file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address buffer buffer-end @64 buffer - to-dynamic true
         
       else buffer @8 CHAR-SLASH = if
         // -------- Slash (Name and comments) --------
-        
-        buffer inc 1 file fgets is-zero if
+
+        buffer-end @64 buffer - is-zero if
           // -------- Names and keyword types --------
           file-name file start-line start-char start-at line-no char-no buffer buffer-end log-stream create-name-token
           
         else
+          buffer inc 1 puts buffer inc @8 putu "\n" puts
           buffer inc @8 CHAR-SLASH = if
-            // -------- Single ine comment --------
+            // -------- Single line comment --------
 
             // Skip this line.
             file line-no char-no log-stream skip-line
@@ -368,7 +392,7 @@ in let file-name file line-no char-no log-stream in
             file-name file line-no char-no log-stream get-next-token
             
           else
-            // -------- Names and keyword types --------
+            // -------- Name and keyword types --------
             file-name file start-line start-char start-at line-no char-no buffer buffer-end log-stream create-name-token
             
           end end
@@ -382,20 +406,58 @@ in let file-name file line-no char-no log-stream in
 end end
 
 
-proc compile-file
-  // ptr: source-name file-desc: output-file ptr: libraries-queue-array ptr: libraries-queue-length file-desc: log-stream
-  ptr file-desc ptr ptr file-desc -- 
-in let source-name output-file libraries-queue-array libraries-queue-length log-stream in
-  source-name add-null let c-source-name in
-    c-source-name fopen-read c-source-name mfree
-  end
+proc compile-procedure
+  // file-desc: source-file file-desc: output-file
+  file-desc file-desc
+  // ptr: global-names-array ptr: global-sizes-array ptr: globals-length 
+  ptr ptr ptr
+  // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
+  ptr ptr ptr
+  // file-desc: log-stream
+  file-desc --
+  
+  // Compiles a Corth procedure.
+  // Compilation warning and errors are dumped to log-stream.
+in let
+  source-file output-file
+  global-names-array global-sizes-array globals-length
+  macro-names-array macro-tokens-array macros-length
+  log-stream in
 
-  let source in
+end end
+
+
+proc compile-file
+  // ptr: source-name file-desc: output-file
+  ptr file-desc
+  // ptr: global-names-array ptr: global-sizes-array ptr: globals-length 
+  ptr ptr ptr
+  // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
+  ptr ptr ptr
+  // libraries-array ptr: libraries-length
+  ptr ptr 
+  // file-desc: log-stream
+  file-desc --
+  
+  // Compiles a Corth source file.
+  // Compilation warning and errors are dumped to log-stream.
+in let
+  source-name output-file
+  global-names-array global-sizes-array globals-length
+  macro-names-array macro-tokens-array macros-length
+  libraries-array libraries-length
+  log-stream in
+
+  source-name add-null let c-source-name in
+    c-source-name fopen-read
+    c-source-name mfree
+  end
+  
+  let source-file in
     // Check if the source is opened.
-    source isn-pos if
+    source-file isn-pos if
       LOG.ERR log-stream fputs "Could not open source file '" log-stream fputs source-name source-name mlength dec log-stream fputs "'\n" log-stream fputs LOG.RESET log-stream fputs
       1 call-sys-exit
-      return
     end
     
     memory line-no sizeof(int) and
@@ -406,13 +468,11 @@ in let source-name output-file libraries-queue-array libraries-queue-length log-
       0 char-no !64
 
       // Get next token and check if there is one available.
-      while
-        source-name source line-no char-no log-stream get-next-token do
+      while source-name source-file line-no char-no log-stream get-next-token do
         let token-type token-address token-arg in
-          token-type KEYWORD-TYPE = if
-            // -------- Global keywords --------
-            
-                 token-arg KEYWORD-INCLUDE = if
+          token-type TYPE-KEYWORD = if
+            // -------- Global keywords --------            
+            token-arg KEYWORD-INCLUDE = if
               // -------- 'include' keyword --------
               // TODO: Create a function to include.
               // TODO: Allow including packages.
@@ -420,103 +480,171 @@ in let source-name output-file libraries-queue-array libraries-queue-length log-
               // TODO: Add pragma once.
 
               // Get the next token, which should be the include path.
-              source-name source line-no char-no log-stream get-next-token ! if
+              source-name source-file line-no char-no log-stream get-next-token ! if
                 LOG.ERR log-stream fputs "Reached EOF while expecting an include path.\n" log-stream fputs
                 token-address log-stream fput-here
                 1 call-sys-exit
               end
 
               let path-token-type path-token-address path-token-arg in
-                path-token-type NAME-TYPE != if
+                path-token-type TYPE-NAME != if
                   LOG.ERR log-stream fputs "Expected a 'name' for path after 'include', got '" log-stream fputs path-token-type log-stream fput-type "'.\n" log-stream fputs
                   path-token-address log-stream fput-here
                   1 call-sys-exit
                 end
                 
-                path-token-arg output-file libraries-queue-array libraries-queue-length log-stream compile-file
-              end
-              
-            else token-arg KEYWORD-MEMORY  = if
-              // -------- 'memory' keyword --------
+                path-token-arg output-file
+                global-names-array global-sizes-array globals-length
+                macro-names-array macro-tokens-array macros-length
+                libraries-array libraries-length
+                log-stream compile-file
 
+                // Deallocate the space for the token addresses.
+                path-token-address mfree
+              end
+
+              token-address mfree
+              
+            else token-arg KEYWORD-MEMORY = if
+              // -------- 'memory' keyword --------
+              
               // Get the next token, which sould be the include path.
-              source-name source line-no char-no log-stream get-next-token ! if
+              source-name source-file line-no char-no log-stream get-next-token ! if
                 LOG.ERR log-stream fputs "Reached EOF while expecting a global variable name.\n" log-stream fputs
                 token-address log-stream fput-here
                 1 call-sys-exit
               end
 
               let variable-name-token-type variable-name-token-address variable-name-token-arg in
-                variable-name-token-type NAME-TYPE != if
+                variable-name-token-type TYPE-NAME != if
                   LOG.ERR log-stream fputs "Expected a 'name' for global variable name after 'memory', got '" log-stream fputs variable-name-token-type log-stream fput-type "'.\n" log-stream fputs
                   variable-name-token-address log-stream fput-here
                   1 call-sys-exit
                 end
 
-                // TODO: Implement the size calculation part.
+                // TODO: Implement size calculation.
+                source-name source-file line-no char-no log-stream get-next-token ! if
+                  LOG.ERR log-stream fputs "Reached EOF while expecting a global variable size.\n" log-stream fputs
+                  token-address log-stream fput-here
+                  1 call-sys-exit
+                end
+
+                let variable-size-token-type variable-size-token-address variable-size-token-arg in
+                  variable-size-token-type TYPE-INTEGER != if
+                    LOG.ERR log-stream fputs "Expected an 'int' for global variable size after 'memory', got '" log-stream fputs variable-size-token-type log-stream fput-type ".\n" log-stream fputs
+                    variable-size-token-type log-stream fput-here
+                    1 call-sys-exit
+                  end
+
+                  source-name source-file line-no char-no log-stream get-next-token ! if
+                    LOG.ERR log-stream fputs "Reached EOF while expecting global variable size.\n" log-stream fputs
+                    token-address log-stream fput-here
+                    1 call-sys-exit
+                  end
+
+                  let end-token-type end-token-address end-token-arg in
+                    end-token-type TYPE-KEYWORD != if
+                      LOG.ERR log-stream fputs "Expected an 'int' for global variable size after 'memory', got '" log-stream fputs end-token-type log-stream fput-type "'.\n" log-stream fputs
+                      end-token-address log-stream fput-here
+                      1 call-sys-exit
+                    end
+
+                    end-token-arg KEYWORD-END != if
+                      LOG.ERR log-stream fputs "Unexpected keyword while expecting global variable size, got '" log-stream fputs end-token-arg log-stream fput-keyword "'.\n" log-stream fputs
+                      end-token-address log-stream fput-here
+                      1 call-sys-exit
+                    end
+
+                    end-token-address mfree
+                  end
+
+                  // TODO: Check if the global variable queue was filled.
+                  variable-name-token-arg variable-size-token-arg global-names-array global-sizes-array globals-length str-map64.set drop
+
+                  variable-size-token-address mfree
+                end
+
+                variable-name-token-address mfree
               end
+
+              token-address mfree
               
-            else token-arg KEYWORD-MACRO   = if
+            else token-arg KEYWORD-MACRO = if
               // -------- 'macro' keyword --------
 
               // Get the next token, which should be the name of the macro.
-              source-name source line-no char-no log-stream get-next-token ! if
+              source-name source-file line-no char-no log-stream get-next-token ! if
                 LOG.ERR log-stream fputs "Reached EOF while expecting a macro name.\n" log-stream fputs
                 token-address log-stream fput-here
                 1 call-sys-exit
               end
 
               let macro-name-token-type macro-name-token-address macro-name-token-arg in
-                macro-name-token-type NAME-TYPE != if
+                macro-name-token-type TYPE-NAME != if
                   LOG.ERR log-stream fputs "Expected a 'name' for macro name after 'macro', got '" log-stream fputs macro-name-token-arg log-stream fput-type "'.\n" log-stream fputs
                   macro-name-token-address log-stream fput-here
                   1 call-sys-exit
                 end
 
                 // macro-tokens-array and macro-tokens-length are used to create a QUEUE for macro tokens.
-                memory macro-tokens-array  MACRO-MAX-TOKENS sizeof(int) * and
-                       macro-tokens-length sizeof(int)                    in
+                memory new-macro-tokens-array  MACRO-MAX-TOKENS sizeof(int) * and
+                       new-macro-tokens-length sizeof(int)                    in
                        
                   while true do
-                    // Get next tokens, until an 'endmacro' is found.
-                    source-name source line-no char-no log-stream get-next-token ! if
+                   // Get next tokens, until an 'endmacro' is found.
+                    source-name source-file line-no char-no log-stream get-next-token ! if
                       LOG.ERR log-stream fputs "Reached EOF while expecting an 'endmacro' in macro '" log-stream fputs macro-name-token-arg macro-name-token-arg mlength log-stream fputs "'.\n" log-stream fputs
                       token-address log-stream fput-here
                       1 call-sys-exit
                     end
 
                     let macro-new-token-type macro-new-token-address macro-new-token-arg in
-                      macro-tokens-length MACRO-MAX-TOKENS - 3 < if
+                      macro-new-token-type TYPE-KEYWORD = if
+                        macro-new-token-arg KEYWORD-ENDMACRO = if
+                          break
+                        end
+                      end
+                      
+                      new-macro-tokens-length MACRO-MAX-TOKENS - 3 < if
                         LOG.ERR log-stream fputs "Macro '" log-stream fputs macro-name-token-arg macro-name-token-arg mlength log-stream fputs "' is longer than MACRO-MAX-TOKENS, stopping execution.\n" log-stream fputs
                         token-address log-stream fput-here
                         1 call-sys-exit
                       end
-
-                      macro-new-token-type KEYWORD-TYPE = if
-                        // TODO: Save the macro
-                        break
-                      end
                       
-                      macro-new-token-type    macro-tokens-array macro-tokens-length queue64.append
-                      macro-new-token-address macro-tokens-array macro-tokens-length queue64.append
-                      macro-new-token-arg     macro-tokens-array macro-tokens-length queue64.append
+                      macro-new-token-type    new-macro-tokens-array new-macro-tokens-length queue64.append
+                      macro-new-token-address new-macro-tokens-array new-macro-tokens-length queue64.append
+                      macro-new-token-arg     new-macro-tokens-array new-macro-tokens-length queue64.append
                     end
                   end
+
+                  new-macro-tokens-array new-macro-tokens-length @64 to-dynamic
+                end 
+
+                let macro-tokens in
+                  // TODO: Check if the macros queue was filled.
+                  macro-name-token-arg macro-tokens macro-names-array macro-tokens-array macros-length str-map64.set drop
                 end
+
+
+                macro-name-token-address mfree
+                // FIXME: This causes the last dynamic memory segment to be changed?
+                macro-name-token-arg     mfree
               end
+
+              token-address mfree
               
-            else token-arg KEYWORD-PROC    = if
+            else token-arg KEYWORD-PROC = if
               // -------- 'proc' keyword --------
 
               // Get the next token, which should be the name of the procedure.
-              source-name source line-no char-no log-stream get-next-token ! if
+              source-name source-file line-no char-no log-stream get-next-token ! if
                 LOG.ERR log-stream fputs "Reached EOF while expecting a procedure name.\n" log-stream fputs
                 token-address log-stream fput-here
                 1 call-sys-exit
               end
 
               let proc-name-token-type proc-name-token-address proc-name-token-arg in
-                proc-name-token-type NAME-TYPE != if
+                proc-name-token-type TYPE-NAME != if
                   "Expected a 'name' for procedure name after 'proc', got " log-stream fputs proc-name-token-type log-stream fput-type "'.\n" log-stream fputs
                   proc-name-token-type log-stream fput-here
                   1 call-sys-exit
@@ -529,14 +657,14 @@ in let source-name output-file libraries-queue-array libraries-queue-length log-
                        outputs-length sizeof(int)               in
 
                   while true do
-                    source-name source line-no char-no log-stream get-next-token ! if
+                    source-name source-file line-no char-no log-stream get-next-token ! if
                       LOG.ERR log-stream fputs "Reached EOF while expecting procedure input type.\n" log-stream fputs
                       token-address log-stream fput-here
                       1 call-sys-exit
                     end
 
                     let input-token-type input-token-address input-token-arg in
-                      input-token-type KEYWORD-TYPE = if
+                      input-token-type TYPE-KEYWORD = if
                         input-token-arg KEYWORD-RETURNS != if
                           LOG.ERR log-stream fputs "Unexpected keyword while expecting input type, got '" log-stream fputs input-token-arg log-stream fput-keyword "'.\n" log-stream fputs
                           token-address log-stream fput-here
@@ -556,14 +684,14 @@ in let source-name output-file libraries-queue-array libraries-queue-length log-
                   end
 
                   while true do
-                    source-name source line-no char-no log-stream get-next-token ! if
+                    source-name source-file line-no char-no log-stream get-next-token ! if
                       LOG.ERR log-stream fputs "Reached EOF while expecting procedure output type.\n" log-stream fputs
                       token-address log-stream fput-here
                       1 call-sys-exit
                     end
 
                     let output-token-type output-token-address output-token-arg in
-                      output-token-type KEYWORD-TYPE = if
+                      output-token-type TYPE-KEYWORD = if
                         output-token-arg KEYWORD-IN != if
                           LOG.ERR log-stream fputs "Unexpected keyword while expecting output type, got '" log-stream fputs output-token-arg log-stream fput-keyword "'.\n" log-stream fputs
                           token-address log-stream fput-here
@@ -581,15 +709,78 @@ in let source-name output-file libraries-queue-array libraries-queue-length log-
                       end end
                     end
                   end
+
+                  memory local-stack        sizeof(ptr) STACK-MAX-ITEMS * and
+                         local-stack-length sizeof(ptr)                   in
+
+                    0 local-stack-length !64
+                         
+                    while true do
+                      source-name source-file line-no char-no log-stream get-next-token ! if
+                        LOG.ERR log-stream fputs "Reached EOF while expecting procedure definition.\n" log-stream fputs
+                        token-address log-stream fput-here
+                        1 call-sys-exit
+                      end
+
+                      let new-token-type new-token-address new-token-arg in
+                        new-token-type TYPE-INTEGER = if
+                          // Create a constant integer type.
+                          16 malloc let x in
+                            x is-null if
+                              LOG.ERR log-stream fputs "'malloc' failed while creating an integer constant.\n" log-stream fputs
+                              new-token-address log-stream fput-here
+                              1 call-sys-exit
+                            end
+
+                            1             x     !64
+                            new-token-arg x 8 + !64
+
+                            x local-stack local-stack-length queue64.append
+                          end
+                        else new-token-type TYPE-INTRINSIC = if
+                          new-token-arg INTRINSIC-ADD = if
+                            // -------- Intrinsic 'add' --------
+                            
+                            local-stack local-stack-length queue64.pop-last
+                            local-stack local-stack-length queue64.pop-last
+                            
+                            let x y in
+                              x @64 1 = y @64 1 = & if
+                                // Just add the constants and push back.
+                                x 8 + @64 y 8 + @64 + x 8 + !64
+                                x local-stack local-stack-length queue64.append
+                                y mfree
+                              else
+                                LOG.TODO log-stream fputs "The compiler can not calculate this yet.\n" log-stream fputs
+                                new-token-address log-stream fput-here
+                                1 call-sys-exit
+                              end
+                            end
+                          else
+                            LOG.TODO log-stream fputs "Intrinsic '" log-stream fputs new-token-arg log-stream fput-intrinsic "' is not implemented yet.\n" log-stream fputs
+                            new-token-address log-stream fput-here
+                            1 call-sys-exit
+                          end
+                        else
+                          LOG.ERR log-stream fputs "Unexpected type, got '" log-stream fputs new-token-type log-stream fput-type "'.\n" log-stream fputs
+                          new-token-address log-stream fput-here
+                          1 call-sys-exit
+                        end end
+                      end
+                    end
+                  end
                 end
+
+                proc-name-token-address mfree
               end
               
+              token-address mfree
             else
               LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
               token-address log-stream fput-here
               1 call-sys-exit
-              
             end end end end
+            
           else
             LOG.ERR log-stream fputs "Expected a keyword type, got '" log-stream fputs token-type log-stream fput-type "'.\n" log-stream fputs
             token-address log-stream fput-here
@@ -599,7 +790,7 @@ in let source-name output-file libraries-queue-array libraries-queue-length log-
       end drop drop drop
     end
     
-    source fclose
+    source-file fclose
   end
 end end
 
@@ -611,19 +802,41 @@ in let argc argv in
   malloc.init
 
   // Make file name dynamic.
-  FILE-NAME inc to-dynamic let file-name in
-    // Check if the file is opened successfully.
-    file-name is-null if
-      "There is not enough space for file-name\n" puts
+  SOURCE-NAME to-dynamic let source-name in
+    source-name is-null if
+      "'malloc' failed while making the source name dynamic.\n" puts
       1 call-sys-exit
     end
 
-    memory libraries-queue-array  sizeof(int) 0x100 * and
-           libraries-queue-length sizeof(int)         in
+    OUTPUT-NAME inc to-dynamic fopen-write let output in
+      // Check if the file is opened successfully.
+      output isn-pos if
+        "Could not open output file.\n" puts
+        1 call-sys-exit
+      end
 
-      0 libraries-queue-length !64
-           
-      file-name STDOUT libraries-queue-array libraries-queue-length STDERR compile-file
+      memory global-names-array sizeof(ptr) GLOBALS-MAX-COUNT    * and
+             global-sizes-array sizeof(ptr) GLOBALS-MAX-COUNT    * and
+             globals-length     sizeof(int)                        and
+             macro-names-array  sizeof(ptr) MACROS-MAX-COUNT     * and
+             macro-tokens-array sizeof(ptr) MACROS-MAX-COUNT     * and
+             macros-length      sizeof(int)                        and
+             libraries-array    sizeof(int) LIBRARIES-MAX-COUNT  * and
+             libraries-length   sizeof(int)                        in
+
+        0 globals-length   !64
+        0 macros-length    !64
+        0 libraries-length !64
+
+        source-name output
+        global-names-array global-sizes-array globals-length
+        macro-names-array macro-tokens-array macros-length
+        libraries-array libraries-length
+        STDERR
+        compile-file
+      end
+      
+      output fclose
     end
   end
 end 0 end
@@ -632,14 +845,33 @@ end 0 end
 /*
 
 Name definitions:
-
   Public:
     Global variables
     Macros
     Procedures
-
   Private:
     Local variables
     Let variables
+
+Stack data:  
+  0  - 7  -> type
+  8  - n  -> args
+
+1: Integer constant args:
+  8  - 15 -> constant
+
+2: Real stack data args:
+
+3: Address read args:
+  8  - 15 -> address
+
+n: Operator args (addition, subtraction, multiplication, division, bit shifting, bitwise operators):
+  8  - 15 -> constant
+  16 - n  -> other operands
+
+Differences with the Python compiler:
+  - In this compiler, if a name is redefined; it is overwritten. In the Python compiler, that would cause an error.
+  - Precompilation.
     
+TODO: There are many tokens, whose address and/or argument should have been 'mfree'd.
 */
