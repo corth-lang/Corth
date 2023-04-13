@@ -1,15 +1,16 @@
+include libs/linux_x86/io.corth
+
 macro great-macro
   1234 putu
 endmacro
 
 macro asd endmacro
 
-memory global-var 
+
+memory global-var 100 end
 
 proc main
   int int -- int
-in let argc argv in
-  memory var sizeof(int) in
-    "Hello World!" puts
-  end
-end 0 end
+in
+  34 17 18 + + !!
+end
