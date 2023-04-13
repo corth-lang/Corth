@@ -21,6 +21,10 @@
 - Add mmap and remake malloc and mfree using mmap.
 - I/O macro and procedures should be rewritten for performance reasons.
 - Create an OS or path library that allows path operations like merging or splitting.
+- Create a dictionary library.
+- Create a vector library.
+- Most of ./libs/memory.corth macro and procedures would be more efficient if they worked with pointers and not indexes.
+- Add the information about the time complexity to collection libraries.
 
 ## Other:
 
