@@ -1,4 +1,5 @@
 include libs/collections/queue64.corth
+include libs/collections/sorted64.corth
 include libs/memory.corth
 include libs/core.corth
 
@@ -14,7 +15,7 @@ include libs/core.corth
 
 
 proc queue64.sort
-  // ptr: queue-start ptr: *queue-length
+  // ptr: queue-start ptr: queue-length
   ptr ptr --
   // Sorts an array using bubble sort ( :( )
 in
@@ -34,28 +35,11 @@ end
 
 
 proc squeue64.append
-  // int: value ptr: queue-start ptr: *queue-length
+  // int: value ptr: queue-start ptr: queue-length
   int ptr ptr --
-  // Appends an item to a sorted array
-in
-  let value queue-start *queue-length in
-    memory left  sizeof(int) and
-           right sizeof(int) in
+  // Appends an item to a sorted array.
+in let value queue-start queue-length in
+  value value queue-start queue-start queue-length @64 8 * + sorted64.available drop queue-start - 8 / queue-start queue-length queue64.insert
+end end
 
-      1 neg left !64
-      *queue-length @64 right !64
 
-      while right @64 left @64 - dec isn-zero do
-        left @64 right @64 + 2 / let middle in
-          value middle queue-start *queue-length queue64.get > if
-            middle left !64
-          else
-            middle right !64
-          end
-        end
-      end
-
-      value right @64 queue-start *queue-length queue64.insert
-    end
-  end
-end
