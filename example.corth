@@ -9,7 +9,8 @@ memory global-var 100 end
 
 proc main
   int int -- int
-in
+in let argc argv in
   1 "Hello, World!
 " 1 syscall3
-end
+end end
+
