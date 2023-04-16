@@ -11,6 +11,7 @@
 - Add types for let variables.
 - Implement types.
 - Implement more complex patterns of scopes.
+- Implement a optimization model.
 
 ## Libraries:
 
