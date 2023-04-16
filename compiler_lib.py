@@ -1126,7 +1126,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    ;; -- RETURN --\n\n")
             file.write(f"    jmp     .RETURN\n\n")
 
-        elif token.type is token_lib.EQUAL:
+        elif token.type is token_lib.NOT_EQUAL:
             if (
                     len(stack) < 2 or
                     stack.pop() is not INT_TYPE or
@@ -1137,12 +1137,9 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             stack.append(BOOL_TYPE)
 
-            file.write(f"    ;; -- EQUAL --\n\n")
+            file.write(f"    ;; -- NOT EQUAL --\n\n")
             file.write(f"    pop     rax\n")
-            file.write(f"    pop     rbx\n")
-            file.write(f"    sub     rax, rbx\n")
-            file.write(f"    pushf\n")
-            file.write(f"    and     QWORD [rsp], 0x40\n")
+            file.write(f"    sub     [rsp], rax\n")
 
         elif token.type is token_lib.LESS_THAN:
             if (
