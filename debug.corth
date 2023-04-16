@@ -194,7 +194,7 @@ in let address log-stream in
         end
 
         // Close the file.
-        file fclose
+        file fclose drop
       end
     end
   end

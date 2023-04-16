@@ -73,7 +73,7 @@ macro INTRINSIC-BAND     14 endmacro
 macro INTRINSIC-BOR      15 endmacro
 macro INTRINSIC-BXOR     16 endmacro
 macro INTRINSIC-BNOT     17 endmacro
-macro INTRINSIC-EQUAL    18 endmacro
+macro INTRINSIC-NOTEQUAL 18 endmacro
 macro INTRINSIC-LESS     19 endmacro
 macro INTRINSIC-TRUE     20 endmacro
 macro INTRINSIC-FALSE    21 endmacro
@@ -109,7 +109,7 @@ macro INTRINSIC-BAND-STR     "&&"        endmacro
 macro INTRINSIC-BOR-STR      "||"        endmacro
 macro INTRINSIC-BXOR-STR     "^^"        endmacro
 macro INTRINSIC-BNOT-STR     "!!"        endmacro
-macro INTRINSIC-EQUAL-STR    "="         endmacro
+macro INTRINSIC-NOTEQUAL-STR "!="        endmacro
 macro INTRINSIC-LESS-STR     "<"         endmacro
 macro INTRINSIC-TRUE-STR     "true"      endmacro
 macro INTRINSIC-FALSE-STR    "false"     endmacro
@@ -195,7 +195,7 @@ in let intrinsic file in
   else intrinsic INTRINSIC-BOR      = if INTRINSIC-BOR-STR      file fputs
   else intrinsic INTRINSIC-BXOR     = if INTRINSIC-BXOR-STR     file fputs
   else intrinsic INTRINSIC-BNOT     = if INTRINSIC-BNOT-STR     file fputs
-  else intrinsic INTRINSIC-EQUAL    = if INTRINSIC-EQUAL-STR    file fputs
+  else intrinsic INTRINSIC-NOTEQUAL = if INTRINSIC-NOTEQUAL-STR file fputs
   else intrinsic INTRINSIC-LESS     = if INTRINSIC-LESS-STR     file fputs
   else intrinsic INTRINSIC-TRUE     = if INTRINSIC-TRUE-STR     file fputs
   else intrinsic INTRINSIC-FALSE    = if INTRINSIC-FALSE-STR    file fputs

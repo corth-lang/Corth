@@ -76,7 +76,7 @@ KEYWORDS = {
     "!!": (BNOT := enum_lib.step()),
 
     # Comparison operators
-    "=": (EQUAL := enum_lib.step()),
+    "!=": (NOT_EQUAL := enum_lib.step()),
     "<": (LESS_THAN := enum_lib.step()),
 
     # Boolean singletons

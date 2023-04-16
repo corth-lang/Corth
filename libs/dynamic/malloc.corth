@@ -24,7 +24,7 @@ in
   "--------------------\n" puts
   "Available segments:\n" puts
   0 while dup malloc.avail-queue-length @64 < do let i in
-    i puti ". 0x" puts i malloc.avail-queue queue64.get putx "\n" puts
+    i puti ". 0x" puts i malloc.avail-queue queue64.get putx " (size: 0x" puts i malloc.avail-queue queue64.get dup @64 - neg putx ")\n" puts
   i end inc end drop
   "--------------------\n" puts
   "Segments:\n" puts
@@ -86,7 +86,7 @@ proc malloc
   // NOTE: Can be unstable or buggy.
 in
   8 + let size in
-    size 8 - isn-pos if
+    size 8 - is-neg if
       NULLPTR return
     end
     

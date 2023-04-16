@@ -1,7 +1,7 @@
 include libs/linux_x86/io.corth
 include libs/linux_x86/sys.corth
 
-macro malloc.ARRAY-SIZE           0x10000 endmacro
+macro malloc.ARRAY-SIZE           0x40000 endmacro
 macro malloc.AVAIL-QUEUE-SIZE     0x1000  endmacro
 include libs/dynamic/malloc.corth
 include libs/dynamic/utils.corth
@@ -31,17 +31,19 @@ macro OUTPUT-NAME "./o.asm" endmacro
 
 macro GLOBALS-MAX-COUNT   0x4000 endmacro
 macro MACROS-MAX-COUNT    0x4000 endmacro
+macro LIBRARIES-MAX-COUNT 0x4000 endmacro
+macro LEVELS-MAX-COUNT    0x100  endmacro
+macro LET-MAX-COUNT       0x400  endmacro
+macro LOCALS-MAX-COUNT    0x400  endmacro
+macro VARS-MAX-ONCE       0x10   endmacro
+
 macro TOKEN-MAX-LENGTH    0x4000 endmacro
 macro MACRO-MAX-TOKENS    0x4000 endmacro
-macro LIBRARIES-MAX-COUNT 0x4000 endmacro
-macro PROC-MAX-IO         0x1000 endmacro
+macro PROC-MAX-IO         0x100  endmacro
 macro STACK-MAX-ITEMS     0x100  endmacro
+
 macro LOCAL-MEMORY-SIZE   0X4000 endmacro
 macro CALL-STACK-SIZE     0x4000 endmacro
-
-macro STACK-TYPE-REAL-INT           0 endmacro
-macro STACK-TYPE-INT-CONSTANT   1 endmacro
-macro STACK-TYPE-BOOL-CONSTANT  2 endmacro
 
 
 proc fread
@@ -214,22 +216,22 @@ in let file-name file start-line start-char start-at line-no char-no buffer buff
   buffer-end @64 buffer - let buffer-size in
     // Check if the token is a keyword.
     // I hate my life.
-         buffer buffer-size KEYWORD-INCLUDE-STR    memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-INCLUDE    true
-    else buffer buffer-size KEYWORD-MACRO-STR      memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-MACRO      true
-    else buffer buffer-size KEYWORD-ENDMACRO-STR   memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-ENDMACRO   true
-    else buffer buffer-size KEYWORD-PROC-STR       memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-PROC       true
-    else buffer buffer-size KEYWORD-END-STR        memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-END        true
-    else buffer buffer-size KEYWORD-RETURN-STR     memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-RETURN     true
-    else buffer buffer-size KEYWORD-RETURNS-STR    memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-RETURNS    true
-    else buffer buffer-size KEYWORD-MEMORY-STR     memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-MEMORY     true
-    else buffer buffer-size KEYWORD-AND-STR        memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-AND        true
-    else buffer buffer-size KEYWORD-IN-STR         memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-IN         true
-    else buffer buffer-size KEYWORD-LET-STR        memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-LET        true
-    else buffer buffer-size KEYWORD-IF-STR         memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-IF         true
-    else buffer buffer-size KEYWORD-ELSE-STR       memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-ELSE       true
-    else buffer buffer-size KEYWORD-WHILE-STR      memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-WHILE      true
-    else buffer buffer-size KEYWORD-DO-STR         memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-DO         true
-    else buffer buffer-size KEYWORD-BREAK-STR      memeq8 if TYPE-KEYWORD file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-BREAK      true
+         buffer buffer-size KEYWORD-INCLUDE-STR    memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-INCLUDE    true
+    else buffer buffer-size KEYWORD-MACRO-STR      memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-MACRO      true
+    else buffer buffer-size KEYWORD-ENDMACRO-STR   memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-ENDMACRO   true
+    else buffer buffer-size KEYWORD-PROC-STR       memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-PROC       true
+    else buffer buffer-size KEYWORD-END-STR        memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-END        true
+    else buffer buffer-size KEYWORD-RETURN-STR     memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-RETURN     true
+    else buffer buffer-size KEYWORD-RETURNS-STR    memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-RETURNS    true
+    else buffer buffer-size KEYWORD-MEMORY-STR     memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-MEMORY     true
+    else buffer buffer-size KEYWORD-AND-STR        memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-AND        true
+    else buffer buffer-size KEYWORD-IN-STR         memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-IN         true
+    else buffer buffer-size KEYWORD-LET-STR        memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-LET        true
+    else buffer buffer-size KEYWORD-IF-STR         memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-IF         true
+    else buffer buffer-size KEYWORD-ELSE-STR       memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-ELSE       true
+    else buffer buffer-size KEYWORD-WHILE-STR      memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-WHILE      true
+    else buffer buffer-size KEYWORD-DO-STR         memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-DO         true
+    else buffer buffer-size KEYWORD-BREAK-STR      memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address KEYWORD-BREAK      true
     
     // I still hate my life.
     else buffer buffer-size INTRINSIC-ADD-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-ADD      true
@@ -250,7 +252,7 @@ in let file-name file start-line start-char start-at line-no char-no buffer buff
     else buffer buffer-size INTRINSIC-BOR-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-BOR      true
     else buffer buffer-size INTRINSIC-BXOR-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-BXOR     true
     else buffer buffer-size INTRINSIC-BNOT-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-BNOT     true
-    else buffer buffer-size INTRINSIC-EQUAL-STR    memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-EQUAL    true
+    else buffer buffer-size INTRINSIC-NOTEQUAL-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-NOTEQUAL true
     else buffer buffer-size INTRINSIC-LESS-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-LESS     true
     else buffer buffer-size INTRINSIC-TRUE-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-TRUE     true
     else buffer buffer-size INTRINSIC-FALSE-STR    memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-FALSE    true
@@ -416,76 +418,37 @@ in let name address log-stream in
 end end
 
 
-proc create-constant-int
-  // int: constant-value -- ptr: stack-data
-  int -- ptr
-in let constant in
-  16 malloc let x in
-    x is-null if
-      "'malloc' failed while creating an integer constant.\n" eputs
-      1 call-sys-exit
-    end
-
-    STACK-TYPE-INT-CONSTANT x     !64
-    constant                x 8 + !64
-  x end
-end end
-
-
-proc create-real-int
+proc create-int
   // -- ptr: stack-data
   -- ptr
 in
   8 malloc let x in
     x is-null if
-      "'malloc' failed while creating a real stack value.\n" eputs
+      "'malloc' failed while creating an integer stack value.\n" eputs
       1 call-sys-exit
     end
 
-    STACK-TYPE-REAL-INT x !64
+    TYPE-INT x !64
   x end
 end
 
 
-proc move-value-to-register
-  // ptr: data ptr: register-name-start int: register-name-length
-  ptr ptr int
-  // file-desc: output-file  ptr: blame-address ptr: blame-procedure-name ptr: blame-procedure-token
-  file-desc ptr ptr ptr
-  // file-desc: log-stream
-  file-desc
-  --
-in let
-    data start length
-    output-file blame-address blame-procedure-name blame-procedure-address
-    log-stream
-  in
-  
-  data @64 let type in
-    type STACK-TYPE-REAL-INT = if
-      // Value was on the stack, pop it from the stack.
-      "    pop     " output-file fputs start length output-file fputs "\n" output-file fputs
-    else type STACK-TYPE-INT-CONSTANT = if
-      // Value was a constant.
-      data 8 + @64 let arg in
-        arg is-zero if
-          // Value was zero. Best way to set a register to 0 is by 'xor reg, reg'.
-          "    xor     " output-file fputs start length output-file fputs ", " output-file fputs start length output-file fputs "\n" output-file fputs
-        else
-          // Value was not zero, move the value to the register.
-          "    mov     " output-file fputs start length output-file fputs ", " output-file fputs arg output-file fputu "\n" output-file fputs
-        end
-      end
-    else
-      LOG.TODO log-stream fputs "Stack data type " output-file fputs type log-stream fputu " can not be moved to a register yet.\n" log-stream fputs
-      blame-address log-stream fput-here
-      blame-procedure-name blame-procedure-address log-stream fput-inside-procedure
+proc create-bool
+  // -- ptr: stack-data
+  -- ptr
+in
+  8 malloc let x in
+    x is-null if
+      "'malloc' failed while creating a boolean stack value.\n" eputs
       1 call-sys-exit
-    end end
-  end
-end end
+    end
+
+    TYPE-BOOL x !64
+  x end
+end
 
 
+// TODO: Split compile-procedure into compile-procedure, compile-keyword-inside-procedure and compile-intrinsic-inside-procedure.
 proc compile-procedure
   // ptr: source-name file-desc: source-file file-desc: output-file
   ptr file-desc file-desc
@@ -499,54 +462,49 @@ proc compile-procedure
   ptr ptr ptr
   // ptr: procedure-name ptr: procedure-address
   ptr ptr
-  // ptr: inputs-array ptr: inputs-length
+  // ptr: local-stack ptr: local-stack-length
   ptr ptr
   // file-desc: log-stream
   file-desc --
   
   // Compiles a Corth procedure.
   // Compilation warning and errors are dumped to log-stream.
-in let log-stream in
-
-  // TODO: Move this to compile-file.
-  memory local-stack        sizeof(ptr) STACK-MAX-ITEMS *  and
-         local-stack-length sizeof(ptr)                    in
-
-  0 local-stack-length !64
-  
-  let inputs-array inputs-length in
-    0 while dup inputs-length @64 < do
-      dup 8 * inputs-array + @64 let input in
-        input TYPE-INT = if
-          create-real-int local-stack local-stack-length queue64.append
-        else
-          drop let
-            source-name source-file output-file
-            line-no char-no
-            data-definitions-array datas-length
-            global-names-array global-sizes-array globals-length
-            macro-names-array macro-tokens-array macros-length
-            procedure-name procedure-address
-          in
-            LOG.TODO log-stream fputs "Type '" log-stream fputs input log-stream fputu "' can not be an input for procedures yet.\n" log-stream fputs
-            procedure-name procedure-address log-stream fput-inside-procedure
-            1 call-sys-exit
-            return
-          end
-        end
-      end
-    inc end drop
-  end
-
-  let
+in let 
     source-name source-file output-file
     line-no char-no
     data-definitions-array datas-length
     global-names-array global-sizes-array globals-length
     macro-names-array macro-tokens-array macros-length
     procedure-name procedure-address
-  in
-    "proc_" output-file fputs procedure-name procedure-name mlength output-file fputs ":\n" output-file fputs
+    local-stack local-stack-length
+    log-stream in
+    
+  "proc_" output-file fputs procedure-name procedure-name mlength output-file fputs ":\n" output-file fputs
+
+  memory levels-array     sizeof(ptr) LEVELS-MAX-COUNT * and
+         levels-length    sizeof(int)                    and
+
+         // level-id-counter allows to create unique IDs for level labels.
+         level-id-counter sizeof(int)                    and
+
+         // let-names, let-addresses and let-vars-length create a str_map64.
+         let-names        sizeof(ptr) LET-MAX-COUNT *    and
+         let-addresses    sizeof(ptr) LET-MAX-COUNT *    and
+         let-vars-length  sizeof(int)                    and
+         
+         // local-names, local-addresses and locals-length create a str_map64.
+         local-names      sizeof(ptr) LOCALS-MAX-COUNT * and
+         local-addresses  sizeof(ptr) LOCALS-MAX-COUNT * and
+         locals-length    sizeof(int)                    and
+
+         // local-memory-end keeps track of the first available position on the local memory.
+         local-memory-end sizeof(int)                    in
+
+    0 levels-length    !64
+    0 level-id-counter !64
+    0 let-vars-length  !64
+    0 locals-length    !64
+    0 local-memory-end !64
 
     while true do
       source-name source-file line-no char-no log-stream get-next-token ! if
@@ -558,89 +516,335 @@ in let log-stream in
       let token-type token-address token-arg in
         token-type TYPE-INTEGER = if
           // -------- Constant integer --------
+          token-arg is-zero if
+              "    xor     rax, rax\n" output-file fputs
+          else
+              "    mov     rax, " output-file fputs token-arg output-file fputu "\n" output-file fputs
+          end
+
+          "    push    rax\n" output-file fputs
+
+          create-int local-stack local-stack-length queue64.append
           
-          token-arg create-constant-int local-stack local-stack-length queue64.append
         else token-type TYPE-STRING = if
           // -------- Strings --------
 
           // TODO: Change this to GLOBAL ADDRESS DATA
           "    mov     rax, data_" output-file fputs datas-length @64 output-file fputu "\n" output-file fputs
           "    push    rax\n" output-file fputs
+          
+          token-arg mlength is-zero if
+              "    xor     rax, rax\n" output-file fputs
+          else
+              "    mov     rax, " output-file fputs token-arg mlength output-file fputu "\n" output-file fputs
+          end
 
-          create-real-int                       local-stack local-stack-length queue64.append
-          token-arg mlength create-constant-int local-stack local-stack-length queue64.append
+          "    push    rax\n" output-file fputs
+
+          create-int local-stack local-stack-length queue64.append
+          create-int local-stack local-stack-length queue64.append
 
           token-arg data-definitions-array datas-length queue64.append
-          
+
         else token-type TYPE-INTRINSIC = if
           token-arg INTRINSIC-ADD = if
-            // -------- Intrinsic 'add' --------
+            // -------- Intrinsic '+' --------
 
-            // TODO: Add checks for the stack length.
-            local-stack local-stack-length queue64.pop-last
-            local-stack local-stack-length queue64.pop-last
-
-            let x y in
-              x @64 STACK-TYPE-INT-CONSTANT = y @64 STACK-TYPE-INT-CONSTANT = & if
-                // Just add the constants and push back.
-                x 8 + @64 y 8 + @64 + x 8 + !64
-                x local-stack local-stack-length queue64.append
-                y mfree
-              else
-                LOG.TODO log-stream fputs "The compiler can not calculate this yet.\n" log-stream fputs
-                token-address log-stream fput-here
-                procedure-name procedure-address log-stream fput-inside-procedure
-                1 call-sys-exit
-              end
+            // TODO: Check the type of arguments.
+            local-stack-length @64 2 < if
+              LOG.ERR log-stream fputs "Intrinsic '+' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
+              token-address log-stream fput-here
+              1 call-sys-exit
             end
-          else token-arg INTRINSIC-SYSCALL3  = if
+            
+            "    pop     rax\n"        output-file fputs
+            "    add     [rsp], rax\n" output-file fputs
+
+            local-stack local-stack-length queue64.pop-last mfree
+            local-stack local-stack-length queue64.pop-last mfree
+            create-int local-stack local-stack-length queue64.append
+
+          else token-arg INTRINSIC-SUB = if
+            // -------- Intrinsic '-' --------
+
+            // TODO: Check the type of arguments.
+            local-stack-length @64 2 < if
+              LOG.ERR log-stream fputs "Intrinsic '-' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
+              token-address log-stream fput-here
+              1 call-sys-exit
+            end
+            
+            "    pop     rax\n"        output-file fputs
+            "    sub     [rsp], rax\n" output-file fputs
+
+            local-stack local-stack-length queue64.pop-last mfree
+            local-stack local-stack-length queue64.pop-last mfree
+            create-int local-stack local-stack-length queue64.append
+
+          else token-arg INTRINSIC-NOTEQUAL = if
+            // -------- Intrinsic '!=' --------
+
+            // TODO: Check the type of arguments.
+            local-stack-length @64 2 < if
+              LOG.ERR log-stream fputs "Intrinsic '!=' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
+              token-address log-stream fput-here
+              1 call-sys-exit
+            end
+
+            "    pop     rax\n"         output-file fputs
+            "    sub     [rsp], rax\n"  output-file fputs
+
+            local-stack local-stack-length queue64.pop-last mfree
+            local-stack local-stack-length queue64.pop-last mfree
+            create-bool local-stack local-stack-length queue64.append
+
+          else token-arg INTRINSIC-LESS = if
+            // -------- Intrinsic '<' --------
+
+            // TODO: Check the type of arguments.
+            local-stack-length @64 2 < if
+              LOG.ERR log-stream fputs "Intrinsic '<' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
+              token-address log-stream fput-here
+              1 call-sys-exit
+            end
+
+            "    pop     rax\n"               output-file fputs
+            "    pop     rbx\n"               output-file fputs
+            "    sub     rax, rbx\n"          output-file fputs
+            "    pushf\n"                     output-file fputs
+            "    and     qword [rsp], 0x80\n" output-file fputs
+
+            local-stack local-stack-length queue64.pop-last mfree
+            local-stack local-stack-length queue64.pop-last mfree
+            create-bool local-stack local-stack-length queue64.append
+            
+          else token-arg INTRINSIC-SYSCALL3 = if
             // -------- Intrinsic 'syscall3' --------
-            
-            // TODO: Add checks for the stack length.
-            local-stack local-stack-length queue64.pop-last dup "rax" output-file token-address procedure-name procedure-address log-stream move-value-to-register mfree
-            local-stack local-stack-length queue64.pop-last dup "rdx" output-file token-address procedure-name procedure-address log-stream move-value-to-register mfree
-            local-stack local-stack-length queue64.pop-last dup "rsi" output-file token-address procedure-name procedure-address log-stream move-value-to-register mfree
-            local-stack local-stack-length queue64.pop-last dup "rdi" output-file token-address procedure-name procedure-address log-stream move-value-to-register mfree
-            
+
+            // TODO: Check the type of arguments.
+            local-stack-length @64 4 < if
+              LOG.ERR log-stream fputs "'syscall3' requires 4 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
+              token-address log-stream fput-here
+              1 call-sys-exit
+            end
+
+            "    pop     rax\n" output-file fputs
+            "    pop     rdx\n" output-file fputs
+            "    pop     rsi\n" output-file fputs
+            "    pop     rdi\n" output-file fputs
             "    syscall\n"     output-file fputs
             "    push    rax\n" output-file fputs
 
-            create-real-int local-stack local-stack-length queue64.append
+            local-stack local-stack-length queue64.pop-last mfree
+            local-stack local-stack-length queue64.pop-last mfree
+            local-stack local-stack-length queue64.pop-last mfree
+            local-stack local-stack-length queue64.pop-last mfree
+            create-int local-stack local-stack-length queue64.append
             
           else
             LOG.TODO log-stream fputs "Intrinsic '" log-stream fputs token-arg log-stream fput-intrinsic "' is not implemented yet.\n" log-stream fputs
             token-address log-stream fput-here
             procedure-name procedure-address log-stream fput-inside-procedure
             1 call-sys-exit
-          end end
-        else token-type TYPE-KEYWORD = if
+          end end end end end
+          
+        else token-type TYPE-KEYWORD = if          
           token-arg KEYWORD-END = if
-            break
+            // -------- Keyword 'end' --------
+            
+            levels-length @64 is-zero if
+              // -------- End of 'proc' --------
+              
+              return
+            end
+            
+            levels-array levels-length queue64.pop-last let level in
+              level @64 level 8 + @64 let start-keyword start-address in                
+                start-keyword KEYWORD-IF = if
+                  // -------- End of 'if' --------
+                  // TODO: Check the stack.
+
+                  level 16 + @64 level 24 + @64 let start-id start-stack in
+                    "    .level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
+                    
+                    start-stack   mfree
+                  end
+                else start-keyword KEYWORD-LET = if
+                  // -------- End of 'let' --------
+
+                  level 16 + @64 level 24 + @64 let new-names old-local-memory-end in
+                    0 while dup new-names mlength 8 / < do let i in i 8 * new-names + @64 let name in
+                      name let-names let-addresses let-vars-length str-map64.remove ! if
+                        LOG.ERR log-stream fputs "Could not find the 'let' variable name '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
+                        token-address log-stream fput-here
+                        start-address log-stream fput-here
+                        procedure-name procedure-address log-stream fput-inside-procedure
+                      end
+
+                      // Free the space allocated for the name for each variable.
+                      name mfree
+                    end i end inc end drop
+
+                    old-local-memory-end local-memory-end !64
+
+                    new-names     mfree
+                  end
+                  
+                else
+                  LOG.TODO log-stream fputs "Finisher of keyword '" log-stream fputs start-keyword log-stream fput-keyword "' is not implemented yet.\n" log-stream fputs
+                  token-address log-stream fput-here
+                  start-address log-stream fput-here
+                  procedure-name procedure-address log-stream fput-inside-procedure
+                  1 call-sys-exit
+                end end
+
+                start-address mfree
+              end
+
+              level mfree
+            end
+
+          else token-arg KEYWORD-IF = if
+            // -------- Keyword 'if' --------
+
+            "    pop     rax\n"      output-file fputs
+            "    test    rax, rax\n" output-file fputs
+            "    jz      .level_"    output-file fputs level-id-counter @64 output-file fputu "\n" output-file fputs
+
+            local-stack-length @64 is-zero if
+              LOG.ERR log-stream fputs "'if' requires a bool, there was no items in the stack.\n" log-stream fputs
+              token-address log-stream fput-here
+              procedure-name procedure-address log-stream fput-inside-procedure
+              1 call-sys-exit
+            end
+            
+            local-stack local-stack-length queue64.pop-last mfree
+            
+            local-stack local-stack-length @64 8 * to-dynamic let copy-stack in
+              copy-stack is-null if
+                "'malloc' failed while copying the stack for 'if'.\n" eputs
+                1 call-sys-exit
+              end
+
+              32 malloc let obj in
+                obj is-null if
+                  "'malloc' failed while creating a level object for 'if'.\n" eputs
+                  1 call-sys-exit
+                end
+
+                KEYWORD-IF           obj      !64
+                token-address        obj 8  + !64
+                level-id-counter @64 obj 16 + !64
+                copy-stack           obj 24 + !64
+                
+                level-id-counter @inc64
+                
+                obj levels-array levels-length queue64.append
+              end
+            end
+
+          else token-arg KEYWORD-LET = if
+            // -------- Keyword 'let' --------
+
+            // New names are stored in new-names and new-names-length queue. When the 'end' of 'let' is reached, new names are deleted from the namespace.
+            memory new-names        sizeof(ptr) VARS-MAX-ONCE * and
+                   new-names-length sizeof(int)                 in
+
+              0 new-names-length !64
+
+              32 malloc let obj in
+                //  0- 7 -> KEYWORD-LET
+                //  8-15 -> Starter address
+                // 16-23 -> New names
+                // 24-31 -> Old local-memory-end
+
+                obj is-null if
+                  "'malloc' failed while creating a level object for 'let'.\n" eputs
+                  1 call-sys-exit
+                end
+                
+                KEYWORD-LET          obj      !64
+                token-address        obj  8 + !64
+                local-memory-end @64 obj 24 + !64
+
+                while true do
+                  source-name source-file line-no char-no log-stream get-next-token ! if
+                    LOG.ERR log-stream fputs "Reached EOF while expecting a name for let variable.\n" log-stream fputs
+                    token-address log-stream fput-here
+                    procedure-name procedure-address log-stream fput-inside-procedure
+                    1 call-sys-exit
+                  end
+
+                  let new-token-type new-token-address new-token-arg in
+                    new-token-type TYPE-KEYWORD = if
+                      new-token-arg KEYWORD-IN != if
+                        LOG.ERR log-stream fputs "Unexpected keyword while expecting a name for 'let' variable or 'in', got '" log-stream fputs new-token-arg log-stream fput-keyword "'.\n" log-stream fputs
+                        new-token-address log-stream fput-here
+                        token-address log-stream fput-here
+                        procedure-name procedure-address log-stream fput-inside-procedure
+                        1 call-sys-exit
+                      end
+
+                      new-token-address mfree
+
+                      break
+
+                    else new-token-type TYPE-NAME = if
+                      local-stack local-stack-length queue64.pop-last drop
+
+                      "    pop     qword [local_ptr" output-file fputs local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "]\n" output-file fputs
+
+                      new-names-length VARS-MAX-ONCE = if
+                        "new-names-length was equal to VARS-MAX-ONCE.\n" eputs
+                        1 call-sys-exit
+                      end
+
+                      new-token-arg new-names new-names-length queue64.append
+                      new-token-arg local-memory-end @64 let-names let-addresses let-vars-length str-map64.set drop
+                      local-memory-end @64 8 + local-memory-end !64
+
+                      new-token-address mfree
+
+                    else
+                      LOG.ERR log-stream fputs "Unexpected type while expecting a name for 'let' variable or 'in', got '" log-stream fputs new-token-type log-stream fput-type "'.\n" log-stream fputs
+                      new-token-address log-stream fput-here
+                      token-address log-stream fput-here
+                      procedure-name procedure-address log-stream fput-inside-procedure
+                      1 call-sys-exit
+                    end end
+                  end
+                end
+
+                new-names new-names-length @64 8 * to-dynamic let new in
+                  new is-null if
+                    "'malloc' failed while allocating space for new names after 'let'.\n" eputs
+                    1 call-sys-exit
+                  end
+
+                  new obj 16 + !64
+                end
+
+                obj levels-array levels-length queue64.append
+              end
+            end
+            
           else
             LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
             token-address log-stream fput-here
             procedure-name procedure-address log-stream fput-inside-procedure
             1 call-sys-exit
-          end
+          end end end
+          
         else
-          LOG.ERR log-stream fputs "Unexpected type, got '" log-stream fputs token-type log-stream fput-type "'.\n" log-stream fputs
+          LOG.ERR log-stream fputs "Unexpected type while expecting a keyword, an intrinsic, a string or an integer, got '" log-stream fputs token-type log-stream fput-type "'.\n" log-stream fputs
           token-address log-stream fput-here
           procedure-name procedure-address log-stream fput-inside-procedure
           1 call-sys-exit
         end end end end
       end
     end
-
-    "
-.return:
-    xchg    rsp, [call_ptr]
-    pop     QWORD [local_ptr]
-    pop     rax
-    xchg    rsp, [call_ptr]
-    jmp     rax
-" output-file fputs
   end
-end end end
+end end
 
 
 proc compile-file
@@ -679,28 +883,25 @@ in let
       1 call-sys-exit
     end
 
-"
-segment .text
-global _start
+    "segment .text\n"                                   output-file fputs
+    "global _start\n"                                   output-file fputs
 
-_start:
-    mov     QWORD [call_ptr], call_stack
-    add     QWORD [call_ptr], 0x4000
-    mov     QWORD [local_ptr], local_memory
+    "_start:\n"                                         output-file fputs
+    "    mov     qword [call_ptr], call_stack\n"        output-file fputs
+    "    add     qword [call_ptr], 0x4000\n"            output-file fputs
+    "    mov     qword [local_ptr], local_memory\n"     output-file fputs
 
-    xchg    rsp, [call_ptr]
-    push    corth_endofprogram
-    push    QWORD [local_ptr]
-    xchg    rsp, [call_ptr]
-    jmp     proc_main
+    "    xchg    rsp, [call_ptr]\n"                     output-file fputs
+    "    push    corth_endofprogram\n"                  output-file fputs
+    "    push    qword [local_ptr]\n"                   output-file fputs
+    "    xchg    rsp, [call_ptr]\n"                     output-file fputs
+    "    jmp     proc_main\n"                           output-file fputs
 
-corth_endofprogram:
-    mov     rax, 60
-    pop     rdi
-    syscall
+    "corth_endofprogram:\n"                             output-file fputs
+    "    mov     rax, 60\n"                             output-file fputs
+    "    pop     rdi\n"                                 output-file fputs
+    "    syscall\n"                                     output-file fputs
 
-" output-file fputs
-    
     memory line-no sizeof(int) and
            char-no sizeof(int) in
 
@@ -859,7 +1060,7 @@ corth_endofprogram:
                     end
                   end
 
-                  new-macro-tokens-array new-macro-tokens-length @64 to-dynamic
+                  new-macro-tokens-array new-macro-tokens-length @64 8 * to-dynamic
                 end 
 
                 let macro-tokens in
@@ -944,22 +1145,77 @@ corth_endofprogram:
                         // TODO: Check if the output queue was filled.
                         output-token-arg outputs-array outputs-length queue64.append
                       else
-                        "Expected a 'type' for output type, got '" log-stream fputs output-token-type log-stream fput-type "'.\n" log-stream fputs
+                        LOG.ERR log-stream fputs "Expected a 'type' for output type, got '" log-stream fputs output-token-type log-stream fput-type "'.\n" log-stream fputs
                         output-token-address log-stream fput-here
                         1 call-sys-exit
                       end end
                     end
                   end
 
-                  source-name source-file output-file
-                  line-no char-no
-                  data-definitions-array datas-length
-                  global-names-array global-sizes-array globals-length
-                  macro-names-array macro-tokens-array macros-length
-                  proc-name-token-arg proc-name-token-address
-                  inputs-array inputs-length
-                  log-stream
-                  compile-procedure
+                  memory local-stack        sizeof(int) STACK-MAX-ITEMS * and
+                         local-stack-length sizeof(int)                   in
+
+                    0 local-stack-length !64
+
+                    // TODO: This system must be changed.
+                    0 while dup inputs-length @64 < do let i in
+                      inputs-array i 8 * + @64 let type in
+                        type TYPE-INT = if
+                          create-int local-stack local-stack-length queue64.append
+                        else type TYPE-BOOL = if
+                          create-bool local-stack local-stack-length queue64.append
+                        else
+                          "This error is probably caused by a bug in the compiler.\n" eputs
+                          1 call-sys-exit
+                        end end
+                      end
+                    i end inc end drop
+
+                    source-name source-file output-file
+                    line-no char-no
+                    data-definitions-array datas-length
+                    global-names-array global-sizes-array globals-length
+                    macro-names-array macro-tokens-array macros-length
+                    proc-name-token-arg proc-name-token-address
+                    local-stack local-stack-length
+                    log-stream
+                    compile-procedure
+                    
+                    ".return:\n"                        output-file fputs
+                    "    xchg    rsp, [call_ptr]\n"     output-file fputs
+                    "    pop     qword [local_ptr]\n"   output-file fputs
+                    "    pop     rax\n"                 output-file fputs
+                    "    xchg    rsp, [call_ptr]\n"     output-file fputs
+                    "    jmp     rax\n"                 output-file fputs
+
+                    // TODO: This system must be changed.
+                    memory temp-outputs-length sizeof(ptr) in
+                      outputs-length @64 temp-outputs-length !64
+                      while local-stack-length @64 isn-zero do
+                        local-stack local-stack-length queue64.pop-last let type in
+                          temp-outputs-length @64 is-zero if
+                            LOG.ERR log-stream fputs "Procedure's stack is too large for its returns.\n" log-stream fputs LOG.RESET log-stream fputs
+                            proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
+                            1 call-sys-exit
+                          end
+                          
+                          outputs-array temp-outputs-length queue64.pop-last let check in
+                            type @64 check != if
+                              LOG.ERR log-stream fputs "Procedure's stack is not matching with its return types.\n" log-stream fputs LOG.RESET log-stream fputs
+                              proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
+                              1 call-sys-exit
+                            end
+                          end
+                        end
+                      end
+
+                      temp-outputs-length @64 isn-zero if
+                        LOG.ERR log-stream fputs "Procedure's stack is missing some of its returns.\n" log-stream fputs LOG.RESET log-stream fputs
+                        proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
+                        1 call-sys-exit
+                      end
+                    end
+                  end
                 end
 
                 proc-name-token-address mfree
@@ -981,7 +1237,7 @@ corth_endofprogram:
       end drop drop drop
     end
 
-    "\nsegment .data\n" output-file fputs
+    "segment .data\n" output-file fputs
     0 while dup datas-length @64 < do let i in
       "    data_" output-file fputs i output-file fputu ": db " output-file fputs
       data-definitions-array i 8 * + @64 let data in
@@ -989,7 +1245,6 @@ corth_endofprogram:
           j data + @8 output-file fputu ", " output-file fputs
         j end inc end drop
       end
-      // output-file 2 neg SEEK-CUR fseek drop
       "\n" output-file fputs
     i end inc end drop
 
@@ -1003,7 +1258,7 @@ segment .bss
     call_ptr:       resq 1
 " output-file fputs
     
-    source-file fclose
+    source-file fclose drop
   end
 end end
 
@@ -1017,14 +1272,20 @@ in let argc argv in
   // Make file name dynamic.
   SOURCE-NAME to-dynamic let source-name in
     source-name is-null if
-      "'malloc' failed while making the source name dynamic.\n" puts
+      "'malloc' failed while making the source name dynamic.\n" eputs
+      1 call-sys-exit
+    end
+    
+    OUTPUT-NAME drop unlink drop
+    OUTPUT-NAME drop 0o777 creat dup isn-pos if
+      "Could not create output file.\n" eputs
       1 call-sys-exit
     end
 
-    OUTPUT-NAME inc to-dynamic fopen-write let output in
+    let output in
       // Check if the file is opened successfully.
       output isn-pos if
-        "Could not open output file.\n" puts
+        "Could not open output file.\n" eputs
         1 call-sys-exit
       end
  
@@ -1055,7 +1316,7 @@ in let argc argv in
         compile-file
       end
       
-      output fclose
+      output fclose drop
     end
   end
 end 0 end

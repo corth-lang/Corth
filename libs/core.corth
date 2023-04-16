@@ -20,7 +20,7 @@ macro INPUT-TOO-BIG    0x0000000000000002 endmacro
 macro >  swp < endmacro
 macro >= < !   endmacro
 macro <= > !   endmacro
-macro != = !   endmacro
+macro =  != !  endmacro
 
 // int: x -- bool: f(x)
 macro is-pos   0 >  endmacro
@@ -46,16 +46,20 @@ macro iabs   dup is-pos if neg end endmacro
 macro sqr    dup *                 endmacro
 macro usqr   dup u*                endmacro
 
+macro int-to-bin-digit '0' +                         endmacro
+macro int-to-oxt-digit '0' +                         endmacro
 macro int-to-dec-digit '0' +                         endmacro
 macro int-to-hex-digit dup 9 > if 'W' else '0' end + endmacro
 
+macro bin-digit-to-int '0' -                         endmacro
+macro oct-digit-to-int '0' -                         endmacro
 macro dec-digit-to-int '0' -                         endmacro
 
 // bool: a bool: b -- bool: f(a, b)
 macro ! if false else true end endmacro
 macro | if drop true else end endmacro
 macro & if else drop false end endmacro
-macro ^ if ! else endmacro
+macro ^ if ! else end endmacro
 
 // Macros below use let, with variable names _a_, _b_, _c_ and _d_. Avoid using those names if going to use those macros.
 // (I mean, what kind of a person uses a variable name like that already but whatever)
@@ -74,8 +78,8 @@ macro rot4  let _a_ _b_ _c_ _d_ in _b_ _c_ _d_ _a_ end endmacro
 macro arot4 let _a_ _b_ _c_ _d_ in _d_ _a_ _b_ _c_ end endmacro
 macro mirr  let _a_ _b_ _c_     in _c_ _b_ _a_     end endmacro
 
-macro is-range  let _a_ _b_ _c_ in _a_ _b_ < if false else _c_ _a_ < if false else true  end end end endmacro // int: x int: min int: max -- bool: x in [min, max]
-macro isn-range let _a_ _b_ _c_ in _a_ _b_ < if true  else _c_ _a_ < if true  else false end end end endmacro // int: x int: min int: max -- bool: x in [min, max]
+macro is-range  let _a_ _b_ _c_ in _a_ _b_ < if false else _a_ _c_ < end end endmacro // int: x int: min int: max -- bool:  (x in [min, max])
+macro isn-range let _a_ _b_ _c_ in _a_ _b_ < if true  else _c_ _a_ < end end endmacro // int: x int: min int: max -- bool: !(x in [min, max])
 
 macro lower-base
   // int: x int: b -- int: lower-base(x, b)
@@ -143,9 +147,9 @@ macro sort2
   end
 endmacro
 
-// Sorts from least to greatest
-// If there was just a tiny amount of optimization, could write this using sort2
-// But here we are making a 38 line sorting algoritm
+// Sorts from least to greatest.
+// If there was just a tiny amount of optimization, could write this using sort2.
+// But here we are making a 38 line sorting algoritm.
 macro sort3
   // int: x int: y int: z -- int: min(x, y, z) int: mid(x, y, z) int: max(x, y, z)
   let _a_ _b_ _c_ in
@@ -221,16 +225,14 @@ proc gcd
   // int: x int: y -- int: gcd(x, y)
   int int -- int
   // NOTE: x < y must be already satisfied otherwise will go in an infinite recursion loop.
-in
-  let x y in
-    x 0 = if
-      y
-    else
-      // y%x < x is always true, so no need to sort again.
-      y x % x gcd
-    end
+in let x y in
+  x 0 = if
+    y
+  else
+    // y%x < x is always true, so no need to sort again.
+    y x % x gcd
   end
-end
+end end
 
 macro lcm
   // int: x int: y -- int: lcd(x, y)
