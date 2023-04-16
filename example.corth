@@ -7,10 +7,27 @@ endmacro
 
 memory global-var 100 end
 
+
 proc main
   int int -- int
 in let argc argv in
-  1 "Hello, World!
-" 1 syscall3
-end end
+
+  memory buffer 8  in  // FIXME: Seems like the str-map64.set function is not working properly. Order of the variables should be 'buffer', 'i', 'value'; but it is 'i', 'value', 'buffer'. This might be caused by both str-map64.set function itself, dmemlt8.
+  memory value  8  in
+  memory i      8  in
+
+    18 value !64
+    buffer 19 + i !64
+
+    while
+      value @64 10 /%
+      int-to-dec-digit i @64 !8
+      i @64 dec i !64
+      dup value !64 0 !=
+    do end
+
+    1 i @64 inc buffer 19 + i @64 - 1 syscall3
+    
+  end end end
+end 0 end
 
