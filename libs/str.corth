@@ -56,12 +56,12 @@ in
         i @8 '0' '9' is-range if
           i @8 '0' - number @64 16 * + number !64
         else i @8 'a' 'f' is-range if
-          i @8 'a' - number @64 16 * + number !64
+          i @8 'W' - number @64 16 * + number !64
         else i @8 'A' 'F' is-range if
-          i @8 'A' - number @64 16 * + number !64
+          i @8 '7' - number @64 16 * + number !64
         else
           0 false return
-        end end end
+        end end end 
       i end inc end drop
     end
 
@@ -144,11 +144,11 @@ end
 proc str.to-int
   // ptr: start int: length -- int: number bool: correct
   ptr int -- int bool
-  // Converts a character array of any base (binary, octal, decimal, hexadecimal) to an integer..
+  // Converts a character array of any base (binary, octal, decimal, hexadecimal) to an integer.
   // If the conversion can not be done, returns 0.
   // NOTE: If the number is too big, the result will be wrong.
 in let start length in
-  start @8 '0' = if
+  length 2 > start @8 '0' = & if
     start inc @8 let base in
       base 'x' = if
         start 2 + length 2 - str.hex-to-int
