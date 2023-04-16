@@ -29,6 +29,11 @@ macro SYSNANOSLEEP  35 endmacro
 
 macro SYSEXIT       60 endmacro
 
+macro SYSRMDIR      84 endmacro
+macro SYSCREAT      85 endmacro
+macro SYSLINK       86 endmacro
+macro SYSUNLINK     87 endmacro
+
 macro SYSGETTOD     96 endmacro
 
 macro SYSSETTOD    164 endmacro
@@ -98,7 +103,7 @@ endmacro
 macro fclose
   // file-desc: file-desc
   // Closes a file stream.
-  SYSCLOSE syscall1 drop
+  SYSCLOSE syscall1
 endmacro
 
 macro set-nanosleep-time
@@ -122,4 +127,19 @@ endmacro
 macro time
   // -- int: time
   NULLPTR SYSTIME syscall1
+endmacro
+
+macro rmdir
+  // ptr: path -- int: success
+  SYSRMDIR syscall1
+endmacro
+
+macro creat
+  // ptr: path int: mode -- int: success
+  SYSCREAT syscall2
+endmacro
+
+macro unlink
+  // ptr: path -- int: success
+  SYSUNLINK syscall1
 endmacro
