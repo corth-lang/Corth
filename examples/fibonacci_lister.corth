@@ -25,10 +25,7 @@ proc main
   int int -- int
 in let argc argv in
   memory a sizeof(int) and
-         b sizeof(int) and
-         i sizeof(int) in
-         
-    10 i !64
+         b sizeof(int) in
 
     1 a !64
     1 b !64

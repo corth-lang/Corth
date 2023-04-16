@@ -4,9 +4,9 @@ proc main
   int int -- int
 in let argc argv in
   "Enter A: " puts
-  geti
+  while geti ! do drop end
   "Enter B: " puts
-  geti
+  while geti ! do drop end
 
   let a b in
     a puti " times " puts b puti " is " puts a b * puti "\n" puts

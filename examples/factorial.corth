@@ -7,7 +7,9 @@ proc main
   int int -- int
 in let argc argv in
   "Enter a number: " puts
-  getu let number in
+  while getu ! do drop end
+  let number in
     "Factorial of " puts number putu " is " puts number fact putu "\n" puts
   end
 end 0 end
+

@@ -1,0 +1,35 @@
+include libs/linux_x86/io.corth
+
+macro malloc.ARRAY-SIZE       0x4000 endmacro
+macro malloc.AVAIL-QUEUE-SIZE 0x100  endmacro
+include libs/dynamic/malloc.corth
+
+proc main
+  int int -- int
+in let argc argv in
+  malloc.init
+
+  56 malloc let a in
+    56 malloc let b in
+      56 malloc let c in 
+        56 malloc let d in
+          56 malloc let e in
+            56 malloc let f in
+              56 malloc let g in
+                56 malloc let h in
+                  a mfree
+                  c mfree
+                  e mfree
+                  g mfree
+                  debug-dynamic-memory
+                  b mfree
+                  debug-dynamic-memory
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+end 0 end

@@ -4,9 +4,9 @@ proc main
   int int -- int
 in let argc argv in
   "Enter A: " puts
-  getu
+  while getu ! do drop end
   "Enter B: " puts
-  getu
+  while getu ! do drop end
 
   let a b in
     "P(" puts a putu ", " puts b putu ") = " puts a b perm putu "\n" puts
