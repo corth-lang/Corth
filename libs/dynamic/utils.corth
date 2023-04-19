@@ -38,8 +38,10 @@ proc dresize
   // ptr: x int: length -- ptr: y
   ptr int -- ptr
   // Resizes x and creates a new dynamicly-placed collection.
+  // If the new size is less than the older size, object will be cut from its most significant bits.
+  // If the new size is greater than the older size, new bits will be object's most significant bits. (But they won't be set or reset)
 in let old length in
-  // Create a new object
+  // Create a new object.
   length malloc
   let new in
     old new length old mlength min2 memcpy8 new
@@ -47,14 +49,21 @@ in let old length in
 end end
 
 
-macro dcopy
+macro dcopy8
   // ptr: x -- ptr: y
   // Copies a dynamicly-placed collection.
-  dup mlength to-dynamic
+  dup mlength to-dynamic8
 endmacro
 
 
-proc to-dynamic
+macro dcopy64
+  // ptr: x -- ptr: y
+  // Copies a dynamicly-placed collection.
+  dup mlength to-dynamic64
+endmacro
+
+
+proc to-dynamic8
   // ptr: start int: length -- ptr: x
   ptr int -- ptr
   // Creates a dynamicly-placed collection from a static or dynamic collection.
@@ -67,7 +76,20 @@ in let start length in
 end end
 
 
-proc djoin
+proc to-dynamic64
+  // ptr: start int: length -- ptr: x
+  ptr int -- ptr
+  // Creates a dynamicly-placed collection from a static or dynamic collection.
+in let start length in
+  length 8 * malloc let new in
+    new isn-null if
+      start new length memcpy64
+    end new
+  end
+end end
+
+
+proc djoin8
   // ptr: a ptr: b -- ptr: join(a, b)
   ptr ptr -- ptr
   // Joins two dynamicly-placed collections.
@@ -81,12 +103,26 @@ in let a-start b-start in
 end end
 
 
+proc djoin64
+  // ptr: a ptr: b -- ptr: join(a, b)
+  ptr ptr -- ptr
+  // Joins two dynamicly-placed collections.
+in let a-start b-start in
+  a-start mlength b-start mlength let a-length b-length in
+    a-length b-length + malloc let result in
+      a-start result            a-length 8 / memcpy64
+      b-start result a-length + b-length 8 / memcpy64
+    result end
+  end
+end end
+
+
 proc add-null
   // ptr: x -- ptr: x + {0}
   ptr -- ptr
   // Copies a dynamicly-placed collection, with a null-char at the end.
 in let old in
-  old old mlength inc to-dynamic let new in
+  old old mlength inc to-dynamic8 let new in
     0 new old mlength + !8 new
   end
 end end
@@ -94,8 +130,6 @@ end end
 
 // These macros compare two dynamicly-placed collections.
 // See memeq8, memeq64, memlt8 and memlt64 from ./libs/memory.corth.
-
-
 // ptr: a ptr: b -- bool: cmp(a, b)
 macro dmemeq8  let _a_ _b_ in _a_ _a_ mlength     _b_ _b_ mlength     memeq8  end endmacro
 macro dmemeq64 let _a_ _b_ in _a_ _a_ mlength 8 / _b_ _b_ mlength 8 / memeq64 end endmacro
