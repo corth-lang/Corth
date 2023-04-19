@@ -24,6 +24,8 @@ macro LOG.HERE  "\x1b[1;32m[HERE] "              endmacro
 macro LOG.LINE  "\x1b[0;37m"                     endmacro
 
 
+// TODO: Create procedures that can check the type and argument of the tokens.
+
 proc generate-address
   // ptr: file-name int: start-line int: start-char int: start-at int: end-line int: end-char int: end-at file-desc: log-stream -- ptr: address
   ptr int int int int int int file-desc -- ptr

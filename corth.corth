@@ -37,6 +37,7 @@ macro LET-MAX-COUNT       0x400  endmacro
 macro LOCALS-MAX-COUNT    0x400  endmacro
 macro VARS-MAX-ONCE       0x10   endmacro
 
+macro EXTENDED-MAX-LENGTH 0x4000 endmacro
 macro TOKEN-MAX-LENGTH    0x4000 endmacro
 macro MACRO-MAX-TOKENS    0x4000 endmacro
 macro PROC-MAX-IO         0x100  endmacro
@@ -272,7 +273,7 @@ in let file-name file start-line start-char start-at line-no char-no buffer buff
     else buffer buffer-size TYPE-BOOL-STR          memeq8 if TYPE-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address TYPE-BOOL          true
     else
       // Return token type, address and argument.
-      TYPE-NAME file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address buffer buffer-size to-dynamic true
+      TYPE-NAME file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address buffer buffer-size to-dynamic8 true
 
     // This is nightmare fuel.
     end end end end end end end end end end end end end end end end end
@@ -365,7 +366,7 @@ in let file-name file line-no char-no log-stream in
         file line-no char-no buffer buffer-end log-stream parse-next-string
 
         // Return token type, address and argument.
-        TYPE-STRING file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address buffer buffer-end @64 buffer - to-dynamic true
+        TYPE-STRING file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address buffer buffer-end @64 buffer - to-dynamic8 true
         
       else buffer @8 CHAR-SLASH = if
         // -------- Slash (Name and comments) --------
@@ -560,7 +561,7 @@ in let
     "    mov     rax, [rsp+8]\n"    output-file fputs
     "    idiv    rbx\n"             output-file fputs
     "    mov     [rsp+8], rax\n"    output-file fputs
-    "    mov     [rsp], rdx\n\n"    output-file fputs
+    "    mov     [rsp], rdx\n"      output-file fputs
     
     local-stack local-stack-length queue64.pop-last mfree
     local-stack local-stack-length queue64.pop-last mfree
@@ -604,6 +605,41 @@ in let
     local-stack local-stack-length queue64.pop-last mfree
     create-bool local-stack local-stack-length queue64.append
 
+  else token-arg INTRINSIC-LOAD8 = if
+    // -------- Intrinsic '@8' --------
+    
+    // TODO: Check the type of arguments.
+    local-stack-length @64 is-zero if
+      LOG.ERR log-stream fputs "Intrinsic '@8' requires an integer, there was no item in the stack.\n" log-stream fputs
+      token-address log-stream fput-here
+      1 call-sys-exit
+    end
+
+    "    xor     rax, rax\n"      output-file fputs
+    "    pop     rbx\n"           output-file fputs
+    "    mov     al, byte[rbx]\n" output-file fputs
+    "    push    rax\n"           output-file fputs
+
+    local-stack local-stack-length queue64.pop-last mfree
+    create-int local-stack local-stack-length queue64.append
+
+  else token-arg INTRINSIC-STORE8 = if
+    // -------- Intrinsic '!8' --------
+
+    // TODO: Check the type of arguments.
+    local-stack-length @64 2 < if
+      LOG.ERR log-stream fputs "Intrinsic '!8' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
+      token-address log-stream fput-here
+      1 call-sys-exit
+    end
+
+    "    pop     rax\n"            output-file fputs
+    "    pop     rbx\n"            output-file fputs
+    "    mov     byte [rax], bl\n" output-file fputs
+
+    local-stack local-stack-length queue64.pop-last mfree
+    local-stack local-stack-length queue64.pop-last mfree
+
   else token-arg INTRINSIC-LOAD64 = if
     // -------- Intrinsic '@64' --------
     
@@ -614,8 +650,8 @@ in let
       1 call-sys-exit
     end
 
-    "    pop     rax\n"   output-file fputs
-    "    push    [rax]\n" output-file fputs
+    "    pop     rax\n"         output-file fputs
+    "    push    qword [rax]\n" output-file fputs
 
     local-stack local-stack-length queue64.pop-last mfree
     create-int local-stack local-stack-length queue64.append
@@ -664,7 +700,7 @@ in let
     token-address log-stream fput-here
     procedure-name procedure-address log-stream fput-inside-procedure
     1 call-sys-exit
-  end end end end end end end end
+  end end end end end end end end end end
 end end
 
 
@@ -826,13 +862,60 @@ in let
               level @64 level 8 + @64 let start-keyword start-address in                
                 start-keyword KEYWORD-IF = if
                   // -------- End of 'if' --------
-                  // TODO: Check the stack.
+                  // TODO: Check for stack change.
 
                   level 16 + @64 level 24 + @64 let start-id start-stack in
                     "    .level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
 
                     start-stack   mfree
                   end
+
+                else start-keyword KEYWORD-WHILE = if
+                  // -------- End of 'while' --------
+                  LOG.ERR  log-stream fputs "You probably forgot a 'do' after 'while'.\n" log-stream fputs
+                  LOG.INFO log-stream fputs "A while-do loop can be created as: 'while <condition> do <code> end'\n" log-stream fputs
+                  token-address log-stream fput-here
+                  start-address log-stream fput-here
+                  procedure-name procedure-address log-stream fput-inside-procedure
+                  1 call-sys-exit
+
+                else start-keyword KEYWORD-DO = if
+                  // -------- End of 'do' --------
+                  level 16 + @64 level 24 + @64 let  start-id start-stack in
+                    levels-length @64 is-zero if
+                      LOG.ERR  log-stream fputs "Expected a 'while' before 'do'.\n" log-stream fputs
+                      LOG.INFO log-stream fputs "A while-do loop can be created as: 'while <condition> do <code> end'\n" log-stream fputs
+                      token-address log-stream fput-here
+                      start-address log-stream fput-here
+                      procedure-name procedure-address log-stream fput-inside-procedure
+                    end
+
+                    levels-array levels-length queue64.pop-last let while-level in
+                      while-level @64 while-level 8 + @64 let while-keyword while-address in
+                        while-keyword KEYWORD-WHILE != if
+                          LOG.ERR  log-stream fputs "Expected a 'while' before 'do', got '" log-stream fputs while-keyword log-stream fput-keyword "'.\n" log-stream fputs
+                          LOG.INFO log-stream fputs "A while-do loop can be created as: 'while <condition> do <code> end'\n" log-stream fputs
+                          token-address log-stream fput-here
+                          while-address log-stream fput-here
+                          start-address log-stream fput-here
+                          procedure-name procedure-address log-stream fput-inside-procedure
+                        end
+
+                        while-level 16 + @64 while-level 24 + @64 let while-id while-stack in
+                          // TODO: Check for stack changes.
+
+                          "    jmp     .level_" output-file fputs while-id output-file fputu "\n"  output-file fputs
+                          ".level_"             output-file fputs start-id output-file fputu ":\n" output-file fputs
+
+                          start-stack local-stack start-stack mlength 8 / memcpy64
+                          start-stack mlength 8 / local-stack-length !64
+                          
+                          start-stack mfree
+                        end
+                      end
+                    end
+                  end
+
                 else start-keyword KEYWORD-LET = if
                   // -------- End of 'let' --------
 
@@ -844,6 +927,7 @@ in let
                         token-address log-stream fput-here
                         start-address log-stream fput-here
                         procedure-name procedure-address log-stream fput-inside-procedure
+                        1 call-sys-exit
                       end
 
                       // Free the space allocated for the name of each variable.
@@ -866,6 +950,7 @@ in let
                         token-address log-stream fput-here
                         start-address log-stream fput-here
                         procedure-name procedure-address log-stream fput-inside-procedure
+                        1 call-sys-exit
                       end
 
                       // Free the space allocated for the name of each variable.
@@ -883,7 +968,7 @@ in let
                   start-address log-stream fput-here
                   procedure-name procedure-address log-stream fput-inside-procedure
                   1 call-sys-exit
-                end end end
+                end end end end end
 
                 start-address mfree
               end
@@ -894,10 +979,6 @@ in let
           else token-arg KEYWORD-IF = if
             // -------- Keyword 'if' --------
 
-            "    pop     rax\n"      output-file fputs
-            "    test    rax, rax\n" output-file fputs
-            "    jz      .level_"    output-file fputs level-id-counter @64 output-file fputu "\n" output-file fputs
-
             local-stack-length @64 is-zero if
               LOG.ERR log-stream fputs "'if' requires a bool, there was no items in the stack.\n" log-stream fputs
               token-address log-stream fput-here
@@ -907,15 +988,19 @@ in let
 
             local-stack local-stack-length queue64.pop-last mfree
 
-            local-stack local-stack-length @64 8 * to-dynamic let copy-stack in
+            local-stack local-stack-length @64 to-dynamic64 let copy-stack in
               copy-stack is-null if
-                "'malloc' failed while copying the stack for 'if'.\n" eputs
-                1 call-sys-exit
+                  LOG.ERR log-stream fputs "'malloc' failed while copying the stack for 'if'.\n" log-stream fputs
+                  token-address log-stream fput-here
+                  procedure-name procedure-address log-stream fput-inside-procedure
+                  1 call-sys-exit
               end
 
               32 malloc let obj in
                 obj is-null if
-                  "'malloc' failed while creating a level object for 'if'.\n" eputs
+                  LOG.ERR log-stream fputs "'malloc' failed while creating a level object for 'if'.\n" log-stream fputs
+                  token-address log-stream fput-here
+                  procedure-name procedure-address log-stream fput-inside-procedure
                   1 call-sys-exit
                 end
 
@@ -924,9 +1009,85 @@ in let
                 level-id-counter @64 obj 16 + !64
                 copy-stack           obj 24 + !64
 
+                obj levels-array levels-length queue64.append
+
+                "    pop     rax\n"      output-file fputs
+                "    test    rax, rax\n" output-file fputs
+                "    jz      .level_"    output-file fputs level-id-counter @64 output-file fputu "\n" output-file fputs
+
                 level-id-counter @inc64
+              end
+            end
+
+          else token-arg KEYWORD-WHILE = if
+            // -------- Keyword 'while' --------
+            local-stack local-stack-length @64 to-dynamic64 let copy-stack in
+              copy-stack is-null if
+                  LOG.ERR log-stream fputs "'malloc' failed while copying the stack for 'while'.\n" log-stream fputs
+                  token-address log-stream fput-here
+                  procedure-name procedure-address log-stream fput-inside-procedure
+                  1 call-sys-exit
+              end
+
+              32 malloc let obj in
+                obj is-null if
+                  LOG.ERR log-stream fputs "'malloc' failed while creating a level object for 'while'.\n" log-stream fputs
+                  token-address log-stream fput-here
+                  procedure-name procedure-address log-stream fput-inside-procedure
+                  1 call-sys-exit
+                end
+
+                KEYWORD-WHILE        obj      !64
+                token-address        obj 8  + !64
+                level-id-counter @64 obj 16 + !64
+                copy-stack           obj 24 + !64
 
                 obj levels-array levels-length queue64.append
+              end
+            end
+            
+            ".level_" output-file fputs level-id-counter @64 output-file fputu ":\n" output-file fputs
+            level-id-counter @inc64
+
+          else token-arg KEYWORD-DO = if
+            // -------- Keyword 'do' --------
+            local-stack-length @64 is-zero if
+              LOG.ERR log-stream fputs "'do' requires a bool, there was no items in the stack.\n" log-stream fputs
+              token-address log-stream fput-here
+              procedure-name procedure-address log-stream fput-inside-procedure
+              1 call-sys-exit
+            end
+
+            local-stack local-stack-length queue64.pop-last mfree
+            
+            local-stack local-stack-length @64 to-dynamic64 let copy-stack in
+              copy-stack is-null if
+                  LOG.ERR log-stream fputs "'malloc' failed while copying the stack for 'do'.\n" log-stream fputs
+                  token-address log-stream fput-here
+                  procedure-name procedure-address log-stream fput-inside-procedure
+                  1 call-sys-exit
+              end
+
+              32 malloc let obj in
+                obj is-null if
+                  LOG.ERR log-stream fputs "'malloc' failed while creating a level object for 'do'.\n" log-stream fputs
+                  token-address log-stream fput-here
+                  procedure-name procedure-address log-stream fput-inside-procedure
+                  1 call-sys-exit
+                end
+
+                KEYWORD-DO           obj      !64
+                token-address        obj 8  + !64
+                level-id-counter @64 obj 16 + !64
+                copy-stack           obj 24 + !64
+
+                obj levels-array levels-length queue64.append
+
+                "    pop     rax\n"      output-file fputs
+                "    test    rax, rax\n" output-file fputs
+                "    jz      .level_"    output-file fputs level-id-counter @64 output-file fputu "\n" output-file fputs
+
+                level-id-counter @inc64
               end
             end
 
@@ -1034,7 +1195,7 @@ in let
                   end
                 end
 
-                new-names new-names-length @64 8 * to-dynamic let new in
+                new-names new-names-length @64 to-dynamic64 let new in
                   new is-null if
                     LOG.ERR log-stream fputs "'malloc' failed while allocating space for new-names after 'memory'.\n" log-stream fputs
                     token-address log-stream fput-here
@@ -1130,7 +1291,7 @@ in let
                   end
                 end
 
-                new-names new-names-length @64 8 * to-dynamic let new in
+                new-names new-names-length @64 to-dynamic64 let new in
                   new is-null if
                     LOG.ERR log-stream fputs "'malloc' failed while allocating space for new-names after 'memory'.\n" log-stream fputs
                     token-address log-stream fput-here
@@ -1150,7 +1311,7 @@ in let
             token-address log-stream fput-here
             procedure-name procedure-address log-stream fput-inside-procedure
             1 call-sys-exit
-          end end end end
+          end end end end end end
 
         else
           LOG.ERR log-stream fputs "Unexpected type while expecting a keyword, an intrinsic, a string or an integer, got '" log-stream fputs token-type log-stream fput-type "'.\n" log-stream fputs
@@ -1219,8 +1380,10 @@ in let
     "    pop     rdi\n"                                 output-file fputs
     "    syscall\n"                                     output-file fputs
 
-    memory line-no sizeof(int) and
-           char-no sizeof(int) in
+    memory extended-tokens-array  sizeof(int) EXTENDED-MAX-LENGTH * and
+           extended-tokens-length sizeof(int)                       and
+           line-no                sizeof(int)                       and
+           char-no                sizeof(int)                       in
 
       // Reset line-no and char-no variables.
       1 line-no !64
@@ -1377,7 +1540,7 @@ in let
                     end
                   end
 
-                  new-macro-tokens-array new-macro-tokens-length @64 8 * to-dynamic
+                  new-macro-tokens-array new-macro-tokens-length @64 to-dynamic64
                 end 
 
                 let macro-tokens in
@@ -1595,7 +1758,7 @@ in let argc argv in
   malloc.init
 
   // Make file name dynamic.
-  SOURCE-NAME to-dynamic let source-name in
+  SOURCE-NAME to-dynamic8 let source-name in
     source-name is-null if
       "'malloc' failed while making the source name dynamic.\n" eputs
       1 call-sys-exit
