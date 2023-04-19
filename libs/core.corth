@@ -225,14 +225,17 @@ proc gcd
   // int: x int: y -- int: gcd(x, y)
   int int -- int
   // NOTE: x < y must be already satisfied otherwise will go in an infinite recursion loop.
-in let x y in
-  x 0 = if
-    y
-  else
-    // y%x < x is always true, so no need to sort again.
-    y x % x gcd
+in
+  while true do
+    let x y in
+      x is-zero if
+        y return
+      else
+        y x % x
+      end
+    end
   end
-end end
+drop end // dummy return
 
 macro lcm
   // int: x int: y -- int: lcd(x, y)
