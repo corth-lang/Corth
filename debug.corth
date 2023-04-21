@@ -210,3 +210,12 @@ in let address log-stream in
   LOG.HERE log-stream fputs address log-stream fput-address ":\n" log-stream fputs
   LOG.LINE log-stream fputs address log-stream fput-lines LOG.RESET log-stream fputs
 end end
+
+
+proc fput-inside-procedure
+  // ptr: procedure-name ptr: procedure-address file-desc: log-stream
+  ptr ptr file-desc --
+in let name address log-stream in
+  LOG.INFO log-stream fputs "Inside procedure '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
+  address log-stream fput-here
+end end

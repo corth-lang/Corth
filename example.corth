@@ -1,16 +1,14 @@
 // include libs/linux_x86/io.corth
 
-macro great-macro
-  1234 putu
-endmacro
-
 
 memory global-var 100 end
 
-macro puts
-  1 arot 1 syscall3 let x in end
-endmacro
+// TODO: There are some problems with the macros system. This example causes an error while it should not.
+macro drop  let _a_             in                 end endmacro
+macro dup   let _a_             in _a_ _a_         end endmacro
+macro arot  let _a_ _b_ _c_     in _c_ _a_ _b_     end endmacro
 
+macro fputs arot 1 syscall3 drop endmacro
 
 proc main
   int int -- int
@@ -27,11 +25,13 @@ in let argc argv in
       value @64 10 /%
       48 + i @64 !8
       i @64 1 - i !64
-      let x in x x end
-      value !64 0 !=
+      dup value !64 0 !=
     do end
 
-    1 i @64 1 + buffer 19 + i @64 - 1 syscall3 let x in end
+    i @64 1 + buffer 19 + i @64 - 1 fputs
+
+    "
+" 1 fputs
     
   end end end
 end 0 end

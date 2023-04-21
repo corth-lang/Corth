@@ -8,7 +8,7 @@ macro TYPE-STRING    5 endmacro
 macro TYPE-TYPE      6 endmacro
 
 // Type strings
-macro TYPE-UNKNOWN-STR   "null"      endmacro
+macro TYPE-UNKNOWN-STR   "<unknown>" endmacro
 macro TYPE-NAME-STR      "name"      endmacro
 macro TYPE-INTEGER-STR   "integer"   endmacro
 macro TYPE-KEYWORD-STR   "keyword"   endmacro
