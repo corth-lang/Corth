@@ -1,0 +1,112 @@
+include libs/memory.corth
+include libs/core.corth
+
+
+/*
+  Deque library for Corth.
+  
+  Deques (Double-ended queue) are staticly-placed data collections that allow appending and popping items from them.
+
+  Appending and popping an item to any end is O(1) while any other index is O(n).
+
+  start-index is the index of the first item, while end-index is the index of the last item plus 1.
+
+  Macro and procedures in this library are designed to have arguments in the form: *other, deque-array, start-index, end-index
+
+  The start address can be calculated as: deque + 8 * start-index
+  The end address can be calculated as:   deque + 8 * end-index
+  The length of a deque can be found as:  end-index - start-index
+*/
+
+macro deque64.get
+  // int: index ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
+  // Gets an item from a deque.
+  // return deque[index]
+
+  let _index_ _deque_ _capacity_ _start_ _end_ in _start_ @64 _index_ + _capacity_ % 8 * _deque_ + @64 end
+endmacro
+
+macro deque64.set
+  // int: value ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
+  // Sets an item on a deque.
+  // deque[index] = value
+  // NOTE: This macro assumes that the index is valid.
+
+  let _value_ _index_ _deque_ _capacity_ _start_ _end_ in _value_ _start_ @64 _index_ + _capacity_ % 8 * _deque_ + !64 end
+endmacro
+
+macro deque64.append-first
+  // int: value ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
+  // Appends an item to a deque to its beginning.
+  // deque.insert(value, 0)
+  // NOTE: This macro assumes that the queue has enough space to insert item.
+  
+  let _value_ _deque_ _capacity_ _start_ _end_ in
+    _start_ @dec64
+    _value_ _start_ @64 _capacity_ % 8 * _deque_ + !64
+  end
+endmacro
+
+macro deque64.pop-first
+  // int: value ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
+  // Removes an item from a deque to its beginning.
+  // return deque.pop(0)
+  
+  let _deque_ _capacity_ _start_ _end_ in
+    _start_ @64 _capacity_ % 8 * _deque_ + @64
+    _start_ @inc64
+  end
+endmacro
+
+macro deque64.append-last
+  // int: value ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
+  // Appends an item to a deque to its end.
+  // deque.insert(value, deque.length)
+  // NOTE: This macro assumes that the queue has enough space to insert item.
+  
+  let _value_ _deque_ _capacity_ _start_ _end_ in
+    _value_ _end_ @64 _capacity_ % 8 * _deque_ + !64
+    _end_ @inc64
+  end
+endmacro
+
+macro deque64.pop-last
+  // int: value ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
+  // Removes an item from a deque to its beginning.
+  // return deque.pop(deque.length - 1)
+  
+  let _deque_ _capacity_ _start_ _end_ in
+    _end_ @dec64
+    _end_ @64 _capacity_ % 8 * _deque_ + @64
+  end
+endmacro
+
+proc deque64.extend-left
+  // ptr: source int: source-length ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
+  ptr int ptr int ptr ptr --
+  // Extends a deque from its beginning.
+  // Source is a 64 bit queue with length being passed dereferenced (but a deque can be used by passing the deque start index and the length).
+  // for (item:queue.reversed)
+  //   deque.insert(item, 0)
+  // end
+  // NOTE: This macro assumes that the queue has enough space to insert item.
+in let source length deque capacity start-index end-index in
+  length while dup isn-zero do dec let i in
+    source i 8 * + @64 deque capacity start-index end-index deque64.append-first
+  i end end drop
+end end
+
+proc deque64.extend-right
+  // ptr: source int: source-length ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
+  ptr int ptr int ptr ptr --
+  // Extends a deque from its end.
+  // Source is a 64 bit queue with length being passed dereferenced (but a deque can be used by passing the deque start index and the length).
+  // for (item:queue)
+  //   deque.insert(item, length)
+  // end
+  // NOTE: This macro assumes that the queue has enough space to insert item.
+in let source length deque capacity start-index end-index in
+  0 while dup length < do let i in
+    source i 8 * + @64 deque capacity start-index end-index deque64.append-last
+  i end inc end drop
+end end
