@@ -5,35 +5,30 @@ include libs/core.corth
 /*
   Queue library for Corth.
   
-  Queues are static-placed collections with static-capacity that allow appending and popping items from it.
+  Queues are static-placed collections that allow appending and popping items from them
+
+  Appending and popping an item to the end is O(1) while any other index is O(n).
 
   To create a queue, an array with the preferred size and a pointer should be created.
   After that, the queue should be initialized using queue64.init.
 */
 
-macro queue64.addr-of
-  // int: index ptr: queue-start ptr: queue-length -- ptr: *queue[index]
-  // return *queue[index]
-
-  drop swp 8 * +
-endmacro
-
 macro queue64.get
   // int: index ptr: queue-start ptr: queue-length -- int: value
   // Gets an item from a queue.
   // return queue[index]
-  // NOTE: This procedure assumes that the index is valid.
+  // NOTE: This macro assumes that the index is valid.
   
-  queue64.addr-of @64
+  let _index_ _queue_ _length_ in _index_ 8 * _queue_ + @64 end
 endmacro
 
 macro queue64.set
   // int: value int: index ptr: queue-start ptr: queue-length
   // Sets an item on a queue.
   // queue[index] = value
-  // NOTE: This procedure assumes that the index is valid.
+  // NOTE: This macro assumes that the index is valid.
   
-  queue64.addr-of !64
+  let _value_ _index_ _queue_ _length_ in _value_ _index_ 8 * _queue_ + !64 end
 endmacro
 
 proc queue64.insert
@@ -71,30 +66,24 @@ in
   end
 end
 
-proc queue64.append
+macro queue64.append
   // int: value ptr: queue-start ptr: queue-length
-  int ptr ptr --
   // Appends an item to a queue.
   // queue.append(value)
-in
-  let value queue-start queue-length in
-    value queue-start queue-length @64 8 * + !64
-    queue-length @inc64
+  
+  let _value_ _queue_ _length_ in
+    _value_ _queue_ _length_ @64 8 * + !64
+    _length_ @inc64
   end
-end
+endmacro
 
-proc queue64.pop-last
-  // ptr: queue-start ptr: queue-length -- int: value
-  ptr ptr -- int
-  // Pops the last item from a queue.
-  // return queue.pop_last()
-in
-  let queue-start queue-length in
-    queue-length @dec64
-    queue-start queue-length @64 8 * + @64
+macro queue64.pop-last
+  // int: value ptr: queue-start ptr: queue-length
+  // Removes the last item of the queue.
+  // return queue.pop(queue.length - 1)
+  
+let _queue_ _length_ in
+    _length_ @dec64
+    _queue_ _length_ @64 8 * + @64
   end
-end
-
-/*
-  TODO: Time complexity.
-*/
+endmacro
