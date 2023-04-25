@@ -29,6 +29,7 @@
 - Most of ./libs/memory.corth macro and procedures would be more efficient if they worked with pointers and not indexes.
 - Add the information about the time complexity to collection libraries.
 - deque64 library requires an insert and pop procedure.
+- Add a string mapping library that uses hash instead of strings.
 
 ## Other:
 
