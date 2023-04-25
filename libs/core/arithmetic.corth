@@ -1,26 +1,13 @@
-// Names starting with _ are usually supposed to not be used
+include libs/core/
 
-macro ptr  int endmacro
-macro uint int endmacro
 
-macro sizeof(ptr)  8 endmacro
-macro sizeof(int)  8 endmacro
-macro sizeof(uint) 8 endmacro
-macro sizeof(bool) 8 endmacro
-macro sizeof(char) 1 endmacro
-
-macro MAX-INT  0x7fffffffffffffff endmacro
-macro MIN-INT  0x8000000000000000 endmacro
-macro MAX-UINT 0xffffffffffffffff endmacro
-macro MIN-UINT 0x0000000000000000 endmacro
-
-macro NOT-A-DIGIT      0x0000000000000001 endmacro
-macro INPUT-TOO-BIG    0x0000000000000002 endmacro
-
+// int: x int: y -- bool: cmp(x, y)
+// Compares two integers.
 macro >  swp < endmacro
 macro >= < !   endmacro
 macro <= > !   endmacro
 macro =  != !  endmacro
+
 
 // int: x -- bool: f(x)
 macro is-pos   0 >  endmacro
@@ -29,13 +16,9 @@ macro is-neg   0 <  endmacro
 macro isn-pos  0 <= endmacro
 macro isn-zero 0 != endmacro
 macro isn-neg  0 >= endmacro
-
 macro is-even 2 % is-zero  endmacro
 macro is-odd  2 % isn-zero endmacro
 
-// ptr: x -- bool: f(x)
-macro is-null  NULLPTR =  endmacro
-macro isn-null NULLPTR != endmacro
 
 // int: x -- int: f(x)
 macro inc    1 +                   endmacro
@@ -45,41 +28,22 @@ macro abs    dup is-neg if neg end endmacro
 macro iabs   dup is-pos if neg end endmacro
 macro sqr    dup *                 endmacro
 macro usqr   dup u*                endmacro
-
 macro int-to-bin-digit '0' +                         endmacro
 macro int-to-oxt-digit '0' +                         endmacro
 macro int-to-dec-digit '0' +                         endmacro
 macro int-to-hex-digit dup 9 > if 'W' else '0' end + endmacro
-
 macro bin-digit-to-int '0' -                         endmacro
 macro oct-digit-to-int '0' -                         endmacro
 macro dec-digit-to-int '0' -                         endmacro
 
-// bool: a bool: b -- bool: f(a, b)
-macro ! if false else true end endmacro
-macro | if drop true else end endmacro
-macro & if else drop false end endmacro
-macro ^ if ! else end endmacro
-
-// Macros below use let, with variable names _a_, _b_, _c_ and _d_. Avoid using those names if going to use those macros.
-// (I mean, what kind of a person uses a variable name like that already but whatever)
-
-macro drop  let _a_             in                 end endmacro
-macro dropd let _a_ _b_         in                 end endmacro
-macro dropi let _a_ _b_         in _b_             end endmacro
-macro dup   let _a_             in _a_ _a_         end endmacro
-macro dupd  let _a_ _b_         in _a_ _b_ _a_ _b_ end endmacro
-macro dupi  let _a_ _b_         in _b_ _a_ _b_     end endmacro
-macro swp   let _a_ _b_         in _b_ _a_         end endmacro
-macro swpd  let _a_ _b_ _c_ _d_ in _c_ _d_ _a_ _b_ end endmacro
-macro rot   let _a_ _b_ _c_     in _b_ _c_ _a_     end endmacro
-macro arot  let _a_ _b_ _c_     in _c_ _a_ _b_     end endmacro
-macro rot4  let _a_ _b_ _c_ _d_ in _b_ _c_ _d_ _a_ end endmacro
-macro arot4 let _a_ _b_ _c_ _d_ in _d_ _a_ _b_ _c_ end endmacro
-macro mirr  let _a_ _b_ _c_     in _c_ _b_ _a_     end endmacro
+macro MAX-INT  0x7fffffffffffffff endmacro
+macro MIN-INT  0x8000000000000000 endmacro
+macro MAX-UINT 0xffffffffffffffff endmacro
+macro MIN-UINT 0x0000000000000000 endmacro
 
 macro is-range  let _a_ _b_ _c_ in _a_ _b_ < if false else _c_ _a_ < ! end end endmacro // int: x int: min int: max -- bool:  (x in [min, max])
 macro isn-range let _a_ _b_ _c_ in _a_ _b_ < if true  else _c_ _a_ <   end end endmacro // int: x int: min int: max -- bool: !(x in [min, max])
+
 
 macro lower-base
   // int: x int: b -- int: lower-base(x, b)
@@ -89,6 +53,7 @@ macro lower-base
     _a_ _a_ _b_ % -
   end
 endmacro
+
 
 macro upper-base
   // int: x int: b -- int: upper-base(x, b)
@@ -100,15 +65,19 @@ macro upper-base
   end
 endmacro
 
+
 macro min2
   // int: x int: y -- int: min(x, y)
+  // Returns the minimum of the two numbers.
   let _a_ _b_ in
     _a_ _b_ < if _a_ else _b_ end
   end
 endmacro
 
+
 macro min3
   // int: x int: y int: z -- int: min(x, y, z)
+  // Returns the minimum of the three numbers.
   let _a_ _b_ _c_ in
     _a_ _b_ < if
       _a_ _c_ < if _a_ else _c_ end
@@ -118,8 +87,10 @@ macro min3
   end
 endmacro
 
+
 macro max2
   // int: x int: y -- int: min(x, y)
+  // Returns the maximum of the two numbers.
   let _a_ _b_ in
     _a_ _b_ > if _a_ else _b_ end
   end
@@ -127,6 +98,7 @@ endmacro
 
 macro max3
   // int: x int: y int: z -- int: min(x, y, z)
+  // Returns the maximum of the three numbers.
   let _a_ _b_ _c_ in
     _a_ _b_ > if
       _a_ _c_ > if _a_ else _c_ end
@@ -136,8 +108,11 @@ macro max3
   end
 endmacro
 
+
 macro sort2
   // int: x int: y -- int: min(x, y) int: max(x, y)
+  // Sorts two numbers in stack.
+  // First element is the least and the last is the most.
   let _a_ _b_ in
     _a_ _b_ < if
       _a_ _b_
@@ -147,11 +122,14 @@ macro sort2
   end
 endmacro
 
+
 // Sorts from least to greatest.
 // If there was just a tiny amount of optimization, could write this using sort2.
 // But here we are making a 38 line sorting algoritm.
 macro sort3
   // int: x int: y int: z -- int: min(x, y, z) int: mid(x, y, z) int: max(x, y, z)
+  // Sorts three numbers in stack.
+  // First element is the least and the last is the most.
   let _a_ _b_ _c_ in
     _a_ _b_ < if
       // x < y
@@ -218,6 +196,7 @@ macro comb
   end
 endmacro
 
+
 // Cool stuff
 
 // Pretty sure that gcd and lcm would work for fixed64 as well, not tested yet though.
@@ -237,12 +216,14 @@ in
   end
 drop end // dummy return
 
+
 macro lcm
   // int: x int: y -- int: lcd(x, y)
   // lcm(x, y) * gcd(x, y) = x * y
   // lcm(x, y) = x * y / gcd(x, y)
   dupd gcd / *
 endmacro
+
 
 proc mul-bet
   // int: x int: y -- int: x * (x+1) * (x+2) * ... * (y-1) * y
@@ -262,12 +243,14 @@ in
   end
 end
 
+
 // Because of the integer limit, the biggest number whose factorial can be calculated without any problem is 20.
 macro fact
   // int: x -- int: x!
   // x! = 1 * 2 * 3 * ... * (x-1) * x = mul-bet(2, x)
   2 swp mul-bet
 endmacro
+
 
 proc ipow
   // int: x uint: c -- int: x^c
@@ -294,6 +277,7 @@ in
     result @64
   end
 end
+
 
 proc upow
   // uint: x uint: c -- uint: x^c

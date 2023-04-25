@@ -1,0 +1,5 @@
+// bool: a bool: b -- bool: f(a, b)
+macro ! if false else true end endmacro
+macro | if drop true else end endmacro
+macro & if else drop false end endmacro
+macro ^ if ! else end endmacro

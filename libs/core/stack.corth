@@ -1,0 +1,16 @@
+// Macros below use let, with variable names _a_, _b_, _c_ and _d_. Avoid using those names if going to use those macros.
+// (I mean, what kind of a person uses a variable name like that already but whatever)
+
+macro drop  let _a_             in                 end endmacro
+macro dropd let _a_ _b_         in                 end endmacro
+macro dropi let _a_ _b_         in _b_             end endmacro
+macro dup   let _a_             in _a_ _a_         end endmacro
+macro dupd  let _a_ _b_         in _a_ _b_ _a_ _b_ end endmacro
+macro dupi  let _a_ _b_         in _b_ _a_ _b_     end endmacro
+macro swp   let _a_ _b_         in _b_ _a_         end endmacro
+macro swpd  let _a_ _b_ _c_ _d_ in _c_ _d_ _a_ _b_ end endmacro
+macro rot   let _a_ _b_ _c_     in _b_ _c_ _a_     end endmacro
+macro arot  let _a_ _b_ _c_     in _c_ _a_ _b_     end endmacro
+macro rot4  let _a_ _b_ _c_ _d_ in _b_ _c_ _d_ _a_ end endmacro
+macro arot4 let _a_ _b_ _c_ _d_ in _d_ _a_ _b_ _c_ end endmacro
+macro mirr  let _a_ _b_ _c_     in _c_ _b_ _a_     end endmacro

@@ -1,8 +1,22 @@
-include libs/core.corth
+include libs/core/
 
-// This should be changed to ptr type, when ptr type is implemented for real.
-// (Probably never :( )
+
+macro ptr int endmacro
+
+
+macro sizeof(ptr)  8 endmacro
+macro sizeof(bool) 8 endmacro
+macro sizeof(char) 1 endmacro
+
+
+// TODO: This should be changed to ptr type, when 'ptr' type is implemented for real.
 macro NULLPTR 0 endmacro
+
+
+// ptr: x -- bool: f(x)
+macro is-null  NULLPTR =  endmacro
+macro isn-null NULLPTR != endmacro
+
 
 proc memeq8
   // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: a==b
@@ -23,6 +37,7 @@ in let a-start a-length b-start b-length in
   i end inc end drop
 end true end
 
+
 proc memeq64
   // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: a==b
   ptr int ptr int -- bool
@@ -42,13 +57,14 @@ in let a-start a-length b-start b-length in
   i end inc end drop
 end true end
 
+
 proc memlt8
-  // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: a==b
+  // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: a<b
   ptr int ptr int -- bool
   // Compares two staticly-placed collections.  
-  // Result is true if and only if there is an integer i in [0, len(a) - 1), a[i] < b[i] and for every integer j in [0, i), a[i] == b[i].
+  // Result is true if and only if there is an integer i in [0, len(a)), a[i] < b[i] and for every integer j in [0, i), a[i] == b[i].
 in let a-start a-length b-start b-length in
-  0 while dup a-length < do let i in
+  0 while dup a-length b-length min2 < do let i in
     a-start i + @8 b-start i + @8 let ai bi in
       ai bi > if
         false return
@@ -57,15 +73,18 @@ in let a-start a-length b-start b-length in
       end end
     end
   i end inc end drop
-end false end
+  
+  a-length b-length <
+end end
+
 
 proc memlt64
-  // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: a==b
+  // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: a<b
   ptr int ptr int -- bool
   // Compares two staticly-placed collections.  
-  // Result is true if and only if there is an integer i in [0, len(a) - 1), a[i] < b[i] and for every integer j in [0, i), a[i] == b[i].
+  // Result is true if and only if there is an integer i in [0, len(a)), a[i] < b[i] and for every integer j in [0, i), a[i] == b[i].
 in let a-start a-length b-start b-length in
-  0 while dup a-length < do let i in
+  0 while dup a-length b-length min2 < do let i in
     a-start i 8 * + @64 b-start i 8 * + @64 let ai bi in
       ai bi > if
         false return
@@ -74,7 +93,10 @@ in let a-start a-length b-start b-length in
       end end
     end
   i end inc end drop
-end false end
+  
+  a-length b-length <
+end end
+
 
 proc memset8
   // ptr: start int: length int: value
@@ -91,6 +113,7 @@ in let start length value in
   end
 end end
 
+
 proc memset64
   // ptr: start int: length int: value
   ptr int int --
@@ -106,13 +129,16 @@ in let start length value in
   end
 end end
 
+
 // Decreases a value in the memory (*-- operator)
 macro @dec8  let _a_ in _a_ @8  dec _a_ !8  end endmacro // ptr: x
 macro @dec64 let _a_ in _a_ @64 dec _a_ !64 end endmacro // ptr: x
 
+
 // Increases a value in the memory (*++ operator)
 macro @inc8  let _a_ in _a_ @8  inc _a_ !8  end endmacro // ptr: x
 macro @inc64 let _a_ in _a_ @64 inc _a_ !64 end endmacro // ptr: x
+
 
 macro @swp8
   // ptr: a ptr: b
@@ -123,6 +149,7 @@ macro @swp8
   end
 endmacro
 
+
 macro @swp64
   // ptr: a ptr: b
   // Swaps two 8-byte values in the memory
@@ -131,6 +158,7 @@ macro @swp64
     _a_ @64 _b_ @64 _a_ !64 _b_ !64
   end
 endmacro
+
 
 proc memcpy8
   // ptr: src ptr: dst int: len 
@@ -147,6 +175,7 @@ in
     inc end drop
   end
 end
+
 
 // memcpy64 only works a bit faster, no other functionality is changed
 // If the length is known to be divisible by 8, it is recommended to use memcpy64
@@ -166,6 +195,7 @@ in
   end
 end
 
+
 proc memcpy8i
   // ptr: src ptr: dst int: len
   // Copies a part of memory to another location
@@ -180,6 +210,7 @@ in
     i end end drop
   end
 end
+
 
 proc memcpy64i
   // ptr: src ptr: dst int: len
@@ -196,6 +227,7 @@ in
   end
 end
 
+
 proc memswp8
   // ptr: a ptr: b int: len
   // Swaps two regions of memory
@@ -210,6 +242,7 @@ in
     inc end drop
   end
 end
+
 
 // memswp64 only works a bit faster, no other functionality is changed
 // If the length is known to be divisible by 8, it is recommended to use memswp64
