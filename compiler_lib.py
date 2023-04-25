@@ -93,7 +93,7 @@ def error_on_token(token, message):
     error(f"({token.address}) {message}")
 
             
-def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = False, allocate_local_memory: int = 0x4000000, allocate_callstack: int = 0x4000000):
+def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = False, allocate_local_memory: int = 0x8000000, allocate_callstack: int = 0x8000000):
     # 'data' stores all of the one use data, 'names' stores the global variables and names
     data = deque()
     names = {}
@@ -563,10 +563,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                     file.write(f"    ;; -- PUSH LET VARIABLE '{token.arg}' --\n\n")
                     file.write(f"    mov    rax, QWORD [local]\n")
 
-                    if address:
-                        file.write(f"    add    rax, {address}\n")
-
-                    file.write(f"    push   QWORD [rax]\n")
+                    file.write(f"    push   QWORD [rax{' + ' + str(address) if address else ''}]\n")
 
                     file.write(f"\n")
                     
