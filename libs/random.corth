@@ -1,7 +1,8 @@
-include libs/core.corth
-include libs/memory.corth
+include libs/core/
+
 
 memory rng-seed sizeof(int) end
+
 
 macro rand64
   // -- int: next
@@ -15,6 +16,7 @@ macro rand64
     x 0x400000000000 u/ x 0x20000 u/ u* x 2 / ^^ dup rng-seed !64
   end 
 endmacro
+
 
 // If precompilation gets added to the compiler, this procedure will lose its meaning and rand-unif-range will be as efficient as this function.
 // But until that day, this function will be more efficient for ranges of [0, b).
@@ -31,6 +33,7 @@ macro rand-unif
   end
 endmacro
 
+
 macro rand-unif-range
   // int: a int: b -- int: uniform-range(a, b)
   // Returns a number in the range [a, b) with the step size of 1.
@@ -44,10 +47,12 @@ macro rand-unif-range
   end
 endmacro
 
+
 proc shuffle8
   // ptr: container int: length --
   ptr int --
   // Shuffles a container that has 1-byte items using Fisher-Yates algortihm.
+  // Runs with O(n) time complexity.
 in let array-ptr array-length in
   array-length while dec dup isn-zero do let i in
     i inc rand-unif let j in
@@ -59,6 +64,7 @@ in let array-ptr array-length in
     end
   i end end drop
 end end
+
 
 proc shuffle64
   // ptr: container int: length --

@@ -1,10 +1,12 @@
-include libs/memory.corth
-include libs/core.corth
+include libs/dynamic/malloc.corth
+include libs/linux_x86/io.corth
+include libs/core/
 
 /*
 
   This library includes some algorithms that can be used for sorted dynamicly-placed byte collection (or string) arrays.
 
+Requires dmemeq8 and dmemlt8.
 */
 
 

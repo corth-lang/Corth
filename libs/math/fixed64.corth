@@ -1,4 +1,4 @@
-include libs/core.corth
+include libs/core/
 
 /*
 
@@ -84,7 +84,7 @@ endmacro
 
 macro ceil-base
   // fixed64: x fixed64: b -- fixed64: ceil(x, b)
-  // ceil(x, b) = x + (-x mod b)
+  // ceil(x, b) = x + ((-x) mod b)
   // ceil(x, b) = floor(x, b) + b
   // Result is the least number that is greater tha nx and is divisible by b.
   // This macro gives exact result with no precision lost.

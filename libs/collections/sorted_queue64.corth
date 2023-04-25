@@ -1,7 +1,6 @@
 include libs/collections/queue64.corth
 include libs/collections/sorted64.corth
-include libs/memory.corth
-include libs/core.corth
+include libs/core/
 
 
 /*

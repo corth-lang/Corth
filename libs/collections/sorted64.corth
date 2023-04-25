@@ -1,5 +1,4 @@
-include libs/memory.corth
-include libs/core.corth
+include libs/core/
 
 /*
 

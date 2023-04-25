@@ -1,5 +1,4 @@
-include libs/core.corth
-include libs/memory.corth
+include libs/core/
 
 macro str ptr int endmacro
 

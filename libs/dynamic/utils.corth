@@ -1,4 +1,4 @@
-include libs/memory.corth
+include libs/core/
 
 /*
   This library adds simple dynamic memory management utilities.

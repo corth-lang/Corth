@@ -6,7 +6,7 @@ Contains basic system macros
 
 */
 
-include libs/memory.corth
+include libs/core/
 
 // -- SYSTEM CONSTANTS --
 

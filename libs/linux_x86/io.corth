@@ -1,7 +1,6 @@
 include libs/linux_x86/sys.corth
-include libs/memory.corth
-include libs/core.corth
 include libs/str.corth
+include libs/core/
 
 //    ================
 //    ==== Output ====
