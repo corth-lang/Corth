@@ -1,0 +1,65 @@
+include libs/linux_x86/io.corth
+include libs/core/
+
+/*
+  
+*/
+
+macro WIDTH  10 endmacro
+macro HEIGHT 10 endmacro
+macro CELLS  WIDTH HEIGHT * endmacro
+
+macro PATTERN-WIDTH  3 endmacro
+macro PATTERN-HEIGHT 3 endmacro
+macro PATTERN-CELLS  PATTERN-WIDTH PATTERN-HEIGHT * endmacro
+
+memory board sizeof(int) CELLS * end
+
+macro get-addr
+  // int: id -- ptr: addr
+  8 * board +
+endmacro
+
+macro get-id
+  // int: x int: y -- int: id
+  WIDTH * +
+endmacro
+
+macro get-x
+  // int: id -- int: x
+  WIDTH %
+endmacro
+
+macro get-y
+  // int: id -- int: y
+  WIDTH /
+endmacro
+
+macro get-xy
+  // int: id -- int: x int: y
+  WIDTH /% swp
+endmacro
+
+proc print-board
+  --
+in
+  0 while dup HEIGHT < do let y in
+    0 while dup WIDTH < do let x in
+      x y get-id get-addr @64 putx " " puts
+    x end inc end drop
+    "\n" puts
+  y end inc end drop
+end
+
+proc reset-board
+  --
+in
+  board CELLS 0xffffffffffffffff memset64
+end
+
+proc main
+  int int -- int
+in let argc argv in
+  reset-board
+  print-board
+end 0 end

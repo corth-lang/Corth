@@ -1,7 +1,7 @@
 include libs/linux_x86/io.corth
 include libs/math/fixed64.corth
 include libs/random.corth
-include libs/core.corth
+include libs/core/
 
 
 macro numbers 30 endmacro

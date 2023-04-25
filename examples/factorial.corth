@@ -1,5 +1,5 @@
 include libs/linux_x86/io.corth
-include libs/core.corth
+include libs/core/
 
 // This example calculates the factorial of the number entered from the user
 

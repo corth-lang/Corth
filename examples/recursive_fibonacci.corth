@@ -1,5 +1,6 @@
 include libs/linux_x86/io.corth
-include libs/core.corth
+include libs/core/
+
 
 proc fib
   int -- int
@@ -8,6 +9,7 @@ in let i in
 
   i 2 <= if 1 else i dec fib i dec dec fib + end
 end end
+
 
 proc main
   int int -- int

@@ -11,7 +11,7 @@ Since Corth does not have floating point aritmetic (and since its hard), a fixed
 include libs/linux_x86/io.corth
 include libs/math/complex.corth
 include libs/math/fixed64.corth
-include libs/memory.corth
+include libs/core/
 
 
 macro WIDTH 128 endmacro

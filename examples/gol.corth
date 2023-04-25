@@ -15,7 +15,7 @@ NOTE: There is a bug that if ROWS and COLS are not divisible by each other, algo
 */
 
 include libs/linux_x86/io.corth
-include libs/memory.corth
+include libs/core/
 
 macro ROWS 16 endmacro
 macro COLS 16 endmacro

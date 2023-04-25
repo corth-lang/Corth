@@ -18,8 +18,10 @@
 
 */
 
+
 include libs/linux_x86/io.corth
-include libs/core.corth
+include libs/core/
+
 
 proc main
   int int -- int
