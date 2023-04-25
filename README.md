@@ -88,14 +88,14 @@ For more information about the commands, type:
     85 2 /  // stack is now 42
 
 - '+' adds the last two items and pushes the result back, '-' subtracts, '*' multiplies and '/' divides.
-- 'inc' and 'dec' are macros defined as '1 +' and '1 -' in *./libs/core.corth*. They can be used to increase or decrease a number once.
+- 'inc' and 'dec' are macros defined as '1 +' and '1 -' in *./libs/core/*. They can be used to increase or decrease a number once.
 
 ### Include:
 
     include libs/str.corth
 
 - 'include' allows to use external code.
-- *./libs/* directory contains some useful libraries like core.corth or str.corth.
+- *./libs/* directory contains some useful libraries like *./libs/core/* or *./libs/str.corth*.
 - Path can be both a file or a directory which will cause the compiler to include every file under that directory.
 
 ### Stack operations:
@@ -106,21 +106,21 @@ For more information about the commands, type:
     1 2 3 rot  // stack is now  2  3  1
     1 2 3 arot // stack is now  3  1  2
 
-- *./libs/core.corth* contains some basic stack operations.
+- *./libs/core/stack.corth* contains some basic stack operations.
 - 'drop' removes the last item from the stack.
 - 'dup' duplicates the last item in the stack.
 - 'swp' swaps the places of the last two items.
 - 'rot' rotates the places of the last 3 items, by moving the first added to the last position.
 - 'arot' does the exact opposite of what 'rot' does.
-- These operations are macros defined using [let](#let), with names starting with underscore (_). For hard to manage stack operations, it is recommended to use 'let' instead.
-- There are some others, but it is recommended to check *./libs/core.corth* for more information since they are a bit more complex.
+- These operations are macros defined using [let](#let), with names starting with underscore (_). For hard to manage stack operations, it is recommended to use 'let' instead of these macros.
+- There are some others, but it is recommended to check *./libs/core/stack.corth* for more information since they are a bit more complex.
 
 ### I/O:
 
     "Hello, world!\n" puts
     34 35 + putu " is a nice number.\n" puts
 
-- *./libs/io.corth* contains useful procedures for I/O operations like reading and writing to streams.
+- *./libs/linux/io.corth* contains useful procedures for I/O operations like reading and writing to streams.
 
 ### Procedures:
 
@@ -221,7 +221,7 @@ For more information about the commands, type:
 
 ### Static memory management:
 
-    include libs/core.corth
+    include libs/core/
 
     memory count sizeof(int) end
     
