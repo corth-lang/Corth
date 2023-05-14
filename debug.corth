@@ -34,7 +34,7 @@ in let log-stream in
   sizeof(address) malloc let address in
     address is-null if
       LOG.ERR log-stream fputs "'malloc' failed while generating address.\n" log-stream fputs LOG.RESET log-stream fputs
-      1 call-sys-exit
+      1 exit drop
     end
 
     // Store the arguments.
