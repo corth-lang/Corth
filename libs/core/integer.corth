@@ -2,3 +2,8 @@ macro uint int endmacro
 
 macro sizeof(int)  8 endmacro
 macro sizeof(uint) 8 endmacro
+
+macro MAX-INT  0x7fffffffffffffff endmacro
+macro MIN-INT  0x8000000000000000 endmacro
+macro MAX-UINT 0xffffffffffffffff endmacro
+macro MIN-UINT 0x0000000000000000 endmacro

@@ -1,4 +1,6 @@
-include libs/core/
+include libs/core/boolean.corth
+include libs/core/stack.corth
+include libs/core/integer.corth
 
 
 // int: x int: y -- bool: cmp(x, y)
@@ -35,11 +37,6 @@ macro int-to-hex-digit dup 9 > if 'W' else '0' end + endmacro
 macro bin-digit-to-int '0' -                         endmacro
 macro oct-digit-to-int '0' -                         endmacro
 macro dec-digit-to-int '0' -                         endmacro
-
-macro MAX-INT  0x7fffffffffffffff endmacro
-macro MIN-INT  0x8000000000000000 endmacro
-macro MAX-UINT 0xffffffffffffffff endmacro
-macro MIN-UINT 0x0000000000000000 endmacro
 
 macro is-range  let _a_ _b_ _c_ in _a_ _b_ < if false else _c_ _a_ < ! end end endmacro // int: x int: min int: max -- bool:  (x in [min, max])
 macro isn-range let _a_ _b_ _c_ in _a_ _b_ < if true  else _c_ _a_ <   end end endmacro // int: x int: min int: max -- bool: !(x in [min, max])
@@ -92,18 +89,36 @@ macro max2
   // int: x int: y -- int: min(x, y)
   // Returns the maximum of the two numbers.
   let _a_ _b_ in
-    _a_ _b_ > if _a_ else _b_ end
+    _a_ _b_ < if _b_ else _a_ end
   end
 endmacro
+
 
 macro max3
   // int: x int: y int: z -- int: min(x, y, z)
   // Returns the maximum of the three numbers.
   let _a_ _b_ _c_ in
-    _a_ _b_ > if
-      _a_ _c_ > if _a_ else _c_ end
+    _a_ _b_ < if
+      _b_ _c_ < if _c_ else _b_ end
     else
-      _b_ _c_ > if _b_ else _c_ end
+      _a_ _c_ < if _c_ else _a_ end
+    end
+  end
+endmacro
+
+
+macro clip
+  // int: x int: min int: max -- int: clipped
+  // Returns x if it is in the range [min, max]. If it is less, returns min and if it is higher, returns max.
+  let _x_ _min_ _max_ in
+    _x_ _min_ < if
+      _min_
+    else
+      _max_ _x_ < if
+        _max_
+      else
+        _x_
+      end
     end
   end
 endmacro
@@ -165,142 +180,3 @@ macro sort3
     end
   end
 endmacro
-
-// Because of the integer limit, can return wrong results for big numbers.
-macro perm
-  // int: x int: y -- int: P(x, y)
-  // P(a, b) = a! / (a-b)! = (a-b) * (a-b+1) * (a-b+2) * ... * (a-1) * a = mul-bet(a-b, a)
-  // NOTE: x >= y must be satisfied.
-  let _a_ _b_ in
-    _a_ _b_ - inc _a_ mul-bet
-  end
-endmacro
-
-// Because of the integer limit, can return wrong results for big numbers.
-// C(28, n) can be calculated without any problem, but any bigger number may start to cause problems.
-macro comb
-  // int: x int: y -- int: C(x, y)
-  // C(a, b) = a! / (b! * (a - b)!) = P(a, b) / b! = P(a, a-b) / (a-b)!
-  // y and x-y are sorted, since if c in P(n, c) is bigger, it is faster to calculate it.
-  // NOTE: x >= y must be satisfied.
-  let _a_ _b_ in 
-    _b_ _a_ _b_ - < if
-      // b < (a - b)
-      // C(a, b) = mul-bet(a-b, a) / b!
-      _a_ _b_ - inc _a_ mul-bet 2 _b_ mul-bet /
-    else
-      // b > (a - b)
-      // C(a, b) = mul-bet(b, a) / (a-b)!
-      _b_ inc _a_ mul-bet 2 _a_ _b_ - mul-bet /
-    end
-  end
-endmacro
-
-
-// Cool stuff
-
-// Pretty sure that gcd and lcm would work for fixed64 as well, not tested yet though.
-proc gcd
-  // int: x int: y -- int: gcd(x, y)
-  int int -- int
-  // NOTE: x < y must be already satisfied otherwise will go in an infinite recursion loop.
-in
-  while true do
-    let x y in
-      x is-zero if
-        y return
-      else
-        y x % x
-      end
-    end
-  end
-drop end // dummy return
-
-
-macro lcm
-  // int: x int: y -- int: lcd(x, y)
-  // lcm(x, y) * gcd(x, y) = x * y
-  // lcm(x, y) = x * y / gcd(x, y)
-  dupd gcd / *
-endmacro
-
-
-proc mul-bet
-  // int: x int: y -- int: x * (x+1) * (x+2) * ... * (y-1) * y
-  int int -- int
-  // For x <= y, multiplies the numbers between (including) x and y.
-  // For y > x, returns 1.
-  // NOTE: For big numbers, the result can lose its precission, because of the integer size limit.
-in
-  let y in
-    memory m sizeof(int) in
-      1 m !64
-      while dup y <= do
-        dup m @64 * m !64
-      inc end drop
-      m @64
-    end
-  end
-end
-
-
-// Because of the integer limit, the biggest number whose factorial can be calculated without any problem is 20.
-macro fact
-  // int: x -- int: x!
-  // x! = 1 * 2 * 3 * ... * (x-1) * x = mul-bet(2, x)
-  2 swp mul-bet
-endmacro
-
-
-proc ipow
-  // int: x uint: c -- int: x^c
-  int uint -- int
-  // Calculates integer exponents.
-in
-  memory result sizeof(int) and
-         frag   sizeof(int) and
-         exp    sizeof(int) in
-         
-    exp      !64     
-    frag     !64
-    1 result !64
-
-    while exp @64 isn-zero do
-      exp @64 is-odd if
-        result @64 frag @64 * result !64
-      end
-
-      frag @64 sqr frag !64
-      exp @64 2 u/ exp !64
-    end
-
-    result @64
-  end
-end
-
-
-proc upow
-  // uint: x uint: c -- uint: x^c
-  uint uint -- int
-  // Calculates unsigned integer exponents.
-in
-  memory result sizeof(int) and
-         frag   sizeof(int) and
-         exp    sizeof(int) in
-         
-    exp      !64     
-    frag     !64
-    1 result !64
-
-    while exp @64 isn-zero do
-      exp @64 is-odd if
-        result @64 frag @64 u* result !64
-      end
-
-      frag @64 usqr frag !64
-      exp @64 2 u/ exp !64
-    end
-
-    result @64
-  end
-end
