@@ -1,4 +1,4 @@
-include libs/core/artihmetic.corth
+include libs/core/arithmetic.corth
 
 
 // Because of the integer limit, can return wrong results for big numbers.
