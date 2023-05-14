@@ -1,38 +1,42 @@
-// include libs/linux_x86/io.corth
+include libs/linux_x86/sys.corth
+include libs/core/stack.corth
+include libs/linux_x86/io.corth
+
+// macro fputs arot 1 syscall3 drop endmacro
+
+// macro file-desc int endmacro
+// macro sizeof(int) 8 endmacro
+macro sizeof(ptr) 8 endmacro
 
 
-memory global-var 100 end
+proc fputu
+  // int: int file-desc: file-desc 
+  int file-desc --
+  // Prints an unsigned integer to a file stream.
+in
+  let file in
+    memory buffer 20          in
+    memory value  sizeof(int) in
+    memory i      sizeof(ptr) in
 
-// TODO: There are some problems with the macros system. This example causes an error while it should not.
-macro drop  let _a_             in                 end endmacro
-macro dup   let _a_             in _a_ _a_         end endmacro
-macro arot  let _a_ _b_ _c_     in _c_ _a_ _b_     end endmacro
+      value !64
+      buffer 19 + i !64
 
-macro fputs arot 1 syscall3 drop endmacro
+      while
+        value @64 10 /%
+        '0' + i @64 !8
+        i @64 1 - i !64
+        dup value !64 0 !=
+      do end
+
+      i @64 1 + buffer 19 + i @64 - file fputs
+    end end end
+  end
+end
+
 
 proc main
   int int -- int
 in let argc argv in
-
-  memory buffer 20 in
-  memory value  8  in
-  memory i      8  in
-
-    12345 value !64
-    buffer 19 + i !64
-
-    while
-      value @64 10 /%
-      48 + i @64 !8
-      i @64 1 - i !64
-      dup value !64 0 !=
-    do end
-
-    i @64 1 + buffer 19 + i @64 - 1 fputs
-
-    "
-" 1 fputs
-    
-  end end end
+  123 1 fputu 
 end 0 end
-
