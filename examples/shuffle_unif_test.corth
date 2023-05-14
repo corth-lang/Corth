@@ -17,7 +17,7 @@ end end
 proc main
   int int -- int
 in let argc argv in
-  time rng-seed !64
+  NULLPTR time rng-seed !64
 
   memory array sizeof(int) 12 * in
     0  array      !64
