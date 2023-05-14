@@ -1,6 +1,5 @@
 include libs/dynamic/malloc.corth
 include libs/linux_x86/io.corth
-include libs/core/
 
 /*
 
@@ -10,7 +9,7 @@ Requires dmemeq8 and dmemlt8.
 */
 
 
-proc str-sorted64.available
+proc str-sorted8.available
   // int: value ptr: start ptr: end -- ptr: lower-bound bool: found
   int ptr ptr -- int bool
   // Finds where the value could be placed using binary search, so that the array could stay sorted.
@@ -24,14 +23,13 @@ in
 
     lower @64 8 % let offset in
       let value in
-        0 while dup 10 < do
+        while true do
           lower @64 upper @64 = if
-            drop lower @64 false return
+            lower @64 false return
           end
 
           lower @64 upper @64 + 2 / offset - 8 lower-base offset + let middle in
             middle @64 value dmemeq8 if
-              drop
               middle true return
             else middle @64 value dmemlt8 if
               middle 8 + lower !64
@@ -39,7 +37,7 @@ in
               middle upper !64
             end end
           end
-        inc end drop
+        end
       end
     end
   end
