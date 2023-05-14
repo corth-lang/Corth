@@ -1,14 +1,13 @@
-include libs/linux_x86/io.corth
+include libs/core/arithmetic.corth
 include libs/linux_x86/sys.corth
+include libs/linux_x86/io.corth
+include libs/core/stack.corth
 
-include libs/core/
 
-macro malloc.ARRAY-SIZE           0x40000 endmacro
-macro malloc.AVAIL-QUEUE-SIZE     0x1000  endmacro
+macro malloc.ARRAY-SIZE       0x40000 endmacro
+macro malloc.AVAIL-QUEUE-SIZE 0x10000 endmacro
 include libs/dynamic/malloc.corth
 include libs/dynamic/utils.corth
-
-include libs/memory.corth
 
 include libs/collections/deque64.corth
 include libs/collections/queue64.corth
@@ -19,35 +18,37 @@ macro CHAR-NEWLINE   10 endmacro
 macro CHAR-ESCAPE    27 endmacro
 macro CHAR-SPACE     32 endmacro
 macro CHAR-DQUOTE    34 endmacro
+macro CHAR-SQUOTE    39 endmacro
 macro CHAR-ASTERISK  42 endmacro
 macro CHAR-SLASH     47 endmacro
 macro CHAR-BACKSLASH 92 endmacro
-macro CHAR-SQUOTE    96 endmacro
 
 include debug.corth
 include enums.corth
 
 
-// TODO: Make not hard-coded
+// TODO: Make not hard-coded.
 macro SOURCE-NAME "./example.corth" endmacro
-macro OUTPUT-NAME "./o.asm" endmacro
+macro OUTPUT-NAME "./o.asm"         endmacro
 
-macro GLOBALS-MAX-COUNT   0x4000   endmacro
-macro MACROS-MAX-COUNT    0x4000   endmacro
-macro LIBRARIES-MAX-COUNT 0x4000   endmacro
-macro LEVELS-MAX-COUNT    0x100    endmacro
-macro LET-MAX-COUNT       0x400    endmacro
-macro LOCALS-MAX-COUNT    0x400    endmacro
-macro VARS-MAX-ONCE       0x10     endmacro
+// TODO: Change those arrays with vectors.
+macro GLOBALS-MAX-COUNT   0x4000    endmacro
+macro MACROS-MAX-COUNT    0x4000    endmacro
+macro PROCS-MAX-COUNT     0X400     endmacro
+macro LIBRARIES-MAX-COUNT 0x4000    endmacro
+macro LEVELS-MAX-COUNT    0x100     endmacro
+macro LET-MAX-COUNT       0x400     endmacro
+macro LOCALS-MAX-COUNT    0x400     endmacro
+macro VARS-MAX-ONCE       0x10      endmacro
 
-macro EXTENDED-MAX-LENGTH 0x400000 endmacro
-macro TOKEN-MAX-LENGTH    0x4000   endmacro
-macro MACRO-MAX-TOKENS    0x400000 endmacro
-macro PROC-MAX-IO         0x100    endmacro
-macro STACK-MAX-ITEMS     0x100    endmacro
+macro EXTENDED-MAX-LENGTH 0x400000  endmacro
+macro TOKEN-MAX-LENGTH    0x4000    endmacro
+macro MACRO-MAX-TOKENS    0x400000  endmacro
+macro PROC-MAX-IO         0x100     endmacro
+macro STACK-MAX-ITEMS     0x100     endmacro
 
-macro LOCAL-MEMORY-SIZE   0X40000  endmacro
-macro CALL-STACK-SIZE     0x40000  endmacro
+macro LOCAL-MEMORY-SIZE   0X40000   endmacro
+macro CALL-STACK-SIZE     0x40000   endmacro
 
 
 proc fread
@@ -78,6 +79,8 @@ in let file line-no char-no in
     while true do
       char 1 file fgets is-zero if
         true return
+      else char @8 is-zero if
+        true return
       else char @8 CHAR-NEWLINE = if
         0 char-no !64
         line-no @inc64
@@ -86,7 +89,7 @@ in let file line-no char-no in
       else
         file 1 neg SEEK-CUR fseek drop
         false return
-      end end end
+      end end end end
     end
   end
 end false end  // dummy return
@@ -99,25 +102,26 @@ proc parse-next-token
   // Keeps track of the line and char number as the bytes are read.
   // NOTE: If buffer-end exceeds buffer + TOKEN-MAX-LENGTH, exits program.
 in let file line-no char-no buffer buffer-end log-stream in
-    while true do
-      buffer-end @64 1 file fread is-zero if                // Reached end of file.
-        char-no @inc64
-        return
-      else buffer-end @64 @8 CHAR-NEWLINE = if              // Reached newline.
-        char-no @inc64
-        return
-      else buffer-end @64 @8 CHAR-SPACE = if                // Reached space.
-        char-no @inc64
-        return
-      else buffer-end @64 buffer - TOKEN-MAX-LENGTH >= if   // Reached the end of the buffer.
-        LOG.ERR log-stream fputs "Found a token longer than TOKEN-MAX-LENGTH, stopping execution.\n" log-stream fputs
-        1 call-sys-exit
-      else                                                  // There is still space in the buffer.
-        file 1 SEEK-CUR fseek drop
-        buffer-end @inc64
-        char-no    @inc64
-      end end end end
-    end
+  while true do
+    buffer-end @64 1 file fread is-zero if                // Reached end of file.
+      char-no @inc64
+      return
+    else buffer-end @64 @8 CHAR-NEWLINE = if              // Reached newline.
+      char-no @inc64
+      return
+    else buffer-end @64 @8 CHAR-SPACE = if                // Reached space.
+      char-no @inc64
+      return
+    else buffer-end @64 buffer - TOKEN-MAX-LENGTH >= if   // Reached the end of the buffer.
+      LOG.ERR  log-stream fputs "Found a token longer than TOKEN-MAX-LENGTH, stopping execution.\n" log-stream fputs
+      LOG.INFO log-stream fputs "Last read token was '" log-stream fputs buffer buffer-end @64 buffer - log-stream fputs "'.\n" log-stream fputs
+      1 exit drop
+    else                                                  // There is still space in the buffer.
+      file 1 SEEK-CUR fseek drop
+      buffer-end @inc64
+      char-no    @inc64
+    end end end end
+  end
 end end
 
 
@@ -133,13 +137,14 @@ in let file line-no char-no buffer buffer-end log-stream in
   while true do
     buffer-end @64 1 file fgets is-zero if                  // Reached end of file.
       LOG.ERR log-stream fputs "Reached EOF before finding any '\"'.\n" log-stream fputs
-      1 call-sys-exit
+      1 exit drop
     else buffer-end @64 @8 CHAR-DQUOTE = if                 // Reached double quote.
       char-no    @inc64
       return
     else buffer-end @64 buffer - TOKEN-MAX-LENGTH >= if     // Reached the end of the buffer.
       LOG.ERR log-stream fputs "Found a string longer than TOKEN-MAX-LENGTH, stopping execution.\n" log-stream fputs
-      1 call-sys-exit
+      LOG.INFO log-stream fputs "Last read token was '" log-stream fputs buffer buffer-end @64 buffer - log-stream fputs "'.\n" log-stream fputs
+      1 exit drop
     else buffer-end @64 @8 CHAR-NEWLINE = if                // Reached new line.
       buffer-end @inc64
       line-no    @inc64
@@ -320,8 +325,6 @@ proc get-next-token
   
   // Generates a token and returns.
   // NOTE: If there is no token available, every other parameter is either NULLPTR or invalid.
-  // TODO: Create a new queue for the saved tokens when a macro is called.
-  // TODO: Change this procedure so that it returns the next saved token, if there is one.
 in let
     file-name file
     line-no char-no
@@ -335,7 +338,7 @@ in let
       extended-length 3 % isn-zero if
         LOG.ERR  log-stream fputs "Extended array length is not a multiple of 3.\n" log-stream fputs
         LOG.INFO log-stream fputs "This error was caused by a bug in the compiler.\n" log-stream fputs
-        1 call-sys-exit
+        1 exit drop
       end
 
       extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.pop-first
@@ -368,7 +371,7 @@ in let
               drop
               LOG.ERR log-stream fputs "Could not convert integer.\n" log-stream fputs LOG.RESET log-stream fputs
               log-stream fput-here
-              1 call-sys-exit
+              1 exit drop
               drop
               TYPE-UNKNOWN NULLPTR 0 false return // dummy return
             end
@@ -378,26 +381,26 @@ in let
 
             buffer inc 1 file fgets is-zero if                  // Reached EOF while expecting a character.
               LOG.ERR log-stream fputs "Reached EOF before finding a character after single quote.\n" log-stream fputs LOG.RESET log-stream fputs
-              1 call-sys-exit
+              1 exit drop
             end
 
             // Get the character
-            buffer @8 let character in
+            buffer inc @8 let character in
               character CHAR-BACKSLASH = if
                 // -------- Escapes --------
                 // TODO: Add escapes.
                 LOG.TODO log-stream fputs "Escapes are not implemented yet.\n" log-stream fputs
-                1 call-sys-exit
+                1 exit drop
               end
 
               buffer 2 + 1 file fgets is-zero if              // Reached EOF while expecting a single quote.
                 LOG.ERR log-stream fputs "Reached EOF before finding a single quote after single quote and character.\n" log-stream fputs
-                1 call-sys-exit
+                1 exit drop
               end
 
               buffer 2 + @8 CHAR-SQUOTE != if                 // Was expecting a single quote, but found another character.
                 LOG.ERR log-stream fputs "Expected a single quote, found '" log-stream fputs buffer 2 + 1 log-stream fputs "'.\n" log-stream fputs
-                1 call-sys-exit
+                1 exit drop
               end
 
               // Return token type, address and argument.
@@ -423,7 +426,7 @@ in let
 
             buffer inc 1 file fgets is-zero if
               LOG.ERR log-stream fputs "Reached EOF while expecting character after slash (/).\n" log-stream fputs
-              1 call-sys-exit
+              1 exit drop
             end
 
             buffer inc @8 CHAR-SLASH = if
@@ -484,7 +487,7 @@ in
   8 malloc let x in
     x is-null if
       "'malloc' failed while creating an integer stack value.\n" eputs
-      1 call-sys-exit
+      1 exit drop
     end
 
     TYPE-INT x !64
@@ -499,7 +502,7 @@ in
   8 malloc let x in
     x is-null if
       "'malloc' failed while creating a boolean stack value.\n" eputs
-      1 call-sys-exit
+      1 exit drop
     end
 
     TYPE-BOOL x !64
@@ -554,7 +557,7 @@ in let
     local-stack-length @64 2 < if
       LOG.ERR log-stream fputs "Intrinsic '+' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
       token-address log-stream fput-here
-      1 call-sys-exit
+      1 exit drop
     end
 
     "    pop     rax\n"        output-file fputs
@@ -571,7 +574,7 @@ in let
     local-stack-length @64 2 < if
       LOG.ERR log-stream fputs "Intrinsic '-' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
       token-address log-stream fput-here
-      1 call-sys-exit
+      1 exit drop
     end
 
     "    pop     rax\n"        output-file fputs
@@ -588,7 +591,7 @@ in let
     local-stack-length @64 2 < if
       LOG.ERR log-stream fputs "Intrinsic '/%' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
       token-address log-stream fput-here
-      1 call-sys-exit
+      1 exit drop
     end
 
     "    xor     rdx, rdx\n"        output-file fputs
@@ -610,7 +613,7 @@ in let
     local-stack-length @64 2 < if
       LOG.ERR log-stream fputs "Intrinsic '!=' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
       token-address log-stream fput-here
-      1 call-sys-exit
+      1 exit drop
     end
 
     "    pop     rax\n"         output-file fputs
@@ -627,7 +630,7 @@ in let
     local-stack-length @64 2 < if
       LOG.ERR log-stream fputs "Intrinsic '<' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
       token-address log-stream fput-here
-      1 call-sys-exit
+      1 exit drop
     end
 
     "    pop     rax\n"               output-file fputs
@@ -647,7 +650,7 @@ in let
     local-stack-length @64 is-zero if
       LOG.ERR log-stream fputs "Intrinsic '@8' requires an integer, there was no item in the stack.\n" log-stream fputs
       token-address log-stream fput-here
-      1 call-sys-exit
+      1 exit drop
     end
 
     "    xor     rax, rax\n"      output-file fputs
@@ -665,7 +668,7 @@ in let
     local-stack-length @64 2 < if
       LOG.ERR log-stream fputs "Intrinsic '!8' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
       token-address log-stream fput-here
-      1 call-sys-exit
+      1 exit drop
     end
 
     "    pop     rax\n"            output-file fputs
@@ -682,7 +685,7 @@ in let
     local-stack-length @64 is-zero if
       LOG.ERR log-stream fputs "Intrinsic '@64' requires an integer, there was no item in the stack.\n" log-stream fputs
       token-address log-stream fput-here
-      1 call-sys-exit
+      1 exit drop
     end
 
     "    pop     rax\n"         output-file fputs
@@ -698,7 +701,7 @@ in let
     local-stack-length @64 2 < if
       LOG.ERR log-stream fputs "Intrinsic '!64' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
       token-address log-stream fput-here
-      1 call-sys-exit
+      1 exit drop
     end
 
     "    pop     rax\n"         output-file fputs
@@ -728,7 +731,7 @@ in let
     local-stack-length @64 4 < if
       LOG.ERR log-stream fputs "'syscall3' requires 4 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
       token-address log-stream fput-here
-      1 call-sys-exit
+      1 exit drop
     end
 
     "    pop     rax\n" output-file fputs
@@ -748,7 +751,7 @@ in let
     LOG.TODO log-stream fputs "Intrinsic '" log-stream fputs token-arg log-stream fput-intrinsic "' is not implemented yet.\n" log-stream fputs
     token-address log-stream fput-here
     procedure-name procedure-address log-stream fput-inside-procedure
-    1 call-sys-exit
+    1 exit drop
   end end end end end end end end end end end end
 end end
 
@@ -762,6 +765,8 @@ proc compile-procedure
   ptr ptr
   // ptr: global-names-array ptr: global-sizes-array ptr: globals-length 
   ptr ptr ptr
+  // ptr: proc-names-array ptr: proc-inputs-array ptr: proc-outputs-array ptr: procs-length
+  ptr ptr ptr ptr
   // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
   ptr ptr ptr
   // ptr: procedure-name ptr: procedure-address
@@ -770,8 +775,10 @@ proc compile-procedure
   ptr ptr
   // ptr: extended-array ptr: extended-start ptr: extended-end
   ptr ptr ptr
-  // file-desc: log-stream
+  // file-desc: log-stream -- 
   file-desc --
+  // local-memory-max: int
+  int
   
   // Compiles a Corth procedure.
   // Compilation warning and errors are dumped to log-stream.
@@ -780,6 +787,7 @@ in let
     line-no char-no
     data-definitions-array datas-length
     global-names-array global-sizes-array globals-length
+    proc-names-array proc-inputs-array proc-outputs-array procs-length
     macro-names macro-tokens macros-length
     procedure-name procedure-address
     local-stack local-stack-length
@@ -806,19 +814,23 @@ in let
          locals-length    sizeof(int)                    and
 
          // local-memory-end keeps track of the first available position on the local memory.
-         local-memory-end sizeof(int)                    in
+         local-memory-end sizeof(int)                    and
+
+         // local-memory-max keeps track of the maximum length of the local memory, to later allocate enough space.
+         local-memory-max sizeof(int)                    in
 
     0 levels-length    !64
     0 level-id-counter !64
     0 let-vars-length  !64
     0 locals-length    !64
     0 local-memory-end !64
+    0 local-memory-max !64
 
     while true do
       source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream get-next-token ! if
         LOG.ERR log-stream fputs "Reached EOF while expecting procedure definition or 'end'.\n" log-stream fputs
         procedure-name procedure-address log-stream fput-inside-procedure
-        1 call-sys-exit
+        1 exit drop
       end
 
       let token-type token-address token-arg in
@@ -843,6 +855,8 @@ in let
           // -------- Names --------
 
           token-arg let-names let-addresses let-vars-length str-map64.get if
+            // -------- 'let' variables --------
+            
             let address in
               "    mov     rax, qword [local_ptr]\n" output-file fputs
               
@@ -852,6 +866,8 @@ in let
             end
             
           else drop token-arg local-names local-addresses locals-length str-map64.get if
+            // -------- 'memory' variables --------
+            
             let address in
               "    push    qword [local_ptr]\n" output-file fputs
               
@@ -861,13 +877,75 @@ in let
               
               create-int local-stack local-stack-length queue64.append
             end
+
+          else drop token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available if
+            // -------- 'proc' calls --------
+            
+            let name-address in name-address proc-names-array - let delta in
+              delta proc-inputs-array + delta proc-outputs-array + let input-address output-address in
+                memory input-length  sizeof(int) and
+                       output-length sizeof(int) in
+
+                  input-address  @64 mlength 8 / input-length  !64
+                  output-address @64 mlength 8 / output-length !64
+
+                  // TODO: This system must be changed.
+                  while input-length @64 isn-zero do
+                    input-address @64 input-length queue64.pop-last let expect in
+                      local-stack-length @64 is-zero if
+                        LOG.ERR log-stream fputs "Not enough items in the stack to call procedure '" log-stream fputs token-arg token-arg mlength log-stream fputs "'.\n" log-stream fputs
+                        token-address log-stream fput-here
+                        procedure-name procedure-address log-stream fput-inside-procedure
+                        1 exit drop
+                      end
+
+                      local-stack local-stack-length queue64.pop-last let got in
+                        expect got @64 != if
+                          LOG.ERR log-stream fputs "Stack does not match with the argument types of procedure '" log-stream fputs token-arg token-arg mlength log-stream fputs "'.\n" log-stream fputs
+                          token-address log-stream fput-here
+                          procedure-name procedure-address log-stream fput-inside-procedure
+                          1 exit drop
+                        end
+                      end
+                    end
+                  end
+
+                  "    xchg    rsp, [call_ptr]\n"              output-file fputs         
+                  "    push    .level_"                        output-file fputs level-id-counter @64 output-file fputu "\n" output-file fputs
+                  "    push    qword [local_ptr]\n"            output-file fputs         
+                  "    add     qword [local_ptr], "            output-file fputs local-memory-end @64 output-file fputu "\n" output-file fputs
+                  "    xchg    rsp, [call_ptr]\n"              output-file fputs         
+                  "    jmp     proc_"                          output-file fputs token-arg token-arg mlength output-file fputs "\n" output-file fputs
+                  ".level_"                                    output-file fputs level-id-counter @64 output-file fputu ":\n" output-file fputs
+
+                  level-id-counter @inc64
+
+                  // TODO: This system must be changed.
+                  while output-length @64 isn-zero do
+                    output-address @64 output-length queue64.pop-last let output in
+                      output TYPE-INT = if
+                        create-int local-stack local-stack-length queue64.append
+                      else output TYPE-BOOL = if
+                        create-bool local-stack local-stack-length queue64.append
+                      else
+                        LOG.ERR log-stream fputs "This should have been impossible to reach.\n" log-stream fputs
+                        LOG.INFO log-stream fputs "This is probably caused by a bug in the compiler.\n" log-stream fputs
+                        token-address log-stream fput-here
+                        procedure-name procedure-address log-stream fput-inside-procedure
+                        1 exit drop
+                      end end
+                    end
+                  end
+                end
+              end
+            end end
             
           else drop            
             LOG.ERR log-stream fputs "Name '" log-stream fputs token-arg token-arg mlength log-stream fputs "' is not defined as a local variable or a macro.\n" log-stream fputs
             token-address log-stream fput-here
             procedure-name procedure-address log-stream fput-inside-procedure
-            1 call-sys-exit
-          end end
+            1 exit drop
+          end end end
 
         else token-type TYPE-INTRINSIC = if
           // -------- Intrinsics --------
@@ -888,8 +966,7 @@ in let
 
             levels-length @64 is-zero if
               // -------- End of 'proc' --------
-
-              return
+              local-memory-max @64 return
             end
 
             levels-array levels-length queue64.pop-last let level in
@@ -906,15 +983,17 @@ in let
 
                 else start-keyword KEYWORD-WHILE = if
                   // -------- End of 'while' --------
+                  
                   LOG.ERR  log-stream fputs "You probably forgot a 'do' after 'while'.\n" log-stream fputs
                   LOG.INFO log-stream fputs "A while-do loop can be created as: 'while <condition> do <code> end'\n" log-stream fputs
                   token-address log-stream fput-here
                   start-address log-stream fput-here
                   procedure-name procedure-address log-stream fput-inside-procedure
-                  1 call-sys-exit
+                  1 exit drop
 
                 else start-keyword KEYWORD-DO = if
                   // -------- End of 'do' --------
+                  
                   level 16 + @64 level 24 + @64 let  start-id start-stack in
                     levels-length @64 is-zero if
                       LOG.ERR  log-stream fputs "Expected a 'while' before 'do'.\n" log-stream fputs
@@ -922,6 +1001,7 @@ in let
                       token-address log-stream fput-here
                       start-address log-stream fput-here
                       procedure-name procedure-address log-stream fput-inside-procedure
+                      1 exit drop
                     end
 
                     levels-array levels-length queue64.pop-last let while-level in
@@ -933,6 +1013,7 @@ in let
                           while-address log-stream fput-here
                           start-address log-stream fput-here
                           procedure-name procedure-address log-stream fput-inside-procedure
+                          1 exit drop
                         end
 
                         while-level 16 + @64 while-level 24 + @64 let while-id while-stack in
@@ -943,8 +1024,6 @@ in let
 
                           start-stack local-stack start-stack mlength 8 / memcpy64
                           start-stack mlength 8 / local-stack-length !64
-                          
-                          start-stack mfree
                         end
                       end
                     end
@@ -955,22 +1034,19 @@ in let
 
                   level 16 + @64 level 24 + @64 let new-names old-local-memory-end in
                     0 while dup new-names mlength 8 / < do let i in i 8 * new-names + @64 let name in
-                      name let-names let-addresses let-vars-length str-map64.remove ! if
-                        LOG.ERR  log-stream fputs "Could not find the 'let' variable name '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
-                        LOG.INFO log-stream fputs "This is probably caused by a bug in the compiler.\n" log-stream fputs
-                        token-address log-stream fput-here
-                        start-address log-stream fput-here
-                        procedure-name procedure-address log-stream fput-inside-procedure
-                        1 call-sys-exit
+                      name mlength 1 = if name @8 '_' != else true end if
+                        name let-names let-addresses let-vars-length str-map64.remove ! if
+                          LOG.ERR  log-stream fputs "Could not find the 'let' variable name '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
+                          LOG.INFO log-stream fputs "This is probably caused by a bug in the compiler.\n" log-stream fputs
+                          token-address log-stream fput-here
+                          start-address log-stream fput-here
+                          procedure-name procedure-address log-stream fput-inside-procedure
+                          1 exit drop
+                        end
                       end
-
-                      // Free the space allocated for the name of each variable.
-                      name mfree
                     end i end inc end drop
 
                     old-local-memory-end local-memory-end !64
-
-                    new-names     mfree
                   end
 
                 else start-keyword KEYWORD-MEMORY = if
@@ -984,16 +1060,11 @@ in let
                         token-address log-stream fput-here
                         start-address log-stream fput-here
                         procedure-name procedure-address log-stream fput-inside-procedure
-                        1 call-sys-exit
+                        1 exit drop
                       end
-
-                      // Free the space allocated for the name of each variable.
-                      name mfree
                     end i end inc end drop
 
                     old-local-memory-end local-memory-end !64
-
-                    new-names     mfree
                   end
 
                 else
@@ -1001,13 +1072,9 @@ in let
                   token-address log-stream fput-here
                   start-address log-stream fput-here
                   procedure-name procedure-address log-stream fput-inside-procedure
-                  1 call-sys-exit
+                  1 exit drop
                 end end end end end
-
-                start-address mfree
               end
-
-              level mfree
             end
 
           else token-arg KEYWORD-IF = if
@@ -1028,17 +1095,15 @@ in let
               LOG.ERR log-stream fputs "'if' requires a bool, there was no items in the stack.\n" log-stream fputs
               token-address log-stream fput-here
               procedure-name procedure-address log-stream fput-inside-procedure
-              1 call-sys-exit
+              1 exit drop
             end
-
-            local-stack local-stack-length queue64.pop-last mfree
 
             local-stack local-stack-length @64 to-dynamic64 let copy-stack in
               copy-stack is-null if
                   LOG.ERR log-stream fputs "'malloc' failed while copying the stack for 'if'.\n" log-stream fputs
                   token-address log-stream fput-here
                   procedure-name procedure-address log-stream fput-inside-procedure
-                  1 call-sys-exit
+                  1 exit drop
               end
 
               32 malloc let obj in
@@ -1046,7 +1111,7 @@ in let
                   LOG.ERR log-stream fputs "'malloc' failed while creating a level object for 'if'.\n" log-stream fputs
                   token-address log-stream fput-here
                   procedure-name procedure-address log-stream fput-inside-procedure
-                  1 call-sys-exit
+                  1 exit drop
                 end
 
                 KEYWORD-IF           obj      !64
@@ -1079,7 +1144,7 @@ in let
                   LOG.ERR log-stream fputs "'malloc' failed while copying the stack for 'while'.\n" log-stream fputs
                   token-address log-stream fput-here
                   procedure-name procedure-address log-stream fput-inside-procedure
-                  1 call-sys-exit
+                  1 exit drop
               end
 
               32 malloc let obj in
@@ -1087,7 +1152,7 @@ in let
                   LOG.ERR log-stream fputs "'malloc' failed while creating a level object for 'while'.\n" log-stream fputs
                   token-address log-stream fput-here
                   procedure-name procedure-address log-stream fput-inside-procedure
-                  1 call-sys-exit
+                  1 exit drop
                 end
 
                 KEYWORD-WHILE        obj      !64
@@ -1116,9 +1181,10 @@ in let
               LOG.ERR log-stream fputs "'do' requires a bool, there was no items in the stack.\n" log-stream fputs
               token-address log-stream fput-here
               procedure-name procedure-address log-stream fput-inside-procedure
-              1 call-sys-exit
+              1 exit drop
             end
 
+            // TODO: Unfinished, should add bool check.
             local-stack local-stack-length queue64.pop-last mfree
             
             local-stack local-stack-length @64 to-dynamic64 let copy-stack in
@@ -1126,7 +1192,7 @@ in let
                   LOG.ERR log-stream fputs "'malloc' failed while copying the stack for 'do'.\n" log-stream fputs
                   token-address log-stream fput-here
                   procedure-name procedure-address log-stream fput-inside-procedure
-                  1 call-sys-exit
+                  1 exit drop
               end
 
               32 malloc let obj in
@@ -1134,7 +1200,7 @@ in let
                   LOG.ERR log-stream fputs "'malloc' failed while creating a level object for 'do'.\n" log-stream fputs
                   token-address log-stream fput-here
                   procedure-name procedure-address log-stream fput-inside-procedure
-                  1 call-sys-exit
+                  1 exit drop
                 end
 
                 KEYWORD-DO           obj      !64
@@ -1176,12 +1242,12 @@ in let
                   LOG.ERR log-stream fputs "'malloc' failed while creating a level object for 'memory'.\n" log-stream fputs
                   token-address log-stream fput-here
                   procedure-name procedure-address log-stream fput-inside-procedure
-                  1 call-sys-exit
+                  1 exit drop
                 end
 
-                KEYWORD-MEMORY       obj      !64
-                token-address        obj  8 + !64
-                local-memory-end @64 obj 24 + !64
+                KEYWORD-MEMORY          obj      !64
+                token-address    dcopy8 obj  8 + !64
+                local-memory-end @64    obj 24 + !64
 
                 // TODO: Add 'and'.
                 // TODO: Add proper pre-compilation for memory size.
@@ -1189,7 +1255,7 @@ in let
                   LOG.ERR log-stream fputs "Reached EOF while expecting a local variable name after 'memory'.\n" log-stream fputs
                   token-address log-stream fput-here
                   procedure-name procedure-address log-stream fput-inside-procedure
-                  1 call-sys-exit
+                  1 exit drop
                 end
 
                 let memory-name-type memory-name-address memory-name-arg in
@@ -1197,14 +1263,14 @@ in let
                     LOG.ERR log-stream fputs "Expected 'name' for local variable name after 'memory', got '" log-stream fputs memory-name-type log-stream fput-type "'.\n" log-stream fputs
                     memory-name-address log-stream fput-here
                     procedure-name procedure-address log-stream fput-inside-procedure
-                    1 call-sys-exit
+                    1 exit drop
                   end
 
                   source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream get-next-token ! if
                     LOG.ERR log-stream fputs "Reached EOF while expecting a local variable size after 'memory'.\n" log-stream fputs
                     token-address log-stream fput-here
                     procedure-name procedure-address log-stream fput-inside-procedure
-                    1 call-sys-exit
+                    1 exit drop
                   end
 
                   let memory-size-type memory-size-address memory-size-arg in
@@ -1212,14 +1278,14 @@ in let
                       LOG.ERR log-stream fputs "Expected 'integer' for local variable size after 'memory', got '" log-stream fputs memory-size-type log-stream fput-type "'.\n" log-stream fputs
                       memory-size-address log-stream fput-here
                       procedure-name procedure-address log-stream fput-inside-procedure
-                      1 call-sys-exit
+                      1 exit drop
                     end
 
                     source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream get-next-token ! if
                       LOG.ERR log-stream fputs "Reached EOF while expecting a local variable size after 'memory'.\n" log-stream fputs
                       token-address log-stream fput-here
                       procedure-name procedure-address log-stream fput-inside-procedure
-                      1 call-sys-exit
+                      1 exit drop
                     end
 
                     let memory-end-type memory-end-address memory-end-arg in
@@ -1227,14 +1293,14 @@ in let
                         LOG.ERR log-stream fputs "Expected 'keyword' after 'memory', got '" log-stream fputs memory-end-type log-stream fput-type "'.\n" log-stream fputs
                         memory-end-address log-stream fput-here
                         procedure-name procedure-address log-stream fput-inside-procedure
-                        1 call-sys-exit
+                        1 exit drop
                       end
 
                       memory-end-arg KEYWORD-AND = if
                         LOG.TODO log-stream fputs "'and' after 'memory' for local variable allocation is not implemented yet.\n" log-stream fputs
                         memory-end-address log-stream fput-here
                         procedure-name procedure-address log-stream fput-inside-procedure
-                        1 call-sys-exit
+                        1 exit drop
                         
                       else memory-end-arg KEYWORD-IN = if
                         // TODO: Check if the new-names queue is full.
@@ -1243,7 +1309,7 @@ in let
                           LOG.ERR log-stream fputs "Local variable '" log-stream fputs memory-name-arg memory-name-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
                           memory-name-address log-stream fput-here
                           procedure-name procedure-address log-stream fput-inside-procedure
-                          1 call-sys-exit
+                          1 exit drop
                         end
 
                         local-memory-end @64 memory-size-arg + local-memory-end !64
@@ -1251,22 +1317,20 @@ in let
                         LOG.ERR log-stream fputs "Expected 'and' or 'in' after local variable, got '" log-stream fputs memory-end-arg log-stream fput-keyword "'.\n" log-stream fputs
                         memory-end-address log-stream fput-here
                         procedure-name procedure-address log-stream fput-inside-procedure
-                        1 call-sys-exit
+                        1 exit drop
                       end end
-
-                      memory-end-address mfree
                     end
-
-                    memory-size-address mfree
                   end
                 end
+
+                local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
 
                 new-names new-names-length @64 to-dynamic64 let new in
                   new is-null if
                     LOG.ERR log-stream fputs "'malloc' failed while allocating space for new-names after 'memory'.\n" log-stream fputs
                     token-address log-stream fput-here
                     procedure-name procedure-address log-stream fput-inside-procedure
-                    1 call-sys-exit
+                    1 exit drop
                   end
 
                   new obj 16 + !64
@@ -1281,7 +1345,7 @@ in let
             // let <name>* in <any> end
             
             // Level structure:
-            //  0- 7 -> KEYWORD-DO
+            //  0- 7 -> KEYWORD-LET
             //  8-15 -> Starter address
             // 16-23 -> New names
             // 24-32 -> Old local-memory-end
@@ -1298,19 +1362,19 @@ in let
                   LOG.ERR log-stream fputs "'malloc' failed while creating a level object for 'let'.\n" log-stream fputs
                   token-address log-stream fput-here
                   procedure-name procedure-address log-stream fput-inside-procedure
-                  1 call-sys-exit
+                  1 exit drop
                 end
 
-                KEYWORD-LET          obj      !64
-                token-address        obj  8 + !64
-                local-memory-end @64 obj 24 + !64
+                KEYWORD-LET             obj      !64
+                token-address    dcopy8 obj  8 + !64
+                local-memory-end @64    obj 24 + !64
 
                 while true do
                   source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream get-next-token ! if
                     LOG.ERR log-stream fputs "Reached EOF while expecting a name for let variable.\n" log-stream fputs
                     token-address log-stream fput-here
                     procedure-name procedure-address log-stream fput-inside-procedure
-                    1 call-sys-exit
+                    1 exit drop
                   end
 
                   let new-token-type new-token-address new-token-arg in
@@ -1320,7 +1384,7 @@ in let
                         new-token-address log-stream fput-here
                         token-address log-stream fput-here
                         procedure-name procedure-address log-stream fput-inside-procedure
-                        1 call-sys-exit
+                        1 exit drop
                       end
 
                       break
@@ -1330,52 +1394,58 @@ in let
                         LOG.ERR log-stream fputs "new-names-length was equal to VARS-MAX-ONCE.\n" log-stream fputs
                         new-token-address log-stream fput-here
                         procedure-name procedure-address log-stream fput-inside-procedure
-                        1 call-sys-exit
+                        1 exit drop
                       end
                       
                       // TODO: Change the way that the variables are stored, so that we can also store their addresses.
-                      new-token-arg new-names new-names-length queue64.append
+                      new-token-arg dcopy8 new-names new-names-length queue64.append
 
                     else
                       LOG.ERR log-stream fputs "Unexpected type while expecting a name for 'let' variable or 'in', got '" log-stream fputs new-token-type log-stream fput-type "'.\n" log-stream fputs
                       new-token-address log-stream fput-here
                       token-address log-stream fput-here
                       procedure-name procedure-address log-stream fput-inside-procedure
-                      1 call-sys-exit
+                      1 exit drop
                     end end
-
-                    new-token-address mfree
                   end
                 end
 
+                // This loop is seperated from the one above, since this loop must run in the reverse order.
                 new-names-length @64 while dup isn-zero do dec let i in
                   local-stack-length @64 is-zero if
                     LOG.ERR log-stream fputs "Expected a data before 'let' variable, but the stack was empty.\n" log-stream fputs
                     token-address log-stream fput-here
                     procedure-name procedure-address log-stream fput-inside-procedure
-                    1 call-sys-exit
+                    1 exit drop
                   end
 
                   local-stack local-stack-length queue64.pop-last drop
 
-                  "    mov     rax, qword [local_ptr]\n" output-file fputs
-                  "    pop     qword [rax" output-file fputs local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "]\n" output-file fputs
+                  new-names i 8 * + @64 mlength 1 = if new-names i 8 * + @64 @8 '_' = else false end if
+                    "    pop     rax\n" output-file fputs
+                  else
+                    "    mov     rax, qword [local_ptr]\n" output-file fputs
+                    "    pop     qword [rax" output-file fputs local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "]\n" output-file fputs
 
-                  new-names i 8 * + @64 local-memory-end @64 let-names let-addresses let-vars-length str-map64.set if
-                    LOG.ERR log-stream fputs "'let' variable '" log-stream fputs new-names i 8 * + @64 dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-                    procedure-name procedure-address log-stream fput-inside-procedure
-                    1 call-sys-exit
+                    new-names i 8 * + @64 local-memory-end @64 let-names let-addresses let-vars-length str-map64.set if
+                      LOG.ERR log-stream fputs "'let' variable '" log-stream fputs new-names i 8 * + @64 dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+                      procedure-name procedure-address log-stream fput-inside-procedure
+                      1 exit drop
+                    end
+
+                    local-memory-end @64 8 + local-memory-end !64
                   end
                   
-                  local-memory-end @64 8 + local-memory-end !64
                 i end end drop
+
+                local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
 
                 new-names new-names-length @64 to-dynamic64 let new in
                   new is-null if
                     LOG.ERR log-stream fputs "'malloc' failed while allocating space for new-names after 'memory'.\n" log-stream fputs
                     token-address log-stream fput-here
                     procedure-name procedure-address log-stream fput-inside-procedure
-                    1 call-sys-exit
+                    1 exit drop
                   end
 
                   new obj 16 + !64
@@ -1388,19 +1458,19 @@ in let
             LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
             token-address log-stream fput-here
             procedure-name procedure-address log-stream fput-inside-procedure
-            1 call-sys-exit
+            1 exit drop
           end end end end end end
 
         else
           LOG.ERR log-stream fputs "Unexpected type while expecting a keyword, an intrinsic, a string or an integer, got '" log-stream fputs token-type log-stream fput-type "'.\n" log-stream fputs
           token-address log-stream fput-here
           procedure-name procedure-address log-stream fput-inside-procedure
-          1 call-sys-exit
+          1 exit drop
         end end end end end
       end
     end
   end
-end end
+end 0 end // dummy return
 
 
 proc compile-file
@@ -1410,6 +1480,8 @@ proc compile-file
   ptr ptr
   // ptr: global-names-array ptr: global-sizes-array ptr: globals-length 
   ptr ptr ptr
+  // ptr: proc-names-array ptr: proc-inputs-array ptr: proc-outputs-array ptr: procs-length
+  ptr ptr ptr ptr
   // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
   ptr ptr ptr
   // libraries-array ptr: libraries-length
@@ -1419,13 +1491,29 @@ proc compile-file
   
   // Compiles a Corth source file.
   // Compilation warning and errors are dumped to log-stream.
+
+  // TODO: Add called-from to improve debugging.
 in let
   source-name output-file
   data-definitions-array datas-length
   global-names-array global-sizes-array globals-length
+  proc-names-array proc-inputs-array proc-outputs-array procs-length
   macro-names-array macro-tokens-array macros-length
   libraries-array libraries-length
   log-stream in
+
+  source-name source-name mlength puts "\n" puts
+  source-name libraries-array libraries-array libraries-length @64 8 * + str-sorted8.available if
+    // TODO: Use called-from to improve debugging.
+    LOG.INFO log-stream fputs "Skipping library '" log-stream fputs source-name source-name mlength log-stream fputs "' since it was already included.\n" log-stream fputs
+    drop return
+  else
+    let address in
+      address address 8 + libraries-length @64 address libraries-array - 8 / - memcpy64i
+      source-name address !64
+      libraries-length @inc64
+    end
+  end
 
   source-name add-null let c-source-name in
     c-source-name fopen-read
@@ -1436,7 +1524,431 @@ in let
     // Check if the source is opened.
     source-file isn-pos if
       LOG.ERR log-stream fputs "Could not open source file '" log-stream fputs source-name source-name mlength dec log-stream fputs "'\n" log-stream fputs LOG.RESET log-stream fputs
-      1 call-sys-exit
+      1 exit drop
+    end
+
+    memory extended-array  sizeof(int) EXTENDED-MAX-LENGTH * and
+           extended-start  sizeof(int)                       and
+           extended-end    sizeof(int)                       and
+           
+           line-no                sizeof(int)                and
+           char-no                sizeof(int)                in
+
+      // Reset extended-tokens.
+      0 extended-start !64
+      0 extended-end   !64
+
+      // Reset line-no and char-no variables.
+      1 line-no !64
+      0 char-no !64
+
+      // Get next token and check if there is one available.
+      while source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token do
+        let token-type token-address token-arg in
+          token-type TYPE-KEYWORD = if
+            // -------- Global keywords --------
+            token-arg KEYWORD-INCLUDE = if
+              // -------- Keyword 'include' -------- 
+              // TODO: Create a function to include.
+              // TODO: Allow including packages.
+              // TODO: Add library search locations.
+              // TODO: Add pragma once.
+
+              // Get the next token, which should be the include path.
+              source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
+                LOG.ERR log-stream fputs "Reached EOF while expecting an include path.\n" log-stream fputs
+                token-address log-stream fput-here
+                1 exit drop
+              end
+
+              let path-token-type path-token-address path-token-arg in
+                path-token-type TYPE-NAME != if
+                  LOG.ERR log-stream fputs "Expected a 'name' for path after 'include', got '" log-stream fputs path-token-type log-stream fput-type "'.\n" log-stream fputs
+                  path-token-address log-stream fput-here
+                  1 exit drop
+                end
+
+                memory stats sizeof(stat) in
+                  path-token-arg add-null dup stats stat drop mfree
+
+                  stats 24 + @64 S_IFMT && let masked in
+                    masked S_IFREG = if
+                      path-token-arg output-file
+                      data-definitions-array datas-length
+                      global-names-array global-sizes-array globals-length
+                      proc-names-array proc-inputs-array proc-outputs-array procs-length
+                      macro-names-array macro-tokens-array macros-length
+                      libraries-array libraries-length
+                      log-stream compile-file
+                    else masked S_IFDIR = if
+                      LOG.TODO log-stream fputs "Including directories is not implemented yet.\n" log-stream fputs
+                      path-token-address log-stream fput-here
+                      1 exit drop
+                    else
+                      LOG.ERR log-stream fputs "Invalid file type, got " log-stream fputs masked log-stream fputx ".\n" log-stream fputs
+                      path-token-address log-stream fput-here
+                      1 exit drop
+                    end end
+                  end
+                end
+                
+              end
+              
+            else token-arg KEYWORD-MEMORY = if
+              // -------- Keyword 'memory' --------
+              
+              // Get the next token, which sould be the include path.
+              source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
+                LOG.ERR log-stream fputs "Reached EOF while expecting a global variable name after 'memory'.\n" log-stream fputs
+                token-address log-stream fput-here
+                1 exit drop
+              end
+
+              let memory-name-type memory-name-address memory-name-arg in
+                memory-name-type TYPE-NAME != if
+                  LOG.ERR log-stream fputs "Expected a 'name' for global variable name after 'memory', got '" log-stream fputs memory-name-type log-stream fput-type "'.\n" log-stream fputs
+                  memory-name-address log-stream fput-here
+                  1 exit drop
+                end
+
+                // TODO: Implement size calculation.
+                source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
+                  LOG.ERR log-stream fputs "Reached EOF while expecting a global variable name after 'memory'.\n" log-stream fputs
+                  token-address log-stream fput-here
+                  1 exit drop
+                end
+
+                let memory-size-type memory-size-address memory-size-arg in
+                  memory-size-type TYPE-INTEGER != if
+                    LOG.ERR log-stream fputs "Expected an 'int' for global variable size after 'memory', got '" log-stream fputs memory-size-type log-stream fput-type ".\n" log-stream fputs
+                    memory-size-type log-stream fput-here
+                    1 exit drop
+                  end
+
+                  source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
+                    LOG.ERR log-stream fputs "Reached EOF while expecting global variable size after 'memory'.\n" log-stream fputs
+                    token-address log-stream fput-here
+                    1 exit drop
+                  end
+
+                  let end-token-type end-token-address end-token-arg in
+                    end-token-type TYPE-KEYWORD != if
+                      LOG.ERR log-stream fputs "Expected an 'int' for global variable size after 'memory', got '" log-stream fputs end-token-type log-stream fput-type "'.\n" log-stream fputs
+                      end-token-address log-stream fput-here
+                      1 exit drop
+                    end
+
+                    end-token-arg KEYWORD-END != if
+                      LOG.ERR log-stream fputs "Unexpected keyword while expecting global variable size, got '" log-stream fputs end-token-arg log-stream fput-keyword "'.\n" log-stream fputs
+                      end-token-address log-stream fput-here
+                      1 exit drop
+                    end
+                  end
+
+                  // TODO: Check if the global variable queue was filled.
+                  memory-name-arg memory-size-arg global-names-array global-sizes-array globals-length str-map64.set drop
+                end
+              end
+              
+            else token-arg KEYWORD-MACRO = if
+              // -------- Keyword 'macro' --------
+
+              // Get the next token, which should be the name of the macro.
+              source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
+                LOG.ERR log-stream fputs "Reached EOF while expecting a macro name.\n" log-stream fputs
+                token-address log-stream fput-here
+                1 exit drop
+              end
+
+              let macro-name-token-type macro-name-token-address macro-name-token-arg in
+                macro-name-token-type TYPE-NAME != if
+                  LOG.ERR log-stream fputs "Expected a 'name' for macro name after 'macro', got '" log-stream fputs macro-name-token-type log-stream fput-type "'.\n" log-stream fputs
+                  macro-name-token-address log-stream fput-here
+                  1 exit drop
+                end
+
+                // macro-tokens-array and macro-tokens-length are used to create a QUEUE for macro tokens.
+                memory new-macro-tokens-array  MACRO-MAX-TOKENS sizeof(int) * and
+                       new-macro-tokens-length sizeof(int)                    in
+
+                  0 new-macro-tokens-length !64
+                       
+                  while true do
+                    // Get next tokens, until an 'endmacro' is found.
+                    source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
+                      LOG.ERR log-stream fputs "Reached EOF while expecting an 'endmacro' in macro '" log-stream fputs macro-name-token-arg macro-name-token-arg mlength log-stream fputs "'.\n" log-stream fputs
+                      token-address log-stream fput-here
+                      1 exit drop
+                    end
+
+                    let macro-new-token-type macro-new-token-address macro-new-token-arg in
+                      macro-new-token-type TYPE-KEYWORD = if
+                        macro-new-token-arg KEYWORD-ENDMACRO = if
+                          break
+                        end
+                      end
+                      
+                      new-macro-tokens-length MACRO-MAX-TOKENS - 3 < if
+                        LOG.ERR log-stream fputs "Macro '" log-stream fputs macro-name-token-arg macro-name-token-arg mlength log-stream fputs "' is longer than MACRO-MAX-TOKENS, stopping execution.\n" log-stream fputs
+                        token-address log-stream fput-here
+                        1 exit drop
+                      end
+
+                      macro-new-token-type    new-macro-tokens-array new-macro-tokens-length queue64.append
+                      macro-new-token-address new-macro-tokens-array new-macro-tokens-length queue64.append
+                      macro-new-token-arg     new-macro-tokens-array new-macro-tokens-length queue64.append
+
+                    end
+                  end
+
+                  new-macro-tokens-array new-macro-tokens-length @64 to-dynamic64
+                end 
+
+                let macro-tokens in
+                  // TODO: Check if the macros queue was filled.
+                  macro-name-token-arg macro-tokens macro-names-array macro-tokens-array macros-length str-map64.set drop
+                end
+              end
+              
+            else token-arg KEYWORD-PROC = if
+              // -------- 'proc' keyword --------
+
+              // Get the next token, which should be the name of the procedure.
+              source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
+                LOG.ERR log-stream fputs "Reached EOF while expecting a procedure name.\n" log-stream fputs
+                token-address log-stream fput-here
+                1 exit drop
+              end
+
+              let proc-name-token-type proc-name-token-address proc-name-token-arg in
+                proc-name-token-type TYPE-NAME != if
+                  LOG.ERR log-stream fputs "Expected a 'name' for procedure name after 'proc', got " log-stream fputs proc-name-token-type log-stream fput-type "'.\n" log-stream fputs
+                  proc-name-token-address log-stream fput-here
+                  1 exit drop
+                end
+
+                // macro-tokens-array and macro-tokens-length are used to create a QUEUE for macro tokens.
+                memory inputs-array   sizeof(int) PROC-MAX-IO * and
+                       inputs-length  sizeof(int)               and
+                       outputs-array  sizeof(int) PROC-MAX-IO * and
+                       outputs-length sizeof(int)               in
+
+                  0 inputs-length !64
+                  0 outputs-length !64
+
+                  while true do
+                    source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
+                      LOG.ERR log-stream fputs "Reached EOF while expecting procedure input type.\n" log-stream fputs
+                      token-address log-stream fput-here
+                      proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
+                      1 exit drop
+                    end
+
+                    let input-token-type input-token-address input-token-arg in
+                      input-token-type TYPE-KEYWORD = if
+                        input-token-arg KEYWORD-RETURNS != if
+                          LOG.ERR log-stream fputs "Unexpected keyword while expecting input type or '--', got '" log-stream fputs input-token-arg log-stream fput-keyword "'.\n" log-stream fputs
+                          token-address log-stream fput-here
+                          proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
+                          1 exit drop
+                        end
+
+                        break
+                      else input-token-type TYPE-TYPE = if
+                        // TODO: Check if the input queue was filled.
+                        input-token-arg inputs-array inputs-length queue64.append
+                      else
+                        "Expected a 'type' for input type or '--', got '" log-stream fputs input-token-type log-stream fput-type "'.\n" log-stream fputs
+                        input-token-address log-stream fput-here
+                        proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
+                        1 exit drop
+                      end end
+                    end
+                  end
+
+                  while true do
+                    source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
+                      LOG.ERR log-stream fputs "Reached EOF while expecting procedure output type.\n" log-stream fputs
+                      token-address log-stream fput-here
+                      proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
+                      1 exit drop
+                    end
+
+                    let output-token-type output-token-address output-token-arg in
+                      output-token-type TYPE-KEYWORD = if
+                        output-token-arg KEYWORD-IN != if
+                          LOG.ERR log-stream fputs "Unexpected keyword while expecting output type or 'in', got '" log-stream fputs output-token-arg log-stream fput-keyword "'.\n" log-stream fputs
+                          token-address log-stream fput-here
+                          proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
+                          1 exit drop
+                        end
+
+                        break
+                      else output-token-type TYPE-TYPE = if
+                        // TODO: Check if the output queue was filled.
+                        output-token-arg outputs-array outputs-length queue64.append
+                      else
+                        LOG.ERR log-stream fputs "Expected a 'type' for output type or 'in', got '" log-stream fputs output-token-type log-stream fput-type "'.\n" log-stream fputs
+                        output-token-address log-stream fput-here
+                        proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
+                        1 exit drop
+                      end end
+                    end
+                  end
+
+                  memory local-stack        sizeof(int) STACK-MAX-ITEMS * and
+                         local-stack-length sizeof(int)                   in
+
+                    0 local-stack-length !64
+
+                    // TODO: This system must be changed.
+                    0 while dup inputs-length @64 < do let i in
+                      inputs-array i 8 * + @64 let type in
+                        type TYPE-INT = if
+                          create-int local-stack local-stack-length queue64.append
+                        else type TYPE-BOOL = if
+                          create-bool local-stack local-stack-length queue64.append
+                        else
+                          LOG.ERR log-stream fputs "Input types for procedure '" log-stream fputs proc-name-token-arg proc-name-token-arg mlength log-stream fputs "' had an unknown type, got '" log-stream fputs type log-stream fputu "'.\n" log-stream fputs
+                          LOG.INFO log-stream fputs "This error is probably caused by a bug in the compiler.\n" log-stream fputs
+                          proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
+                          1 exit drop
+                        end end
+                      end
+                    i end inc end drop
+
+                    source-name source-file output-file
+                    line-no char-no
+                    data-definitions-array datas-length
+                    global-names-array global-sizes-array globals-length
+                    proc-names-array proc-inputs-array proc-outputs-array procs-length
+                    macro-names-array macro-tokens-array macros-length
+                    proc-name-token-arg proc-name-token-address
+                    local-stack local-stack-length
+                    extended-array extended-start extended-end
+                    log-stream
+                    compile-procedure
+                    LOG.INFO log-stream fputs "Procedure '" log-stream fputs proc-name-token-arg proc-name-token-arg mlength log-stream fputs "' requires at least " log-stream fputs log-stream fputu " bytes of allocated local memory.\n" log-stream fputs
+                    
+                    ".return:\n"                        output-file fputs
+                    "    xchg    rsp, [call_ptr]\n"     output-file fputs
+                    "    pop     qword [local_ptr]\n"   output-file fputs
+                    "    pop     rax\n"                 output-file fputs
+                    "    xchg    rsp, [call_ptr]\n"     output-file fputs
+                    "    jmp     rax\n"                 output-file fputs
+
+                    // TODO: This system must be changed.
+                    memory temp-outputs-length sizeof(ptr) in
+                      outputs-length @64 temp-outputs-length !64
+                      
+                      while local-stack-length @64 isn-zero do
+                        local-stack local-stack-length queue64.pop-last let type in
+                          temp-outputs-length @64 is-zero if
+                            LOG.ERR log-stream fputs "Procedure's stack is too large for its returns.\n" log-stream fputs LOG.RESET log-stream fputs
+                            proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
+                            1 exit drop
+                          end
+                          
+                          outputs-array temp-outputs-length queue64.pop-last let check in
+                            type @64 check != if
+                              LOG.ERR log-stream fputs "Procedure's stack does not match with its return types.\n" log-stream fputs LOG.RESET log-stream fputs
+                              proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
+                              1 exit drop
+                            end
+                          end
+                        end
+                      end
+                      
+                      temp-outputs-length @64 isn-zero if
+                        LOG.ERR log-stream fputs "Procedure's stack is missing some of its returns.\n" log-stream fputs LOG.RESET log-stream fputs
+                        proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
+                        1 exit drop
+                      end
+                    end
+
+                    // Store the procedure name, input and outputs.
+                    proc-name-token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available if
+                      drop
+                      LOG.ERR log-stream fputs "Procedure '" log-stream fputs proc-name-token-arg proc-name-token-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+                      proc-name-token-address log-stream fput-here
+                      1 exit drop
+                    else
+                      let name-address in
+                        name-address proc-names-array - let delta in
+                          proc-inputs-array delta + proc-outputs-array delta + let input-address output-address in
+                            name-address   name-address   8 + procs-length @64 name-address   proc-names-array   - 8 / - memcpy64i
+                            input-address  input-address  8 + procs-length @64 input-address  proc-inputs-array  - 8 / - memcpy64i
+                            output-address output-address 8 + procs-length @64 output-address proc-outputs-array - 8 / - memcpy64i
+                            
+                            proc-name-token-arg name-address !64
+                            
+                            inputs-array inputs-length  @64 to-dynamic64 let inputs-copy in
+                              inputs-copy is-null if
+                                LOG.ERR log-stream fputs "'malloc' failed while copying inputs\n" log-stream fputs
+                                proc-name-token-address log-stream fput-here
+                                1 exit drop
+                              end
+                              inputs-copy input-address  !64
+                            end 
+                            
+                            outputs-array outputs-length  @64 to-dynamic64 let outputs-copy in
+                              outputs-copy is-null if
+                                LOG.ERR log-stream fputs "'malloc' failed while copying outputs\n" log-stream fputs
+                                proc-name-token-address log-stream fput-here
+                                1 exit drop
+                              end
+                              outputs-copy output-address  !64
+                            end 
+                            
+                            procs-length @inc64
+                          end
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+            else
+              LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
+              token-address log-stream fput-here
+              1 exit drop
+            end end end end
+            
+          else
+            LOG.ERR log-stream fputs "Expected a keyword type, got '" log-stream fputs token-type log-stream fput-type "'.\n" log-stream fputs
+            token-address log-stream fput-here
+            1 exit drop
+          end
+        end
+      end drop drop drop
+    end
+
+    // TODO: Print the global variables to file.
+    
+    
+    source-file fclose drop
+  end
+end end
+
+
+proc compile-nasm
+  // ptr: source-name ptr: output-name file-desc: log-stream --
+  ptr ptr file-desc --
+in let source-name output-name log-stream in
+  // Remove the output file.
+  output-name unlink drop
+
+  // Create the output file.
+  output-name 0o777 creat dup isn-pos if
+    LOG.ERR log-stream fputs "Could not create output file '" log-stream fputs output-name output-name mlength log-stream fputs "'.\n" log-stream fputs
+    1 exit drop
+  end
+
+  let output-file in
+    // Check if the file is opened successfully.
+    output-file isn-pos if
+      LOG.ERR log-stream fputs "Could not open output file '" log-stream fputs output-name output-name mlength log-stream fputs "'.\n" log-stream fputs
+      1 exit drop
     end
 
     "segment .text\n"                                   output-file fputs
@@ -1458,383 +1970,58 @@ in let
     "    pop     rdi\n"                                 output-file fputs
     "    syscall\n"                                     output-file fputs
 
-    memory extended-array  sizeof(int) EXTENDED-MAX-LENGTH * and
-           extended-start  sizeof(int)                       and
-           extended-end    sizeof(int)                       and
-           
-           line-no                sizeof(int)                and
-           char-no                sizeof(int)                in
+    memory global-names-array     sizeof(ptr) GLOBALS-MAX-COUNT    * and
+           global-sizes-array     sizeof(ptr) GLOBALS-MAX-COUNT    * and
+           globals-length         sizeof(int)                        and
 
-      // Reset extended-tokens.
-      0 extended-start !64
-      0 extended-end   !64
+           proc-names-array       sizeof(ptr) PROCS-MAX-COUNT      * and
+           proc-inputs-array      sizeof(ptr) PROCS-MAX-COUNT      * and
+           proc-outputs-array     sizeof(ptr) PROCS-MAX-COUNT      * and
+           procs-length           sizeof(int)                        and
 
-      // Reset line-no and char-no variables.
-      1 line-no !64
-      0 char-no !64
+           macro-names-array      sizeof(ptr) MACROS-MAX-COUNT     * and
+           macro-tokens-array     sizeof(ptr) MACROS-MAX-COUNT     * and
+           macros-length          sizeof(int)                        and
 
-      // Get next token and check if there is one available.
-      while source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token do
-        let token-type token-address token-arg in
-          token-type TYPE-KEYWORD = if
-            // -------- Global keywords --------            
-            token-arg KEYWORD-INCLUDE = if
-              // -------- 'include' keyword --------
-              // TODO: Create a function to include.
-              // TODO: Allow including packages.
-              // TODO: Add library search locations.
-              // TODO: Add pragma once.
+           data-definitions-array sizeof(ptr) MACROS-MAX-COUNT     * and
+           datas-length           sizeof(int)                        and
 
-              // Get the next token, which should be the include path.
-              source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
-                LOG.ERR log-stream fputs "Reached EOF while expecting an include path.\n" log-stream fputs
-                token-address log-stream fput-here
-                1 call-sys-exit
-              end
+           libraries-array        sizeof(int) LIBRARIES-MAX-COUNT  * and
+           libraries-length       sizeof(int)                        in
 
-              let path-token-type path-token-address path-token-arg in
-                path-token-type TYPE-NAME != if
-                  LOG.ERR log-stream fputs "Expected a 'name' for path after 'include', got '" log-stream fputs path-token-type log-stream fput-type "'.\n" log-stream fputs
-                  path-token-address log-stream fput-here
-                  1 call-sys-exit
-                end
-                
-                path-token-arg output-file
-                data-definitions-array datas-length
-                global-names-array global-sizes-array globals-length
-                macro-names-array macro-tokens-array macros-length
-                libraries-array libraries-length
-                log-stream compile-file
+      0 globals-length   !64
+      0 procs-length     !64
+      0 macros-length    !64
+      0 libraries-length !64
 
-                // Deallocate the space for the token addresses.
-                path-token-address mfree
-              end
+      source-name output-file
+      data-definitions-array datas-length
+      global-names-array global-sizes-array globals-length
+      proc-names-array proc-inputs-array proc-outputs-array procs-length
+      macro-names-array macro-tokens-array macros-length
+      libraries-array libraries-length
+      log-stream
+      compile-file
 
-              token-address mfree
-              
-            else token-arg KEYWORD-MEMORY = if
-              // -------- 'memory' keyword --------
-              
-              // Get the next token, which sould be the include path.
-              source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
-                LOG.ERR log-stream fputs "Reached EOF while expecting a global variable name after 'memory'.\n" log-stream fputs
-                token-address log-stream fput-here
-                1 call-sys-exit
-              end
-
-              let memory-name-type memory-name-address memory-name-arg in
-                memory-name-type TYPE-NAME != if
-                  LOG.ERR log-stream fputs "Expected a 'name' for global variable name after 'memory', got '" log-stream fputs memory-name-type log-stream fput-type "'.\n" log-stream fputs
-                  memory-name-address log-stream fput-here
-                  1 call-sys-exit
-                end
-
-                // TODO: Implement size calculation.
-                source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
-                  LOG.ERR log-stream fputs "Reached EOF while expecting a global variable name after 'memory'.\n" log-stream fputs
-                  token-address log-stream fput-here
-                  1 call-sys-exit
-                end
-
-                let memory-size-type memory-size-address memory-size-arg in
-                  memory-size-type TYPE-INTEGER != if
-                    LOG.ERR log-stream fputs "Expected an 'int' for global variable size after 'memory', got '" log-stream fputs memory-size-type log-stream fput-type ".\n" log-stream fputs
-                    memory-size-type log-stream fput-here
-                    1 call-sys-exit
-                  end
-
-                  source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
-                    LOG.ERR log-stream fputs "Reached EOF while expecting global variable size after 'memory'.\n" log-stream fputs
-                    token-address log-stream fput-here
-                    1 call-sys-exit
-                  end
-
-                  let end-token-type end-token-address end-token-arg in
-                    end-token-type TYPE-KEYWORD != if
-                      LOG.ERR log-stream fputs "Expected an 'int' for global variable size after 'memory', got '" log-stream fputs end-token-type log-stream fput-type "'.\n" log-stream fputs
-                      end-token-address log-stream fput-here
-                      1 call-sys-exit
-                    end
-
-                    end-token-arg KEYWORD-END != if
-                      LOG.ERR log-stream fputs "Unexpected keyword while expecting global variable size, got '" log-stream fputs end-token-arg log-stream fput-keyword "'.\n" log-stream fputs
-                      end-token-address log-stream fput-here
-                      1 call-sys-exit
-                    end
-
-                    end-token-address mfree
-                  end
-
-                  // TODO: Check if the global variable queue was filled.
-                  memory-name-arg memory-size-arg global-names-array global-sizes-array globals-length str-map64.set drop
-
-                  memory-size-address mfree
-                end
-
-                memory-name-address mfree
-              end
-
-              token-address mfree
-              
-            else token-arg KEYWORD-MACRO = if
-              // -------- 'macro' keyword --------
-
-              // Get the next token, which should be the name of the macro.
-              source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
-                LOG.ERR log-stream fputs "Reached EOF while expecting a macro name.\n" log-stream fputs
-                token-address log-stream fput-here
-                1 call-sys-exit
-              end
-
-              let macro-name-token-type macro-name-token-address macro-name-token-arg in
-                macro-name-token-type TYPE-NAME != if
-                  LOG.ERR log-stream fputs "Expected a 'name' for macro name after 'macro', got '" log-stream fputs macro-name-token-arg log-stream fput-type "'.\n" log-stream fputs
-                  macro-name-token-address log-stream fput-here
-                  1 call-sys-exit
-                end
-
-                // macro-tokens-array and macro-tokens-length are used to create a QUEUE for macro tokens.
-                memory new-macro-tokens-array  MACRO-MAX-TOKENS sizeof(int) * and
-                       new-macro-tokens-length sizeof(int)                    in
-
-                  0 new-macro-tokens-length !64
-                       
-                  while true do
-                   // Get next tokens, until an 'endmacro' is found.
-                    source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
-                      LOG.ERR log-stream fputs "Reached EOF while expecting an 'endmacro' in macro '" log-stream fputs macro-name-token-arg macro-name-token-arg mlength log-stream fputs "'.\n" log-stream fputs
-                      token-address log-stream fput-here
-                      1 call-sys-exit
-                    end
-
-                    let macro-new-token-type macro-new-token-address macro-new-token-arg in
-                      macro-new-token-type TYPE-KEYWORD = if
-                        macro-new-token-arg KEYWORD-ENDMACRO = if
-                          break
-                        end
-                      end
-                      
-                      new-macro-tokens-length MACRO-MAX-TOKENS - 3 < if
-                        LOG.ERR log-stream fputs "Macro '" log-stream fputs macro-name-token-arg macro-name-token-arg mlength log-stream fputs "' is longer than MACRO-MAX-TOKENS, stopping execution.\n" log-stream fputs
-                        token-address log-stream fput-here
-                        1 call-sys-exit
-                      end
-
-                      macro-new-token-type    new-macro-tokens-array new-macro-tokens-length queue64.append
-                      macro-new-token-address new-macro-tokens-array new-macro-tokens-length queue64.append
-                      macro-new-token-arg     new-macro-tokens-array new-macro-tokens-length queue64.append
-
-                    end
-                  end
-
-                  new-macro-tokens-array new-macro-tokens-length @64 to-dynamic64
-                end 
-
-                let macro-tokens in
-                  // TODO: Check if the macros queue was filled.
-                  macro-name-token-arg macro-tokens macro-names-array macro-tokens-array macros-length str-map64.set drop
-                end
-
-                macro-name-token-address mfree
-              end
-
-              token-address mfree
-              
-            else token-arg KEYWORD-PROC = if
-              // -------- 'proc' keyword --------
-
-              // Get the next token, which should be the name of the procedure.
-              source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
-                LOG.ERR log-stream fputs "Reached EOF while expecting a procedure name.\n" log-stream fputs
-                token-address log-stream fput-here
-                1 call-sys-exit
-              end
-
-              let proc-name-token-type proc-name-token-address proc-name-token-arg in
-                proc-name-token-type TYPE-NAME != if
-                  "Expected a 'name' for procedure name after 'proc', got " log-stream fputs proc-name-token-type log-stream fput-type "'.\n" log-stream fputs
-                  proc-name-token-type log-stream fput-here
-                  1 call-sys-exit
-                end
-
-                // macro-tokens-array and macro-tokens-length are used to create a QUEUE for macro tokens.
-                memory inputs-array   sizeof(int) PROC-MAX-IO * and
-                       inputs-length  sizeof(int)               and
-                       outputs-array  sizeof(int) PROC-MAX-IO * and
-                       outputs-length sizeof(int)               in
-
-                  0 inputs-length !64
-
-                  while true do
-                    source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
-                      LOG.ERR log-stream fputs "Reached EOF while expecting procedure input type.\n" log-stream fputs
-                      token-address log-stream fput-here
-                      proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                      1 call-sys-exit
-                    end
-
-                    let input-token-type input-token-address input-token-arg in
-                      input-token-type TYPE-KEYWORD = if
-                        input-token-arg KEYWORD-RETURNS != if
-                          LOG.ERR log-stream fputs "Unexpected keyword while expecting input type or '--', got '" log-stream fputs input-token-arg log-stream fput-keyword "'.\n" log-stream fputs
-                          token-address log-stream fput-here
-                          proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                          1 call-sys-exit
-                        end
-
-                        break
-                      else input-token-type TYPE-TYPE = if
-                        // TODO: Check if the input queue was filled.
-                        input-token-arg inputs-array inputs-length queue64.append
-                      else
-                        "Expected a 'type' for input type or '--', got '" log-stream fputs input-token-type log-stream fput-type "'.\n" log-stream fputs
-                        input-token-address log-stream fput-here
-                        proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                        1 call-sys-exit
-                      end end
-                    end
-                  end
-
-                  while true do
-                    source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream get-next-token ! if
-                      LOG.ERR log-stream fputs "Reached EOF while expecting procedure output type.\n" log-stream fputs
-                      token-address log-stream fput-here
-                      proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                      1 call-sys-exit
-                    end
-
-                    let output-token-type output-token-address output-token-arg in
-                      output-token-type TYPE-KEYWORD = if
-                        output-token-arg KEYWORD-IN != if
-                          LOG.ERR log-stream fputs "Unexpected keyword while expecting output type or 'in', got '" log-stream fputs output-token-arg log-stream fput-keyword "'.\n" log-stream fputs
-                          token-address log-stream fput-here
-                          proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                          1 call-sys-exit
-                        end
-
-                        break
-                      else output-token-type TYPE-TYPE = if
-                        // TODO: Check if the output queue was filled.
-                        output-token-arg outputs-array outputs-length queue64.append
-                      else
-                        LOG.ERR log-stream fputs "Expected a 'type' for output type or 'in', got '" log-stream fputs output-token-type log-stream fput-type "'.\n" log-stream fputs
-                        output-token-address log-stream fput-here
-                        proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                        1 call-sys-exit
-                      end end
-                    end
-                  end
-
-                  memory local-stack        sizeof(int) STACK-MAX-ITEMS * and
-                         local-stack-length sizeof(int)                   in
-
-                    0 local-stack-length !64
-
-                    // TODO: This system must be changed.
-                    0 while dup inputs-length @64 < do let i in
-                      inputs-array i 8 * + @64 let type in
-                        type TYPE-INT = if
-                          create-int local-stack local-stack-length queue64.append
-                        else type TYPE-BOOL = if
-                          create-bool local-stack local-stack-length queue64.append
-                        else
-                          LOG.ERR log-stream fputs "Input types for procedure '" log-stream fputs proc-name-token-arg proc-name-token-arg mlength log-stream fputs "' had an unknown type, got '" log-stream fputs type log-stream fputu "'.\n" log-stream fputs
-                          LOG.INFO log-stream fputs "This error is probably caused by a bug in the compiler.\n" log-stream fputs
-                          proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                          1 call-sys-exit
-                        end end
-                      end
-                    i end inc end drop
-
-                    source-name source-file output-file
-                    line-no char-no
-                    data-definitions-array datas-length
-                    global-names-array global-sizes-array globals-length
-                    macro-names-array macro-tokens-array macros-length
-                    proc-name-token-arg proc-name-token-address
-                    local-stack local-stack-length
-                    extended-array extended-start extended-end
-                    log-stream
-                    compile-procedure
-                    
-                    ".return:\n"                        output-file fputs
-                    "    xchg    rsp, [call_ptr]\n"     output-file fputs
-                    "    pop     qword [local_ptr]\n"   output-file fputs
-                    "    pop     rax\n"                 output-file fputs
-                    "    xchg    rsp, [call_ptr]\n"     output-file fputs
-                    "    jmp     rax\n"                 output-file fputs
-
-                    // TODO: This system must be changed.
-                    memory temp-outputs-length sizeof(ptr) in
-                      outputs-length @64 temp-outputs-length !64
-                      while local-stack-length @64 isn-zero do
-                        local-stack local-stack-length queue64.pop-last let type in
-                          temp-outputs-length @64 is-zero if
-                            LOG.ERR log-stream fputs "Procedure's stack is too large for its returns.\n" log-stream fputs LOG.RESET log-stream fputs
-                            proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                            1 call-sys-exit
-                          end
-                          
-                          outputs-array temp-outputs-length queue64.pop-last let check in
-                            type @64 check != if
-                              LOG.ERR log-stream fputs "Procedure's stack is not matching with its return types.\n" log-stream fputs LOG.RESET log-stream fputs
-                              proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                              1 call-sys-exit
-                            end
-                          end
-                        end
-                      end
-
-                      temp-outputs-length @64 isn-zero if
-                        LOG.ERR log-stream fputs "Procedure's stack is missing some of its returns.\n" log-stream fputs LOG.RESET log-stream fputs
-                        proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                        1 call-sys-exit
-                      end
-                    end
-                  end
-                end
-
-                proc-name-token-address mfree
-              end
-              
-              token-address mfree
-            else
-              LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
-              token-address log-stream fput-here
-              1 call-sys-exit
-            end end end end
-            
-          else
-            LOG.ERR log-stream fputs "Expected a keyword type, got '" log-stream fputs token-type log-stream fput-type "'.\n" log-stream fputs
-            token-address log-stream fput-here
-            1 call-sys-exit
-          end
+      "segment .data\n" output-file fputs
+      0 while dup datas-length @64 < do let i in
+        "    data_" output-file fputs i output-file fputu ": db " output-file fputs
+        data-definitions-array i 8 * + @64 let data in
+          0 while dup data mlength < do let j in
+            j data + @8 output-file fputu ", " output-file fputs
+          j end inc end drop
         end
-      end drop drop drop
+        "\n" output-file fputs
+      i end inc end drop
     end
 
-    "segment .data\n" output-file fputs
-    0 while dup datas-length @64 < do let i in
-      "    data_" output-file fputs i output-file fputu ": db " output-file fputs
-      data-definitions-array i 8 * + @64 let data in
-        0 while dup data mlength < do let j in
-          j data + @8 output-file fputu ", " output-file fputs
-        j end inc end drop
-      end
-      "\n" output-file fputs
-    i end inc end drop
+    "segment .bss\n"                                    output-file fputs
+    "    local_memory:   resb 67108864\n"               output-file fputs
+    "    local_ptr:      resq 1\n"                      output-file fputs
+    "    call_stack:     resb 67108864\n"               output-file fputs
+    "    call_ptr:       resq 1\n"                      output-file fputs
 
-    // TODO: Print the global variables to file.
-    
-    "
-segment .bss
-    local_memory:   resb 67108864
-    local_ptr:      resq 1
-    call_stack:     resq 67108864
-    call_ptr:       resq 1
-" output-file fputs
-    
-    source-file fclose drop
+    output-file fclose drop
   end
 end end
 
@@ -1849,50 +2036,15 @@ in let argc argv in
   SOURCE-NAME to-dynamic8 let source-name in
     source-name is-null if
       "'malloc' failed while making the source name dynamic.\n" eputs
-      1 call-sys-exit
-    end
-    
-    OUTPUT-NAME drop unlink drop
-    OUTPUT-NAME drop 0o777 creat dup isn-pos if
-      "Could not create output file.\n" eputs
-      1 call-sys-exit
+      1 exit drop
     end
 
-    let output in
-      // Check if the file is opened successfully.
-      output isn-pos if
-        "Could not open output file.\n" eputs
-        1 call-sys-exit
+    OUTPUT-NAME to-dynamic8 add-null let output-name in
+      output-name is-null if
+        "'malloc' failed while making the output name dynamic.\n" eputs
       end
- 
-      memory global-names-array     sizeof(ptr) GLOBALS-MAX-COUNT    * and
-             global-sizes-array     sizeof(ptr) GLOBALS-MAX-COUNT    * and
-             globals-length         sizeof(int)                        and
-             
-             macro-names-array      sizeof(ptr) MACROS-MAX-COUNT     * and
-             macro-tokens-array     sizeof(ptr) MACROS-MAX-COUNT     * and
-             macros-length          sizeof(int)                        and
-             
-             data-definitions-array sizeof(ptr) MACROS-MAX-COUNT     * and
-             datas-length           sizeof(int)                        and
-             
-             libraries-array        sizeof(int) LIBRARIES-MAX-COUNT  * and
-             libraries-length       sizeof(int)                        in
 
-        0 globals-length   !64
-        0 macros-length    !64
-        0 libraries-length !64
-
-        source-name output
-        data-definitions-array datas-length
-        global-names-array global-sizes-array globals-length
-        macro-names-array macro-tokens-array macros-length
-        libraries-array libraries-length
-        STDERR
-        compile-file
-      end
-      
-      output fclose drop
+      source-name output-name STDERR compile-nasm
     end
   end
 end 0 end
@@ -1905,33 +2057,14 @@ Name definitions:
     Global variables
     Macros
     Procedures
+
   Private:
     Local variables
     Let variables
 
-Stack data:  
-  0  - 7  -> type
-  8  - n  -> args
-
-1: Integer constant args:
-  8  - 15 -> constant
-
-2: Real stack data args:
-
-3: Read address args:
-  8  - 15 -> address
-
-4: Global address args:
-  8  - 15 -> global address name
-
-n: Operator args (addition, subtraction, multiplication, division, bit shifting, bitwise operators):
-  8  - 15 -> constant
-  16 - n  -> other operands
-
 Differences with the Python compiler:
-  - In this compiler, if a name is redefined; it is overwritten. In the Python compiler, that would cause an error.
-  - Precompilation.
+  - If a let variable is named '_', the stack value will be popped but the variable won't be saved and the name won't be created.
 
 Syscall register arguments:
-%rdi %rsi %rdx %r10 %r8 %r9.
+  %rdi %rsi %rdx %r10 %r8 %r9
 */
