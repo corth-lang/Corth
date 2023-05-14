@@ -162,7 +162,7 @@
 
 
         //// This defines a 'for' loop that starts from <start>, and increases until <end>.
-        //// If <end> is less than <start>, 'dec' and '<' should be replaced with 'inc' and '>'.
+        //// If <end> is less than <start>, 'inc' and '<' should be replaced with 'dec' and '>'.
         //// Equality can also be used if <end> should be in the range (like <= or >=).
         <start> while dup <end> < do
           ...
@@ -209,7 +209,7 @@
         do    //// Check if the value is true and if not; jump to the location AFTER 'end', breaking the loop.
         
           //// This code will run AFTER condition is checked. This part can also contain 'break', which (just like do) jumps to the location after 'end'.
-          <code>...
+          <code> ...
           
         end   //// Jump back to 'while'.
         
