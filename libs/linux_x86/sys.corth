@@ -1,145 +1,83 @@
-// sys.corth
-
 /*
 
-Contains basic system macros
+    Linux x86 architecture SYS library
+
+Contains basic system macros for SYSCALL constants and overwrappers.
 
 */
 
-include libs/core/
+include libs/core/arithmetic.corth
+include libs/core/stack.corth
 
-// -- SYSTEM CONSTANTS --
+macro file-desc         int endmacro
+macro sizeof(file-desc)   8 endmacro
 
-macro file-desc int endmacro
+macro sizeof(file-desc)   8 endmacro
+macro sizeof(stat)      144 endmacro
 
-// MAIN STREAMS
+// Main streams
 macro STDIN          0 endmacro
 macro STDOUT         1 endmacro
 macro STDERR         2 endmacro
 
-// SYSCALLS
+// SYSCALLs
 macro SYSREAD        0 endmacro
 macro SYSWRITE       1 endmacro
 macro SYSOPEN        2 endmacro
 macro SYSCLOSE       3 endmacro
-
+macro SYSSTAT        4 endmacro
+macro SYSFSTAT       5 endmacro
+macro SYSLSTAT       6 endmacro
+macro SYSPOLL        7 endmacro
 macro SYSLSEEK       8 endmacro
-
 macro SYSNANOSLEEP  35 endmacro
-
 macro SYSEXIT       60 endmacro
-
 macro SYSRMDIR      84 endmacro
 macro SYSCREAT      85 endmacro
 macro SYSLINK       86 endmacro
 macro SYSUNLINK     87 endmacro
-
 macro SYSGETTOD     96 endmacro
-
 macro SYSSETTOD    164 endmacro
-
 macro SYSTIME      201 endmacro
 
-// FILE MODES
+// File modes
 macro RD-ONLY        0 endmacro
 macro WR-ONLY        1 endmacro
 macro RDWR           2 endmacro
 
+// Seek whence
 macro SEEK-SET       0 endmacro
 macro SEEK-CUR       1 endmacro
 macro SEEK-END       2 endmacro
 
-memory nanosleep-time sizeof(int) 2 * end
+// Standard wrappers
+macro fseek SYSLSEEK syscall3 endmacro          // file-desc: file-desc int: offset int: whence
+macro ftell 0 SEEK-CUR fseek endmacro           // file-desc: file-desc -- int: file-pointer
+macro fopen SYSOPEN syscall3 endmacro           // int: str-ptr int: mode int: flags -- file-desc: file-desc
+macro fclose SYSCLOSE syscall1 endmacro         // file-desc: file -- int: success
+macro stat SYSSTAT syscall2 endmacro            // ptr: path ptr: buffer -- int: success
+macro fstat SYSFSTAT syscall2 endmacro          // file-desc: file ptr: buffer -- int: success
+macro lstat SYSLSTAT syscall2 endmacro          // ptr: path ptr: buffer -- int: success
+macro nanosleep SYSNANOSLEEP syscall2 endmacro  // ptr: nanosleep-time -- int: success
+macro exit SYSEXIT syscall1 endmacro            // int: exit-code -- int: success
+macro time SYSTIME syscall1 endmacro            // int: address -- int: time
+macro rmdir SYSRMDIR syscall1 endmacro          // ptr: path -- int: success
+macro creat SYSCREAT syscall2 endmacro          // ptr: path int: mode -- int: success
+macro unlink SYSUNLINK syscall1 endmacro        // ptr: path -- int: success
 
-macro call-sys-exit
-  // int: exit-code
-  
-  SYSEXIT syscall1 drop
-endmacro
+// Non-standard wrappers
+macro flength 0 SEEK-END fseek endmacro         // file-desc: file-desc -- int: length 
 
-macro fseek
-  // file-desc: file-desc int: offset int: whence
+macro fopen-read RD-ONLY 0 fopen endmacro       // int: str-ptr -- file-desc: file-desc
+macro fopen-write WR-ONLY 0 fopen endmacro      // int: str-ptr -- file-desc: file-desc
+macro fopen-read-write RDWR 0 fopen endmacro    // int: str-ptr -- file-desc: file-desc
 
-  SYSLSEEK syscall3
-endmacro
-
-macro ftell
-  // file-desc: file-desc -- int: file-pointer
-  // Returns the position of the file pointer.
-  0 SEEK-CUR fseek
-endmacro
-
-macro flength
-  // file-desc: file-desc -- int: length
-  // Returns the length of the file.
-  // NOTE: Moves the file pointer to the end; so to not lose information, file pointer should be saved before.
-  0 SEEK-END fseek
-endmacro
-
-macro fopen
-  // int: str-ptr int: mode int: flags -- file-desc: file-desc
-  // Opens a file stream with the specified mode.
-  SYSOPEN syscall3
-endmacro
-
-macro fopen-read
-  // int: str-ptr -- file-desc: file-desc
-  // Opens a file stream in read mode.
-  RD-ONLY 0 fopen
-endmacro
-
-macro fopen-write
-  // int: str-ptr -- file-desc: file-desc
-  // Opens a file stream in write mode.
-  WR-ONLY 0 fopen
-endmacro
-
-macro fopen-read-write
-  // int: str-ptr -- file-desc: file-desc
-  // Opens a file stream in read and write mode.
-  RDWR 0 fopen
-endmacro
-
-macro fclose
-  // file-desc: file-desc
-  // Closes a file stream.
-  SYSCLOSE syscall1
-endmacro
-
-macro set-nanosleep-time
-  // int: seconds int: nanoseconds
-  
-  nanosleep-time 0 + !64
-  nanosleep-time 8 + !64
-endmacro
-
-macro get-nanosleep-time
-  // -- int: seconds int: nanoseconds
-  
-  nanosleep-time 0 + @64
-  nanosleep-time 8 + @64
-endmacro
-
-macro nanosleep
-  nanosleep-time 0 SYSNANOSLEEP syscall2 drop
-endmacro
-
-macro time
-  // -- int: time
-  NULLPTR SYSTIME syscall1
-endmacro
-
-macro rmdir
-  // ptr: path -- int: success
-  SYSRMDIR syscall1
-endmacro
-
-macro creat
-  // ptr: path int: mode -- int: success
-  SYSCREAT syscall2
-endmacro
-
-macro unlink
-  // ptr: path -- int: success
-  SYSUNLINK syscall1
-endmacro
+// Stat types
+macro S_IFMT   0o170000 endmacro
+macro S_IFSOCK 0o140000 endmacro 
+macro S_IFLNK  0o120000 endmacro  
+macro S_IFREG  0o100000 endmacro  
+macro S_IFBLK  0o060000 endmacro  
+macro S_IFDIR  0o040000 endmacro 
+macro S_IFCHR  0o020000 endmacro
+macro S_IFIFO  0o010000 endmacro
