@@ -11,8 +11,13 @@ The idea to make such a programming language came from the [Porth programming la
 - *./libs/* directory contains some libraries written in Corth.
 - *./examples/* directory contains some examples written in Corth.
 
-For now, the language and tools are made in Python (>=Python3.7 because of the f-strings). As the project evolves, these tools will be rewritten in Corth.
+For now, the language and tools are made in Python. As the project evolves, these tools will be rewritten in Corth.
 
+## Requirements
+
+- To use the Python compiler, Python is required (at least >=3.7 because of the f-strings).
+- Programs are compiled to NASM, which requires the NASM compiler.
+- You will need Linux environment, since syscalls won't work for Windows.
 
 ## How to use the compiler?
 
@@ -48,7 +53,7 @@ For more information about the commands, type:
     
 - This is a simple program that prints "Hello, World!" when run.
 - '[include](#include)' is used to include the library io.corth, which contains some I/O operations like writing to files and the standard output.
-- '[let](#let)' is used to 'name' values. In this example, the parameters are named.
+- '[let](#let)' is used to 'name' values. In this example, it is used to name the parameter values.
 - '[procedures](#procedures)' is used to define a procedure. 'main' is where the program starts.
 - 'puts' is used to print a string to the standard output.
 - For more examples, you can check the *./examples/* directory.
@@ -88,7 +93,7 @@ For more information about the commands, type:
     85 2 /  // stack is now 42
 
 - '+' adds the last two items and pushes the result back, '-' subtracts, '*' multiplies and '/' divides.
-- 'inc' and 'dec' are macros defined as '1 +' and '1 -' in *./libs/core/*. They can be used to increase or decrease a number once.
+- 'inc' and 'dec' are macros defined as '1 +' and '1 -' in *./libs/core/arithmetic.corth*. They can be used to increase or decrease a number once.
 
 ### Include:
 
