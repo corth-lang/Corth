@@ -3,10 +3,11 @@
 ## New compiler:
 
 - Implement global variables.
-- Implement macros.
 - Add types for let variables.
 - Implement more complex patterns of scopes.
 - Implement an optimization model.
+- Implement directory including.
+- Make 'argc' and 'argv' arguments useful.
 
 ## New ideas:
 
@@ -14,6 +15,7 @@
 - Implement local labels.
 - Implement goto.
 - Implement local macros.
+- Implement 'promise' (not sure) keyword, which allows to 'promise' to create procedures for cyclic procedure dependencies.
 
 ## Libraries:
 
