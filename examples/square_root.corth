@@ -7,7 +7,7 @@ in let argc argv in
   "Enter an unsigned integer: " puts
   getu if int-to-fixed64 let x in
     "Square root of " puts x put-ufixed64 " is " puts x sqrt-f put-ufixed64 ".\n" puts
-    "Calculated that with " puts SQRT-TOLERANCE put-ufixed64 " precision.\n" puts
+    "Calculated that with " puts SQRT.TOLERANCE put-ufixed64 " precision.\n" puts
   end else
     drop
   end

@@ -11,7 +11,7 @@ macro tries   10000000 endmacro
 proc main
   int int -- int
 in let argc argv in
-  time rng-seed !64
+  NULLPTR time rng-seed !64
 
   "Generating " puts numbers tries u* putu " random numbers between 0 and " puts numbers putu "...\n" puts
   memory array sizeof(int) numbers * in
