@@ -148,7 +148,7 @@ in 8 - let group in
   group malloc.avail-queue-array malloc.avail-queue-array malloc.avail-queue-length @64 8 * + sorted64.available if
     // If that group was already specified as free.
     "Tried to mfree an already mfreed address\n" eputs
-    100 call-sys-exit drop
+    100 exit drop drop
   else
     malloc.avail-queue-array - 8 / let index in
       group index malloc.avail-queue queue64.insert
