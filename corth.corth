@@ -1502,12 +1502,12 @@ in let
   libraries-array libraries-length
   log-stream in
 
-  source-name source-name mlength puts "\n" puts
   source-name libraries-array libraries-array libraries-length @64 8 * + str-sorted8.available if
     // TODO: Use called-from to improve debugging.
     LOG.INFO log-stream fputs "Skipping library '" log-stream fputs source-name source-name mlength log-stream fputs "' since it was already included.\n" log-stream fputs
     drop return
   else
+    LOG.INFO log-stream fputs "Including library '" log-stream fputs source-name source-name mlength log-stream fputs "'.\n" log-stream fputs
     let address in
       address address 8 + libraries-length @64 address libraries-array - 8 / - memcpy64i
       source-name address !64
