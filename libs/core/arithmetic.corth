@@ -4,20 +4,31 @@ include libs/core/integer.corth
 
 
 // int: x int: y -- bool: cmp(x, y)
-// Compares two integers.
+// Compares two signed integers.
+// TODO: These should be implemented back using INTRINSICs later.
 macro >  swp < endmacro
-macro >= < !   endmacro
 macro <= > !   endmacro
+macro >= < !   endmacro
 macro =  != !  endmacro
+
+// uint: x uint: y -- bool: cmp(x, y)
+// Compares two unsigned integers.
+// TODO: These should be implemented using INTRINSICs later.
+macro u<  MIN-INT + swp MIN-INT + swp <   endmacro
+macro u>  MIN-INT + swp MIN-INT +     <   endmacro
+macro u<= MIN-INT + swp MIN-INT +     < ! endmacro
+macro u>= MIN-INT + swp MIN-INT + swp < ! endmacro
+macro u=  =  endmacro
+macro u!= != endmacro
 
 
 // int: x -- bool: f(x)
-macro is-pos   0 >  endmacro
-macro is-zero  0 =  endmacro
-macro is-neg   0 <  endmacro
-macro isn-pos  0 <= endmacro
-macro isn-zero 0 != endmacro
-macro isn-neg  0 >= endmacro
+macro is-pos   0 >         endmacro
+macro is-zero  0 =         endmacro
+macro is-neg   0 <         endmacro
+macro isn-pos  0 <=        endmacro
+macro isn-zero 0 !=        endmacro
+macro isn-neg  0 >=        endmacro
 macro is-even 2 % is-zero  endmacro
 macro is-odd  2 % isn-zero endmacro
 
