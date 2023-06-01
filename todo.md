@@ -16,6 +16,7 @@
 - Implement goto.
 - Implement local macros.
 - Implement 'promise' (not sure) keyword, which allows to 'promise' to create procedures for cyclic procedure dependencies.
+- Calling standard C functions.
 
 ## Libraries:
 
@@ -33,6 +34,14 @@
 - deque64 library requires an insert and pop procedure.
 - Add a string mapping library that uses hash instead of strings.
 
+## New compiler symbols:
+
+- #warn <message>: Causes the compiler to show a warning.
+- #err <code> <message>: Causes the compiler to show an error and exit with an exit code.
+- #isdef <name>: Checks if a name is defined and returns a bool.
+- #isinc <path>: Checks if a library is included and returns a bool.
+
 ## Other:
 
-- Make a test library.
+- Make a unittest library.
+- Add compiler symbols.
