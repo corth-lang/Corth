@@ -14,26 +14,25 @@ macro POS.LINE   0  endmacro
 macro POS.CHAR   8  endmacro
 macro POS.AT     16 endmacro
 
-macro LOG.RESET "\x1b[0;97m"                     endmacro
-macro LOG.ERR   "\x1b[1;31m[ERROR] "             endmacro
+macro LOG.SOFT  "\x1b[1;31m[SOFT]\x1b[0;97m "    endmacro
+macro LOG.ERR   "\x1b[1;31m[ERROR]\x1b[0;97m "   endmacro
 macro LOG.INFO  "\x1b[1;97m[INFO]\x1b[0;97m "    endmacro
-macro LOG.CMD   "\x1b[1;32m[CMD]\x1b[0;32m "     endmacro
-macro LOG.TODO  "\x1b[1;35m[TODO] "              endmacro
-macro LOG.WARN  "\x1b[1;33m[WARNING]\x1b[0;33m " endmacro
-macro LOG.HERE  "\x1b[1;32m[HERE] "              endmacro
-macro LOG.LINE  "\x1b[0;37m"                     endmacro
+macro LOG.CMD   "\x1b[1;32m[CMD]\x1b[0;97m "     endmacro
+macro LOG.TODO  "\x1b[1;35m[TODO]\x1b[0;97m "    endmacro
+macro LOG.WARN  "\x1b[1;33m[WARNING]\x1b[0;97m " endmacro
+macro LOG.HERE  "\x1b[1;32m[HERE]\x1b[0;97m "    endmacro
 
 
-// TODO: Create procedures that can check the type and argument of the tokens.
+// TODO: Add fput-token
 
 proc generate-address
-  // ptr: file-name int: start-line int: start-char int: start-at int: end-line int: end-char int: end-at file-desc: log-stream -- ptr: address
+  // ptr: file-name int: start-line int: start-char int: start-at int: end-line int: end-char int: end-at file-sc: log-stream -- ptr: address
   ptr int int int int int int file-desc -- ptr
   // Returns a dynamicly-placed object to store the address of token.
 in let log-stream in
   sizeof(address) malloc let address in
     address is-null if
-      LOG.ERR log-stream fputs "'malloc' failed while generating address.\n" log-stream fputs LOG.RESET log-stream fputs
+      LOG.ERR log-stream fputs "'malloc' failed while generating address.\n" log-stream fputs
       1 exit drop
     end
 
@@ -208,7 +207,7 @@ proc fput-here
   ptr file-desc --
 in let address log-stream in
   LOG.HERE log-stream fputs address log-stream fput-address ":\n" log-stream fputs
-  LOG.LINE log-stream fputs address log-stream fput-lines LOG.RESET log-stream fputs
+  address log-stream fput-lines
 end end
 
 
