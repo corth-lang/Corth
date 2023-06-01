@@ -1,0 +1,98 @@
+/*
+    
+    Array library for Corth
+
+  Contains utility macro and procedures for 64 bit arrays.
+*/
+
+proc array64.min
+  // ptr: array int: length -- int: min-item
+  ptr int -- int
+  // Returns the least value (signed) in the array.
+
+  // NOTE: If the array does not contain any items, returns MAX-INT (2^63-1).
+in let array length in
+  memory min sizeof(int) in
+    MAX-INT min !64
+
+    0 while dup length < do let i in
+      array i 8 * + @64 let value in
+        value min @64 < if
+          value min !64
+        end
+      end
+    i end inc end drop
+
+    min @64
+  end
+end end
+
+
+proc array64.umin
+  // ptr: array int: length -- uint: min-item
+  ptr int -- int
+  // Returns the least value (unsigned) in the array.
+  
+  // NOTE: If the array does not contain any items, returns MAX-UINT (2^64-1).
+in let array length in
+  memory min sizeof(int) in
+    MAX-UINT min !64
+
+    0 while dup length u< do let i in
+      array i 8 * + @64 let value in
+        value min @64 u< if
+          value min !64
+        end
+      end
+    i end inc end drop
+
+    min @64
+  end
+end end
+
+
+proc array64.max
+  // ptr: array int: length -- int: min-item
+  ptr int -- int
+  // Returns the least value (signed) in the array.
+
+  // NOTE: If the array does not contain any items, returns MIN-INT (-2^63).
+in let array length in
+  memory max sizeof(int) in
+    MIN-INT max !64
+
+    0 while dup length > do let i in
+      array i 8 * + @64 let value in
+        value max @64 > if
+          value max !64
+        end
+      end
+    i end inc end drop
+
+    max @64
+  end
+end end
+
+
+proc array64.umax
+  // ptr: array int: length -- uint: min-item
+  ptr int -- int
+  // Returns the least value (unsigned) in the array.
+  
+  // NOTE: If the array does not contain any items, returns MIN-UINT (20).
+in let array length in
+  memory max sizeof(int) in
+    MIN-UINT max !64
+
+    0 while dup length u> do let i in
+      array i 8 * + @64 let value in
+        value max @64 u> if
+          value max !64
+        end
+      end
+    i end inc end drop
+
+    max @64
+  end
+end end
+
