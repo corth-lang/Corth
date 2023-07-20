@@ -1,4 +1,4 @@
-include libs/core/
+include libs/core/arithmetic.corth
 
 
 macro ptr int endmacro
@@ -68,9 +68,11 @@ in let a-start a-length b-start b-length in
     a-start i + @8 b-start i + @8 let ai bi in
       ai bi > if
         false return
-      else ai bi < if
+      end
+
+      ai bi < if
         true return
-      end end
+      end
     end
   i end inc end drop
   
@@ -88,9 +90,11 @@ in let a-start a-length b-start b-length in
     a-start i 8 * + @64 b-start i 8 * + @64 let ai bi in
       ai bi > if
         false return
-      else ai bi < if
+      end
+
+      ai bi < if
         true return
-      end end
+      end
     end
   i end inc end drop
   
@@ -130,19 +134,19 @@ in let start length value in
 end end
 
 
-// Decreases a value in the memory (*-- operator)
+// Decreases a value in the memory. (*-- operator)
 macro @dec8  let _a_ in _a_ @8  dec _a_ !8  end endmacro // ptr: x
 macro @dec64 let _a_ in _a_ @64 dec _a_ !64 end endmacro // ptr: x
 
 
-// Increases a value in the memory (*++ operator)
+// Increases a value in the memory. (*++ operator)
 macro @inc8  let _a_ in _a_ @8  inc _a_ !8  end endmacro // ptr: x
 macro @inc64 let _a_ in _a_ @64 inc _a_ !64 end endmacro // ptr: x
 
 
 macro @swp8
   // ptr: a ptr: b
-  // Swaps two bytes in the memory
+  // Swaps two bytes in the memory.
   // *a, *b = *b, *a
   let _a_ _b_ in
     _a_ @8 _b_ @8 _a_ !8 _b_ !8
@@ -152,7 +156,7 @@ endmacro
 
 macro @swp64
   // ptr: a ptr: b
-  // Swaps two 8-byte values in the memory
+  // Swaps two 8-byte values in the memory.
   // *a, *b = *b, *a
   let _a_ _b_ in
     _a_ @64 _b_ @64 _a_ !64 _b_ !64
@@ -162,45 +166,41 @@ endmacro
 
 proc memcpy8
   // ptr: src ptr: dst int: len 
-  // Copies a part of memory to another location
-  // Bytes are read one-by-one
+  // Copies a part of memory to another location.
+  // Bytes are read one-by-one.
   ptr ptr int --
 in
   let src dst len in
-    0 while dup len < do
-      let i in
-        src i + @8 
-        dst i + !8
-      i end
-    inc end drop
+    0 while dup len < do let i in
+      src i + @8 
+      dst i + !8
+    i end inc end drop
   end
 end
 
 
-// memcpy64 only works a bit faster, no other functionality is changed
-// If the length is known to be divisible by 8, it is recommended to use memcpy64
+// memcpy64 only works a bit faster, no other functionality is changed.
+// If the length is known to be divisible by 8, it is recommended to use memcpy64.
 proc memcpy64
   // ptr: src ptr: dst int: len
-  // Copies a part of memory to another location
-  // Bytes are read 8-by-8
+  // Copies a part of memory to another location.
+  // Bytes are read 8-by-8.
   ptr ptr int --
 in
   let src dst len in
-    0 while dup len < do
-      let i in
-        src i 8 * + @64
-        dst i 8 * + !64
-      i end
-    inc end drop
+    0 while dup len 8 * < do let i in
+      src i + @64
+      dst i + !64
+    i end 8 + end drop
   end
 end
 
 
 proc memcpy8i
   // ptr: src ptr: dst int: len
-  // Copies a part of memory to another location
-  // Bytes are read one-by-one
-  // The copying is done in reverse order, aka from last item to first item
+  // Copies a part of memory to another location.
+  // Bytes are read one-by-one.
+  // The copying is done in reverse order, aka from last item to first item.
   ptr ptr int --
 in
   let src dst len in
@@ -214,15 +214,15 @@ end
 
 proc memcpy64i
   // ptr: src ptr: dst int: len
-  // Copies a part of memory to another location
-  // Bytes are read 8-by-8
-  // The copying is done in reverse order, aka from last item to first item
+  // Copies a part of memory to another location.
+  // Bytes are read 8-by-8.
+  // The copying is done in reverse order, aka from last item to first item.
   ptr ptr int --
 in
   let src dst len in
-    len while dup isn-zero do dec let i in
-      src i 8 * + @64
-      dst i 8 * + !64
+    len 8 * while dup isn-zero do 8 - let i in
+      src i + @64
+      dst i + !64
     i end end drop
   end
 end
@@ -230,33 +230,29 @@ end
 
 proc memswp8
   // ptr: a ptr: b int: len
-  // Swaps two regions of memory
-  // Swaps one byte per iteration
+  // Swaps two regions of memory.
+  // Swaps one byte per iteration.
   ptr ptr int --
 in
   let a b len in
-    0 while dup len < do
-      let i in
-        a i + b i + @swp8
-      i end
-    inc end drop
+    0 while dup len < do let i in
+      a i + b i + @swp8
+    i end inc end drop
   end
 end
 
 
-// memswp64 only works a bit faster, no other functionality is changed
-// If the length is known to be divisible by 8, it is recommended to use memswp64
+// memswp64 only works a bit faster, no other functionality is changed.
+// If the length is known to be divisible by 8, it is recommended to use memswp64.
 proc memswp64
   // ptr: a ptr: b int: len
-  // Swaps two regions of memory
-  // Swaps 8 bytes per iteration
+  // Swaps two regions of memory.
+  // Swaps 8 bytes per iteration.
   ptr ptr int --
 in
   let a b len in
-    0 while dup len < do
-      let i in
-        a i + b i + @swp64
-      i end
-    8 + end drop
+    0 while dup len 8 * < do let i in
+      a i + b i + @swp64
+    i end 8 + end drop
   end
 end
