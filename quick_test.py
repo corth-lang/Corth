@@ -31,3 +31,5 @@ def quick_test(path="./examples/", log_path="./log"):
 
     print(f"{len(error_files)} files returned error.")
 
+    return len(error_files)
+

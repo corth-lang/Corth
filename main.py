@@ -54,7 +54,9 @@ def compile_command():
 def test_command():
     import quick_test
 
-    quick_test.quick_test()
+    error_count = quick_test.quick_test()
+
+    sys.exit(error_count)
 
 
 parser = argparse.ArgumentParser(
