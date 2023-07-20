@@ -4,7 +4,9 @@ include libs/core/integer.corth
 
 
 // int: x int: y -- bool: cmp(x, y)
-// Compares two signed integers.
+// fixed64: x fixed64: y -- bool: cmp(x, y)
+
+// Compares two signed numbers.
 // TODO: These should be implemented back using INTRINSICs later.
 macro >  swp < endmacro
 macro <= > !   endmacro
@@ -12,35 +14,46 @@ macro >= < !   endmacro
 macro =  != !  endmacro
 
 // uint: x uint: y -- bool: cmp(x, y)
+// ufixed64: x ufixed64: y -- bool: cmp(x, y)
+
 // Compares two unsigned integers.
 // TODO: These should be implemented using INTRINSICs later.
 macro u<  MIN-INT + swp MIN-INT + swp <   endmacro
 macro u>  MIN-INT + swp MIN-INT +     <   endmacro
 macro u<= MIN-INT + swp MIN-INT +     < ! endmacro
 macro u>= MIN-INT + swp MIN-INT + swp < ! endmacro
-macro u=  =  endmacro
-macro u!= != endmacro
+macro u=  =                               endmacro
+macro u!= !=                              endmacro
 
 
 // int: x -- bool: f(x)
+// fixed64: x -- bool: f(x)
 macro is-pos   0 >         endmacro
 macro is-zero  0 =         endmacro
 macro is-neg   0 <         endmacro
 macro isn-pos  0 <=        endmacro
 macro isn-zero 0 !=        endmacro
 macro isn-neg  0 >=        endmacro
+
+
+// int: x -- bool: f(x)
 macro is-even 2 % is-zero  endmacro
 macro is-odd  2 % isn-zero endmacro
 
 
 // int: x -- int: f(x)
+// fixed64: x -- fixed64: f(x)
 macro inc    1 +                   endmacro
 macro dec    1 -                   endmacro
 macro neg    !! inc                endmacro
 macro abs    dup is-neg if neg end endmacro
 macro iabs   dup is-pos if neg end endmacro
+
+
+// int: x -- int: f(x)
 macro sqr    dup *                 endmacro
 macro usqr   dup u*                endmacro
+
 macro int-to-bin-digit '0' +                         endmacro
 macro int-to-oxt-digit '0' +                         endmacro
 macro int-to-dec-digit '0' +                         endmacro
@@ -55,27 +68,33 @@ macro isn-range let _a_ _b_ _c_ in _a_ _b_ < if true  else _c_ _a_ <   end end e
 
 macro lower-base
   // int: x int: b -- int: lower-base(x, b)
+  // fixed64: x fixed64: b -- fixed64: lower-base(x, b)
+  
   // Returns the largest number that is less than or equal to x and is divisible by b.
   // lower-base(x, b) = x - (x % b)
-  let _a_ _b_ in
-    _a_ _a_ _b_ % -
+  let _x_ _b_ in
+    _x_ _x_ _b_ % -
   end
 endmacro
 
 
 macro upper-base
   // int: x int: b -- int: upper-base(x, b)
+  // fixed64: x fixed64: b -- fixed64: lower-base(x, b)
+  
   // Returns the smallest number that is greater than x and is divisible by b.
   // upper-base(x, b) = x + ((-x) % b)
   // upper-base(x, b) = lower-base(x, b) + b
-  let _a_ _b_ in
-    _a_ _a_ neg _b_ % +
+  let _x_ _b_ in
+    _x_ _x_ neg _b_ % +
   end
 endmacro
 
 
 macro min2
   // int: x int: y -- int: min(x, y)
+  // fixed64: x fixed64: y -- fixed64: min(x, y)
+  
   // Returns the minimum of the two numbers.
   let _a_ _b_ in
     _a_ _b_ < if _a_ else _b_ end
@@ -85,6 +104,8 @@ endmacro
 
 macro min3
   // int: x int: y int: z -- int: min(x, y, z)
+  // fixed64: x fixed64: y fixed64: z -- fixed64: min(x, y, z)
+  
   // Returns the minimum of the three numbers.
   let _a_ _b_ _c_ in
     _a_ _b_ < if
@@ -98,6 +119,8 @@ endmacro
 
 macro max2
   // int: x int: y -- int: min(x, y)
+  // fixed64: x fixed64: y -- fixed64: max(x, y)
+  
   // Returns the maximum of the two numbers.
   let _a_ _b_ in
     _a_ _b_ < if _b_ else _a_ end
@@ -107,6 +130,8 @@ endmacro
 
 macro max3
   // int: x int: y int: z -- int: min(x, y, z)
+  // fixed64: x fixed64: y fixed64: z -- fixed64: max(x, y, z)
+  
   // Returns the maximum of the three numbers.
   let _a_ _b_ _c_ in
     _a_ _b_ < if
@@ -120,6 +145,8 @@ endmacro
 
 macro clip
   // int: x int: min int: max -- int: clipped
+  // fixed64: x fixed64: min fixed64: max -- fixed64: clipped
+  
   // Returns x if it is in the range [min, max]. If it is less, returns min and if it is higher, returns max.
   let _x_ _min_ _max_ in
     _x_ _min_ < if
@@ -137,6 +164,8 @@ endmacro
 
 macro sort2
   // int: x int: y -- int: min(x, y) int: max(x, y)
+  // fixed64: x fixed64: y -- fixed64: min(x, y) fixed64: max(x, y)
+
   // Sorts two numbers in stack.
   // First element is the least and the last is the most.
   let _a_ _b_ in
@@ -149,13 +178,12 @@ macro sort2
 endmacro
 
 
-// Sorts from least to greatest.
-// If there was just a tiny amount of optimization, could write this using sort2.
-// But here we are making a 38 line sorting algoritm.
 macro sort3
   // int: x int: y int: z -- int: min(x, y, z) int: mid(x, y, z) int: max(x, y, z)
+  // fixed64: x fixed64: y fixed64: z -- fixed64: min(x, y, z) fixed64: mid(x, y, z) fixed64: max(x, y, z)
+  
   // Sorts three numbers in stack.
-  // First element is the least and the last is the most.
+  // First element is the least and the last is the greatest
   let _a_ _b_ _c_ in
     _a_ _b_ < if
       // x < y
