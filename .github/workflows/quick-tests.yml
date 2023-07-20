@@ -1,0 +1,13 @@
+name: quick-tests
+run-name: Quick tests for Corth
+on: [push]
+jobs:
+  check-bats-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+      - run: sudo apt install python3
+      - run: python3 main.py quick-test
