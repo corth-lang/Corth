@@ -1,42 +1,30 @@
-include libs/linux_x86/sys.corth
-include libs/core/stack.corth
+/*
+macro STDOUT 1 endmacro
+
+macro SYSWRITE 1 endmacro
+
+macro fwrite SYSWRITE syscall3 endmacro
+
+// This is creating problems.
+macro drop let _ in end endmacro
+*/
+
 include libs/linux_x86/io.corth
 
-// macro fputs arot 1 syscall3 drop endmacro
 
-// macro file-desc int endmacro
-// macro sizeof(int) 8 endmacro
-macro sizeof(ptr) 8 endmacro
-
-
-proc fputu
-  // int: int file-desc: file-desc 
-  int file-desc --
-  // Prints an unsigned integer to a file stream.
+proc hello
+  --
 in
-  let file in
-    memory buffer 20          in
-    memory value  sizeof(int) in
-    memory i      sizeof(ptr) in
-
-      value !64
-      buffer 19 + i !64
-
-      while
-        value @64 10 /%
-        '0' + i @64 !8
-        i @64 1 - i !64
-        dup value !64 0 !=
-      do end
-
-      i @64 1 + buffer 19 + i @64 - file fputs
-    end end end
-  end
+  STDOUT "Hello, World!
+" fwrite let _ in end
+  hello
 end
 
 
 proc main
   int int -- int
-in let argc argv in
-  123 1 fputu 
+in let _ _ in
+  hello
 end 0 end
+
+
