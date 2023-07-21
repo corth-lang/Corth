@@ -1,4 +1,4 @@
-include libs/linux_x86/io.corth
+include libs/linux_x86/stdio.corth
 include libs/random.corth
 
 
@@ -13,6 +13,6 @@ in let argc argv in
     64 while dup isn-zero do
       rand64 CHAR-SIZE / CHARS + 1 puts
     dec end drop
-    "\n" puts
+    putnl
   dec end drop
 end 0 end

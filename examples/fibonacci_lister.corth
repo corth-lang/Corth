@@ -19,7 +19,7 @@
 */
 
 
-include libs/linux_x86/io.corth
+include libs/linux_x86/stdio.corth
 include libs/core/
 
 
@@ -33,7 +33,7 @@ in let argc argv in
     1 b !64
 
     while true do
-      a @64 putu "\n" puts
+      a @64 putu putnl
       b @64 dup a @64 + b !64 a !64
     end 
   end

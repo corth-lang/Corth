@@ -1,4 +1,4 @@
-include libs/linux_x86/io.corth
+include libs/linux_x86/stdio.corth
 
 // Max length of string. If a longer string is used, -may- crash.
 // Max length should not be more than 256.
@@ -93,9 +93,9 @@ in let argc argv in
     _ptr1 ptr1 !64
     _ptr2 ptr2 !64
     "lev('" puts _ptr1 len1 puts "', '" puts _ptr2 len2 puts "') = " puts
-    len1 len2 rec-lev puti "\n" puts
-    "Number of calls = " puts number-of-calls @64 putu "\n" puts
-    "Number of remembers = " puts number-of-rembs @64 putu "\n" puts
+    len1 len2 rec-lev puti putnl
+    "Number of calls = " puts number-of-calls @64 putu putnl
+    "Number of remembers = " puts number-of-rembs @64 putu putnl
   end
 end 0 end
 

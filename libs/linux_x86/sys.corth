@@ -2,7 +2,7 @@
 
     Linux x86 architecture SYS library
 
-Contains basic system macros for SYSCALL constants and overwrappers.
+  Contains basic system macros for SYSCALL constants and overwrappers.
 
 */
 
@@ -10,8 +10,6 @@ include libs/core/arithmetic.corth
 include libs/core/stack.corth
 
 macro file-desc         int endmacro
-macro sizeof(file-desc)   8 endmacro
-
 macro sizeof(file-desc)   8 endmacro
 macro sizeof(stat)      144 endmacro
 
@@ -51,9 +49,11 @@ macro SEEK-CUR       1 endmacro
 macro SEEK-END       2 endmacro
 
 // Standard wrappers
-macro fseek SYSLSEEK syscall3 endmacro          // file-desc: file-desc int: offset int: whence
+macro fread SYSREAD syscall3 endmacro           // file-desc: file-desc ptr: str-ptr int: str-len -- int: success
+macro fwrite SYSWRITE syscall3 endmacro         // file-desc: file-desc ptr: str-ptr int: str-len -- int: success
+macro fseek SYSLSEEK syscall3 endmacro          // file-desc: file-desc int: offset int: whence -- int: success
 macro ftell 0 SEEK-CUR fseek endmacro           // file-desc: file-desc -- int: file-pointer
-macro fopen SYSOPEN syscall3 endmacro           // int: str-ptr int: mode int: flags -- file-desc: file-desc
+macro fopen SYSOPEN syscall3 endmacro           // ptr: str-ptr int: mode int: flags -- file-desc: file-desc
 macro fclose SYSCLOSE syscall1 endmacro         // file-desc: file -- int: success
 macro stat SYSSTAT syscall2 endmacro            // ptr: path ptr: buffer -- int: success
 macro fstat SYSFSTAT syscall2 endmacro          // file-desc: file ptr: buffer -- int: success

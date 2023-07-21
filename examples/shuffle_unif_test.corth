@@ -1,4 +1,4 @@
-include libs/linux_x86/io.corth
+include libs/linux_x86/stdio.corth
 include libs/linux_x86/sys.corth
 include libs/random.corth
 
@@ -33,7 +33,7 @@ in let argc argv in
     10 array 80 + !64
     11 array 88 + !64
 
-    "Start: " puts array 12 print-array "\n" puts
+    "Start: " puts array 12 print-array putnl
     
     "Shuffling...\n" puts
 
@@ -41,6 +41,6 @@ in let argc argv in
 
     "Done.\n" puts
 
-    "End: " puts array 12 print-array "\n" puts
+    "End: " puts array 12 print-array putnl
   end
 end 0 end

@@ -1,4 +1,4 @@
-include libs/linux_x86/io.corth
+include libs/linux_x86/stdio.corth
 include libs/math/arithmetic.corth
 
 // This example calculates the factorial of the number entered from the user
@@ -9,7 +9,7 @@ in let argc argv in
   "Enter a number: " puts
   while getu ! do drop end
   let number in
-    "Factorial of " puts number putu " is " puts number fact putu "\n" puts
+    "Factorial of " puts number putu " is " puts number fact putu putnl
   end
 end 0 end
 

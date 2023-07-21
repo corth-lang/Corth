@@ -8,7 +8,7 @@ Since Corth does not have floating point aritmetic (and since its hard), a fixed
 */
 
 
-include libs/linux_x86/io.corth
+include libs/linux_x86/stdio.corth
 include libs/math/complex.corth
 include libs/math/fixed64.corth
 include libs/core/
@@ -47,15 +47,13 @@ in
     0 while
       // Break if reached the max iteration
       dup MAX-ITERATION dec <
-    do
-      inc
-      
+    do      
       // Calculate next Z
       z load-complex sqr-c c load-complex add-cc z store-complex
 
       // Check if |Z| > 2 (|Z|^2 > 4)
-      z load-complex lengths-c 4 int-to-fixed64 > if dec break end
-    end
+      z load-complex lengths-c 4 int-to-fixed64 > if break end
+    inc end
   end
 end
 
@@ -100,7 +98,7 @@ in let argc argv in
   0x0000000010080100 neg 0x00000000fffe9080 camera-pos store-complex  // Set camera pos to -0.062622129902656 + 0.9999780950616818176i 
   0x0000000100000000 camera-zoom !64                                  // Set camera zoom to 1
 
-  "\n" puts
+  putnl
 
   while true do
     render

@@ -1,4 +1,4 @@
-include libs/linux_x86/io.corth
+include libs/linux_x86/stdio.corth
 include libs/math/fixed64.corth
 include libs/random.corth
 include libs/core/
@@ -31,7 +31,7 @@ in let argc argv in
 
     0 while dup numbers < do
       let i in
-        i putu ": " puts i 8 * array + @64 putu "\n" puts
+        i putu ": " puts i 8 * array + @64 putu putnl
       i end
     inc end drop
 

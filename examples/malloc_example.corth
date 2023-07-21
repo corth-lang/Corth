@@ -1,9 +1,10 @@
-include libs/linux_x86/io.corth
+include libs/linux_x86/stdio.corth
 include libs/core/
 
 macro malloc.ARRAY-SIZE       0x4000 endmacro
 macro malloc.AVAIL-QUEUE-SIZE 0x100  endmacro
 include libs/dynamic/malloc.corth
+include libs/dynamic/debug_malloc.corth
 
 proc main
   int int -- int

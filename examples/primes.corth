@@ -1,4 +1,4 @@
-include libs/linux_x86/io.corth
+include libs/linux_x86/stdio.corth
 
 // END is the end of the numbers to check
 // BUFFER-SIZE is the size of buffer that the prime numbers are being stored in. It should be half of END
@@ -39,7 +39,7 @@ in let argc argv in
       n is-prime if
         n primes-end @64 !64
         primes-end @64 8 + primes-end !64
-        n puti "\n" puts
+        n puti putnl
       end
     n end
   inc end drop

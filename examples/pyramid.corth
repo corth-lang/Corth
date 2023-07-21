@@ -20,7 +20,7 @@ The output of this program should look like:
 */
 
 
-include libs/linux_x86/io.corth
+include libs/linux_x86/stdio.corth
 include libs/core/
 
 
@@ -31,8 +31,6 @@ in let argc argv in
     dup while dup isn-zero do
       "*" puts
     dec end drop
-
-    "\n" puts
-
+    putnl
   dec end drop
 end 0 end

@@ -1,4 +1,4 @@
-include libs/linux_x86/io.corth
+include libs/linux_x86/stdio.corth
 include libs/core/
 
 
@@ -15,5 +15,5 @@ proc main
   int int -- int
 in let argc argv in
   // Find the 10th fibonacci number
-  10 fib putu "\n" puts
+  10 fib putu putnl
 end 0 end

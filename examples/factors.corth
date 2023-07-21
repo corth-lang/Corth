@@ -1,4 +1,4 @@
-include libs/linux_x86/io.corth
+include libs/linux_x86/stdio.corth
 
 // This example calculates the factors of the number the user entered
 
@@ -14,14 +14,14 @@ in let argc argv in
         let i in
           number i % is-zero if
             i puti " and " puts
-            number i / puti "\n" puts
+            number i / putu putnl
           end
         i end
       inc end
 
       let last in
         last sqr number = if
-          last puti " is the square root of " puts number puti "\n" puts
+          last puti " is the square root of " puts number puti putnl
         end
       end
     end
