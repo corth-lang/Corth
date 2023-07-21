@@ -1,4 +1,5 @@
-include libs/core/
+include libs/core/stack.corth
+include libs/core/memory.corth
 
 macro str ptr int endmacro
 
@@ -9,12 +10,7 @@ endmacro
 
 macro strc.get-len
   // ptr: ptr -- int: len
-
-  0 while
-    swp dup @8 0 !=
-  do
-    inc swp
-  inc end drop
+  dup while dup @8 isn-zero do inc end - neg
 endmacro
 
 macro str.to-strc
@@ -45,6 +41,7 @@ proc str.hex-to-int
   ptr int -- int bool
   // Converts a character array of hexadecimal number to an integer.
   // If the conversion can not be done, returns 0.
+  
   // NOTE: If the number is too big, the result will be wrong.
 in
   memory number sizeof(int) in
@@ -56,11 +53,12 @@ in
           i @8 '0' - number @64 16 * + number !64
         else i @8 'a' 'f' is-range if
           i @8 'W' - number @64 16 * + number !64
-        else i @8 'A' 'F' is-range if
-          i @8 '7' - number @64 16 * + number !64
-        else
+        else i @8 'A' 'F' isn-range if
+          // TODO: Umm, soft errors are annoying me.
           0 false return
-        end end end 
+        end end end
+        
+        i @8 '7' - number @64 16 * + number !64
       i end inc end drop
     end
 
@@ -80,11 +78,11 @@ in
 
     let start length in
       start while dup start length + < do let i in
-        i @8 '0' '9' is-range if
-          i @8 '0' - number @64 10 * + number !64
-        else
+        i @8 '0' '9' isn-range if
           0 false return
         end
+        
+        i @8 '0' - number @64 10 * + number !64
       i end inc end drop
     end
 
@@ -104,11 +102,11 @@ in
 
     let start length in
       start while dup start length + < do let i in
-        i @8 '0' '7' is-range if
-          i @8 '0' - number @64 8 * + number !64
-        else
+        i @8 '0' '7' isn-range if
           0 false return
         end
+        
+        i @8 '0' - number @64 8 * + number !64
       i end inc end drop
     end
 
@@ -128,11 +126,11 @@ in
 
     let start length in
       start while dup start length + < do let i in
-        i @8 '0' '1' is-range if
-          i @8 '0' - number @64 8 * + number !64
-        else
+        i @8 '0' '1' isn-range if
           0 false return
         end
+        
+        i @8 '0' - number @64 8 * + number !64
       i end inc end drop
     end
 
