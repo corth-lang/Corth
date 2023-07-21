@@ -14,15 +14,17 @@ This library is not super precise, but the values are useful and quick enough fo
 
 */
 
-macro fixed64         int endmacro
+macro fixed64          int endmacro
+macro ufixed64         int endmacro
 
-macro sizeof(fixed64) 8   endmacro
+macro sizeof(fixed64)  8 endmacro
+macro sizeof(ufixed64) 8 endmacro
 
-macro SQRT.TOLERANCE 0x00000000000000ff endmacro
-macro SQRT.DEPTH     256                endmacro
+macro SQRT.TOLERANCE   0x00000000000000ff endmacro
+macro SQRT.DEPTH       256                endmacro
 
-macro FONE-HALF      0x0000000080000000 endmacro
-macro FONE           0x0000000100000000 endmacro
+macro FONE-HALF        0x0000000080000000 endmacro
+macro FONE             0x0000000100000000 endmacro
 
 
 // CONVERTIONS
