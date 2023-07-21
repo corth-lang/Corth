@@ -1,8 +1,12 @@
 include libs/core/
 
 /*
+
+    Dynamic utilities library for Corth
+
   This library adds simple dynamic memory management utilities.
-  malloc and mlength is required for some macro and procedures.
+  malloc and mlength is required for some of the macro and procedures.
+
 */
 
 
@@ -11,10 +15,12 @@ proc dresize-up
   ptr int -- ptr
   // Resizes x and creates a new dynamicly-placed collection.
   // New length must be greater than the older, otherwise undefined behaviour may be observed.
+  // NOTE: If malloc fails, returns null.
 in let old length in
-  // Create a new object
+  // Create a new object.
   length malloc
   let new in
+    new is-null if new return end
     old new old mlength memcpy8 new
   end
 end end
@@ -25,10 +31,12 @@ proc dresize-down
   ptr int -- ptr
   // Resizes x and creates a new dynamicly-placed collection.
   // New length must be less than the older, otherwise undefined behaviour may be observed.
+  // NOTE: If malloc fails, returns null.
 in let old length in
-  // Create a new object
+  // Create a new object.
   length malloc
   let new in
+    new is-null if new return end
     old new length memcpy8 new
   end
 end end
@@ -40,10 +48,12 @@ proc dresize
   // Resizes x and creates a new dynamicly-placed collection.
   // If the new size is less than the older size, object will be cut from its most significant bits.
   // If the new size is greater than the older size, new bits will be object's most significant bits. (But they won't be set or reset)
+  // NOTE: If malloc fails, returns null.
 in let old length in
   // Create a new object.
   length malloc
   let new in
+    new is-null if new return end
     old new length old mlength min2 memcpy8 new
   end
 end end
@@ -67,12 +77,13 @@ proc to-dynamic8
   // ptr: start int: length -- ptr: x
   ptr int -- ptr
   // Creates a dynamicly-placed collection from a static or dynamic collection.
+  // NOTE: If malloc fails, returns null.
 in let start length in
   length malloc let new in
     new isn-null if
       start new length memcpy8
-    end new
-  end
+    end
+  new end
 end end
 
 
@@ -80,12 +91,13 @@ proc to-dynamic64
   // ptr: start int: length -- ptr: x
   ptr int -- ptr
   // Creates a dynamicly-placed collection from a static or dynamic collection.
+  // NOTE: If malloc fails, returns null.
 in let start length in
   length 8 * malloc let new in
     new isn-null if
       start new length memcpy64
-    end new
-  end
+    end
+  new end
 end end
 
 
@@ -93,11 +105,14 @@ proc djoin8
   // ptr: a ptr: b -- ptr: join(a, b)
   ptr ptr -- ptr
   // Joins two dynamicly-placed collections.
+  // NOTE: If malloc fails, returns null.
 in let a-start b-start in
   a-start mlength b-start mlength let a-length b-length in
     a-length b-length + malloc let result in
-      a-start result            a-length memcpy8
-      b-start result a-length + b-length memcpy8
+      result isn-null if
+        a-start result            a-length memcpy8
+        b-start result a-length + b-length memcpy8
+      end
     result end
   end
 end end
@@ -107,29 +122,65 @@ proc djoin64
   // ptr: a ptr: b -- ptr: join(a, b)
   ptr ptr -- ptr
   // Joins two dynamicly-placed collections.
+  // NOTE: If malloc fails, returns null.
 in let a-start b-start in
   a-start mlength b-start mlength let a-length b-length in
     a-length b-length + malloc let result in
-      a-start result            a-length 8 / memcpy64
-      b-start result a-length + b-length 8 / memcpy64
+      result isn-null if
+        a-start result            a-length 8 / memcpy64
+        b-start result a-length + b-length 8 / memcpy64
+      end
     result end
   end
 end end
 
 
-proc add-null
-  // ptr: x -- ptr: x + {0}
-  ptr -- ptr
-  // Copies a dynamicly-placed collection, with a null-char at the end.
-in let old in
-  old old mlength inc to-dynamic8 let new in
-    0 new old mlength + !8 new
-  end
+proc dappend8
+  // int: value ptr: x -- ptr: x + {value}
+  int ptr -- ptr
+  // Copies a dynamicly-placed collection and adds an item at the end.
+  // NOTE: If malloc fails, returns null.
+in let value old in
+  old old mlength inc dresize-up let new in
+    new isn-null if
+      value new old mlength + !8
+    end
+  new end
 end end
 
 
+proc dappend64
+  // int: value ptr: x -- ptr: x + {value}
+  int ptr -- ptr
+  // Copies a dynamicly-placed collection and adds an item at the end.
+  // NOTE: If malloc fails, returns null.
+in let value old in
+  old old mlength 8 + dresize-up let new in
+    new isn-null if
+      value new old mlength + !64
+    end
+  new end
+end end
+
+
+macro null-term8
+  // ptr: x -- ptr: x + {0}
+  // Copies a dynamicly-placed collection, with a null-char at the end.
+  // NOTE: If malloc fails, returns null.
+  0 dappend8
+endmacro
+
+
+macro null-term64
+  // ptr: x -- ptr: x + {0}
+  // Copies a dynamicly-placed collection, with a null-char at the end.
+  // NOTE: If malloc fails, returns null.
+  0 dappend64
+endmacro
+
+
 // These macros compare two dynamicly-placed collections.
-// See memeq8, memeq64, memlt8 and memlt64 from ./libs/memory.corth.
+// See memeq8, memeq64, memlt8 and memlt64 from ./libs/core/memory.corth.
 // ptr: a ptr: b -- bool: cmp(a, b)
 macro dmemeq8  let _a_ _b_ in _a_ _a_ mlength     _b_ _b_ mlength     memeq8  end endmacro
 macro dmemeq64 let _a_ _b_ in _a_ _a_ mlength 8 / _b_ _b_ mlength 8 / memeq64 end endmacro
