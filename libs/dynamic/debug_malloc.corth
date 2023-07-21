@@ -1,0 +1,21 @@
+// Can be used to debug malloc segments.
+proc debug-dynamic-memory
+  --
+  // Prints the segments of the memory for debug purposes.
+in
+  "Reached debug-dynamic-memory.\n" puts
+  "--------------------\n" puts
+  "Available segments:\n" puts
+  0 while dup malloc.avail-queue-length @64 < do let i in
+    i puti ". 0x" puts i malloc.avail-queue queue64.get putx " (size: 0x" puts i malloc.avail-queue queue64.get dup @64 - neg putx ")\n" puts
+  i end inc end drop
+  "--------------------\n" puts
+  "Segments:\n" puts
+  malloc.array while dup malloc.array malloc.ARRAY-SIZE + < do let group in
+    "Segment at 0x" puts group putx ", points to 0x" puts group @64 putx putnl
+    "Status: " puts group malloc.avail-queue-array malloc.avail-queue-array malloc.avail-queue-length @64 8 * + sorted64.available if "Free" else "Occupied" end puts drop putnl
+    "Size: " puts group @64 group - puti " (" puts group @64 group - 8 - puti " usable)\n" puts
+  group @64 end end drop
+  "--------------------\n" puts
+  "End of debug-dynamic-memory.\n" puts
+end

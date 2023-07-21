@@ -1,7 +1,7 @@
 // Before this library is included, malloc.ARRAY-SIZE and malloc.AVAIL-QUEUE-SIZE should be defined.
 // Before using any of the procedures or macros, malloc.init should be called.
 
-// Every block is initialized with size as the first item, and with a size of length + 1.
+// Every block is initialized with size as the first item, and with a size of length + 8.
 // Length is the LENGTH of the usable area, and size is the SIZE of the whole group.
 
 // malloc.avail-queue is a sorted queue.
@@ -14,28 +14,6 @@ memory malloc.avail-queue-array   malloc.AVAIL-QUEUE-SIZE end
 memory malloc.avail-queue-length sizeof(int) end
 
 macro malloc.avail-queue malloc.avail-queue-array malloc.avail-queue-length endmacro
-
-
-proc debug-dynamic-memory
-  --
-  // Prints the segments of the memory for debug purposes.
-in
-  "Reached debug-dynamic-memory.\n" puts
-  "--------------------\n" puts
-  "Available segments:\n" puts
-  0 while dup malloc.avail-queue-length @64 < do let i in
-    i puti ". 0x" puts i malloc.avail-queue queue64.get putx " (size: 0x" puts i malloc.avail-queue queue64.get dup @64 - neg putx ")\n" puts
-  i end inc end drop
-  "--------------------\n" puts
-  "Segments:\n" puts
-  malloc.array while dup malloc.array malloc.ARRAY-SIZE + < do let group in
-    "Segment at 0x" puts group putx ", points to 0x" puts group @64 putx "\n" puts
-    "Status: " puts group malloc.avail-queue-array malloc.avail-queue-array malloc.avail-queue-length @64 8 * + sorted64.available if "Free" else "Occupied" end puts drop "\n" puts
-    "Size: " puts group @64 group - puti " (" puts group @64 group - 8 - puti " usable)\n" puts
-  group @64 end end drop
-  "--------------------\n" puts
-  "End of debug-dynamic-memory.\n" puts
-end
 
 
 proc malloc.init
@@ -145,16 +123,16 @@ proc mfree
   // NOTE: Should not be used with pointers which are not allocated using malloc. This can cause segmentaion fault.
   // NOTE: Can be unstable or buggy.
 in 8 - let group in
-  group malloc.avail-queue-array malloc.avail-queue-array malloc.avail-queue-length @64 8 * + sorted64.available if
+  group malloc.avail-queue-array malloc.avail-queue-array malloc.avail-queue-length @64 8 * + sorted64.available if drop
     // If that group was already specified as free.
-    "Tried to mfree an already mfreed address\n" eputs
-    100 exit drop drop
-  else
-    malloc.avail-queue-array - 8 / let index in
-      group index malloc.avail-queue queue64.insert
-    end
-    malloc.sew
+    1 exit drop return
   end
+  
+  malloc.avail-queue-array - 8 / let index in
+    group index malloc.avail-queue queue64.insert
+  end
+  
+  malloc.sew
 end end
 
 
