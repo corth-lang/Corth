@@ -1,5 +1,4 @@
 include libs/collections/str_sorted8.corth
-include libs/collections/sorted64.corth
 include libs/core/
 
 /*
@@ -13,7 +12,7 @@ Length shows the length of both arrays.
 
 
 proc str-map64.set
-  // int: key int: value ptr: key-array ptr: value-array ptr: length -- bool: found
+  // ptr: key int: value ptr: key-array ptr: value-array ptr: length -- bool: found
   int int ptr ptr ptr -- bool
   // Sets the matching value of the key to a specified value in a map64.
   // If the key could not have been found, appends this key-value pair.

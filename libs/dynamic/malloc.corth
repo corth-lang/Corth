@@ -61,10 +61,12 @@ proc malloc
   // int: length -- ptr: addr
   int -- ptr
   // Allocates memory with a specific size, allows dynamic memory management.
+  // Always allocates the smallest availiable segment for memory efficiency.
   // NOTE: Can be unstable or buggy.
 in
   8 + let size in
-    size 8 - is-neg if
+    size 8 < if
+      // If size is valid.
       NULLPTR return
     end
     
@@ -86,7 +88,7 @@ in
             group-size size 8 + >= group-size size = | if
               // If the group has enough space.
               group-size available-size @64 < if
-                // If the group is the smallest.
+                // Find the smallest group.
                 group      available-group !64
                 group-size available-size  !64
                 id         available-id    !64

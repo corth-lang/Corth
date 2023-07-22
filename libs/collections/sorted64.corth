@@ -39,4 +39,4 @@ in
       end
     end
   end
-0 false end  // dummy return
+NULLPTR false end  // dummy return

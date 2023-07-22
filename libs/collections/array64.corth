@@ -3,6 +3,7 @@
     Array library for Corth
 
   Contains utility macro and procedures for 64 bit arrays.
+
 */
 
 proc array64.min
@@ -10,7 +11,7 @@ proc array64.min
   ptr int -- int
   // Returns the least value (signed) in the array.
 
-  // NOTE: If the array does not contain any items, returns MAX-INT (2^63-1).
+  // NOTE: If the array has a length of 0, returns MAX-INT (2^63-1).
 in let array length in
   memory min sizeof(int) in
     MAX-INT min !64
@@ -33,7 +34,7 @@ proc array64.umin
   ptr int -- int
   // Returns the least value (unsigned) in the array.
   
-  // NOTE: If the array does not contain any items, returns MAX-UINT (2^64-1).
+  // NOTE: If the array has a length of 0, returns MAX-UINT (2^64-1).
 in let array length in
   memory min sizeof(int) in
     MAX-UINT min !64
@@ -56,7 +57,7 @@ proc array64.max
   ptr int -- int
   // Returns the least value (signed) in the array.
 
-  // NOTE: If the array does not contain any items, returns MIN-INT (-2^63).
+  // NOTE: If the array has a length of 0, returns MIN-INT (-2^63).
 in let array length in
   memory max sizeof(int) in
     MIN-INT max !64
@@ -79,7 +80,7 @@ proc array64.umax
   ptr int -- int
   // Returns the least value (unsigned) in the array.
   
-  // NOTE: If the array does not contain any items, returns MIN-UINT (20).
+  // NOTE: If the array has a length of 0, returns MIN-UINT (20).
 in let array length in
   memory max sizeof(int) in
     MIN-UINT max !64

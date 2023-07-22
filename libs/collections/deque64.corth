@@ -84,10 +84,11 @@ proc deque64.extend-left
   // ptr: source int: source-length ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
   ptr int ptr int ptr ptr --
   // Extends a deque from its beginning.
-  // Source is a 64 bit queue with length being passed dereferenced (but a deque can be used by passing the deque start index and the length).
+  // Source is a 64 bit array with length being passed dereferenced.
   // for (item:queue.reversed)
   //   deque.insert(item, 0)
   // end
+  // NOTE: Array must be a linearly placed 64-bit array. A deque can not be used.
   // NOTE: This macro assumes that the queue has enough space to insert item.
 in let source length deque capacity start-index end-index in
   length while dup isn-zero do dec let i in
@@ -99,10 +100,11 @@ proc deque64.extend-right
   // ptr: source int: source-length ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
   ptr int ptr int ptr ptr --
   // Extends a deque from its end.
-  // Source is a 64 bit queue with length being passed dereferenced (but a deque can be used by passing the deque start index and the length).
+  // Source is a 64 bit array with length being passed dereferenced.
   // for (item:queue)
   //   deque.insert(item, length)
   // end
+  // NOTE: Array must be a linearly placed 64-bit array. A deque can not be used.
   // NOTE: This macro assumes that the queue has enough space to insert item.
 in let source length deque capacity start-index end-index in
   0 while dup length < do let i in

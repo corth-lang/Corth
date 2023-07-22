@@ -6,7 +6,7 @@
 
 ### Procedures:
 
-- It is not preferred to defined a procedure in one line. Instead, it is recommended to split the lines to 'proc' keyword, types, 'in' keyword, behaviour, 'end' keyword.
+- It is not preferred to define a procedure in one line. Instead, it is recommended to split the lines to 'proc' keyword, types, 'in' keyword, behaviour, 'end' keyword.
 
 
         proc <name>

@@ -12,8 +12,8 @@ macro rand64
   // The result fixed64 is in the range [0, 2^32) with the step size of 2^-32.
   rng-seed @64
   18446744073709551557 u** + 23 +
-  let x in
-    x 0x400000000000 u/ x 0x20000 u/ u* x 2 / ^^ dup rng-seed !64
+  let _x_ in
+    _x_ 0x400000000000 u/ _x_ 0x20000 u/ u* _x_ 2 / ^^ dup rng-seed !64
   end 
 endmacro
 
@@ -52,6 +52,7 @@ proc shuffle8
   // ptr: container int: length --
   ptr int --
   // Shuffles a container that has 1-byte items using Fisher-Yates algortihm.
+  // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
   // Runs with O(n) time complexity.
 in let array-ptr array-length in
   array-length while dec dup isn-zero do let i in
@@ -70,6 +71,7 @@ proc shuffle64
   // ptr: container int: length --
   ptr int --
   // Shuffles a container that has 8-byte items using Fisher-Yates algortihm.
+  // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
   // Runs with O(n) time complexity.
 in let array-ptr array-length in
   array-length while dec dup isn-zero do let i in

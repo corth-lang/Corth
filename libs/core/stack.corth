@@ -1,6 +1,3 @@
-// Macros below use let, with variable names _a_, _b_, _c_ and _d_. Avoid using those names if going to use those macros.
-// (I mean, what kind of a person uses a variable name like that already but whatever)
-
 // The naming convention:
 // - Add 'd' to the end to indicate 'perform 2 times'.
 // - Add 't' to the end to indicate 'perform 3 times'.
