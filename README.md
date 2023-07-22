@@ -43,7 +43,7 @@ For more information about the commands, type:
 
 ### First program:
 
-    include libs/linux_86/io.corth
+    include libs/linux_86/stdio.corth
     
     proc main 
       int int -- int
@@ -52,7 +52,7 @@ For more information about the commands, type:
     end 0 end
     
 - This is a simple program that prints "Hello, World!" when run.
-- '[include](#include)' is used to include the library io.corth, which contains some I/O operations like writing to files and the standard output.
+- '[include](#include)' is used to include the library stdio, which contains some I/O operations like writing to files and the standard output.
 - '[let](#let)' is used to 'name' values. In this example, it is used to name the parameter values.
 - '[procedures](#procedures)' is used to define a procedure. 'main' is where the program starts.
 - 'puts' is used to print a string to the standard output.
@@ -125,7 +125,7 @@ For more information about the commands, type:
     "Hello, world!\n" puts
     34 35 + putu " is a nice number.\n" puts
 
-- *./libs/linux/io.corth* contains useful procedures for I/O operations like reading and writing to streams.
+- *./libs/linux/stdio.corth* contains useful procedures for I/O operations like reading from and writing to streams.
 
 ### Procedures:
 
@@ -183,7 +183,7 @@ For more information about the commands, type:
 
 ### Control flow:
 
-    include libs/linux_x86/io.corth
+    include libs/linux_x86/stdio.corth
 
     proc main
       int int -- int
