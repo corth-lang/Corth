@@ -1,21 +1,21 @@
 // Can be used to debug malloc segments.
 proc debug-dynamic-memory
-  --
+  file-desc --
   // Prints the segments of the memory for debug purposes.
-in
-  "Reached debug-dynamic-memory.\n" puts
-  "--------------------\n" puts
-  "Available segments:\n" puts
+in let  log-stream in
+  "Reached debug-dynamic-memory.\n" log-stream fputs
+  "--------------------\n" log-stream fputs
+  "Available segments:\n" log-stream fputs
   0 while dup malloc.avail-queue-length @64 < do let i in
-    i puti ". 0x" puts i malloc.avail-queue queue64.get putx " (size: 0x" puts i malloc.avail-queue queue64.get dup @64 - neg putx ")\n" puts
+    i log-stream fputi ". 0x" log-stream fputs i malloc.avail-queue queue64.get log-stream fputx " (size: 0x" log-stream fputs i malloc.avail-queue queue64.get dup @64 - neg log-stream fputx ")\n" log-stream fputs
   i end inc end drop
-  "--------------------\n" puts
-  "Segments:\n" puts
+  "--------------------\n" log-stream fputs
+  "Segments:\n" log-stream fputs
   malloc.array while dup malloc.array malloc.ARRAY-SIZE + < do let group in
-    "Segment at 0x" puts group putx ", points to 0x" puts group @64 putx putnl
-    "Status: " puts group malloc.avail-queue-array malloc.avail-queue-array malloc.avail-queue-length @64 8 * + sorted64.available if "Free" else "Occupied" end puts drop putnl
-    "Size: " puts group @64 group - puti " (" puts group @64 group - 8 - puti " usable)\n" puts
+    "Segment at 0x" log-stream fputs group log-stream fputx ", points to 0x" log-stream fputs group @64 log-stream fputx log-stream fputnl
+    "Status: " log-stream fputs group malloc.avail-queue-array malloc.avail-queue-array malloc.avail-queue-length @64 8 * + sorted64.available if "Free" else "Occupied" end log-stream fputs drop log-stream fputnl
+    "Size: " log-stream fputs group @64 group - log-stream fputi " (" log-stream fputs group @64 group - 8 - log-stream fputi " usable)\n" log-stream fputs
   group @64 end end drop
-  "--------------------\n" puts
-  "End of debug-dynamic-memory.\n" puts
-end
+  "--------------------\n" log-stream fputs
+  "End of debug-dynamic-memory.\n" log-stream fputs
+end end

@@ -23,9 +23,9 @@ in let argc argv in
                   c mfree
                   e mfree
                   g mfree
-                  debug-dynamic-memory
+                  STDOUT debug-dynamic-memory
                   b mfree
-                  debug-dynamic-memory
+                  STDOUT debug-dynamic-memory
                 end
               end
             end
