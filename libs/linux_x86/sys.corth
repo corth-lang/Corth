@@ -66,11 +66,9 @@ macro creat SYSCREAT syscall2 endmacro          // ptr: path int: mode -- int: s
 macro unlink SYSUNLINK syscall1 endmacro        // ptr: path -- int: success
 
 // Non-standard wrappers
-macro flength 0 SEEK-END fseek endmacro         // file-desc: file-desc -- int: length 
-
-macro fopen-read RD-ONLY 0 fopen endmacro       // int: str-ptr -- file-desc: file-desc
-macro fopen-write WR-ONLY 0 fopen endmacro      // int: str-ptr -- file-desc: file-desc
-macro fopen-read-write RDWR 0 fopen endmacro    // int: str-ptr -- file-desc: file-desc
+macro fopen-r RD-ONLY 0 fopen endmacro          // ptr: str-ptr -- file-desc: file-desc
+macro fopen-w WR-ONLY 0 fopen endmacro          // ptr: str-ptr -- file-desc: file-desc
+macro fopen-rw RDWR 0 fopen endmacro            // ptr: str-ptr -- file-desc: file-desc
 
 // Stat types
 macro S_IFMT   0o170000 endmacro
