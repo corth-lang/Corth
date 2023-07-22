@@ -167,7 +167,7 @@ macro null-term8
   // ptr: x -- ptr: x + {0}
   // Copies a dynamicly-placed collection, with a null-char at the end.
   // NOTE: If malloc fails, returns null.
-  0 dappend8
+  0 swp dappend8
 endmacro
 
 
@@ -175,7 +175,7 @@ macro null-term64
   // ptr: x -- ptr: x + {0}
   // Copies a dynamicly-placed collection, with a null-char at the end.
   // NOTE: If malloc fails, returns null.
-  0 dappend64
+  0 swp dappend64
 endmacro
 
 
