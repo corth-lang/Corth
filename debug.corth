@@ -1,6 +1,6 @@
 include libs/linux_x86/io.corth
-
 include libs/dynamic/utils.corth
+include libs/dynamic/debug_malloc.corth
 
 include enums.corth
 
@@ -14,12 +14,14 @@ macro POS.LINE   0  endmacro
 macro POS.CHAR   8  endmacro
 macro POS.AT     16 endmacro
 
+macro LOG.INFO  "\x1b[1;97m[INFO]\x1b[0;97m "    endmacro
+macro LOG.WARN  "\x1b[1;33m[WARNING]\x1b[0;97m " endmacro
 macro LOG.SOFT  "\x1b[1;31m[SOFT]\x1b[0;97m "    endmacro
 macro LOG.ERR   "\x1b[1;31m[ERROR]\x1b[0;97m "   endmacro
-macro LOG.INFO  "\x1b[1;97m[INFO]\x1b[0;97m "    endmacro
+macro LOG.BUG   "\x1b[1;31m[BUG]\x1b[0;97m "     endmacro
+
 macro LOG.CMD   "\x1b[1;32m[CMD]\x1b[0;97m "     endmacro
 macro LOG.TODO  "\x1b[1;35m[TODO]\x1b[0;97m "    endmacro
-macro LOG.WARN  "\x1b[1;33m[WARNING]\x1b[0;97m " endmacro
 macro LOG.HERE  "\x1b[1;32m[HERE]\x1b[0;97m "    endmacro
 
 
@@ -158,8 +160,8 @@ proc fput-lines
 in let address log-stream in
   address @64 address ADDR.START + address ADDR.END + let file-name start-pos end-pos in
     // Add a null character for fopen
-    file-name add-null let c-file-name in
-      c-file-name fopen-read c-file-name mfree
+    file-name null-term8 let c-file-name in
+      c-file-name fopen-r c-file-name drop
     end
 
     // Open the source file.
@@ -175,22 +177,22 @@ in let address log-stream in
         file 0 SEEK-SET fseek drop start-line dec file seek-line
 
         start-line end-line = if
-          start-line log-stream fputu-full ": " log-stream fputs file log-stream fput-line "\n" log-stream fputs let length in
-            "                      " log-stream fputs start-char " " log-stream fputs-multiple end-char start-char - "~" log-stream fputs-multiple "\n" log-stream fputs
+          start-line log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
+            "                      " log-stream fputs start-char " " log-stream fputs-multiple end-char start-char - "~" log-stream fputs-multiple log-stream fputnl
           end
         else
-          start-line log-stream fputu-full ": " log-stream fputs file log-stream fput-line "\n" log-stream fputs let length in
-            "                      " log-stream fputs start-char " " log-stream fputs-multiple length start-char - "~" log-stream fputs-multiple "\n" log-stream fputs
+          start-line log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
+            "                      " log-stream fputs start-char " " log-stream fputs-multiple length start-char - "~" log-stream fputs-multiple log-stream fputnl
           end
 
           start-line inc while dup end-line < do let line-no in
-            line-no log-stream fputu-full ": " log-stream fputs file log-stream fput-line "\n" log-stream fputs let length in
-              "                      " log-stream fputs length "~" log-stream fputs-multiple "\n" log-stream fputs
+            line-no log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
+              "                      " log-stream fputs length "~" log-stream fputs-multiple log-stream fputnl
             end
           line-no end inc end drop
 
-          end-line log-stream fputu-full ": " log-stream fputs file log-stream fput-line "\n" log-stream fputs let length in
-            "                      " log-stream fputs end-char "~" log-stream fputs-multiple "\n" log-stream fputs
+          end-line log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
+            "                      " log-stream fputs end-char "~" log-stream fputs-multiple log-stream fputnl
           end
         end
 
@@ -202,19 +204,27 @@ in let address log-stream in
 end end
 
 
-proc fput-here
-  // ptr: address file-desc: log-stream --
-  ptr file-desc --
-in let address log-stream in
-  LOG.HERE log-stream fputs address log-stream fput-address ":\n" log-stream fputs
-  address log-stream fput-lines
-end end
+macro fput-here let _address_ _log_stream_ in
+  // ptr: _address_ file-desc: _log_stream_ --
+  LOG.HERE _log_stream_ fputs _address_ _log_stream_ fput-address ":\n" _log_stream_ fputs
+  _address_ _log_stream_ fput-lines
+end endmacro
 
 
-proc fput-inside-procedure
-  // ptr: procedure-name ptr: procedure-address file-desc: log-stream
-  ptr ptr file-desc --
-in let name address log-stream in
-  LOG.INFO log-stream fputs "Inside procedure '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
-  address log-stream fput-here
+macro fput-inside-procedure let _procedure_name_ _procedure_address_ _log_stream_ in
+  // ptr: _address_ ptr: _procedure_name_ ptr: _procedure_address_ file-desc: _log_stream_ --
+  LOG.INFO _log_stream_ fputs "Inside procedure '" _log_stream_ fputs _procedure_name_ _procedure_name_ mlength _log_stream_ fputs "'.\n" _log_stream_ fputs
+  LOG.HERE _log_stream_ fputs _procedure_address_ _log_stream_ fput-address ":\n" _log_stream_ fputs
+  _procedure_address_ _log_stream_ fput-lines
+end endmacro
+
+
+proc report-bug
+  // file-desc: file-desc --
+  file-desc --
+in let log-stream in
+  LOG.ERR log-stream fputs "This should have been impossible to reach.\n" log-stream fputs
+  LOG.INFO log-stream fputs "This is probably caused by a bug in the compiler.\n" log-stream fputs
+  LOG.INFO log-stream fputs "Malloc segments: \n" log-stream fputs
+  log-stream debug-dynamic-memory
 end end
