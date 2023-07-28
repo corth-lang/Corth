@@ -1,0 +1,44 @@
+include libs/converter/iconvert.corth
+
+
+macro intconvxe
+  // ptr: buffer int: value -- ptr: result-start
+  ptr int -- ptr
+  // Converts an integer to a hexadecimal string with '0x' as a prefix.
+  // NOTE: Buffer size must be 18 bytes.
+  let _buffer_ _value_ in
+    _buffer_ _value_ intconvx let buffer-start in
+      '0' buffer-start 2 - !8
+      'x' buffer-start dec !8
+      buffer-start 2 -
+    end
+  end
+endmacro
+
+macro intconvoe
+  // ptr: buffer int: value -- ptr: result-start
+  ptr int -- ptr
+  // Converts an integer to a hexadecimal string with '0x' as a prefix.
+  // NOTE: Buffer size must be 24 bytes.
+  let _buffer_ _value_ in
+    _buffer_ _value_ intconvo let buffer-start in
+      '0' buffer-start 2 - !8
+      'b' buffer-start dec !8
+      buffer-start 2 -
+    end
+  end
+endmacro
+
+macro intconvbe
+  // ptr: buffer int: value -- ptr: result-start
+  ptr int -- ptr
+  // Converts an integer to a hexadecimal string with '0x' as a prefix.
+  // NOTE: Buffer size must be 66 bytes.
+  let _buffer_ _value_ in
+    _buffer_ _value_ intconvb let buffer-start in
+      '0' buffer-start 2 - !8
+      'b' buffer-start dec !8
+      buffer-start 2 -
+    end
+  end
+endmacro
