@@ -54,13 +54,10 @@ macro iabs   dup is-pos if neg end endmacro
 macro sqr    dup *                 endmacro
 macro usqr   dup u*                endmacro
 
-macro int-to-bin-digit '0' +                         endmacro
-macro int-to-oxt-digit '0' +                         endmacro
-macro int-to-dec-digit '0' +                         endmacro
-macro int-to-hex-digit dup 9 > if 'W' else '0' end + endmacro
-macro bin-digit-to-int '0' -                         endmacro
-macro oct-digit-to-int '0' -                         endmacro
-macro dec-digit-to-int '0' -                         endmacro
+macro int-to-ddigit '0' + endmacro
+macro ddigit-to-int '0' - endmacro
+
+macro int-to-xdigit dup 9 > if 'W' else '0' end + endmacro
 
 macro is-range  let _a_ _b_ _c_ in _a_ _b_ < if false else _c_ _a_ < ! end end endmacro // int: x int: min int: max -- bool:  (x in [min, max])
 macro isn-range let _a_ _b_ _c_ in _a_ _b_ < if true  else _c_ _a_ <   end end endmacro // int: x int: min int: max -- bool: !(x in [min, max])
