@@ -1,0 +1,15 @@
+include libs/linux_x86/stdio.corth
+
+proc main
+  int int -- int
+in let argc argv in
+  memory number sizeof(int) in
+    while "Enter an integer: " puts number geti ! do "Please enter a valid number.\n" puts end
+
+    "Unsigned decimal: " puts number @64 putu putnl
+    "Signed decimal  : " puts number @64 puti putnl
+    "Hexadecimal     : " puts number @64 putx putnl
+    "Octal           : " puts number @64 puto putnl
+    "Binary          : " puts number @64 putb putnl
+  end
+end 0 end 
