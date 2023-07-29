@@ -1,0 +1,26 @@
+include libs/linux_x86/sys.corth
+include libs/converter/convert.corth
+include libs/core/
+
+
+macro fgets arot fread endmacro // ptr: str-ptr int: str-len file-desc: file-desc -- int: read-bytes 
+
+proc fgetu
+  // ptr: address files-desc: file-desc -- bool: success
+  ptr file-desc -- bool
+  // 21 bytes are read, since the longest unsigned integer is 21 digits in decimal.
+in let number file in
+  memory buffer 21 in
+    buffer buffer 21 file fgets dec number convuint
+  end
+end end
+
+proc fgeti
+  // ptr: address file-desc: file-desc -- bool: success
+  ptr file-desc -- bool
+  // 21 bytes are read, since the least negative number is 20 digits in decimal and requires a minus.
+in let number file in
+  memory buffer 21 in
+    buffer buffer 21 file fgets dec number convint
+  end
+end end
