@@ -338,7 +338,7 @@ endmacro
 
 // -- I/O --
 
-// These macros use the file-desc, fputs, fputu and fputup. An I/O library should be included before.
+// These macros use the file-desc, fputs, fputu and fputup. An I/O library should be included first.
 // TODO: Add precision variables.
 proc fput-ufixed64
   // fixed64: value file-desc: file-desc

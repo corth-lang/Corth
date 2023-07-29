@@ -1,6 +1,7 @@
-include libs/linux_x86/io.corth
-include libs/dynamic/utils.corth
 include libs/dynamic/debug_malloc.corth
+include libs/dynamic/utils.corth
+include libs/linux_x86/io/
+include libs/core/
 
 include enums.corth
 
@@ -108,7 +109,7 @@ proc fputu-full
   // int: int file-desc: file-desc 
   int file-desc --
   // Prints an unsigned integer to a file stream.
-  // The length of string is guaranteed to be 20. Missing length is filled with spaces from the left.
+  // The length of string is guaranteed to be 20. Missing length is filled with spaces from left.
 in let file in
   memory buffer     20          and
          value      sizeof(int) and
@@ -122,7 +123,7 @@ in let file in
 
     while
       value @64 10 /%
-      int-to-dec-digit buffer-end @64 !8
+      int-to-ddigit buffer-end @64 !8
       buffer-end @dec64
     dup value !64 isn-zero do end
 

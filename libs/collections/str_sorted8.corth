@@ -1,5 +1,4 @@
 include libs/dynamic/malloc.corth
-include libs/linux_x86/io.corth
 
 /*
 

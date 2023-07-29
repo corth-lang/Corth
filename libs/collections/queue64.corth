@@ -12,13 +12,17 @@ include libs/core/
   After that, the queue should be initialized using queue64.init.
 */
 
+macro queue64.get-addr
+  // int: index ptr: queue-start ptr: queue-length -- ptr: address
+  let _queue_ _ in 8 * _queue_ + end
+endmacro
+
 macro queue64.get
   // int: index ptr: queue-start ptr: queue-length -- int: value
   // Gets an item from a queue.
   // return queue[index]
   // NOTE: This macro assumes that the index is valid.
-  
-  let _index_ _queue_ _length_ in _index_ 8 * _queue_ + @64 end
+  queue64.get-addr @64
 endmacro
 
 macro queue64.set
@@ -26,8 +30,7 @@ macro queue64.set
   // Sets an item on a queue.
   // queue[index] = value
   // NOTE: This macro assumes that the index is valid.
-  
-  let _value_ _index_ _queue_ _length_ in _value_ _index_ 8 * _queue_ + !64 end
+  queue64.get-addr !64
 endmacro
 
 proc queue64.insert
@@ -36,34 +39,30 @@ proc queue64.insert
   // Inserts an item to a queue.
   // queue.insert(value, index)
   // NOTE: This procedure assumes that the queue has enough space to insert item.
-in
-  let value index queue-start queue-length in
-    queue-start index 8 * + let page-addr in
-      // Move contents to the right.
-      page-addr page-addr 8 + queue-length @64 index - memcpy64i
-      value queue-start index 8 * + !64
-      queue-length @inc64
-    end
+in let value index queue-start queue-length in
+  queue-start index 8 * + let page-addr in
+    // Move content to right.
+    page-addr page-addr 8 + queue-length @64 index - memcpy64i
+    value queue-start index 8 * + !64
+    queue-length @inc64
   end
-end
+end end
 
 proc queue64.pop
   // int: index-to-pop ptr: queue-start ptr: queue-length -- int: value
   int ptr ptr -- int
   // Pops an item from a queue.
   // return queue.pop(index)
-in
-  let index queue-start queue-length in
-    queue-start index 8 * + let page-addr in
-      // Return the value at page address.
-      page-addr @64
+in let index queue-start queue-length in
+  queue-start index 8 * + let page-addr in
+    // Return the value at page address.
+    page-addr @64
 
-      // Move the contents to the left.
-      page-addr 8 + page-addr queue-length @64 index - dec memcpy64
-    end
-    queue-length @dec64
+    // Move the contents to the left.
+    page-addr 8 + page-addr queue-length @64 index - dec memcpy64
   end
-end
+  queue-length @dec64
+end end
 
 macro queue64.append
   // int: value ptr: queue-start ptr: queue-length
@@ -81,7 +80,7 @@ macro queue64.pop-last
   // Removes the last item of the queue.
   // return queue.pop(queue.length - 1)
   
-let _queue_ _length_ in
+  let _queue_ _length_ in
     _length_ @dec64
     _queue_ _length_ @64 8 * + @64
   end

@@ -6,6 +6,10 @@
 
 */
 
+
+include libs/core/integer.corth
+
+
 proc array64.min
   // ptr: array int: length -- int: min-item
   ptr int -- int
