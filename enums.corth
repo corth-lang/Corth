@@ -1,3 +1,29 @@
+include libs/linux_x86/io/
+
+// TODO: Change these arrays with vectors.
+macro GLOBALS-MAX-COUNT   0x4000    endmacro
+macro MACROS-MAX-COUNT    0x4000    endmacro
+macro PROCS-MAX-COUNT     0X400     endmacro
+macro LIBRARIES-MAX-COUNT 0x4000    endmacro
+macro LEVELS-MAX-COUNT    0x100     endmacro
+macro LET-MAX-COUNT       0x400     endmacro
+macro LOCALS-MAX-COUNT    0x400     endmacro
+macro VARS-MAX-ONCE       0x10      endmacro
+
+macro EXTENDED-MAX-LENGTH 0x400000  endmacro
+macro TOKEN-MAX-LENGTH    0x4000    endmacro
+macro MACRO-MAX-TOKENS    0x400000  endmacro
+macro PROC-MAX-IO         0x100     endmacro
+macro STACK-MAX-ITEMS     0x100     endmacro
+
+macro LOCAL-MEMORY-SIZE   0X40000   endmacro
+macro CALL-STACK-SIZE     0x40000   endmacro
+
+// Exit codes
+macro SUCCESS-EXIT-CODE    0 endmacro
+macro ERROR-EXIT-CODE      1 endmacro
+macro SOFT-ERROR-EXIT-CODE 2 endmacro
+
 // Type IDs
 macro TYPE-UNKNOWN   0 endmacro
 macro TYPE-NAME      1 endmacro
