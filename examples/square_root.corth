@@ -4,11 +4,10 @@ include libs/math/fixed64.corth
 proc main
   int int -- int
 in let argc argv in
-  "Enter an unsigned integer: " puts
-  getu if int-to-fixed64 let x in
-    "Square root of " puts x put-ufixed64 " is " puts x sqrt-f put-ufixed64 ".\n" puts
+  memory number sizeof(int) in
+    while "Enter an unsigned integer: " puts number getu ! do "Please enter a valid number.\n" puts end
+    
+    "Square root of " puts number @64 int-to-fixed64 put-ufixed64 " is " puts number @64 int-to-fixed64 sqrt-f put-ufixed64 ".\n" puts
     "Calculated that with " puts SQRT.TOLERANCE put-ufixed64 " precision.\n" puts
-  end else
-    drop
   end
 end 0 end

@@ -3,12 +3,11 @@ include libs/linux_x86/stdio.corth
 proc main
   int int -- int
 in let argc argv in
-  "Enter A: " puts
-  while geti ! do drop end
-  "Enter B: " puts
-  while geti ! do drop end
+  memory a sizeof(int) and
+         b sizeof(int) in
+    while "Enter A: " puts a geti ! do "Please enter a valid number.\n" puts end
+    while "Enter B: " puts b geti ! do "Please enter a valid number.\n" puts end
 
-  let a b in
-    a puti " times " puts b puti " is " puts a b * puti putnl
+    a @64 puti " times " puts b @64 puti " is " puts a @64 b @64 * puti putnl
   end
 end 0 end

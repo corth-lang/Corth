@@ -6,10 +6,9 @@ include libs/math/arithmetic.corth
 proc main
   int int -- int
 in let argc argv in
-  "Enter a number: " puts
-  while getu ! do drop end
-  let number in
-    "Factorial of " puts number putu " is " puts number fact putu putnl
+  memory number sizeof(int) in
+    while "Enter a number: " puts number getu ! do "Please enter a valid number.\n" puts end
+    "Factorial of " puts number @64 putu " is " puts number @64 fact putu putnl
   end
 end 0 end
 

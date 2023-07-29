@@ -1,0 +1,15 @@
+macro malloc.ARRAY-SIZE       0x1000 endmacro
+macro malloc.AVAIL-QUEUE-SIZE 0x1000 endmacro
+
+include libs/collections/list64.corth
+include libs/core/stack.corth
+
+
+proc main
+  int ptr -- int
+in let argc argv in
+  memory list sizeof(ptr) in
+    16 list64.init list !64
+    
+  end
+end 0 end

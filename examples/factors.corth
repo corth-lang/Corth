@@ -5,27 +5,22 @@ include libs/linux_x86/stdio.corth
 proc main
   int int -- int
 in let argc argv in
-  "Enter a number: " puts
-  getu if
-    let number in
-      "Factors of " puts number putu " are:\n" puts
+  memory number sizeof(int) in
+    while "Enter an integer: " puts number getu ! do "Please enter a valid number.\n" puts end
+    
+    "Factors of " puts number @64 putu " are:\n" puts
 
-      1 while dup sqr number < do
-        let i in
-          number i % is-zero if
-            i puti " and " puts
-            number i / putu putnl
-          end
-        i end
-      inc end
+    1 while dup sqr number @64 < do let i in
+      number @64 i % is-zero if
+        i puti " and " puts
+        number @64 i / putu putnl
+      end
+    i end inc end
 
-      let last in
-        last sqr number = if
-          last puti " is the square root of " puts number puti putnl
-        end
+    let last in
+      last sqr number @64 = if
+        last puti " is the square root of " puts number @64 puti putnl
       end
     end
-  else
-    drop
   end
 end 0 end

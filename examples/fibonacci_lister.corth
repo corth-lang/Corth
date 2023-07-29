@@ -23,18 +23,27 @@ include libs/linux_x86/stdio.corth
 include libs/core/
 
 
+// Lists the first N numbers from the fibonacci sequence.
+macro N 20 endmacro
+
+
 proc main
   int int -- int
 in let argc argv in
   memory a sizeof(int) and
          b sizeof(int) in
 
+    // Start with a=1 and b=1.
     1 a !64
     1 b !64
 
-    while true do
+    // Iterate N times.
+    N while dup isn-zero do
+      // Print a.
       a @64 putu putnl
+
+      // a'=a+b; b'=a
       b @64 dup a @64 + b !64 a !64
-    end 
+    dec end drop
   end
 end 0 end
