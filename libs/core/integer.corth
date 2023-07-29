@@ -7,3 +7,17 @@ macro MAX-INT  0x7fffffffffffffff endmacro
 macro MIN-INT  0x8000000000000000 endmacro
 macro MAX-UINT 0xffffffffffffffff endmacro
 macro MIN-UINT 0x0000000000000000 endmacro
+
+macro is-odigit   '0' '7' is-range endmacro
+macro is-ddigit   '0' '9' is-range endmacro
+macro is-xeldigit 'a' 'f' is-range endmacro
+macro is-xeudigit 'A' 'F' is-range endmacro
+macro is-lletter  'a' 'z' is-range endmacro
+macro is-uletter  'A' 'Z' is-range endmacro
+
+macro isn-odigit   '0' '7' isn-range endmacro
+macro isn-ddigit   '0' '9' isn-range endmacro
+macro isn-xeldigit 'a' 'f' isn-range endmacro
+macro isn-xeudigit 'A' 'F' isn-range endmacro
+macro isn-lletter  'a' 'z' isn-range endmacro
+macro isn-uletter  'A' 'Z' isn-range endmacro
