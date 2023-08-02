@@ -1,15 +1,65 @@
-macro malloc.ARRAY-SIZE       0x1000 endmacro
-macro malloc.AVAIL-QUEUE-SIZE 0x1000 endmacro
+include libs/linux_x86/stdio.corth
+include libs/linux_x86/sys.corth
+include libs/core/stack.corth
+include libs/random.corth
+
+macro malloc.ARRAY-SIZE       0x4000000 endmacro
+macro malloc.AVAIL-QUEUE-SIZE 0x4000 endmacro
+include libs/dynamic/malloc.corth
+include libs/dynamic/utils.corth
 
 include libs/collections/list64.corth
-include libs/core/stack.corth
+
+
+proc putl
+  // ptr: list -- 
+  ptr --
+in let list in
+  "list(" puts
+  list list64.length putu
+  ":" puts
+  list list64.capacity putu
+  ")[" puts
+  0 while dup list list64.length < do let i in
+    i list list64.get putu ", " puts
+  i end inc end drop
+  "]" puts
+end end
 
 
 proc main
   int ptr -- int
 in let argc argv in
   memory list sizeof(ptr) in
-    16 list64.init list !64
+    malloc.init
+    NULLPTR time rng-seed !64
     
+    0 list64.init dup is-null if drop
+      "malloc failed!\n" puts
+      1 return
+    end list !64
+
+    0 while dup 16 < do
+      dup list list64.append
+    inc end drop
+    list putl putnl
+
+    0 while dup 10 < do
+      100 rand-unif let x in
+        list list64.length rand-unif let i in
+          x i list list64.insert
+          "Insert " puts x puti " on index " puts i puti putnl
+        end
+      end
+    inc end drop
+    list putl putnl
+
+    0 while dup 10 < do
+      list list64.length rand-unif let i in
+        i list list64.pop drop
+        "Pop index " puts i puti putnl
+      end
+    inc end drop
+    list putl putnl
   end
 end 0 end
