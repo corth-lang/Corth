@@ -257,6 +257,7 @@ def compile_module(file, program: deque, data: deque, names: dict, compiled_modu
 
             if macro_name.type is not token_lib.NAME:
                 error_on_token(macro_name, f"Expected NAME after MACRO")
+                return True
 
             macro = deque()
             
@@ -494,16 +495,9 @@ def get_memory_size(program, sizes, end, names, debug_mode: bool = False):
                 
                 stack.append(stack.pop() + stack.pop())
 
-            elif token.type is token_lib.SUB:
+            elif token.type is token_lib.FULLMUL:
                 if len(stack) < 2:
-                    error(f"SUB requires two INTs")
-                    return True
-
-                stack.append(-stack.pop() + stack.pop())
-
-            elif token.type is token_lib.MUL:
-                if len(stack) < 2:
-                    error(f"MUL requires two INTs")
+                    error(f"FULLMUL requires two INTs")
                     return True
                 
                 stack.append(stack.pop() * stack.pop())
@@ -670,19 +664,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             stack.append(INT_TYPE)
 
-        elif token.type is token_lib.BAND:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack[-1] is not INT_TYPE
-            ):
-                error_on_token(token, "BAND expects two INTs")
-                return True
-
-            file.write(f"    ;; -- BAND --\n\n")
-            file.write(f"    pop     rax\n")
-            file.write(f"    and     [rsp], rax\n\n")
-
         elif token.type is token_lib.BOR:
             if (
                     len(stack) < 2 or
@@ -695,19 +676,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    ;; -- BOR --\n\n")
             file.write(f"    pop     rax\n")
             file.write(f"    or      [rsp], rax\n\n")
-
-        elif token.type is token_lib.BXOR:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack[-1] is not INT_TYPE
-            ):
-                error_on_token(token, "BXOR expects two INTs")
-                return True
-
-            file.write(f"    ;; -- BXOR --\n\n")
-            file.write(f"    pop     rax\n")
-            file.write(f"    xor     [rsp], rax\n\n")
 
         elif token.type is token_lib.BNOT:
             if (
@@ -733,19 +701,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    pop     rax\n")
             file.write(f"    add     [rsp], rax\n\n")
 
-        elif token.type is token_lib.SUB:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack[-1] is not INT_TYPE
-            ):
-                error_on_token(token, "SUB expects two INTs")
-                return True
-
-            file.write(f"    ;; -- SUB --\n\n")
-            file.write(f"    pop     rax\n")
-            file.write(f"    sub     QWORD [rsp], rax\n\n")
-
         elif token.type is token_lib.DIVMOD:
             if (
                     len(stack) < 2 or
@@ -761,38 +716,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    mov     rax, [rsp+8]\n")
             file.write(f"    idiv    rbx\n")
             file.write(f"    mov     [rsp+8], rax\n")
-            file.write(f"    mov     [rsp], rdx\n\n")
-
-        elif token.type is token_lib.DIV:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack[-1] is not INT_TYPE
-            ):
-                error_on_token(token, "DIV expects two INTs")
-                return True
-
-            file.write(f"    ;; -- DIV --\n\n")
-            file.write(f"    xor     rdx, rdx\n")
-            file.write(f"    pop     rbx\n")
-            file.write(f"    mov     rax, [rsp]\n")
-            file.write(f"    idiv    rbx\n")
-            file.write(f"    mov     [rsp], rax\n\n")
-
-        elif token.type is token_lib.MOD:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack[-1] is not INT_TYPE
-            ):
-                error_on_token(token, "MOD expects two INTs")
-                return True
-
-            file.write(f"    ;; -- MOD --\n\n")
-            file.write(f"    xor     rdx, rdx\n")
-            file.write(f"    pop     rbx\n")
-            file.write(f"    mov     rax, [rsp]\n")
-            file.write(f"    idiv    rbx\n")
             file.write(f"    mov     [rsp], rdx\n\n")
 
         elif token.type is token_lib.UDIVMOD:
@@ -812,38 +735,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    mov     [rsp+8], rax\n")
             file.write(f"    mov     [rsp], rdx\n\n")
 
-        elif token.type is token_lib.UDIV:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack[-1] is not INT_TYPE
-            ):
-                error_on_token(token, "UDIV expects two INTs")
-                return True
-
-            file.write(f"    ;; -- UDIV --\n\n")
-            file.write(f"    xor     rdx, rdx\n")
-            file.write(f"    pop     rbx\n")
-            file.write(f"    mov     rax, [rsp]\n")
-            file.write(f"    div     rbx\n")
-            file.write(f"    mov     [rsp], rax\n\n")
-
-        elif token.type is token_lib.UMOD:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack[-1] is not INT_TYPE
-            ):
-                error_on_token(token, "UMOD expects two INTs")
-                return True
-
-            file.write(f"    ;; -- UMOD --\n\n")
-            file.write(f"    xor     rdx, rdx\n")
-            file.write(f"    pop     rbx\n")
-            file.write(f"    mov     rax, [rsp]\n")
-            file.write(f"    div     rbx\n")
-            file.write(f"    mov     [rsp], rdx\n\n")
-
         elif token.type is token_lib.FULLMUL:
             if (
                     len(stack) < 2 or
@@ -860,38 +751,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    imul    rbx\n")
             file.write(f"    mov     [rsp], rax\n")
             file.write(f"    mov     [rsp+8], rdx\n\n")
-
-        elif token.type is token_lib.MUL:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack[-1] is not INT_TYPE
-            ):
-                error_on_token(token, "MUL expects two INTs")
-                return True
-
-            file.write(f"    ;; -- MUL --\n\n")
-            file.write(f"    xor     rdx, rdx\n")
-            file.write(f"    pop     rbx\n")
-            file.write(f"    mov     rax, [rsp]\n")
-            file.write(f"    imul    rbx\n")
-            file.write(f"    mov     [rsp], rax\n\n")
-
-        elif token.type is token_lib.MUL2:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack[-1] is not INT_TYPE
-            ):
-                error_on_token(token, "MUL2 expects two INTs")
-                return True
-
-            file.write(f"    ;; -- MUL2 --\n\n")
-            file.write(f"    xor     rdx, rdx\n")
-            file.write(f"    pop     rbx\n")
-            file.write(f"    mov     rax, [rsp]\n")
-            file.write(f"    imul    rbx\n")
-            file.write(f"    mov     [rsp], rdx\n\n")
             
         elif token.type is token_lib.UFULLMUL:
             if (
@@ -909,38 +768,6 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    mul     rbx\n")
             file.write(f"    mov     [rsp], rax\n")
             file.write(f"    mov     [rsp+8], rdx\n\n")
-
-        elif token.type is token_lib.UMUL:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack[-1] is not INT_TYPE
-            ):
-                error_on_token(token, "UMUL expects two INTs")
-                return True
-
-            file.write(f"    ;; -- UMUL --\n\n")
-            file.write(f"    xor     rdx, rdx\n")
-            file.write(f"    pop     rbx\n")
-            file.write(f"    mov     rax, [rsp]\n")
-            file.write(f"    mul     rbx\n")
-            file.write(f"    mov     [rsp], rax\n\n")
-
-        elif token.type is token_lib.UMUL2:
-            if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack[-1] is not INT_TYPE
-            ):
-                error_on_token(token, "UMUL2 expects two INTs")
-                return True
-
-            file.write(f"    ;; -- UMUL2 --\n\n")
-            file.write(f"    xor     rdx, rdx\n")
-            file.write(f"    pop     rbx\n")
-            file.write(f"    mov     rax, [rsp]\n")
-            file.write(f"    mul     rbx\n")
-            file.write(f"    mov     [rsp], rdx\n\n")
 
         elif token.type is token_lib.IF:
             if len(stack) < 1 or stack.pop() is not BOOL_TYPE:
@@ -1209,63 +1036,27 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f"    ;; -- STORE --\n\n")
             file.write(f"    pop     rax\n")
             file.write(f"    pop     rbx\n")
-            file.write(f"    mov     [rax], bl\n\n") 
-
-        elif token.type is token_lib.SYSCALL0:
-            if len(stack) < 1 or stack[-1] is not INT_TYPE:
-                error_on_token(token, "SYSCALL0 expects a INT")
-                return True
-
-            file.write(f"    ;; -- SYSCALL0 --\n\n")
-            file.write(f"    mov     rax, [rsp]\n")
-            file.write(f"    syscall\n")
-            file.write(f"    mov     [rsp], rax\n\n")
-
-        elif token.type is token_lib.SYSCALL1:
+            file.write(f"    mov     [rax], bl\n\n")
+            
+        elif token.type is token_lib.SYSCALL6:
             if (
-                    len(stack) < 2 or
-                    stack.pop() is not INT_TYPE or
-                    stack[-1] is not INT_TYPE
-            ):
-                error_on_token(token, "SYSCALL1 expects two INTs")
-                return True
-
-            file.write(f"    ;; -- SYSCALL1 --\n\n")
-            file.write(f"    pop     rax\n")
-            file.write(f"    mov     rdi, [rsp]\n")
-            file.write(f"    syscall\n")
-            file.write(f"    mov     [rsp], rax\n\n")
-
-        elif token.type is token_lib.SYSCALL2:
-            if (
-                    len(stack) < 3 or
+                    len(stack) < 6 or
                     stack.pop() is not INT_TYPE or
                     stack.pop() is not INT_TYPE or
-                    stack[-1] is not INT_TYPE
-                ):
-                error_on_token(token, "SYSCALL2 expects three INTs")
-                return True
-
-            file.write(f"    ;; -- SYSCALL2 --\n\n")
-            file.write(f"    pop     rax\n")
-            file.write(f"    pop     rsi\n")
-            file.write(f"    mov     rdi, [rsp]\n")
-            file.write(f"    syscall\n")
-            file.write(f"    mov     [rsp], rax\n\n")
-
-        elif token.type is token_lib.SYSCALL3:
-            if (
-                    len(stack) < 4 or
+                    stack.pop() is not INT_TYPE or
                     stack.pop() is not INT_TYPE or
                     stack.pop() is not INT_TYPE or
                     stack.pop() is not INT_TYPE or
                     stack[-1] is not INT_TYPE
             ):
-                error_on_token(token, "SYSCALL3 expects four INTs")
+                error_on_token(token, "SYSCALL6 expects 7 INTs")
                 return True
 
-            file.write(f"    ;; -- SYSCALL3 --\n\n")
+            file.write(f"    ;; -- SYSCALL6 --\n\n")
             file.write(f"    pop     rax\n")
+            file.write(f"    pop     r9\n")
+            file.write(f"    pop     r8\n")
+            file.write(f"    pop     r10\n")
             file.write(f"    pop     rdx\n")
             file.write(f"    pop     rsi\n")
             file.write(f"    mov     rdi, [rsp]\n")

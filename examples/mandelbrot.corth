@@ -20,7 +20,8 @@ macro HALF-WIDTH WIDTH 2 / endmacro
 macro HALF-HEIGHT HEIGHT 2 / endmacro
 macro CHARS "          .........--------+++++++******=====????$$$@@%" drop endmacro
 macro MAX-ITERATION 55 endmacro
-macro BUFFER-SIZE WIDTH 2 * 1 + HEIGHT * endmacro
+macro BUFFER-SIZE-T WIDTH 2 ** 1 + HEIGHT ** endmacro
+macro BUFFER-SIZE   WIDTH 2 * 1 + HEIGHT * endmacro
 
 
 macro clear-screen
@@ -61,9 +62,9 @@ end
 proc render
   --
 in
-  memory number sizeof(comp) and
-         buffer BUFFER-SIZE  and
-         i      sizeof(ptr)  in
+  memory number sizeof(comp)  and
+         buffer BUFFER-SIZE-T and
+         i      sizeof(ptr)   in
 
     // Screen is buffered, and when the buffer is filled; it is dumped on the screen.
     buffer i !64

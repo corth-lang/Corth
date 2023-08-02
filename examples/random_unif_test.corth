@@ -14,7 +14,7 @@ in let argc argv in
   NULLPTR time rng-seed !64
 
   "Generating " puts numbers tries u* putu " random numbers between 0 and " puts numbers putu "...\n" puts
-  memory array sizeof(int) numbers * in
+  memory array sizeof(int) numbers ** in
     0 while dup numbers < do
       let i in
         0 i 8 * array + !64

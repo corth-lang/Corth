@@ -51,28 +51,17 @@ KEYWORDS = {
     
     # Arithmetic operators
     "+": (ADD := enum_lib.step()),
-    "-": (SUB := enum_lib.step()),
 
     # Signed operations
-    "*": (MUL := enum_lib.step()),
-    "*2": (MUL2 := enum_lib.step()),
     "**": (FULLMUL := enum_lib.step()),
     "/%": (DIVMOD := enum_lib.step()),
-    "/": (DIV := enum_lib.step()),
-    "%": (MOD := enum_lib.step()),
 
     # Unsigned operations
-    "u*": (UMUL := enum_lib.step()),
-    "u*2": (UMUL2 := enum_lib.step()),
     "u**": (UFULLMUL := enum_lib.step()),
     "u/%": (UDIVMOD := enum_lib.step()),
-    "u/": (UDIV := enum_lib.step()),
-    "u%": (UMOD := enum_lib.step()),
 
     # Bitwise operators
-    "&&": (BAND := enum_lib.step()),
     "||": (BOR := enum_lib.step()),
-    "^^": (BXOR := enum_lib.step()),
     "!!": (BNOT := enum_lib.step()),
 
     # Comparison operators
@@ -90,10 +79,7 @@ KEYWORDS = {
     "!64": (STORE8 := enum_lib.step()),
 
     # System calls
-    "syscall0": (SYSCALL0 := enum_lib.step()),
-    "syscall1": (SYSCALL1 := enum_lib.step()),
-    "syscall2": (SYSCALL2 := enum_lib.step()),
-    "syscall3": (SYSCALL3 := enum_lib.step()),
+    "syscall6": (SYSCALL6 := enum_lib.step()),
 
     # Debug tools
     # These don't have an effect on the compiled program, but helps to debug programs

@@ -3,11 +3,13 @@ include libs/core/stack.corth
 include libs/core/integer.corth
 
 
+// TODO: These should be implemented back using INTRINSICs later.
+// -- UNIMPLEMENTED INTRINSICS --
+
 // int: x int: y -- bool: cmp(x, y)
 // fixed64: x fixed64: y -- bool: cmp(x, y)
 
 // Compares two signed numbers.
-// TODO: These should be implemented back using INTRINSICs later.
 macro >  swp < endmacro
 macro <= > !   endmacro
 macro >= < !   endmacro
@@ -17,13 +19,28 @@ macro =  != !  endmacro
 // ufixed64: x ufixed64: y -- bool: cmp(x, y)
 
 // Compares two unsigned integers.
-// TODO: These should be implemented using INTRINSICs later.
 macro u<  MIN-INT + swp MIN-INT + swp <   endmacro
 macro u>  MIN-INT + swp MIN-INT +     <   endmacro
 macro u<= MIN-INT + swp MIN-INT +     < ! endmacro
 macro u>= MIN-INT + swp MIN-INT + swp < ! endmacro
 macro u=  =                               endmacro
 macro u!= !=                              endmacro
+
+// int: x int: y -- int: op(x, y)
+// uint: x uint: y -- uint: op(x, y)
+macro *   **  let _*2_ _*1_ in _*1_ end endmacro
+macro *2  **  let _*2_ _*1_ in _*2_ end endmacro
+macro u*  u** let _*2_ _*1_ in _*1_ end endmacro
+macro u*2 u** let _*2_ _*1_ in _*2_ end endmacro
+macro /   /%  let _/_ _%_ in _/_ end endmacro
+macro %   /%  let _/_ _%_ in _%_ end endmacro
+macro u/  u/% let _/_ _%_ in _/_ end endmacro
+macro u%  u/% let _/_ _%_ in _%_ end endmacro
+macro ^^ let _a_ _b_ in _a_ !! _b_ !! || !! _a_ _b_ || !! || !!  end endmacro
+macro && let _a_ _b_ in _a_ !! _b_ !! || !! end endmacro
+macro - neg + endmacro
+
+// -- UNIMPLEMENTED INTRINSICS --
 
 
 // int: x -- bool: f(x)

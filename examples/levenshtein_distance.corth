@@ -11,7 +11,7 @@ macro UNKNOWN 0xff endmacro
 memory ptr1 sizeof(ptr) and
        ptr2 sizeof(ptr) end
 
-memory remember MAX-SIZE MAX-SIZE * end
+memory remember MAX-SIZE MAX-SIZE ** end
 
 memory number-of-calls sizeof(int) end
 memory number-of-rembs sizeof(int) end

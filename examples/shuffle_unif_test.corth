@@ -19,7 +19,7 @@ proc main
 in let argc argv in
   NULLPTR time rng-seed !64
 
-  memory array sizeof(int) 12 * in
+  memory array sizeof(int) 12 ** in
     0  array      !64
     1  array 8  + !64
     2  array 16 + !64
