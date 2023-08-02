@@ -14,8 +14,8 @@ NOTE: Unless it is said to be otherwise, all fixed numbers are signed.
 
 include libs/math/fixed64.corth
 
-macro comp fixed64 fixed64 endmacro
-macro sizeof(comp) 2 sizeof(fixed64) * endmacro
+macro comp         fixed64 fixed64 endmacro
+macro sizeof(comp) 16              endmacro
 
 macro load-complex
   // ptr: address

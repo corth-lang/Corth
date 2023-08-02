@@ -11,7 +11,7 @@ macro rand64
   // -- fixed64: next
   // The result fixed64 is in the range [0, 2^32) with the step size of 2^-32.
   rng-seed @64
-  18446744073709551557 u** + 23 +
+  0xFFFFFFFFFFFFFFC5 u** + 23 +
   let _x_ in
     _x_ 0x400000000000 u/ _x_ 0x20000 u/ u* _x_ 2 / ^^ dup rng-seed !64
   end 
@@ -28,8 +28,8 @@ macro rand-unif
   // Returns a number in the range [0, x) with the step size of 2^-32.
   
   // uniform(x) = rand64 % x
-  let _b_ in
-    rand64 _b_ %
+  let _end_ in
+    rand64 _end_ %
   end
 endmacro
 
@@ -42,8 +42,8 @@ macro rand-unif-range
   // Returns a number in the range [a, b) with the step size of 2^-32.
   
   // uniform-range(a, b) = a + uniform(b - a)
-  let _b_ _c_ in
-    rand64 _c_ _b_ - % _b_ +
+  let _start_ _end_ in
+    rand64 _start_ _end_ - % _end_ +
   end
 endmacro
 
