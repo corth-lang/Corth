@@ -5,17 +5,19 @@ include libs/core/stack.corth
 include libs/core/arithmetic.corth
 include libs/core/memory.corth
 
+
 macro malloc.ARRAY-SIZE       0x4000000 endmacro
 macro malloc.AVAIL-QUEUE-SIZE 0x10000 endmacro
 include libs/dynamic/malloc.corth
 include libs/dynamic/utils.corth
 
+include libs/collections/list64.corth
 include libs/collections/deque64.corth
 include libs/collections/queue64.corth
 include libs/collections/str_map64.corth
 
 // TODO: It might be a good idea to store these in a seperate file.
-macro CHAR-NULL      0  endmacro
+macro CHAR-NULL       0 endmacro
 macro CHAR-NEWLINE   10 endmacro
 macro CHAR-ESCAPE    27 endmacro
 macro CHAR-SPACE     32 endmacro
@@ -31,8 +33,8 @@ include enums.corth
 
 
 // TODO: Make not hard-coded.
-macro SOURCE-NAME "./example.corth"              endmacro
-macro OUTPUT-NAME "./o.asm"                      endmacro
+macro SOURCE-NAME "./example.corth" endmacro
+macro OUTPUT-NAME "./o.asm"       endmacro
 
 proc create-name-token
   // ptr: file-name file-desc: file-desc
@@ -195,7 +197,12 @@ in let
                   address log-stream fput-here
                   ERROR-EXIT-CODE exit drop
                 end
+
+                memory x sizeof(int) in
+                  buffer buffer-end @64 buffer - x convint drop x log-stream fputi log-stream fputnl
+                end
                 
+                number @64 log-stream fputi log-stream fputnl
                 TYPE-INTEGER address number @64
               end
             end
@@ -612,8 +619,8 @@ proc compile-procedure
   ptr file-desc file-desc
   // ptr: line-no ptr: char-no
   ptr ptr
-  // ptr: data-definitions-array ptr: datas-length 
-  ptr ptr
+  // ptr: data-definitions-list
+  ptr
   // ptr: global-names-array ptr: global-sizes-array ptr: globals-length 
   ptr ptr ptr
   // ptr: proc-names-array ptr: proc-inputs-array ptr: proc-outputs-array ptr: procs-length
@@ -636,7 +643,7 @@ proc compile-procedure
 in let 
   source-name source-file output-file
   line-no char-no
-  data-definitions-array datas-length
+  data-definitions-list
   global-names-array global-sizes-array globals-length
   proc-names-array proc-inputs-array proc-outputs-array procs-length
   macro-names macro-tokens macros-length
@@ -648,32 +655,38 @@ in
     
   "proc_" output-file fputs procedure-name procedure-name mlength output-file fputs ":\n" output-file fputs
 
-  memory levels-array     sizeof(ptr) LEVELS-MAX-COUNT * and
-         levels-length    sizeof(int)                    and
+  memory levels-list      sizeof(ptr)                     and
 
          // level-id-counter allows to create unique IDs for level labels.
-         level-id-counter sizeof(int)                    and
+         level-id-counter sizeof(int)                     and
 
          // let-names, let-addresses and let-vars-length create a str_map64.
-         let-names        sizeof(ptr) LET-MAX-COUNT *    and
-         let-addresses    sizeof(ptr) LET-MAX-COUNT *    and
-         let-vars-length  sizeof(int)                    and
+         let-names        sizeof(ptr) LET-MAX-COUNT **    and
+         let-addresses    sizeof(ptr) LET-MAX-COUNT **    and
+         let-vars-length  sizeof(int)                     and
          
          // local-names, local-addresses and locals-length create a str_map64.
-         local-names      sizeof(ptr) LOCALS-MAX-COUNT * and
-         local-addresses  sizeof(ptr) LOCALS-MAX-COUNT * and
-         locals-length    sizeof(int)                    and
+         local-names      sizeof(ptr) LOCALS-MAX-COUNT ** and
+         local-addresses  sizeof(ptr) LOCALS-MAX-COUNT ** and
+         locals-length    sizeof(int)                     and
 
          // local-memory-end keeps track of the first available position on the local memory.
-         local-memory-end sizeof(int)                    and
+         local-memory-end sizeof(int)                     and
 
          // local-memory-max keeps track of the maximum length of the local memory, to later allocate enough space.
-         local-memory-max sizeof(int)                    and
+         local-memory-max sizeof(int)                     and
 
          // branch-active keeps track of if the branch of the code ended.
-         branch-active    1                              in
+         branch-active    1                               in
 
-    0 levels-length    !64
+    16 list64.init let dynamic in
+      dynamic is-null if
+        LOG.ERR log-stream fputs "Could not create a list dynamic object.\n" log-stream fputs
+        procedure-name procedure-address log-stream fput-inside-procedure
+        ERROR-EXIT-CODE exit drop
+      end
+    dynamic levels-list !64 end
+
     0 level-id-counter !64
     0 let-vars-length  !64
     0 locals-length    !64
@@ -713,14 +726,14 @@ in
           end
 
           // TODO: Change this to GLOBAL ADDRESS DATA
-          "    mov     rax, data_" output-file fputs datas-length @64 output-file fputu output-file fputnl
+          "    mov     rax, data_" output-file fputs data-definitions-list list64.length @64 output-file fputu output-file fputnl
           "    push    rax\n" output-file fputs
           
           create-int local-stack local-stack-length queue64.append
           
           output-file local-stack local-stack-length token-arg mlength push-int-constant
 
-          token-arg data-definitions-array datas-length queue64.append
+          token-arg data-definitions-list list64.append
 
         else token-type TYPE-NAME = if
           // -------- Names --------
@@ -850,7 +863,7 @@ in
           token-arg KEYWORD-END = if
             // -------- Keyword 'end' --------
 
-            levels-length @64 is-zero if
+            levels-list list64.length is-zero if
               // -------- End of 'proc' --------
 
               branch-active @8 is-zero if
@@ -863,7 +876,7 @@ in
               local-memory-max @64 return
             end
 
-            levels-array levels-length queue64.pop-last let level in
+            levels-list list64.pop-last let level in
               level @64 level 8 + @64 let start-keyword start-address in                
                 start-keyword KEYWORD-IF = if
                   // -------- End of 'if' --------
@@ -917,7 +930,7 @@ in
                   end              
                   
                   level 16 + @64 level 24 + @64 let  start-id start-stack in
-                    levels-length @64 is-zero if
+                    levels-list list64.length is-zero if
                       LOG.ERR  log-stream fputs "Expected a 'while' before 'do'.\n" log-stream fputs
                       LOG.INFO log-stream fputs "A 'while-do' loop can be created as: 'while <condition> do <code> end'\n" log-stream fputs
                       token-address log-stream fput-here
@@ -926,7 +939,7 @@ in
                       ERROR-EXIT-CODE exit drop
                     end
 
-                    levels-array levels-length queue64.pop-last let while-level in
+                    levels-list list64.pop-last let while-level in
                       while-level @64 while-level 8 + @64 let while-keyword while-address in
                         while-keyword KEYWORD-WHILE != if
                           LOG.ERR  log-stream fputs "Expected a 'while' before 'do', got '" log-stream fputs while-keyword log-stream fput-keyword "'.\n" log-stream fputs
@@ -1051,7 +1064,7 @@ in
                 level-id-counter @64 obj 16 + !64
                 copy-stack           obj 24 + !64
 
-                obj levels-array levels-length queue64.append
+                obj levels-list list64.append
 
                 "    pop     rax\n"      output-file fputs
                 "    test    rax, rax\n" output-file fputs
@@ -1081,14 +1094,14 @@ in
               ERROR-EXIT-CODE exit drop
             end
 
-            levels-length @64 is-zero if
+            levels-list list64.length is-zero if
               LOG.ERR log-stream fputs "'else' requires 'if'.\n" log-stream fputs
               token-address log-stream fput-here
               procedure-name procedure-address log-stream fput-inside-procedure
               ERROR-EXIT-CODE exit drop
             end
 
-            levels-array levels-length queue64.pop-last let level in
+            levels-list list64.pop-last let level in
               level @64 KEYWORD-IF != if
                 LOG.ERR log-stream fputs "'else' requires an 'if', but there was an unclosed '" log-stream fputs level @64 log-stream fput-keyword "'.\n" log-stream fputs
                 token-address log-stream fput-here
@@ -1126,7 +1139,7 @@ in
                     level-id-counter @64 new-level 24 + !64
                     copy-stack           new-level 32 + !64
 
-                    new-level levels-array levels-length queue64.append
+                    new-level levels-list list64.append
                   end
                 end
 
@@ -1172,7 +1185,7 @@ in
                 level-id-counter @64 new-level 16 + !64
                 copy-stack           new-level 24 + !64
 
-                new-level levels-array levels-length queue64.append
+                new-level levels-list list64.append
               end
             end
             
@@ -1229,7 +1242,7 @@ in
                 level-id-counter @64 obj 16 + !64
                 copy-stack           obj 24 + !64
 
-                obj levels-array levels-length queue64.append
+                obj levels-list list64.append
 
                 "    pop     rax\n"      output-file fputs
                 "    test    rax, rax\n" output-file fputs
@@ -1260,8 +1273,8 @@ in
             end
 
             // New names are stored in new-names and new-names-length queue. When the 'end' of 'memory' is reached, new names are deleted from the namespace.
-            memory new-names        sizeof(ptr) VARS-MAX-ONCE * and
-                   new-names-length sizeof(int)                 in
+            memory new-names        sizeof(ptr) VARS-MAX-ONCE ** and
+                   new-names-length sizeof(int)                  in
 
               0 new-names-length !64
 
@@ -1367,7 +1380,7 @@ in
                   new obj 16 + !64
                 end
 
-                obj levels-array levels-length queue64.append
+                obj levels-list list64.append
               end
             end
 
@@ -1390,8 +1403,8 @@ in
 
             // New names are stored in new-names and new-names-length queue. When the 'end' of 'let' is reached, new names are deleted from the namespace.
             // TODO: Convert new-names and new-names-length to a vector, so that it can have infinite storage.
-            memory new-names        sizeof(ptr) VARS-MAX-ONCE * and
-                   new-names-length sizeof(int)                 in
+            memory new-names        sizeof(ptr) VARS-MAX-ONCE ** and
+                   new-names-length sizeof(int)                  in
 
               0 new-names-length !64
 
@@ -1489,7 +1502,7 @@ in
                   new obj 16 + !64
                 end
 
-                obj levels-array levels-length queue64.append
+                obj levels-list list64.append
               end
             end
             
@@ -1528,11 +1541,41 @@ in
 end 0 end // dummy return
 
 
+proc include-path
+  // ptr: path
+  ptr
+  // file-desc: output-file
+  file-desc
+  // ptr: data-definitions-list
+  ptr
+  // ptr: global-names-array ptr: global-sizes-array ptr: globals-length 
+  ptr ptr ptr
+  // ptr: proc-names-array ptr: proc-inputs-array ptr: proc-outputs-array ptr: procs-length
+  ptr ptr ptr ptr
+  // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
+  ptr ptr ptr
+  // libraries-array ptr: libraries-length
+  ptr ptr 
+  // file-desc: log-stream
+  file-desc --
+in let
+  path
+  output-file
+  data-definitions-list
+  global-names-array global-sizes-array globals-length
+  proc-names-array proc-inputs-array proc-outputs-array procs-length
+  macro-names-array macro-tokens-array macros-length
+  libraries-array libraries-length
+  log-stream
+in
+end end
+
+
 proc compile-file
   // ptr: source-name file-desc: output-file
   ptr file-desc
-  // ptr: data-definitions-array ptr: datas-length 
-  ptr ptr
+  // ptr: data-definitions-list
+  ptr
   // ptr: global-names-array ptr: global-sizes-array ptr: globals-length 
   ptr ptr ptr
   // ptr: proc-names-array ptr: proc-inputs-array ptr: proc-outputs-array ptr: procs-length
@@ -1550,7 +1593,7 @@ proc compile-file
   // TODO: Add called-from to improve debugging.
 in let
   source-name output-file
-  data-definitions-array datas-length
+  data-definitions-list
   global-names-array global-sizes-array globals-length
   proc-names-array proc-inputs-array proc-outputs-array procs-length
   macro-names-array macro-tokens-array macros-length
@@ -1606,7 +1649,6 @@ in
               // TODO: Create a function to include.
               // TODO: Allow including packages.
               // TODO: Add library search locations.
-              // TODO: Add pragma once.
 
               // Get the next token, which should be the include path.
               source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream false get-next-token ! if
@@ -1621,22 +1663,23 @@ in
                   path-token-address log-stream fput-here
                   ERROR-EXIT-CODE exit drop
                 end
-
+                
                 memory stats sizeof(stat) in
                   path-token-arg null-term8 dup stats stat drop drop
 
                   stats 24 + @64 S_IFMT && let masked in
                     masked S_IFREG = if
+                      // File including, call compile-file on the file.
                       path-token-arg output-file
-                      data-definitions-array datas-length
+                      data-definitions-list
                       global-names-array global-sizes-array globals-length
                       proc-names-array proc-inputs-array proc-outputs-array procs-length
                       macro-names-array macro-tokens-array macros-length
                       libraries-array libraries-length
                       log-stream compile-file
                     else masked S_IFDIR = if
-                      LOG.TODO log-stream fputs "Including directories is not implemented yet.\n" log-stream fputs
-                      path-token-address log-stream fput-here
+                      // Directory including, should include all sub paths.
+                      LOG.TODO log-stream fputs "Including directories is not implemented yet.\n" log-stream fputs 
                       ERROR-EXIT-CODE exit drop
                     else
                       LOG.ERR log-stream fputs "Invalid file type, got " log-stream fputs masked log-stream fputx ".\n" log-stream fputs
@@ -1721,10 +1764,13 @@ in
                 end
 
                 // macro-tokens-array and macro-tokens-length are used to create a QUEUE for macro tokens.
-                memory new-macro-tokens-array  MACRO-MAX-TOKENS sizeof(int) * and
-                       new-macro-tokens-length sizeof(int)                    in
-
-                  0 new-macro-tokens-length !64
+                memory macro-tokens-list sizeof(ptr) in
+                  16 list64.init let dynamic in
+                    dynamic is-null if
+                      LOG.ERR log-stream fputs "Could not create list dynamic object.\n" log-stream fputs
+                      ERROR-EXIT-CODE exit drop
+                    end
+                  dynamic macro-tokens-list !64 end
                        
                   while true do
                     // Get next tokens, until an 'endmacro' is found.
@@ -1740,27 +1786,17 @@ in
                           break
                         end
                       end
-                      
-                      new-macro-tokens-length MACRO-MAX-TOKENS - 3 < if
-                        LOG.ERR log-stream fputs "Macro '" log-stream fputs macro-name-token-arg macro-name-token-arg mlength log-stream fputs "' is longer than MACRO-MAX-TOKENS, stopping execution.\n" log-stream fputs
-                        token-address log-stream fput-here
-                        ERROR-EXIT-CODE exit drop
-                      end
 
-                      macro-new-token-type    new-macro-tokens-array new-macro-tokens-length queue64.append
-                      macro-new-token-address new-macro-tokens-array new-macro-tokens-length queue64.append
-                      macro-new-token-arg     new-macro-tokens-array new-macro-tokens-length queue64.append
-
+                      macro-new-token-type    macro-tokens-list list64.append
+                      macro-new-token-address macro-tokens-list list64.append
+                      macro-new-token-arg     macro-tokens-list list64.append
                     end
                   end
-                  
-                  new-macro-tokens-array new-macro-tokens-length @64 to-dynamic64
 
-                end
-
-                let macro-tokens in
                   // TODO: Check if the macros queue was filled.
-                  macro-name-token-arg macro-tokens macro-names-array macro-tokens-array macros-length str-map64.set drop
+                  macro-tokens-list list64.array-addr macro-tokens-list list64.length to-dynamic64 let object in
+                    macro-name-token-arg object macro-names-array macro-tokens-array macros-length str-map64.set drop
+                  end
                 end
               end
               
@@ -1917,7 +1953,7 @@ in
 
                     source-name source-file output-file
                     line-no char-no
-                    data-definitions-array datas-length
+                    data-definitions-list
                     global-names-array global-sizes-array globals-length
                     proc-names-array proc-inputs-array proc-outputs-array procs-length
                     macro-names-array macro-tokens-array macros-length
@@ -2043,8 +2079,7 @@ in let source-name output-name log-stream in
            macro-tokens-array     sizeof(ptr) MACROS-MAX-COUNT     * and
            macros-length          sizeof(int)                        and
 
-           data-definitions-array sizeof(ptr) MACROS-MAX-COUNT     * and
-           datas-length           sizeof(int)                        and
+           data-definitions-list  sizeof(ptr)                        and
 
            libraries-array        sizeof(int) LIBRARIES-MAX-COUNT  * and
            libraries-length       sizeof(int)                        in
@@ -2054,8 +2089,16 @@ in let source-name output-name log-stream in
       0 macros-length    !64
       0 libraries-length !64
 
+      16 list64.init let dynamic in
+        dynamic is-null if
+          LOG.ERR log-stream fputs "Could not create a list dynamic object.\n" log-stream fputs
+          ERROR-EXIT-CODE exit drop
+        end
+        dynamic data-definitions-list !64
+      end
+
       source-name output-file
-      data-definitions-array datas-length
+      data-definitions-list
       global-names-array global-sizes-array globals-length
       proc-names-array proc-inputs-array proc-outputs-array procs-length
       macro-names-array macro-tokens-array macros-length
@@ -2064,9 +2107,9 @@ in let source-name output-name log-stream in
       compile-file
 
       "segment .data\n" output-file fputs
-      0 while dup datas-length @64 < do let i in
+      0 while dup data-definitions-list list64.length < do let i in
         "    data_" output-file fputs i output-file fputu ": db " output-file fputs
-        data-definitions-array i 8 * + @64 let data in
+        i data-definitions-list list64.get let data in
           0 while dup data mlength < do let j in
             j data + @8 output-file fputu ", " output-file fputs
           j end inc end drop
