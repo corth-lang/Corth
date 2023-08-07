@@ -6,7 +6,7 @@
 
 ### Procedures:
 
-- It is not preferred to define a procedure in one line. Instead, it is recommended to split the lines to 'proc' keyword, types, 'in' keyword, behaviour, 'end' keyword.
+- It is not preferred to define a procedure in one line. Instead, it is recommended to split the lines into 'proc' keyword, types, 'in' keyword, behaviour, 'end' keyword.
 
 
         proc <name>
@@ -61,7 +61,7 @@
         ...
 
 
-- It is recommended to split the lines of behaviour so that no line depends to another (or, the dependency is minimalized). This way it is easy to see which command generates values and which one uses that value.
+- It is recommended to split the lines of behaviour so that no line depends on another (or the dependency is minimalized). This way it is easy to see which command generates values and which one uses that value.
 
 
         ...
@@ -114,11 +114,11 @@
         let obj in
           obj obj mlength to-dynamic
         end
-        //// This code uses 'let', even though there is a macro that does exactly that and also makes the code shorted.
+        //// This code uses 'let', even though there is a macro that does exactly that and shortens the code.
 
         //// Instead, use:
         dup mlength to-dynamic
-        //// This code uses 'dup', which makes the code much shorter.
+        //// This code uses 'dup', which makes the code shorter.
 
 
 ### Macros:
@@ -137,12 +137,14 @@
 - If the macro defines 'let' variables, their name should start and end with underscores (_). This helps to make sure that they are not reused in the code that uses them.
 
 
+        //// From ./libs/core/stack.corth
         macro dup let _a_ in _a_ _a_ end endmacro  
 
 
-- If macros with similar patterns are defined together, the tokens can be aligned for easier readabilty.
+- If macros with similar patterns are defined together, the tokens can be aligned to keep the code easier to read.
 
 
+        //// From ./libs/core/stack.corth
         macro dup let _a_     in _a_ _a_ end endmacro
         macro swp let _a_ _b_ in _b_ _a_ end endmacro
 
@@ -150,6 +152,7 @@
 - If the macro is used to define a constant, no input or output description is required.
 
 
+        //// From ./libs/math/constants.corth
         macro PI          0x03243F6A89 endmacro
         macro E           0x02B7E15162 endmacro
         macro rad-per-deg 0x000477D1A8 endmacro
@@ -185,7 +188,7 @@
 
 
         //// This defines a 'while' loop that runs a code and after, checks whether a condition is true.
-        //// Because of the syntax of Corth language, any commands can be written inside 'while-do' or 'do-end'.
+        //// Because of the syntax of Corth language, any command can be written between 'while-do' or between 'do-end'.
         while
           <code>
         <condition> do end
@@ -201,14 +204,14 @@
         while //// This is where 'end' jumps to.
         
           //// This part is run BEFORE condition is checked. This is why it can be used for 'do-while' loops.
-          <code> ...
 
-          //// This is the condition. Note that this is just a part of the code above, that returns a bool for 'do'. Because of that, condition could definititly be returned before other codes are run.
+
+          //// This is the condition. Note that this is just a part of the code above, that returns a bool for 'do'. Because of that, condition could definitily be returned before any other code is run.
           <condition> ...
           
         do    //// Check if the value is true and if not; jump to the location AFTER 'end', breaking the loop.
         
-          //// This code will run AFTER condition is checked. This part can also contain 'break', which (just like do) jumps to the location after 'end'.
+          //// This code will run AFTER condition is checked. This part can also contain 'break', which (just like 'do') jumps to the location after 'end'.
           <code> ...
           
         end   //// Jump back to 'while'.
