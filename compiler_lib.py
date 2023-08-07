@@ -636,18 +636,22 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
 
             file.write(f"    ;; -- LET --\n\n")
 
-            levels.append((start_level, token_lib.MEMORY, next_memory, var_names))
+            levels.append((start_level, token_lib.MEMORY, next_memory, deque(name for name in var_names if name != "_")))
             
             for var_name in var_names:
                 if not stack:
                     error_on_token(token, f"There was not enough values in the stack for let to handle")
                     return True
 
+                stack.pop()
+                
+                if var_name == "_":
+                    file.write("    add     rsp, 8\n")
+                    continue
+
                 if var_name in local_memory:
                     error_on_token(token, f"Local variable '{var_name}' was already defined")
                     return True
-
-                stack.pop()
                 
                 local_memory[var_name] = LET_VARIABLE, next_memory
 
@@ -956,7 +960,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                     stack.pop() is not INT_TYPE or
                     stack.pop() is not INT_TYPE
             ):
-                error_on_token(token, "= expects two INTs")
+                error_on_token(token, "!= expects two INTs")
                 return True
 
             stack.append(BOOL_TYPE)
@@ -994,7 +998,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             stack.append(BOOL_TYPE)
 
             file.write(f"    ;; -- TRUE --\n\n")
-            file.write(f"    mov     rax, 1\n")
+            file.write(f"    mov     rax, 0xffffffffffffffff\n")
             file.write(f"    push    rax\n\n")
 
         elif token.type is token_lib.LOAD8:
