@@ -80,59 +80,32 @@ macro KEYWORD-BREAK-STR    "break"     endmacro
 macro KEYWORD-INCLUDE-STR  "include"   endmacro
 
 // Intrinsic IDs
-macro INTRINSIC-ADD      0  endmacro
-macro INTRINSIC-SUB      1  endmacro
-macro INTRINSIC-MUL      2  endmacro
-macro INTRINSIC-MUL2     3  endmacro
-macro INTRINSIC-FULLMUL  4  endmacro
-macro INTRINSIC-DIV      5  endmacro
-macro INTRINSIC-MOD      6  endmacro
-macro INTRINSIC-DIVMOD   7  endmacro
-macro INTRINSIC-UMUL     8  endmacro
-macro INTRINSIC-UMUL2    9  endmacro
-macro INTRINSIC-UFULLMUL 10 endmacro
-macro INTRINSIC-UDIV     11 endmacro
-macro INTRINSIC-UMOD     12 endmacro
-macro INTRINSIC-UDIVMOD  13 endmacro
-macro INTRINSIC-BAND     14 endmacro
-macro INTRINSIC-BOR      15 endmacro
-macro INTRINSIC-BXOR     16 endmacro
-macro INTRINSIC-BNOT     17 endmacro
-macro INTRINSIC-NOTEQUAL 18 endmacro
-macro INTRINSIC-LESS     19 endmacro
-macro INTRINSIC-TRUE     20 endmacro
-macro INTRINSIC-FALSE    21 endmacro
-macro INTRINSIC-LOAD8    22 endmacro
-macro INTRINSIC-STORE8   23 endmacro
-macro INTRINSIC-LOAD64   24 endmacro
-macro INTRINSIC-STORE64  25 endmacro
-macro INTRINSIC-SYSCALL0 26 endmacro
-macro INTRINSIC-SYSCALL1 27 endmacro
-macro INTRINSIC-SYSCALL2 28 endmacro
-macro INTRINSIC-SYSCALL3 29 endmacro
-macro INTRINSIC-SYSCALL4 30 endmacro
-macro INTRINSIC-SYSCALL5 31 endmacro
-macro INTRINSIC-SYSCALL6 32 endmacro
-macro INTRINSIC-UNKNOWN  33 endmacro  // TODO: This should be 0.
+macro INTRINSIC-UNKNOWN  0  endmacro
+macro INTRINSIC-ADD      1  endmacro
+macro INTRINSIC-FULLMUL  2  endmacro
+macro INTRINSIC-DIVMOD   3  endmacro
+macro INTRINSIC-UFULLMUL 4  endmacro
+macro INTRINSIC-UDIVMOD  5  endmacro
+macro INTRINSIC-BOR      6  endmacro
+macro INTRINSIC-BNOT     7  endmacro
+macro INTRINSIC-NOTEQUAL 8  endmacro
+macro INTRINSIC-LESS     9  endmacro
+macro INTRINSIC-TRUE     10 endmacro
+macro INTRINSIC-FALSE    11 endmacro
+macro INTRINSIC-LOAD8    12 endmacro
+macro INTRINSIC-STORE8   13 endmacro
+macro INTRINSIC-LOAD64   14 endmacro
+macro INTRINSIC-STORE64  15 endmacro
+macro INTRINSIC-SYSCALL6 16 endmacro
 
 // Intrinsic strings
+macro INTRINSIC-UNKNOWN-STR  "<unknown>" endmacro
 macro INTRINSIC-ADD-STR      "+"         endmacro
-macro INTRINSIC-SUB-STR      "-"         endmacro
-macro INTRINSIC-MUL-STR      "*"         endmacro
-macro INTRINSIC-MUL2-STR     "*2"        endmacro
 macro INTRINSIC-FULLMUL-STR  "**"        endmacro
-macro INTRINSIC-DIV-STR      "/"         endmacro
-macro INTRINSIC-MOD-STR      "%"         endmacro
 macro INTRINSIC-DIVMOD-STR   "/%"        endmacro
-macro INTRINSIC-UMUL-STR     "u*"        endmacro
-macro INTRINSIC-UMUL2-STR    "u*2"       endmacro
 macro INTRINSIC-UFULLMUL-STR "u**"       endmacro
-macro INTRINSIC-UDIV-STR     "u/"        endmacro
-macro INTRINSIC-UMOD-STR     "u%"        endmacro
 macro INTRINSIC-UDIVMOD-STR  "u/%"       endmacro
-macro INTRINSIC-BAND-STR     "&&"        endmacro
 macro INTRINSIC-BOR-STR      "||"        endmacro
-macro INTRINSIC-BXOR-STR     "^^"        endmacro
 macro INTRINSIC-BNOT-STR     "!!"        endmacro
 macro INTRINSIC-NOTEQUAL-STR "!="        endmacro
 macro INTRINSIC-LESS-STR     "<"         endmacro
@@ -142,14 +115,7 @@ macro INTRINSIC-LOAD8-STR    "@8"        endmacro
 macro INTRINSIC-STORE8-STR   "!8"        endmacro
 macro INTRINSIC-LOAD64-STR   "@64"       endmacro
 macro INTRINSIC-STORE64-STR  "!64"       endmacro
-macro INTRINSIC-SYSCALL0-STR "syscall0"  endmacro
-macro INTRINSIC-SYSCALL1-STR "syscall1"  endmacro
-macro INTRINSIC-SYSCALL2-STR "syscall2"  endmacro
-macro INTRINSIC-SYSCALL3-STR "syscall3"  endmacro
-macro INTRINSIC-SYSCALL4-STR "syscall4"  endmacro
-macro INTRINSIC-SYSCALL5-STR "syscall5"  endmacro
 macro INTRINSIC-SYSCALL6-STR "syscall6"  endmacro
-macro INTRINSIC-UNKNOWN-STR  "<unknown>" endmacro
 
 // Type IDs
 macro TYPE-INT  1 endmacro
@@ -203,22 +169,11 @@ proc fput-intrinsic
   int file-desc --
 in let intrinsic file in
        intrinsic INTRINSIC-ADD      = if INTRINSIC-ADD-STR      file fputs
-  else intrinsic INTRINSIC-SUB      = if INTRINSIC-SUB-STR      file fputs
-  else intrinsic INTRINSIC-MUL      = if INTRINSIC-MUL-STR      file fputs
-  else intrinsic INTRINSIC-MUL2     = if INTRINSIC-MUL2-STR     file fputs
   else intrinsic INTRINSIC-FULLMUL  = if INTRINSIC-FULLMUL-STR  file fputs
-  else intrinsic INTRINSIC-DIV      = if INTRINSIC-DIV-STR      file fputs
-  else intrinsic INTRINSIC-MOD      = if INTRINSIC-MOD-STR      file fputs
   else intrinsic INTRINSIC-DIVMOD   = if INTRINSIC-DIVMOD-STR   file fputs
-  else intrinsic INTRINSIC-UMUL     = if INTRINSIC-UMUL-STR     file fputs
-  else intrinsic INTRINSIC-UMUL2    = if INTRINSIC-UMUL2-STR    file fputs
   else intrinsic INTRINSIC-UFULLMUL = if INTRINSIC-UFULLMUL-STR file fputs
-  else intrinsic INTRINSIC-UDIV     = if INTRINSIC-UDIV-STR     file fputs
-  else intrinsic INTRINSIC-UMOD     = if INTRINSIC-UMOD-STR     file fputs
   else intrinsic INTRINSIC-UDIVMOD  = if INTRINSIC-UDIVMOD-STR  file fputs
-  else intrinsic INTRINSIC-BAND     = if INTRINSIC-BAND-STR     file fputs
   else intrinsic INTRINSIC-BOR      = if INTRINSIC-BOR-STR      file fputs
-  else intrinsic INTRINSIC-BXOR     = if INTRINSIC-BXOR-STR     file fputs
   else intrinsic INTRINSIC-BNOT     = if INTRINSIC-BNOT-STR     file fputs
   else intrinsic INTRINSIC-NOTEQUAL = if INTRINSIC-NOTEQUAL-STR file fputs
   else intrinsic INTRINSIC-LESS     = if INTRINSIC-LESS-STR     file fputs
@@ -228,15 +183,8 @@ in let intrinsic file in
   else intrinsic INTRINSIC-STORE8   = if INTRINSIC-STORE8-STR   file fputs
   else intrinsic INTRINSIC-LOAD64   = if INTRINSIC-LOAD64-STR   file fputs
   else intrinsic INTRINSIC-STORE64  = if INTRINSIC-STORE64-STR  file fputs
-  else intrinsic INTRINSIC-SYSCALL0 = if INTRINSIC-SYSCALL0-STR file fputs
-  else intrinsic INTRINSIC-SYSCALL1 = if INTRINSIC-SYSCALL1-STR file fputs
-  else intrinsic INTRINSIC-SYSCALL2 = if INTRINSIC-SYSCALL2-STR file fputs
-  else intrinsic INTRINSIC-SYSCALL3 = if INTRINSIC-SYSCALL3-STR file fputs
-  else intrinsic INTRINSIC-SYSCALL4 = if INTRINSIC-SYSCALL4-STR file fputs
-  else intrinsic INTRINSIC-SYSCALL5 = if INTRINSIC-SYSCALL5-STR file fputs
   else intrinsic INTRINSIC-SYSCALL6 = if INTRINSIC-SYSCALL6-STR file fputs
   else                                   INTRINSIC-UNKNOWN-STR  file fputs
-  end end end end end end end end end end end end end end end end end
-  end end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end end 
 end
 

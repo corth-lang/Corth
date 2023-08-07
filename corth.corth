@@ -34,7 +34,7 @@ include enums.corth
 
 // TODO: Make not hard-coded.
 macro SOURCE-NAME "./example.corth" endmacro
-macro OUTPUT-NAME "./o.asm"       endmacro
+macro OUTPUT-NAME "./o.asm"         endmacro
 
 proc create-name-token
   // ptr: file-name file-desc: file-desc
@@ -85,22 +85,11 @@ in let
     
     // I still hate my life.
     else buffer buffer-size INTRINSIC-ADD-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-ADD      
-    else buffer buffer-size INTRINSIC-SUB-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SUB      
-    else buffer buffer-size INTRINSIC-MUL-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-MUL      
-    else buffer buffer-size INTRINSIC-MUL2-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-MUL2     
     else buffer buffer-size INTRINSIC-FULLMUL-STR  memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-FULLMUL  
-    else buffer buffer-size INTRINSIC-DIV-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-DIV      
-    else buffer buffer-size INTRINSIC-MOD-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-MOD      
     else buffer buffer-size INTRINSIC-DIVMOD-STR   memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-DIVMOD   
-    else buffer buffer-size INTRINSIC-UMUL-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-UMUL     
-    else buffer buffer-size INTRINSIC-UMUL2-STR    memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-UMUL2    
     else buffer buffer-size INTRINSIC-UFULLMUL-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-UFULLMUL 
-    else buffer buffer-size INTRINSIC-UDIV-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-UDIV     
-    else buffer buffer-size INTRINSIC-UMOD-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-UMOD     
     else buffer buffer-size INTRINSIC-UDIVMOD-STR  memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-UDIVMOD  
-    else buffer buffer-size INTRINSIC-BAND-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-BAND     
     else buffer buffer-size INTRINSIC-BOR-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-BOR      
-    else buffer buffer-size INTRINSIC-BXOR-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-BXOR     
     else buffer buffer-size INTRINSIC-BNOT-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-BNOT     
     else buffer buffer-size INTRINSIC-NOTEQUAL-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-NOTEQUAL 
     else buffer buffer-size INTRINSIC-LESS-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-LESS     
@@ -110,12 +99,6 @@ in let
     else buffer buffer-size INTRINSIC-STORE8-STR   memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-STORE8   
     else buffer buffer-size INTRINSIC-LOAD64-STR   memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-LOAD64   
     else buffer buffer-size INTRINSIC-STORE64-STR  memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-STORE64  
-    else buffer buffer-size INTRINSIC-SYSCALL0-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SYSCALL0 
-    else buffer buffer-size INTRINSIC-SYSCALL1-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SYSCALL1 
-    else buffer buffer-size INTRINSIC-SYSCALL2-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SYSCALL2 
-    else buffer buffer-size INTRINSIC-SYSCALL3-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SYSCALL3 
-    else buffer buffer-size INTRINSIC-SYSCALL4-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SYSCALL4 
-    else buffer buffer-size INTRINSIC-SYSCALL5-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SYSCALL5 
     else buffer buffer-size INTRINSIC-SYSCALL6-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address INTRINSIC-SYSCALL6 
     
     else buffer buffer-size TYPE-INT-STR           memeq8 if TYPE-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address TYPE-INT           
@@ -127,7 +110,6 @@ in let
 
     // This is nightmare fuel.
     end end end end end end end end end end end end end end end end end
-    end end end end end end end end end end end end end end end end end 
     end end end end end end end end end end end end end end end end end
   end
 end end
@@ -197,12 +179,7 @@ in let
                   address log-stream fput-here
                   ERROR-EXIT-CODE exit drop
                 end
-
-                memory x sizeof(int) in
-                  buffer buffer-end @64 buffer - x convint drop x log-stream fputi log-stream fputnl
-                end
                 
-                number @64 log-stream fputi log-stream fputnl
                 TYPE-INTEGER address number @64
               end
             end
@@ -403,43 +380,60 @@ in
     local-stack local-stack-length queue64.pop-last drop
     create-int local-stack local-stack-length queue64.append
 
-  else token-arg INTRINSIC-SUB = if
-    // -------- Intrinsic '-' --------
+  else token-arg INTRINSIC-BOR = if
+    // -------- Intrinsic '||' --------
 
     // TODO: Check the type of arguments.
     local-stack-length @64 2 < if
-      LOG.ERR log-stream fputs "Intrinsic '-' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
+      LOG.ERR log-stream fputs "Intrinsic '||' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
       token-address log-stream fput-here
       ERROR-EXIT-CODE exit drop
     end
 
     "    pop     rax\n"        output-file fputs
-    "    sub     [rsp], rax\n" output-file fputs
-
+    "    or      [rsp], rax\n" output-file fputs
+    
     local-stack local-stack-length queue64.pop-last drop
     local-stack local-stack-length queue64.pop-last drop
     create-int local-stack local-stack-length queue64.append
-    
-  else token-arg INTRINSIC-MUL = if
-    // -------- Intrinsic '*' --------
+
+  else token-arg INTRINSIC-BNOT = if
+    // -------- Intrinsic '!!' --------
 
     // TODO: Check the type of arguments.
-    local-stack-length @64 2 < if
-      LOG.ERR log-stream fputs "Intrinsic '*' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
+    local-stack-length @64 1 < if
+      LOG.ERR log-stream fputs "Intrinsic '!!' requires an integer, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
       token-address log-stream fput-here
       ERROR-EXIT-CODE exit drop
     end
 
-    "    xor     rdx, rdx\n"   output-file fputs
-    "    pop     rbx\n"        output-file fputs
-    "    mov     rax, [rsp]\n" output-file fputs
-    "    imul    rbx\n"        output-file fputs
-    "    mov     [rsp], rax\n" output-file fputs
+    "    not     qword [rsp]\n"    output-file fputs
+    
+    local-stack local-stack-length queue64.pop-last drop
+    create-int local-stack local-stack-length queue64.append
+    
+  else token-arg INTRINSIC-FULLMUL = if
+    // -------- Intrinsic '**' --------
 
+    // TODO: Check the type of arguments.
+    local-stack-length @64 2 < if
+      LOG.ERR log-stream fputs "Intrinsic '**' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
+      token-address log-stream fput-here
+      ERROR-EXIT-CODE exit drop
+    end
+
+    "    xor     rdx, rdx\n"        output-file fputs
+    "    mov     rbx, [rsp]\n"      output-file fputs
+    "    mov     rax, [rsp+8]\n"    output-file fputs
+    "    imul    rbx\n"             output-file fputs
+    "    mov     [rsp], rax\n"      output-file fputs
+    "    mov     [rsp+8], rdx\n"    output-file fputs
+    
     local-stack local-stack-length queue64.pop-last drop
     local-stack local-stack-length queue64.pop-last drop
     create-int local-stack local-stack-length queue64.append
-
+    create-int local-stack local-stack-length queue64.append
+    
   else token-arg INTRINSIC-DIVMOD = if
     // -------- Intrinsic '/%' --------
 
@@ -454,6 +448,50 @@ in
     "    mov     rbx, [rsp]\n"      output-file fputs
     "    mov     rax, [rsp+8]\n"    output-file fputs
     "    idiv    rbx\n"             output-file fputs
+    "    mov     [rsp+8], rax\n"    output-file fputs
+    "    mov     [rsp], rdx\n"      output-file fputs
+    
+    local-stack local-stack-length queue64.pop-last drop
+    local-stack local-stack-length queue64.pop-last drop
+    create-int local-stack local-stack-length queue64.append
+    create-int local-stack local-stack-length queue64.append
+    
+  else token-arg INTRINSIC-UFULLMUL = if
+    // -------- Intrinsic 'u**' --------
+
+    // TODO: Check the type of arguments.
+    local-stack-length @64 2 < if
+      LOG.ERR log-stream fputs "Intrinsic 'u**' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
+      token-address log-stream fput-here
+      ERROR-EXIT-CODE exit drop
+    end
+
+    "    xor     rdx, rdx\n"        output-file fputs
+    "    mov     rbx, [rsp]\n"      output-file fputs
+    "    mov     rax, [rsp+8]\n"    output-file fputs
+    "    mul     rbx\n"             output-file fputs
+    "    mov     [rsp], rax\n"      output-file fputs
+    "    mov     [rsp+8], rdx\n"    output-file fputs
+    
+    local-stack local-stack-length queue64.pop-last drop
+    local-stack local-stack-length queue64.pop-last drop
+    create-int local-stack local-stack-length queue64.append
+    create-int local-stack local-stack-length queue64.append
+    
+  else token-arg INTRINSIC-UDIVMOD = if
+    // -------- Intrinsic 'u/%' --------
+
+    // TODO: Check the type of arguments.
+    local-stack-length @64 2 < if
+      LOG.ERR log-stream fputs "Intrinsic 'u/%' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
+      token-address log-stream fput-here
+      ERROR-EXIT-CODE exit drop
+    end
+
+    "    xor     rdx, rdx\n"        output-file fputs
+    "    mov     rbx, [rsp]\n"      output-file fputs
+    "    mov     rax, [rsp+8]\n"    output-file fputs
+    "    div     rbx\n"             output-file fputs
     "    mov     [rsp+8], rax\n"    output-file fputs
     "    mov     [rsp], rdx\n"      output-file fputs
     
@@ -582,23 +620,29 @@ in
 
     create-bool local-stack local-stack-length queue64.append
     
-  else token-arg INTRINSIC-SYSCALL3 = if
-    // -------- Intrinsic 'syscall3' --------
+  else token-arg INTRINSIC-SYSCALL6 = if
+    // -------- Intrinsic 'syscall6' --------
 
     // TODO: Check the type of arguments.
-    local-stack-length @64 4 < if
-      LOG.ERR log-stream fputs "'syscall3' requires 4 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
+    local-stack-length @64 7 < if
+      LOG.ERR log-stream fputs "'syscall6' requires 7 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
       token-address log-stream fput-here
       ERROR-EXIT-CODE exit drop
     end
 
     "    pop     rax\n" output-file fputs
+    "    pop     r9\n" output-file fputs
+    "    pop     r8\n" output-file fputs
+    "    pop     r10\n" output-file fputs
     "    pop     rdx\n" output-file fputs
     "    pop     rsi\n" output-file fputs
     "    pop     rdi\n" output-file fputs
     "    syscall\n"     output-file fputs
     "    push    rax\n" output-file fputs
 
+    local-stack local-stack-length queue64.pop-last drop
+    local-stack local-stack-length queue64.pop-last drop
+    local-stack local-stack-length queue64.pop-last drop
     local-stack local-stack-length queue64.pop-last drop
     local-stack local-stack-length queue64.pop-last drop
     local-stack local-stack-length queue64.pop-last drop
@@ -610,7 +654,7 @@ in
     token-address log-stream fput-here
     procedure-name procedure-address log-stream fput-inside-procedure
     ERROR-EXIT-CODE exit drop
-  end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end
 end end
 
 
@@ -1603,7 +1647,7 @@ in
   // Check if the library was included already.
   source-name libraries-array libraries-array libraries-length @64 8 * + str-sorted8.available if
     // TODO: Use called-from to improve debugging.
-    LOG.INFO log-stream fputs "Skipping library '" log-stream fputs source-name source-name mlength log-stream fputs "' since it was already included.\n" log-stream fputs
+    LOG.INFO log-stream fputs "Skipping library '" log-stream fputs source-name source-name mlength log-stream fputs "' because it was already included.\n" log-stream fputs
     drop return
   else
     LOG.INFO log-stream fputs "Including library '" log-stream fputs source-name source-name mlength log-stream fputs "'.\n" log-stream fputs
@@ -1624,12 +1668,12 @@ in
       ERROR-EXIT-CODE exit drop
     end
 
-    memory extended-array  sizeof(int) EXTENDED-MAX-LENGTH * and
-           extended-start  sizeof(int)                       and
-           extended-end    sizeof(int)                       and
+    memory extended-array  sizeof(int) EXTENDED-MAX-LENGTH ** and
+           extended-start  sizeof(int)                        and
+           extended-end    sizeof(int)                        and
            
-           line-no                sizeof(int)                and
-           char-no                sizeof(int)                in
+           line-no         sizeof(int)                        and
+           char-no         sizeof(int)                        in
 
       // Reset extended-tokens.
       0 extended-start !64
@@ -1818,10 +1862,10 @@ in
                 end
 
                 // macro-tokens-array and macro-tokens-length are used to create a QUEUE for macro tokens.
-                memory inputs-array   sizeof(int) PROC-MAX-IO * and
-                       inputs-length  sizeof(int)               and
-                       outputs-array  sizeof(int) PROC-MAX-IO * and
-                       outputs-length sizeof(int)               in
+                memory inputs-array   sizeof(int) PROC-MAX-IO ** and
+                       inputs-length  sizeof(int)                and
+                       outputs-array  sizeof(int) PROC-MAX-IO ** and
+                       outputs-length sizeof(int)                in
 
                   0 inputs-length !64
                   0 outputs-length !64
@@ -1930,8 +1974,8 @@ in
                       end
                     end
 
-                  memory local-stack        sizeof(int) STACK-MAX-ITEMS * and
-                         local-stack-length sizeof(int)                   in
+                  memory local-stack        sizeof(int) STACK-MAX-ITEMS ** and
+                         local-stack-length sizeof(int)                    in
 
                     0 local-stack-length !64
 
@@ -2018,11 +2062,9 @@ in
         end
       end drop drop drop
     end
-
-    // TODO: Print the global variables to file.
-    
     
     source-file fclose drop
+    LOG.INFO log-stream fputs "Successfully included '" log-stream fputs source-name source-name mlength log-stream fputs "'.\n" log-stream fputs
   end
 end end
 
@@ -2066,22 +2108,22 @@ in let source-name output-name log-stream in
     "    pop     rdi\n"                                 output-file fputs
     "    syscall\n"                                     output-file fputs
 
-    memory global-names-array     sizeof(ptr) GLOBALS-MAX-COUNT    * and
-           global-sizes-array     sizeof(ptr) GLOBALS-MAX-COUNT    * and
+    memory global-names-array     sizeof(ptr) GLOBALS-MAX-COUNT   ** and
+           global-sizes-array     sizeof(ptr) GLOBALS-MAX-COUNT   ** and
            globals-length         sizeof(int)                        and
 
-           proc-names-array       sizeof(ptr) PROCS-MAX-COUNT      * and
-           proc-inputs-array      sizeof(ptr) PROCS-MAX-COUNT      * and
-           proc-outputs-array     sizeof(ptr) PROCS-MAX-COUNT      * and
+           proc-names-array       sizeof(ptr) PROCS-MAX-COUNT     ** and
+           proc-inputs-array      sizeof(ptr) PROCS-MAX-COUNT     ** and
+           proc-outputs-array     sizeof(ptr) PROCS-MAX-COUNT     ** and
            procs-length           sizeof(int)                        and
 
-           macro-names-array      sizeof(ptr) MACROS-MAX-COUNT     * and
-           macro-tokens-array     sizeof(ptr) MACROS-MAX-COUNT     * and
+           macro-names-array      sizeof(ptr) MACROS-MAX-COUNT    ** and
+           macro-tokens-array     sizeof(ptr) MACROS-MAX-COUNT    ** and
            macros-length          sizeof(int)                        and
 
            data-definitions-list  sizeof(ptr)                        and
 
-           libraries-array        sizeof(int) LIBRARIES-MAX-COUNT  * and
+           libraries-array        sizeof(int) LIBRARIES-MAX-COUNT ** and
            libraries-length       sizeof(int)                        in
 
       0 globals-length   !64
@@ -2123,6 +2165,8 @@ in let source-name output-name log-stream in
     "    local_ptr:      resq 1\n"                      output-file fputs
     "    call_stack:     resb 67108864\n"               output-file fputs
     "    call_ptr:       resq 1\n"                      output-file fputs
+
+    // TODO: Print the global variables to file.
 
     output-file fclose drop
   end
