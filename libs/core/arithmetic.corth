@@ -83,14 +83,14 @@ macro avg2 +   2 / endmacro // int: x int: y -- int: (x+y)/2
 macro avg3 + + 3 / endmacro // int: x int: y -- int: (xx+y+z)/3
 
 
-macro lower-base
   // int: x int: b -- int: lower-base(x, b)
   // fixed64: x fixed64: b -- fixed64: lower-base(x, b)
   
   // Returns the largest number that is less than or equal to x and is divisible by b.
   // lower-base(x, b) = x - (x % b)
-  let _x_ _b_ in
-    _x_ _x_ _b_ % -
+macro lower-base 
+  let _x_ _base_ in
+    _x_ _x_ _base_ % +
   end
 endmacro
 
@@ -102,8 +102,8 @@ macro upper-base
   // Returns the smallest number that is greater than x and is divisible by b.
   // upper-base(x, b) = x + ((-x) % b)
   // upper-base(x, b) = lower-base(x, b) + b
-  let _x_ _b_ in
-    _x_ _x_ neg _b_ % +
+  let _x_ _base_ in
+    _x_ _x_ neg _base_ % +
   end
 endmacro
 
