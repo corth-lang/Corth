@@ -79,6 +79,9 @@ macro int-to-xdigit dup 9 > if 'W' else '0' end + endmacro
 macro is-range  let _a_ _b_ _c_ in _a_ _b_ < if false else _c_ _a_ < ! end end endmacro // int: x int: min int: max -- bool:  (x in [min, max])
 macro isn-range let _a_ _b_ _c_ in _a_ _b_ < if true  else _c_ _a_ <   end end endmacro // int: x int: min int: max -- bool: !(x in [min, max])
 
+macro avg2 +   2 / endmacro // int: x int: y -- int: (x+y)/2
+macro avg3 + + 3 / endmacro // int: x int: y -- int: (xx+y+z)/3
+
 
 macro lower-base
   // int: x int: b -- int: lower-base(x, b)

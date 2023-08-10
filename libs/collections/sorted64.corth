@@ -25,7 +25,7 @@ in
             drop lower @64 false return
           end
 
-          lower @64 upper @64 + 2 / offset - 8 lower-base offset + let middle in
+          lower @64 upper @64 avg2 offset - 8 lower-base offset + let middle in
             middle @64 value = if
               drop middle
               true return
