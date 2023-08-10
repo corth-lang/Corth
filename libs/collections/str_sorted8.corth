@@ -10,7 +10,7 @@ Requires dmemeq8 and dmemlt8.
 
 proc str-sorted8.available
   // int: value ptr: start ptr: end -- ptr: lower-bound bool: found
-  int ptr ptr -- int bool
+  int ptr ptr -- ptr bool
   // Finds where the value could be placed using binary search, so that the array could stay sorted.
   // Returns if the value was found in the array.
 in
@@ -40,4 +40,4 @@ in
       end
     end
   end
-0 false end  // dummy return
+NULLPTR false end  // dummy return
