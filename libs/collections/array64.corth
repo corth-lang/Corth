@@ -10,6 +10,24 @@
 include libs/core/integer.corth
 
 
+macro array64.get-addr
+  // int: index ptr: array -- ptr: addr
+  
+  swp 8 * +
+endmacro
+
+macro array64.get
+  // int: index ptr: array -- int: value
+
+  array64.get-addr @64
+endmacro
+
+macro array64.set
+  // int: value int: index ptr: array --
+
+  array64.get-addr !64
+endmacro
+
 proc array64.min
   // ptr: array int: length -- int: min-item
   ptr int -- int
@@ -21,7 +39,7 @@ in let array length in
     MAX-INT min !64
 
     0 while dup length < do let i in
-      array i 8 * + @64 let value in
+      i array array64.get let value in
         value min @64 < if
           value min !64
         end
@@ -31,7 +49,6 @@ in let array length in
     min @64
   end
 end end
-
 
 proc array64.umin
   // ptr: array int: length -- uint: min-item
@@ -55,7 +72,6 @@ in let array length in
   end
 end end
 
-
 proc array64.max
   // ptr: array int: length -- int: min-item
   ptr int -- int
@@ -77,7 +93,6 @@ in let array length in
     max @64
   end
 end end
-
 
 proc array64.umax
   // ptr: array int: length -- uint: min-item

@@ -1,4 +1,5 @@
 include libs/core/memory.corth
+include libs/collections/array64.corth
 
 macro list64.RESIZING 16 endmacro
 
@@ -50,7 +51,7 @@ endmacro
 
 macro list64.get-addr
   // int: index ptr: list64 -- ptr: address
-  let _list_ in 8 * _list_ list64.array-addr + end
+  list64.array-addr array64.get-addr
 endmacro
 
 macro list64.get
