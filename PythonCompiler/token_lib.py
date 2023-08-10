@@ -1,4 +1,4 @@
-import enum_lib
+from PythonCompiler import enum_lib
 
 
 class Token:

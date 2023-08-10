@@ -3,10 +3,10 @@ from collections import deque
 import os
 import typing
 
-import enum_lib
-import token_lib
-import log_lib
-import parser_lib
+from PythonCompiler import enum_lib
+from PythonCompiler import token_lib
+from PythonCompiler import log_lib
+from PythonCompiler import parser_lib
 
 """
 macro <name>

@@ -1,6 +1,6 @@
-import enum_lib
-import token_lib
-import log_lib
+from PythonCompiler import enum_lib
+from PythonCompiler import token_lib
+from PythonCompiler import log_lib
 
 
 

@@ -3,9 +3,9 @@ from collections import deque
 import sys
 import argparse
 
-import compiler_lib
-import parser_lib
-import log_lib
+from PythonCompiler import compiler_lib
+from PythonCompiler import parser_lib
+from PythonCompiler import log_lib
 
 
 def compile_command():
