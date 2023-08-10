@@ -10,7 +10,7 @@ include libs/core/
 
   start-index is the index of the first item, while end-index is the index of the last item plus 1.
 
-  Macro and procedures in this library are designed to have arguments in the form: *other, deque-array, start-index, end-index
+  Macro and procedures in this library are designed to have arguments in the form: *other, deque-array, deque-capacity, start-index, end-index.
 
   The start address can be calculated as: deque + 8 * start-index
   The end address can be calculated as:   deque + 8 * end-index
