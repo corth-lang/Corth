@@ -9,9 +9,9 @@
 include libs/collections/queue64.corth
 include libs/collections/sorted_queue64.corth
 
-memory malloc.array malloc.ARRAY-SIZE end
-memory malloc.avail-queue-array   malloc.AVAIL-QUEUE-SIZE end
-memory malloc.avail-queue-length sizeof(int) end
+memory malloc.array              malloc.ARRAY-SIZE       end
+memory malloc.avail-queue-array  malloc.AVAIL-QUEUE-SIZE end
+memory malloc.avail-queue-length sizeof(int)             end
 
 macro malloc.avail-queue malloc.avail-queue-array malloc.avail-queue-length endmacro
 
@@ -19,9 +19,14 @@ macro malloc.avail-queue malloc.avail-queue-array malloc.avail-queue-length endm
 proc malloc.init
   --
 in
+  // Set the available queue length to 0.
   0 malloc.avail-queue-length !64
-  malloc.array malloc.avail-queue queue64.append
+
+  // Create the first block.
   malloc.array malloc.ARRAY-SIZE + malloc.array !64
+
+  // Append the block as available to the available queue.
+  malloc.array malloc.avail-queue queue64.append
 end
 
 
