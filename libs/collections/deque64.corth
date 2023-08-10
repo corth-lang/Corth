@@ -17,12 +17,30 @@ include libs/core/
   The length of a deque can be found as:  end-index - start-index
 */
 
+macro deque64.get-addr
+  // int: index ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
+
+  let _index_ _deque_ _capacity_ _start_ _end_ in _start_ @64 _index_ + _capacity_ % 8 * _deque_ + end
+endmacro
+
+macro deque64.first-addr
+  // ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
+
+  let _deque_ _capacity_ _start_ _end_ in _start_ @64 _capacity_ % 8 * _deque_ + end
+endmacro
+
+macro deque64.last-addr
+  // ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
+
+  let _deque_ _capacity_ _start_ _end_ in _end_ @64 _capacity_ % 8 * _deque_ + end
+endmacro
+
 macro deque64.get
   // int: index ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
   // Gets an item from a deque.
   // return deque[index]
 
-  let _index_ _deque_ _capacity_ _start_ _end_ in _start_ @64 _index_ + _capacity_ % 8 * _deque_ + @64 end
+  deque64.get-addr @64
 endmacro
 
 macro deque64.set
@@ -31,7 +49,7 @@ macro deque64.set
   // deque[index] = value
   // NOTE: This macro assumes that the index is valid.
 
-  let _value_ _index_ _deque_ _capacity_ _start_ _end_ in _value_ _start_ @64 _index_ + _capacity_ % 8 * _deque_ + !64 end
+  deque64.get-addr !64
 endmacro
 
 macro deque64.append-first
