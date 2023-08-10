@@ -1,5 +1,5 @@
-include enums.corth
-include debug.corth
+include CorthCompiler/enums.corth
+include CorthCompiler/debug.corth
 
 
 proc fgets-keep
@@ -14,7 +14,7 @@ in let start length file in
     start length file fgets
 
     // Return the file pointer to its original pointer.
-    file original SEEK-SET fseek drop
+    file original SEEK-SET lseek drop
   end
 end end
 
@@ -38,7 +38,7 @@ in let file line-no char-no in
       else char @8 CHAR-SPACE = if
         char-no @inc64
       else
-        file 1 neg SEEK-CUR fseek drop
+        file 1 neg SEEK-CUR lseek drop
         false return
       end end end end
     end
@@ -68,7 +68,7 @@ in let file line-no char-no buffer buffer-end log-stream in
       LOG.INFO log-stream fputs "Last read token was '" log-stream fputs buffer buffer-end @64 buffer - log-stream fputs "'.\n" log-stream fputs
       ERROR-EXIT-CODE exit drop
     else                                                  // There is still space in the buffer.
-      file 1 SEEK-CUR fseek drop
+      file 1 SEEK-CUR lseek drop
       buffer-end @inc64
       char-no    @inc64
     end end end end

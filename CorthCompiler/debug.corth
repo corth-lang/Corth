@@ -3,7 +3,7 @@ include libs/dynamic/utils.corth
 include libs/linux_x86/io/
 include libs/core/
 
-include enums.corth
+include CorthCompiler/enums.corth
 
 macro sizeof(address) 56 endmacro
 
@@ -175,7 +175,7 @@ in let address log-stream in
       start-pos POS.LINE + @64 start-pos POS.CHAR + @64 end-pos POS.LINE + @64 end-pos POS.CHAR + @64 let start-line start-char end-line end-char in
 
         // Move the file pointer to the start.
-        file 0 SEEK-SET fseek drop start-line dec file seek-line
+        file 0 SEEK-SET lseek drop start-line dec file seek-line
 
         start-line end-line = if
           start-line log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in

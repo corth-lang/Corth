@@ -27,9 +27,9 @@ macro CHAR-ASTERISK  42 endmacro
 macro CHAR-SLASH     47 endmacro
 macro CHAR-BACKSLASH 92 endmacro
 
-include lexer.corth
-include debug.corth
-include enums.corth
+include CorthCompiler/lexer.corth
+include CorthCompiler/debug.corth
+include CorthCompiler/enums.corth
 
 
 // TODO: Make not hard-coded.
@@ -256,7 +256,7 @@ in let
               file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros isn-zero get-next-token ! if false return end
             else
               // -------- Name and keyword types --------
-              file 1 neg SEEK-CUR fseek drop
+              file 1 neg SEEK-CUR lseek drop
 
               file-name file start-line start-char start-at line-no char-no buffer buffer-end log-stream create-name-token
             end end
@@ -1726,7 +1726,7 @@ in
                       LOG.TODO log-stream fputs "Including directories is not implemented yet.\n" log-stream fputs 
                       ERROR-EXIT-CODE exit drop
                     else
-                      LOG.ERR log-stream fputs "Invalid file type, got " log-stream fputs masked log-stream fputx ".\n" log-stream fputs
+                      LOG.ERR log-stream fputs "Invalid file type, got " log-stream fputs masked log-stream fputo ".\n" log-stream fputs
                       path-token-address log-stream fput-here
                       ERROR-EXIT-CODE exit drop
                     end end
