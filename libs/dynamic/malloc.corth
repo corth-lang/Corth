@@ -29,16 +29,10 @@ in
   malloc.array malloc.avail-queue queue64.append
 end
 
-
-proc malloc.get-size-of-block
-  // ptr: block -- int: size
-  ptr -- int
-in
-  let *block in
-    *block @64 *block -
-  end
-end
-
+// ptr: block -- int: size
+macro malloc.get-size-of-block let _block_ in
+  _block_ @64 _block_ -
+end endmacro
 
 macro malloc.get-length-of-block
   // ptr: block -- int: length
