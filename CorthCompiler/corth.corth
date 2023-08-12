@@ -1583,36 +1583,6 @@ in
 end 0 end // dummy return
 
 
-proc include-path
-  // ptr: path
-  ptr
-  // file-desc: output-file
-  file-desc
-  // ptr: data-definitions-list
-  ptr
-  // ptr: global-names-array ptr: global-sizes-array ptr: globals-length 
-  ptr ptr ptr
-  // ptr: proc-names-array ptr: proc-inputs-array ptr: proc-outputs-array ptr: procs-length
-  ptr ptr ptr ptr
-  // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
-  ptr ptr ptr
-  // libraries-array ptr: libraries-length
-  ptr ptr 
-  // file-desc: log-stream
-  file-desc --
-in let
-  path
-  output-file
-  data-definitions-list
-  global-names-array global-sizes-array globals-length
-  proc-names-array proc-inputs-array proc-outputs-array procs-length
-  macro-names-array macro-tokens-array macros-length
-  libraries-array libraries-length
-  log-stream
-in
-end end
-
-
 proc compile-file
   // ptr: source-name file-desc: output-file
   ptr file-desc
