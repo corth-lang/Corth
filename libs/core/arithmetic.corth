@@ -90,7 +90,7 @@ macro avg3 + + 3 / endmacro // int: x int: y -- int: (xx+y+z)/3
   // lower-base(x, b) = x - (x % b)
 macro lower-base 
   let _x_ _base_ in
-    _x_ _x_ _base_ % +
+    _x_ _x_ _base_ % -
   end
 endmacro
 
