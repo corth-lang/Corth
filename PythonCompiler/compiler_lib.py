@@ -1044,7 +1044,7 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             
         elif token.type is token_lib.SYSCALL6:
             if (
-                    len(stack) < 6 or
+                    len(stack) < 7 or
                     stack.pop() is not INT_TYPE or
                     stack.pop() is not INT_TYPE or
                     stack.pop() is not INT_TYPE or
