@@ -105,31 +105,16 @@ in let source file in
 end end
 
 
-proc fputu-full
-  // int: int file-desc: file-desc 
-  int file-desc --
-  // Prints an unsigned integer to a file stream.
-  // The length of string is guaranteed to be 20. Missing length is filled with spaces from left.
-in let file in
-  memory buffer     20          and
-         value      sizeof(int) and
-         buffer-end sizeof(ptr) in
+macro fputu-full let _value_ _file_ in
+  // int: int file-desc: file-desc
 
-    // TODO: This can be improved by only setting the unused space.
-    buffer 20 CHAR-SPACE memset8
+  memory _buffer_ 20 in
+    _buffer_ _value_ intconvud let _buffer_start_ in
+      ' ' _buffer_ _buffer_start_ _buffer_ - memset8
+    end
 
-    value !64
-    buffer 19 + buffer-end !64
-
-    while
-      value @64 10 /%
-      int-to-ddigit buffer-end @64 !8
-      buffer-end @dec64
-    dup value !64 isn-zero do end
-
-    buffer 20 file fputs
+    _buffer_ 20 _file_ fputs
   end
-end end
 
 
 proc fputs-multiple
@@ -141,6 +126,7 @@ in let start length file in
     start length file fputs
   dec end drop
 end end
+end endmacro
 
 
 proc fput-address
