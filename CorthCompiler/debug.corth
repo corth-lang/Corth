@@ -92,7 +92,7 @@ in let file in
       char 1 file fgets is-zero if drop return end
 
       // If a newline is reached, decrease the counter.
-      char @8 CHAR-NEWLINE = if dec end
+      char @8 '\n' = if dec end
     end drop
   end
 end end
@@ -106,19 +106,15 @@ proc fput-line
 in let source file in
   memory char 1 in
     0 while true do
-      // If EOF is reached, returns immediately.
+      // If EOF is reached, return immediately.
       char 1 source fgets is-zero if return end
 
-      char @8 CHAR-NEWLINE = if
-        return
-      else
-        // Print the byte to the file stream.
-        char 1 file fputs
-        
-        // Increase the length counter.
-        inc
-      end
-    end
+      // If a newline character is reached, return immediately.
+      char @8 '\n' = if return end
+      
+      // Print the byte to the file stream.
+      char 1 file fputs
+    inc end
   end
 end end
 

@@ -28,19 +28,24 @@ proc strip-file
 in let file line-no char-no in
   memory char 1 in
     while true do
-      char 1 file fgets is-zero if
-        true return
-      else char @8 is-zero if
-        true return
-      else char @8 CHAR-NEWLINE = if
+      // If EOF is reached, return immediately.
+      char 1 file fgets is-zero if true return end
+
+      // If a null-terminator is reached, return immediately.
+      char @8 is-zero if true return end
+
+      char @8 '\n' = if
         0 char-no !64
         line-no @inc64
-      else char @8 CHAR-SPACE = if
-        char-no @inc64
+        
       else
-        file 1 neg SEEK-CUR lseek drop
-        false return
-      end end end end
+        char @8 ' ' != if
+          file 1 neg SEEK-CUR lseek drop
+          false return
+        end
+      
+        char-no @inc64
+      end
     end
   end
 end false end  // dummy return
@@ -54,16 +59,25 @@ proc parse-next-token
   // NOTE: If buffer-end exceeds buffer + TOKEN-MAX-LENGTH, exits program.
 in let file line-no char-no buffer buffer-end log-stream in
   while true do
-    buffer-end @64 1 file fgets-keep is-zero if                // Reached end of file.
+    buffer-end @64 1 file fgets-keep is-zero if
+      // Reached EOF.
       char-no @inc64
       return
-    else buffer-end @64 @8 CHAR-NEWLINE = if              // Reached newline.
+    end
+      
+    buffer-end @64 @8 '\n' = if
+      // Reached a newline character.
       char-no @inc64
       return
-    else buffer-end @64 @8 CHAR-SPACE = if                // Reached space.
+    end
+      
+    buffer-end @64 @8 ' ' = if
+      // Reached a space character.
       char-no @inc64
       return
-    else buffer-end @64 buffer - TOKEN-MAX-LENGTH >= if   // Reached the end of the buffer.
+    end
+      
+    buffer-end @64 buffer - TOKEN-MAX-LENGTH >= if   // Reached the end of the buffer.
       LOG.ERR  log-stream fputs "Found a token longer than TOKEN-MAX-LENGTH, stopping execution.\n" log-stream fputs
       LOG.INFO log-stream fputs "Last read token was '" log-stream fputs buffer buffer-end @64 buffer - log-stream fputs "'.\n" log-stream fputs
       ERROR-EXIT-CODE exit drop
@@ -71,7 +85,7 @@ in let file line-no char-no buffer buffer-end log-stream in
       file 1 SEEK-CUR lseek drop
       buffer-end @inc64
       char-no    @inc64
-    end end end end
+    end
   end
 end end
 
@@ -85,26 +99,37 @@ proc parse-next-string
   // NOTE: If EOF is reached before a double quote is found, exits program.
   // TODO: Add escapes.
 in let file line-no char-no buffer buffer-end log-stream in
-  while true do
-    buffer-end @64 1 file fgets is-zero if                  // Reached end of file.
+  while true do buffer-end @64 let char-addr in
+    // Check if we reached EOF before an end of string.
+    char-addr 1 file fgets is-zero if
       LOG.ERR log-stream fputs "Reached EOF before finding any '\"'.\n" log-stream fputs
       ERROR-EXIT-CODE exit drop
-    else buffer-end @64 @8 CHAR-DQUOTE = if                 // Reached double quote.
+    end
+    
+    // Check if we reached the end of the string.
+    char-addr @8 '"' = if
       char-no    @inc64
       return
-    else buffer-end @64 buffer - TOKEN-MAX-LENGTH >= if     // Reached the end of the buffer.
+    end
+      
+    // Reached the end of the buffer.
+    char-addr buffer - TOKEN-MAX-LENGTH >= if
       LOG.ERR log-stream fputs "Found a string longer than TOKEN-MAX-LENGTH, stopping execution.\n" log-stream fputs
       LOG.INFO log-stream fputs "Last read token was '" log-stream fputs buffer buffer-end @64 buffer - log-stream fputs "'.\n" log-stream fputs
       ERROR-EXIT-CODE exit drop
-    else buffer-end @64 @8 CHAR-NEWLINE = if                // Reached new line.
-      buffer-end @inc64
-      line-no    @inc64
+    end
+      
+    char-addr @8 '\n' = if
+      // Reached new line, reset char-no and increase line-no.
+      line-no   @inc64
       0 char-no !64
-    else                                                   
-      buffer-end @inc64
+    else
+      // Reached any character, increase char-no. 
       char-no    @inc64
-    end end end end
-  end
+    end
+    
+    buffer-end @inc64
+  end end
 end end
 
 
@@ -119,11 +144,11 @@ in let file line-no char-no log-stream in
   
   memory char 1 in
     while true do
-      char 1 file fgets is-zero if
-        return
-      else char @8 CHAR-NEWLINE = if
-        return
-      end end
+      // If EOF is reached, return immediately.
+      char 1 file fgets is-zero if return end
+
+      // If a newline character is reached, return immediately.
+      char @8 '\n' = if return end
     end
   end
 end end
@@ -142,17 +167,17 @@ in let file line-no char-no log-stream in
         return
       end
         
-      char @8 CHAR-ASTERISK = if                       // Reached asterisk.
+      char @8 '*' = if                       // Reached asterisk.
         char 1 file fgets is-zero if                        // Reached EOF while expecting a block comment end.
           LOG.WARN log-stream fputs "Reached EOF while expecting a block comment end.\n" log-stream fputs
           return
         end
 
-        char @8 CHAR-SLASH = if                             // Reached block comment end.
+        char @8 '/' = if                             // Reached block comment end.
           return
         end
         
-      else char @8 CHAR-NEWLINE = if                        // Reached a newline.
+      else char @8 '\n' = if                        // Reached a newline.
         line-no @inc64
         0 char-no !64
         

@@ -9,12 +9,11 @@
 include libs/core/arithmetic.corth
 include libs/core/stack.corth
 
-macro syscall5 let _type_ in 0 _type_ syscall6 end endmacro
-macro syscall4 let _type_ in 0 0 _type_ syscall6 end endmacro
-macro syscall3 let _type_ in 0 0 0 _type_ syscall6 end endmacro
-macro syscall2 let _type_ in 0 0 0 0 _type_ syscall6 end endmacro
-macro syscall1 let _type_ in 0 0 0 0 0 _type_ syscall6 end endmacro
 macro syscall0 let _type_ in 0 0 0 0 0 0 _type_ syscall6 end endmacro
+macro syscall1 let _type_ in 0 0 0 0 0 _type_ syscall6 end endmacro
+macro syscall2 let _type_ in 0 0 0 0 _type_ syscall6 end endmacro
+macro syscall3 let _type_ in 0 0 0 _type_ syscall6 end endmacro
+macro syscall5 let _type_ in 0 _type_ syscall6 end endmacro
 
 macro file-desc         int endmacro
 macro sizeof(file-desc)   8 endmacro
@@ -67,22 +66,23 @@ macro RW_OK          6 endmacro
 macro RWX_OK         7 endmacro
 
 // Standard wrappers
-macro fread SYSREAD syscall3 endmacro           // file-desc: file-desc ptr: str-ptr int: str-len -- int: success
-macro fwrite SYSWRITE syscall3 endmacro         // file-desc: file-desc ptr: str-ptr int: str-len -- int: success
-macro fseek SYSLSEEK syscall3 endmacro          // file-desc: file-desc int: offset int: whence -- int: success
-macro ftell 0 SEEK-CUR fseek endmacro           // file-desc: file-desc -- int: file-pointer
-macro fopen SYSOPEN syscall3 endmacro           // ptr: str-ptr int: mode int: flags -- file-desc: file-desc
-macro fclose SYSCLOSE syscall1 endmacro         // file-desc: file -- int: success
-macro stat SYSSTAT syscall2 endmacro            // ptr: path ptr: buffer -- int: success
-macro fstat SYSFSTAT syscall2 endmacro          // file-desc: file ptr: buffer -- int: success
-macro lstat SYSLSTAT syscall2 endmacro          // ptr: path ptr: buffer -- int: success
-macro nanosleep SYSNANOSLEEP syscall2 endmacro  // ptr: nanosleep-time -- int: success
-macro exit SYSEXIT syscall1 endmacro            // int: exit-code -- int: success
-macro time SYSTIME syscall1 endmacro            // int: address -- int: time
-macro rmdir SYSRMDIR syscall1 endmacro          // ptr: path -- int: success
-macro creat SYSCREAT syscall2 endmacro          // ptr: path int: mode -- int: success
-macro unlink SYSUNLINK syscall1 endmacro        // ptr: path -- int: success
+macro fread     SYSREAD         syscall3 endmacro  // file-desc: file-desc ptr: str-ptr int: str-len -- int: success
+macro fwrite    SYSWRITE        syscall3 endmacro  // file-desc: file-desc ptr: str-ptr int: str-len -- int: success
+macro fopen     SYSOPEN         syscall3 endmacro  // ptr: str-ptr int: mode int: flags -- file-desc: file-desc
+macro fclose    SYSCLOSE        syscall1 endmacro  // file-desc: file -- int: success
+macro stat      SYSSTAT         syscall2 endmacro  // ptr: path ptr: buffer -- int: success
+macro fstat     SYSFSTAT        syscall2 endmacro  // file-desc: file ptr: buffer -- int: success
+macro lstat     SYSLSTAT        syscall2 endmacro  // ptr: path ptr: buffer -- int: success
+macro lseek     SYSLSEEK        syscall3 endmacro  // file-desc: file-desc int: offset int: whence -- int: success
 macro access    SYSACCESS       syscall2 endmacro  // ptr: file-name int: mode -- int: success
+macro nanosleep SYSNANOSLEEP    syscall2 endmacro  // ptr: nanosleep-time -- int: success
+macro exit      SYSEXIT         syscall1 endmacro  // int: exit-code -- int: success
+macro time      SYSTIME         syscall1 endmacro  // int: address -- int: time
+macro rmdir     SYSRMDIR        syscall1 endmacro  // ptr: path -- int: success
+macro creat     SYSCREAT        syscall2 endmacro  // ptr: path int: mode -- int: success
+macro unlink    SYSUNLINK       syscall1 endmacro  // ptr: path -- int: success
+
+macro ftell   0 SEEK-CUR        lseek    endmacro  // file-desc: file-desc -- int: file-pointer
 
 // Non-standard wrappers
 macro fopen-r RD-ONLY 0 fopen endmacro          // ptr: str-ptr -- file-desc: file-desc

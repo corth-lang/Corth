@@ -16,17 +16,6 @@ include libs/collections/deque64.corth
 include libs/collections/queue64.corth
 include libs/collections/str_map64.corth
 
-// TODO: It might be a good idea to store these in a seperate file.
-macro CHAR-NULL       0 endmacro
-macro CHAR-NEWLINE   10 endmacro
-macro CHAR-ESCAPE    27 endmacro
-macro CHAR-SPACE     32 endmacro
-macro CHAR-DQUOTE    34 endmacro
-macro CHAR-SQUOTE    39 endmacro
-macro CHAR-ASTERISK  42 endmacro
-macro CHAR-SLASH     47 endmacro
-macro CHAR-BACKSLASH 92 endmacro
-
 include CorthCompiler/lexer.corth
 include CorthCompiler/debug.corth
 include CorthCompiler/enums.corth
@@ -174,39 +163,44 @@ in let
 
             file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address let address in
               memory number sizeof(int) in
+                // TODO: There is something wrong with this code.
                 buffer buffer-end @64 buffer - number convint ! if
                   LOG.ERR log-stream fputs "Could not convert integer.\n" log-stream fputs
                   address log-stream fput-here
                   ERROR-EXIT-CODE exit drop
                 end
-                
+
                 TYPE-INTEGER address number @64
               end
             end
 
-          else buffer @8 CHAR-SQUOTE = if
+          else buffer @8 '\'' = if
             // -------- Characters --------
+            // TODO: Add multpile character pushing.
 
-            buffer inc 1 file fgets is-zero if                  // Reached EOF while expecting a character.
+            buffer inc 1 file fgets is-zero if
+              // Reached EOF while expecting a character.
               LOG.ERR log-stream fputs "Reached EOF before finding a character after single quote.\n" log-stream fputs 
               ERROR-EXIT-CODE exit drop
             end
 
             // Get the character
             buffer inc @8 let character in
-              character CHAR-BACKSLASH = if
+              character '\\' = if
                 // -------- Escapes --------
                 // TODO: Add escapes.
                 LOG.TODO log-stream fputs "Escapes are not implemented yet.\n" log-stream fputs
                 ERROR-EXIT-CODE exit drop
               end
 
-              buffer 2 + 1 file fgets is-zero if              // Reached EOF while expecting a single quote.
+              buffer 2 + 1 file fgets is-zero if
+                // Reached EOF while expecting a single quote.
                 LOG.ERR log-stream fputs "Reached EOF before finding a single quote after single quote and character.\n" log-stream fputs
                 ERROR-EXIT-CODE exit drop
               end
 
-              buffer 2 + @8 CHAR-SQUOTE != if                 // Was expecting a single quote, but found another character.
+              buffer 2 + @8 '\'' != if
+                // Was expecting a single quote, but found another character.
                 LOG.ERR log-stream fputs "Expected a single quote, found '" log-stream fputs buffer 2 + 1 log-stream fputs "'.\n" log-stream fputs
                 ERROR-EXIT-CODE exit drop
               end
@@ -215,7 +209,7 @@ in let
               TYPE-INTEGER file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address character
             end
 
-          else buffer @8 CHAR-DQUOTE = if
+          else buffer @8 '"' = if
             // -------- String type --------
 
             // Move the buffer-end left once, so the quote is removed.
@@ -229,7 +223,7 @@ in let
             // Return token type, address and argument.
             TYPE-STRING file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address buffer buffer-end @64 buffer - to-dynamic8
 
-          else buffer @8 CHAR-SLASH = if
+          else buffer @8 '/' = if
             // -------- Slash (Name and comments) --------
 
             buffer inc 1 file fgets is-zero if
@@ -237,7 +231,7 @@ in let
               ERROR-EXIT-CODE exit drop
             end
 
-            buffer inc @8 CHAR-SLASH = if
+            buffer inc @8 '/' = if
               // -------- Single line comment --------
 
               // Skip this line.
@@ -246,7 +240,7 @@ in let
               // Get next token and return it.
               file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros isn-zero get-next-token ! if false return end
 
-            else buffer inc @8 CHAR-ASTERISK = if
+            else buffer inc @8 '*' = if
               // -------- Block comment --------
 
               // Skip the block comment.
@@ -1392,6 +1386,9 @@ in
                         
                       else memory-end-arg KEYWORD-IN = if
                         // TODO: Check if the new-names queue is full.
+                        // -- DEBUG --
+                        // memory-size-arg log-stream fputu log-stream fputnl
+
                         memory-name-arg new-names new-names-length queue64.append
                         memory-name-arg local-memory-end @64 local-names local-addresses locals-length str-map64.set if
                           LOG.ERR log-stream fputs "Local variable '" log-stream fputs memory-name-arg memory-name-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
@@ -1483,8 +1480,9 @@ in
                       end
 
                       break
+                    end
 
-                    else new-token-type TYPE-NAME = if
+                    new-token-type TYPE-NAME = if
                       new-names-length VARS-MAX-ONCE = if
                         LOG.ERR log-stream fputs "new-names-length was equal to VARS-MAX-ONCE.\n" log-stream fputs
                         new-token-address log-stream fput-here
@@ -1501,7 +1499,7 @@ in
                       token-address log-stream fput-here
                       procedure-name procedure-address log-stream fput-inside-procedure
                       ERROR-EXIT-CODE exit drop
-                    end end
+                    end
                   end
                 end
 
@@ -1649,13 +1647,13 @@ in
     // TODO: Use called-from to improve debugging.
     LOG.INFO log-stream fputs "Skipping library '" log-stream fputs source-name source-name mlength log-stream fputs "' because it was already included.\n" log-stream fputs
     drop return
-  else
-    LOG.INFO log-stream fputs "Including library '" log-stream fputs source-name source-name mlength log-stream fputs "'.\n" log-stream fputs
-    let address in
-      address address 8 + libraries-length @64 address libraries-array - 8 / - memcpy64i
-      source-name address !64
-      libraries-length @inc64
-    end
+  end
+  
+  LOG.INFO log-stream fputs "Including library '" log-stream fputs source-name source-name mlength log-stream fputs "'.\n" log-stream fputs
+  let address in
+    address address 8 + libraries-length @64 address libraries-array - 8 / - memcpy64i
+    source-name address !64
+    libraries-length @inc64
   end
 
   // Open the source file.
@@ -1707,29 +1705,47 @@ in
                   path-token-address log-stream fput-here
                   ERROR-EXIT-CODE exit drop
                 end
-                
-                memory stats sizeof(stat) in
-                  path-token-arg null-term8 dup stats stat drop drop
 
-                  stats 24 + @64 S_IFMT && let masked in
-                    masked S_IFREG = if
-                      // File including, call compile-file on the file.
-                      path-token-arg output-file
-                      data-definitions-list
-                      global-names-array global-sizes-array globals-length
-                      proc-names-array proc-inputs-array proc-outputs-array procs-length
-                      macro-names-array macro-tokens-array macros-length
-                      libraries-array libraries-length
-                      log-stream compile-file
-                    else masked S_IFDIR = if
-                      // Directory including, should include all sub paths.
-                      LOG.TODO log-stream fputs "Including directories is not implemented yet.\n" log-stream fputs 
-                      ERROR-EXIT-CODE exit drop
-                    else
-                      LOG.ERR log-stream fputs "Invalid file type, got " log-stream fputs masked log-stream fputo ".\n" log-stream fputs
-                      path-token-address log-stream fput-here
-                      ERROR-EXIT-CODE exit drop
-                    end end
+                path-token-arg null-term8 let termed-path in
+                  memory stats sizeof(stat) in
+                    termed-path stats stat drop
+
+                    stats 24 + @64 S_IFMT && let masked in
+                      // Check if the include path exists.
+                      termed-path F_OK access isn-zero if
+                        LOG.ERR log-stream fputs "Path '" log-stream fputs path-token-arg path-token-arg mlength log-stream fputs "' does not exist.\n" log-stream fputs
+                        path-token-address log-stream fput-here
+                        ERROR-EXIT-CODE exit drop
+                      end
+
+                      // Check if the user has read permission for this file.
+                      termed-path R_OK access isn-zero if
+                        LOG.ERR log-stream fputs "Path '" log-stream fputs path-token-arg path-token-arg mlength log-stream fputs "' can not be read, because the user does not have permissions.\n" log-stream fputs
+                        path-token-address log-stream fput-here
+                        ERROR-EXIT-CODE exit drop
+                      end
+                      
+                      masked S_IFREG = if
+                        // File including, call compile-file on the file.
+                        path-token-arg output-file
+                        data-definitions-list
+                        global-names-array global-sizes-array globals-length
+                        proc-names-array proc-inputs-array proc-outputs-array procs-length
+                        macro-names-array macro-tokens-array macros-length
+                        libraries-array libraries-length
+                        log-stream compile-file
+                        
+                      else masked S_IFDIR = if
+                        // Directory including, should include all sub paths.
+                        LOG.TODO log-stream fputs "Including directories is not implemented yet.\n" log-stream fputs 
+                        ERROR-EXIT-CODE exit drop
+                        
+                      else
+                        LOG.ERR log-stream fputs "Invalid file type, got " log-stream fputs masked log-stream fputo ".\n" log-stream fputs
+                        path-token-address log-stream fput-here
+                        ERROR-EXIT-CODE exit drop
+                      end end
+                    end
                   end
                 end
               end
@@ -1888,16 +1904,18 @@ in
                         end
 
                         break
-                      else input-token-type TYPE-TYPE = if
+                      end
+                      
+                      input-token-type TYPE-TYPE = if
                         // TODO: Check if the input queue was filled.
                         input-token-arg inputs-array inputs-length queue64.append
-                      else
                         
+                      else
                         LOG.ERR log-stream fputs "Expected a 'type' for input type or '--', got '" log-stream fputs input-token-type log-stream fput-type "'.\n" log-stream fputs
                         input-token-address log-stream fput-here
                         proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
                         ERROR-EXIT-CODE exit drop
-                      end end
+                      end
                     end
                   end
 
@@ -1919,60 +1937,64 @@ in
                         end
 
                         break
-                      else output-token-type TYPE-TYPE = if
-                        // TODO: Check if the output queue was filled.
-                        output-token-arg outputs-array outputs-length queue64.append
-                      else
+                      end
+
+                      // Check if the token is of type-type.
+                      output-token-type TYPE-TYPE != if
                         LOG.ERR log-stream fputs "Expected a 'type' for output type or 'in', got '" log-stream fputs output-token-type log-stream fput-type "'.\n" log-stream fputs
                         output-token-address log-stream fput-here
                         proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
                         ERROR-EXIT-CODE exit drop
-                      end end
+                      end
+
+                      // TODO: Check if the output queue was filled.
+                      output-token-arg outputs-array outputs-length queue64.append
                     end
                   end
 
-                    // Store the procedure name, input and outputs.
-                    proc-name-token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available if
-                      drop
-                      LOG.ERR log-stream fputs "Procedure '" log-stream fputs proc-name-token-arg proc-name-token-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-                      proc-name-token-address log-stream fput-here
-                      ERROR-EXIT-CODE exit drop
-                      return
-                    end
-                    
-                    let name-address in
-                      name-address proc-names-array - let delta in
-                        proc-inputs-array delta + proc-outputs-array delta + let input-address output-address in
-                          name-address   name-address   8 + procs-length @64 name-address   proc-names-array   - 8 / - memcpy64i
-                          input-address  input-address  8 + procs-length @64 input-address  proc-inputs-array  - 8 / - memcpy64i
-                          output-address output-address 8 + procs-length @64 output-address proc-outputs-array - 8 / - memcpy64i
+                  // Store the procedure name, input and outputs.
+                  // Check if the procedure was defined already.
+                  proc-name-token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available if
+                    drop
+                    LOG.ERR log-stream fputs "Procedure '" log-stream fputs proc-name-token-arg proc-name-token-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+                    proc-name-token-address log-stream fput-here
+                    ERROR-EXIT-CODE exit drop
+                    return
+                  end
 
-                          proc-name-token-arg name-address !64
+                  let name-address in
+                    name-address proc-names-array - let delta in
+                      proc-inputs-array delta + proc-outputs-array delta + let input-address output-address in
+                        name-address   name-address   8 + procs-length @64 name-address   proc-names-array   - 8 / - memcpy64i
+                        input-address  input-address  8 + procs-length @64 input-address  proc-inputs-array  - 8 / - memcpy64i
+                        output-address output-address 8 + procs-length @64 output-address proc-outputs-array - 8 / - memcpy64i
 
-                          inputs-array inputs-length @64 to-dynamic64 let inputs-copy in
-                            inputs-copy is-null if
-                              LOG.ERR log-stream fputs "'malloc' failed while copying inputs\n" log-stream fputs
-                              proc-name-token-address log-stream fput-here
-                              ERROR-EXIT-CODE exit drop
-                            end
-                            
-                            inputs-copy input-address !64
-                          end 
+                        proc-name-token-arg name-address !64
 
-                          outputs-array outputs-length @64 to-dynamic64 let outputs-copy in
-                            outputs-copy is-null if
-                              LOG.ERR log-stream fputs "'malloc' failed while copying outputs\n" log-stream fputs
-                              proc-name-token-address log-stream fput-here
-                              ERROR-EXIT-CODE exit drop
-                            end
-                            
-                            outputs-copy output-address !64
-                          end 
+                        inputs-array inputs-length @64 to-dynamic64 let inputs-copy in
+                          inputs-copy is-null if
+                            LOG.ERR log-stream fputs "'malloc' failed while copying inputs\n" log-stream fputs
+                            proc-name-token-address log-stream fput-here
+                            ERROR-EXIT-CODE exit drop
+                          end
 
-                          procs-length @inc64
-                        end
+                          inputs-copy input-address !64
+                        end 
+
+                        outputs-array outputs-length @64 to-dynamic64 let outputs-copy in
+                          outputs-copy is-null if
+                            LOG.ERR log-stream fputs "'malloc' failed while copying outputs\n" log-stream fputs
+                            proc-name-token-address log-stream fput-here
+                            ERROR-EXIT-CODE exit drop
+                          end
+
+                          outputs-copy output-address !64
+                        end 
+
+                        procs-length @inc64
                       end
                     end
+                  end
 
                   memory local-stack        sizeof(int) STACK-MAX-ITEMS ** and
                          local-stack-length sizeof(int)                    in
@@ -2178,6 +2200,9 @@ proc main
 in let argc argv in
   // Initialize malloc.
   malloc.init
+
+  // Initialize debug.
+  debug-init
 
   // Make file name dynamic.
   SOURCE-NAME to-dynamic8 let source-name in

@@ -804,9 +804,8 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
             file.write(f".L{level}:\n\n")
 
             if returned:
-                levels.append((start_level, token_lib.ELSE, None))  # Indicate that the condition can not return any output, since it already returned.
-
-                returned = False
+                error_on_token(token, "Returned before ELSE")
+                return True
 
             else:
                 levels.append((start_level, token_lib.ELSE, stack))  # Return the stack to check later.
@@ -822,6 +821,10 @@ def compile_procedure(file, program, data: deque, names: dict, arguments: tuple,
                     old_stack ,= args
 
                     if returned:
+                        if start is token_lib.ELSE:
+                            error_on_token(token, "ELSE-END after RETURN")
+                            return True
+                        
                         stack = old_stack
                         returned = False
                         

@@ -20,21 +20,24 @@ in
     upper !64
     lower !64
 
-    lower @64 8 % let offset in
-      let value in
-        while true do
-          lower @64 upper @64 = if
-            lower @64 false return
+    lower @64 8 % let value offset in
+      while true do
+        // Check if failed to find the value, if so, return false.
+        lower @64 upper @64 = if
+          lower @64 false return
+        end
+
+        lower @64 upper @64 avg2 offset - 8 lower-base offset + let middle in
+          // Check if found the exact value, if so, return true.
+          middle @64 value dmemeq8 if
+            middle true return
           end
 
-          lower @64 upper @64 avg2 offset - 8 lower-base offset + let middle in
-            middle @64 value dmemeq8 if
-              middle true return
-            else middle @64 value dmemlt8 if
-              middle 8 + lower !64
-            else
-              middle upper !64
-            end end
+          // Move the end search points.
+          middle @64 value dmemlt8 if
+            middle 8 + lower !64
+          else
+            middle upper !64
           end
         end
       end

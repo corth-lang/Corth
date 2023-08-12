@@ -13,11 +13,14 @@ in let start length number in
       i @8 '0'
     else i @8 is-xeldigit if
       i @8 'W'
-    else i @8 is-xeudigit if
-      i @8 '7'
     else
-      false return
-    end end end
+      i @8 isn-xeudigit if
+        false return
+      end
+      
+      i @8 '7'
+    end end
+    
     - number @64 16 * + number !64
   i end inc end drop
 end true end
@@ -74,11 +77,13 @@ in let start length number in
   start while dup start length + < do let i in
     i @8 '0' = if
       number @64 2 *
-    else i @8 '1' = if
-      number @64 2 * inc
     else
-      false return
-    end end
+      i @8 '1' != if
+        false return
+      end
+      
+      number @64 2 * inc
+    end
     
     number !64
   i end inc end drop
