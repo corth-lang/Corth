@@ -180,9 +180,19 @@ endmacro
 
 
 // These macros compare two dynamicly-placed collections.
-// See memeq8, memeq64, memlt8 and memlt64 from ./libs/core/memory.corth.
+
+// See memcmp8/64 from ./libs/core/memory.corth.
+// ptr: a ptr: b -- int: cmp(a, b)
+macro dmemcmp8  let _a_ _b_ in _a_ _a_ mlength     _b_ _b_ mlength     memcmp8  end endmacro
+macro dmemcmp64 let _a_ _b_ in _a_ _a_ mlength 8 / _b_ _b_ mlength 8 / memcmp64 end endmacro
+
+// See memlt8/64, memeq8/64, memgt8/64 from ./libs/core/memory.corth.
 // ptr: a ptr: b -- bool: cmp(a, b)
-macro dmemeq8  let _a_ _b_ in _a_ _a_ mlength     _b_ _b_ mlength     memeq8  end endmacro
-macro dmemeq64 let _a_ _b_ in _a_ _a_ mlength 8 / _b_ _b_ mlength 8 / memeq64 end endmacro
-macro dmemlt8  let _a_ _b_ in _a_ _a_ mlength     _b_ _b_ mlength     memlt8  end endmacro
-macro dmemlt64 let _a_ _b_ in _a_ _a_ mlength 8 / _b_ _b_ mlength 8 / memlt64 end endmacro
+macro dmemlt8  dmemcmp8  is-neg  endmacro
+macro dmemeq8  dmemcmp8  is-zero endmacro
+macro dmemgt8  dmemcmp8  is-pos  endmacro
+
+macro dmemlt64 dmemcmp64 is-neg  endmacro
+macro dmemeq64 dmemcmp64 is-zero endmacro
+macro dmemgt64 dmemcmp64 is-pos  endmacro
+
