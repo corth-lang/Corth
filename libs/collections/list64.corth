@@ -34,6 +34,13 @@ macro list64.length
   list64.length-addr @64
 endmacro
 
+macro list64.end-addr let _list_ in
+  // ptr: list64 -- ptr: end-addr
+
+  // Return the address of array.length()th item of array.
+  _list_ list64.length _list_ list64.array-addr array64.get-addr
+end endmacro
+
 macro list64.capacity
   // ptr: list64 -- int: capacity
   // Capacity is the total amount of indexes available.
