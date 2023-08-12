@@ -15,6 +15,7 @@ include libs/collections/list64.corth
 include libs/collections/deque64.corth
 include libs/collections/queue64.corth
 include libs/collections/str_map64.corth
+include libs/collections/str_set8.corth
 
 include CorthCompiler/lexer.corth
 include CorthCompiler/debug.corth
@@ -1594,8 +1595,8 @@ proc compile-file
   ptr ptr ptr ptr
   // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
   ptr ptr ptr
-  // libraries-array ptr: libraries-length
-  ptr ptr 
+  // libraries-set
+  ptr 
   // file-desc: log-stream
   file-desc --
   
@@ -1609,22 +1610,17 @@ in let
   global-names-array global-sizes-array globals-length
   proc-names-array proc-inputs-array proc-outputs-array procs-length
   macro-names-array macro-tokens-array macros-length
-  libraries-array libraries-length
+  libraries-set
   log-stream
 in
   // Check if the library was included already.
-  source-name libraries-array libraries-array libraries-length @64 8 * + str-sorted8.available if
+  source-name libraries-set str-set8.add ! if
     // TODO: Use called-from to improve debugging.
     LOG.INFO log-stream fputs "Skipping library '" log-stream fputs source-name source-name mlength log-stream fputs "' because it was already included.\n" log-stream fputs
-    drop return
+    return
   end
   
   LOG.INFO log-stream fputs "Including library '" log-stream fputs source-name source-name mlength log-stream fputs "'.\n" log-stream fputs
-  let address in
-    address address 8 + libraries-length @64 address libraries-array - 8 / - memcpy64i
-    source-name address !64
-    libraries-length @inc64
-  end
 
   // Open the source file.
   source-name null-term8 fopen-r
@@ -1702,7 +1698,7 @@ in
                         global-names-array global-sizes-array globals-length
                         proc-names-array proc-inputs-array proc-outputs-array procs-length
                         macro-names-array macro-tokens-array macros-length
-                        libraries-array libraries-length
+                        libraries-set
                         log-stream compile-file
                         
                       else masked S_IFDIR = if
@@ -2115,20 +2111,26 @@ in let source-name output-name log-stream in
 
            data-definitions-list  sizeof(ptr)                        and
 
-           libraries-array        sizeof(int) LIBRARIES-MAX-COUNT ** and
-           libraries-length       sizeof(int)                        in
+           libraries-set          sizeof(ptr)                        in
 
       0 globals-length   !64
       0 procs-length     !64
       0 macros-length    !64
-      0 libraries-length !64
 
       16 list64.init let dynamic in
         dynamic is-null if
-          LOG.ERR log-stream fputs "Could not create a list dynamic object.\n" log-stream fputs
+          LOG.ERR log-stream fputs "Could not create a list dynamic object for data-definitions-list.\n" log-stream fputs
           ERROR-EXIT-CODE exit drop
         end
         dynamic data-definitions-list !64
+      end
+
+      16 list64.init let dynamic in
+        dynamic is-null if
+          LOG.ERR log-stream fputs "Could not create a list dynamic object for libraries-set.\n" log-stream fputs
+          ERROR-EXIT-CODE exit drop
+        end
+        dynamic libraries-set !64
       end
 
       source-name output-file
@@ -2136,7 +2138,7 @@ in let source-name output-name log-stream in
       global-names-array global-sizes-array globals-length
       proc-names-array proc-inputs-array proc-outputs-array procs-length
       macro-names-array macro-tokens-array macros-length
-      libraries-array libraries-length
+      libraries-set
       log-stream
       compile-file
 
