@@ -26,6 +26,24 @@ macro LOG.TODO  "\x1b[1;35m[TODO]\x1b[0;97m "    endmacro
 macro LOG.HERE  "\x1b[1;32m[HERE]\x1b[0;97m "    endmacro
 
 
+// This buffer can be used to easily write many spaces at once.
+// NOTE: Trying to write more than .-BUFFER-SIZE characters may cause problems.
+macro  SPACE-BUFFER-SIZE 256               endmacro
+memory space-buffer      SPACE-BUFFER-SIZE end
+
+macro  TILDE-BUFFER-SIZE 256               endmacro
+memory tilde-buffer      TILDE-BUFFER-SIZE end
+
+
+proc debug-init -- in
+  // Set up the space-buffer.
+  space-buffer SPACE-BUFFER-SIZE ' ' memset8
+  
+  // Set up the tilde-buffer.
+  tilde-buffer TILDE-BUFFER-SIZE '~' memset8
+end
+
+
 // TODO: Add fput-token
 
 proc generate-address
@@ -115,17 +133,6 @@ macro fputu-full let _value_ _file_ in
 
     _buffer_ 20 _file_ fputs
   end
-
-
-proc fputs-multiple
-  // int: times ptr: start int: length file-desc: file-desc
-  int ptr int file-desc --
-  // Prints a byte collection to a file stream multiple times.
-in let start length file in
-  while dup isn-zero do
-    start length file fputs
-  dec end drop
-end end
 end endmacro
 
 
@@ -165,21 +172,21 @@ in let address log-stream in
 
         start-line end-line = if
           start-line log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
-            "                      " log-stream fputs start-char " " log-stream fputs-multiple end-char start-char - "~" log-stream fputs-multiple log-stream fputnl
+            "                      " log-stream fputs space-buffer start-char log-stream fputs tilde-buffer end-char start-char - log-stream fputs log-stream fputnl
           end
         else
           start-line log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
-            "                      " log-stream fputs start-char " " log-stream fputs-multiple length start-char - "~" log-stream fputs-multiple log-stream fputnl
+            "                      " log-stream fputs space-buffer start-char log-stream fputs tilde-buffer length start-char - log-stream fputs log-stream fputnl
           end
 
           start-line inc while dup end-line < do let line-no in
             line-no log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
-              "                      " log-stream fputs length "~" log-stream fputs-multiple log-stream fputnl
+              "                      " log-stream fputs tilde-buffer length log-stream fputs log-stream fputnl
             end
           line-no end inc end drop
 
           end-line log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
-            "                      " log-stream fputs end-char "~" log-stream fputs-multiple log-stream fputnl
+            "                      " log-stream fputs tilde-buffer end-char log-stream fputs log-stream fputnl
           end
         end
 
