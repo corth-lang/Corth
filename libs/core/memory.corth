@@ -18,88 +18,62 @@ macro is-null  NULLPTR =  endmacro
 macro isn-null NULLPTR != endmacro
 
 
-proc memeq8
-  // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: a==b
-  ptr int ptr int -- bool
-  // Compares two staticly-placed collections.
-  // Result is true if and only if for every integer i in [0, len(a)), a[i] == b[i].
+proc memcmp8
+  // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: cmp(a, b)
+  ptr int ptr int -- int
+  // Returns -1 if a<b.
+  // Returns  0 if a=b.
+  // Returns +1 if a>b.
 in let a-start a-length b-start b-length in
-  a-length b-length != if
-    false return
+  a-length b-length min2 let compare-length in
+    0 while dup compare-length < do let item-addr in
+      // Get a[i] and b[i].
+      a-start item-addr + @8 b-start item-addr + @8 let a-item b-item in
+        // If a[i]<b[i], return -1.
+        a-item b-item < if 0xffffffffffffffff return end
+
+        // If a[i]>b[i], return 1.
+        b-item a-item < if 1 return end
+      end
+    item-addr end inc end drop
   end
 
-  0 while dup a-length < do let i in
-    a-start i + @8 b-start i + @8 let ai bi in
-      ai bi != if
-        false return
-      end
-    end
-  i end inc end drop
-end true end
+  // Compare the lengths.
+  a-length b-length cmp
+end end
 
-
-proc memeq64
-  // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: a==b
-  ptr int ptr int -- bool
-  // Compares two staticly-placed collections.
-  // Result is true if and only if for every integer i in [0, len(a)), a[i] == b[i].
+proc memcmp64
+  // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: cmp(a, b)
+  ptr int ptr int -- int
+  // Returns -1 if a<b.
+  // Returns  0 if a=b.
+  // Returns +1 if a>b.
 in let a-start a-length b-start b-length in
-  a-length b-length != if
-    false return
+  a-length b-length min2 8 * let compare-length in
+    0 while dup compare-length < do let item-addr in
+      // Get a[i] and b[i].
+      a-start item-addr + @64 b-start item-addr + @64 let a-item b-item in
+        // If a[i]<b[i], return -1.
+        a-item b-item < if 0xffffffffffffffff return end
+
+        // If a[i]>b[i], return 1.
+        b-item a-item < if 1 return end
+      end
+    item-addr end 8 + end drop
   end
 
-  0 while dup a-length < do let i in
-    a-start i 8 * + @64 b-start i 8 * + @64 let ai bi in
-      ai bi != if
-        false return
-      end
-    end
-  i end inc end drop
-end true end
-
-
-proc memlt8
-  // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: a<b
-  ptr int ptr int -- bool
-  // Compares two staticly-placed collections.  
-  // Result is true if and only if there is an integer i in [0, len(a)), a[i] < b[i] and for every integer j in [0, i), a[i] == b[i].
-in let a-start a-length b-start b-length in
-  0 while dup a-length b-length min2 < do let i in
-    a-start i + @8 b-start i + @8 let ai bi in
-      ai bi > if
-        false return
-      end
-
-      ai bi < if
-        true return
-      end
-    end
-  i end inc end drop
-  
-  a-length b-length <
+  // Compare the lengths.
+  a-length b-length cmp
 end end
 
 
-proc memlt64
-  // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: a<b
-  ptr int ptr int -- bool
-  // Compares two staticly-placed collections.  
-  // Result is true if and only if there is an integer i in [0, len(a)), a[i] < b[i] and for every integer j in [0, i), a[i] == b[i].
-in let a-start a-length b-start b-length in
-  0 while dup a-length b-length min2 < do let i in
-    a-start i 8 * + @64 b-start i 8 * + @64 let ai bi in
-      ai bi > if
-        false return
-      end
+macro memlt8  memcmp8  is-neg  endmacro
+macro memeq8  memcmp8  is-zero endmacro
+macro memgt8  memcmp8  is-pos  endmacro
 
-      ai bi < if
-        true return
-      end
-    end
-  i end inc end drop
-  
-  a-length b-length <
-end end
+macro memlt64 memcmp64 is-neg  endmacro
+macro memeq64 memcmp64 is-zero endmacro
+macro memgt64 memcmp64 is-pos  endmacro
 
 
 proc memset8
