@@ -3,8 +3,10 @@ include libs/core/stack.corth
 include libs/core/integer.corth
 
 
-// TODO: These should be implemented back using INTRINSICs later.
-// -- UNIMPLEMENTED INTRINSICS --
+// TODO: Some of these macros should be implemented back as intrinsics later.
+
+
+// -------------------------------------------------------------
 
 // int: x int: y -- bool: cmp(x, y)
 // fixed64: x fixed64: y -- bool: cmp(x, y)
@@ -14,19 +16,6 @@ macro >  swp < endmacro
 macro <= > !   endmacro
 macro >= < !   endmacro
 macro =  != !  endmacro
-
-// Return -1 if a<b.
-// Return  0 if a=b.
-// Return +1 if a>b.
-macro cmp let _a_ _b_ in
-  _a_ _b_ < if
-    0xffffffffffffffff
-  else _b_ _a_ < if
-    1
-  else
-    0
-  end end
-end endmacro
 
 // uint: x uint: y -- bool: cmp(x, y)
 // ufixed64: x ufixed64: y -- bool: cmp(x, y)
@@ -39,8 +28,28 @@ macro u>= MIN-INT + swp MIN-INT + swp < ! endmacro
 macro u=  =                               endmacro
 macro u!= !=                              endmacro
 
+
+// -------------------------------------------------------------
+
+// int: x int: y -- int: cmp(x, y)
+// fixed64: x fixed64: y -- int: cmp(x, y)
+
+// Returns -1 if a<b.
+// Returns  0 if a=b.
+// Returns +1 if a>b.
+macro cmp let _a_ _b_ in
+  _a_ _b_ < if 0xffffffffffffffff else _b_ _a_ < if 1 else 0 end end
+end endmacro
+
+
+// -------------------------------------------------------------
+
 // int: x int: y -- int: op(x, y)
 // uint: x uint: y -- uint: op(x, y)
+
+macro -   neg + endmacro
+macro ^^  let _a_ _b_ in _a_ !! _b_ !! || !! _a_ _b_ || !! || !!  end endmacro
+macro &&  let _a_ _b_ in _a_ !! _b_ !! || !! end endmacro
 macro *   **  let _*2_ _*1_ in _*1_ end endmacro
 macro *2  **  let _*2_ _*1_ in _*2_ end endmacro
 macro u*  u** let _*2_ _*1_ in _*1_ end endmacro
@@ -49,27 +58,30 @@ macro /   /%  let _/_ _%_ in _/_ end endmacro
 macro %   /%  let _/_ _%_ in _%_ end endmacro
 macro u/  u/% let _/_ _%_ in _/_ end endmacro
 macro u%  u/% let _/_ _%_ in _%_ end endmacro
-macro ^^ let _a_ _b_ in _a_ !! _b_ !! || !! _a_ _b_ || !! || !!  end endmacro
-macro && let _a_ _b_ in _a_ !! _b_ !! || !! end endmacro
-macro - neg + endmacro
 
-// -- UNIMPLEMENTED INTRINSICS --
 
+// -------------------------------------------------------------
 
 // int: x -- bool: f(x)
 // fixed64: x -- bool: f(x)
-macro is-pos   0 >         endmacro
-macro is-zero  0 =         endmacro
-macro is-neg   0 <         endmacro
-macro isn-pos  0 <=        endmacro
-macro isn-zero 0 !=        endmacro
-macro isn-neg  0 >=        endmacro
+macro is-pos   0 >   endmacro
+macro is-zero  0 =   endmacro
+macro is-neg   0 <   endmacro
+macro isn-pos  0 <=  endmacro
+macro isn-zero 0 !=  endmacro
+macro isn-neg  0 >=  endmacro
 
+
+// -------------------------------------------------------------
 
 // int: x -- bool: f(x)
+// uint: x -- bool: f(x)
+
 macro is-even 2 % is-zero  endmacro
 macro is-odd  2 % isn-zero endmacro
 
+
+// -------------------------------------------------------------
 
 // int: x -- int: f(x)
 // fixed64: x -- fixed64: f(x)
@@ -80,172 +92,176 @@ macro abs    dup is-neg if neg end endmacro
 macro iabs   dup is-pos if neg end endmacro
 
 
-// int: x -- int: f(x)
-macro sqr    dup *                 endmacro
-macro usqr   dup u*                endmacro
+// -------------------------------------------------------------
 
+// int: x -- int: f(x)
+
+// Returns the square of the number.
+macro sqr dup * endmacro
+
+
+// -------------------------------------------------------------
+
+// uint: x -- uint: f(x)
+
+// Returns the square of the number.
+macro usqr dup u* endmacro
+
+
+// -------------------------------------------------------------
+
+// int: x -- int: f(x)
+// uint: x -- uint: f(x)
+
+// Returns the decimal ASCII character match of the number. (0 <= number <= 9)
 macro int-to-ddigit '0' + endmacro
+
+// Returns the number match of the decimal ASCII character. ('0' <= number <= '9')
 macro ddigit-to-int '0' - endmacro
 
+// Returns the hexadecimal ASCII character match of the number. (0 <= number <= 15)
 macro int-to-xdigit dup 9 > if 'W' else '0' end + endmacro
 
-macro is-range  let _a_ _b_ _c_ in _a_ _b_ < if false else _c_ _a_ < ! end end endmacro // int: x int: min int: max -- bool:  (x in [min, max])
-macro isn-range let _a_ _b_ _c_ in _a_ _b_ < if true  else _c_ _a_ <   end end endmacro // int: x int: min int: max -- bool: !(x in [min, max])
 
-macro avg2 +   2 / endmacro // int: x int: y -- int: (x+y)/2
-macro avg3 + + 3 / endmacro // int: x int: y -- int: (xx+y+z)/3
+// -------------------------------------------------------------
+
+// int: x int: y -- int: (x+y)/2
+// fixed64: x fixed64: y -- fixed64: (x+y)/2
+
+// Returns the arithmetical average of the 3 numbers.
+macro avg2 +   2 / endmacro
 
 
-  // int: x int: b -- int: lower-base(x, b)
-  // fixed64: x fixed64: b -- fixed64: lower-base(x, b)
-  
-  // Returns the largest number that is less than or equal to x and is divisible by b.
-  // lower-base(x, b) = x - (x % b)
-macro lower-base 
-  let _x_ _base_ in
-    _x_ _x_ _base_ % -
+// -------------------------------------------------------------
+
+// int: x int: y int: z -- int: (x+y+z)/3
+// fixed: x fixed: y fixed: z -- fixed: (x+y+z)/3
+
+// Returns the arithmetical average of the 3 numbers.
+macro avg3 + + 3 / endmacro
+
+// -------------------------------------------------------------
+
+// int: x int: a int: b -- bool: contain(x, [a, b])
+
+// Returns true if x is in the range of [a, b].
+macro is-range  let _x_ _a_ _b_ in _x_ _a_ < if false else _b_ _x_ < ! end end endmacro
+
+// Returns true if x is NOT in the range of [a, b].
+macro isn-range let _x_ _a_ _b_ in _x_ _a_ < if true  else _b_ _x_ <   end end endmacro
+
+
+// -------------------------------------------------------------
+
+// int: x int: b -- int: base(x, b)
+// fixed64: x fixed64: b -- fixed64: base(x, b)
+
+// Returns the largest number that is less than or equal to x and is divisible by b.
+// lower-base(x, b) = x - (x % b)
+macro lower-base let _x_ _base_ in
+  _x_ _x_ _base_ % -
+end endmacro
+
+// Returns the smallest number that is greater than x and is divisible by b.
+// upper-base(x, b) = x + ((-x) % b)
+// upper-base(x, b) = lower-base(x, b) + b
+macro upper-base let _x_ _base_ in
+  _x_ _x_ neg _base_ % +
+end endmacro
+
+
+// -------------------------------------------------------------
+
+// int: x int: y -- int: min(x, y)
+// fixed64: x fixed64: y -- fixed64: min/max(x, y)
+
+// Returns the minimum of the two numbers.
+macro min2 let _a_ _b_ in
+  _a_ _b_ < if _a_ else _b_ end
+end endmacro
+
+// Returns the maximum of the two numbers.
+macro max2 let _a_ _b_ in
+  _a_ _b_ < if _b_ else _a_ end
+end endmacro
+
+
+// -------------------------------------------------------------
+
+// int: x int: y int: z -- int: min(x, y, z)
+// fixed64: x fixed64: y fixed64: z -- fixed64: min/max(x, y, z)
+
+// Returns the maximum of the three numbers.
+macro max3 let _a_ _b_ _c_ in
+  _a_ _b_ < if
+    _b_ _c_ < if _c_ else _b_ end
+  else
+    _a_ _c_ < if _c_ else _a_ end
   end
-endmacro
+end endmacro
 
-
-macro upper-base
-  // int: x int: b -- int: upper-base(x, b)
-  // fixed64: x fixed64: b -- fixed64: lower-base(x, b)
-  
-  // Returns the smallest number that is greater than x and is divisible by b.
-  // upper-base(x, b) = x + ((-x) % b)
-  // upper-base(x, b) = lower-base(x, b) + b
-  let _x_ _base_ in
-    _x_ _x_ neg _base_ % +
+// Returns the minimum of the three numbers.
+macro min3 let _a_ _b_ _c_ in
+  _a_ _b_ < if
+    _a_ _c_ < if _a_ else _c_ end
+  else
+    _b_ _c_ < if _b_ else _c_ end
   end
-endmacro
+end endmacro
 
 
-macro min2
-  // int: x int: y -- int: min(x, y)
-  // fixed64: x fixed64: y -- fixed64: min(x, y)
-  
-  // Returns the minimum of the two numbers.
-  let _a_ _b_ in
-    _a_ _b_ < if _a_ else _b_ end
-  end
-endmacro
+// -------------------------------------------------------------
 
+// int: x int: min int: max -- int: clipped
+// fixed64: x fixed64: min fixed64: max -- fixed64: clipped
 
-macro min3
-  // int: x int: y int: z -- int: min(x, y, z)
-  // fixed64: x fixed64: y fixed64: z -- fixed64: min(x, y, z)
-  
-  // Returns the minimum of the three numbers.
-  let _a_ _b_ _c_ in
-    _a_ _b_ < if
-      _a_ _c_ < if _a_ else _c_ end
+// Returns x if it is in the range [min, max]. If it is less, returns min and if it is higher, returns max.
+macro clip let _x_ _min_ _max_ in
+  _x_ _min_ < if
+    _min_
+  else
+    _max_ _x_ < if
+      _max_
     else
-      _b_ _c_ < if _b_ else _c_ end
+      _x_
     end
   end
-endmacro
+end endmacro
 
 
-macro max2
-  // int: x int: y -- int: min(x, y)
-  // fixed64: x fixed64: y -- fixed64: max(x, y)
-  
-  // Returns the maximum of the two numbers.
-  let _a_ _b_ in
-    _a_ _b_ < if _b_ else _a_ end
+// -------------------------------------------------------------
+
+// int: x int: y -- int: min(x, y) int: max(x, y)
+// fixed64: x fixed64: y -- fixed64: min(x, y) fixed64: max(x, y)
+
+// Sorts two numbers in the stack.
+macro sort2 let _a_ _b_ in
+  _a_ _b_ < if
+    _a_ _b_
+  else
+    _b_ _a_
   end
-endmacro
+end endmacro
 
 
-macro max3
-  // int: x int: y int: z -- int: min(x, y, z)
-  // fixed64: x fixed64: y fixed64: z -- fixed64: max(x, y, z)
-  
-  // Returns the maximum of the three numbers.
-  let _a_ _b_ _c_ in
-    _a_ _b_ < if
-      _b_ _c_ < if _c_ else _b_ end
+// -------------------------------------------------------------
+
+// int: x int: y int: z -- int: min(x, y, z) int: mid(x, y, z) int: max(x, y, z)
+// fixed64: x fixed64: y fixed64: z -- fixed64: min(x, y, z) fixed64: mid(x, y, z) fixed64: max(x, y, z)
+
+// Sorts three numbers in the stack.
+macro sort3 let _a_ _b_ _c_ in
+  _a_ _b_ < if
+    _a_ _c_ < if
+      _a_ _b_ _c_ < if _b_ _c_ else _c_ _b_ end
     else
-      _a_ _c_ < if _c_ else _a_ end
+      _c_ _a_ _b_
+    end
+  else
+    _a_ _c_ < if
+      _b_ _a_ _c_
+    else
+      _b_ _c_ < if _b_ _c_ else _c_ _b_ end _a_
     end
   end
-endmacro
-
-
-macro clip
-  // int: x int: min int: max -- int: clipped
-  // fixed64: x fixed64: min fixed64: max -- fixed64: clipped
-  
-  // Returns x if it is in the range [min, max]. If it is less, returns min and if it is higher, returns max.
-  let _x_ _min_ _max_ in
-    _x_ _min_ < if
-      _min_
-    else
-      _max_ _x_ < if
-        _max_
-      else
-        _x_
-      end
-    end
-  end
-endmacro
-
-
-macro sort2
-  // int: x int: y -- int: min(x, y) int: max(x, y)
-  // fixed64: x fixed64: y -- fixed64: min(x, y) fixed64: max(x, y)
-
-  // Sorts two numbers in stack.
-  // First element is the least and the last is the most.
-  let _a_ _b_ in
-    _a_ _b_ < if
-      _a_ _b_
-    else
-      _b_ _a_
-    end
-  end
-endmacro
-
-
-macro sort3
-  // int: x int: y int: z -- int: min(x, y, z) int: mid(x, y, z) int: max(x, y, z)
-  // fixed64: x fixed64: y fixed64: z -- fixed64: min(x, y, z) fixed64: mid(x, y, z) fixed64: max(x, y, z)
-  
-  // Sorts three numbers in stack.
-  // First element is the least and the last is the greatest
-  let _a_ _b_ _c_ in
-    _a_ _b_ < if
-      // x < y
-      _a_ _c_ < if
-        // x < z
-        _a_
-        _b_ _c_ < if
-          // y < z
-          _b_ _c_
-        else
-          // z < y
-          _c_ _b_
-        end
-      else
-        // z < x
-        _c_ _a_ _b_
-      end
-    else
-      // y < x
-      _a_ _c_ < if
-        // x < z
-        _b_ _a_ _c_
-      else
-        // z < x
-        _b_ _c_ < if
-          // y < z
-          _b_ _c_
-        else
-          // z < y
-          _c_ _b_
-        end _a_
-      end
-    end
-  end
-endmacro
+end endmacro
