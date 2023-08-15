@@ -164,7 +164,6 @@ in let
 
             file-name start-line start-char start-at line-no @64 char-no @64 file ftell log-stream generate-address let address in
               memory number sizeof(int) in
-                // TODO: There is something wrong with this code.
                 buffer buffer-end @64 buffer - number convint ! if
                   LOG.ERR log-stream fputs "Could not convert integer.\n" log-stream fputs
                   address log-stream fput-here
