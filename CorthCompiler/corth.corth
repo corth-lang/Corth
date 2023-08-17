@@ -1386,8 +1386,6 @@ in
                         
                       else memory-end-arg KEYWORD-IN = if
                         // TODO: Check if the new-names queue is full.
-                        // -- DEBUG --
-                        // memory-size-arg log-stream fputu log-stream fputnl
 
                         memory-name-arg new-names new-names-length queue64.append
                         memory-name-arg local-memory-end @64 local-names local-addresses locals-length str-map64.set if
