@@ -9,7 +9,7 @@ macro fwrite SYSWRITE syscall3 endmacro
 macro drop let _ in end endmacro
 */
 
-include libs/linux_x86/io.corth
+include libs/linux_x86/stdio.corth
 
 
 proc hello
