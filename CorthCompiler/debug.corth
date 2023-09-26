@@ -213,6 +213,4 @@ proc report-bug
 in let log-stream in
   LOG.ERR log-stream fputs "This should have been impossible to reach.\n" log-stream fputs
   LOG.INFO log-stream fputs "This is probably caused by a bug in the compiler.\n" log-stream fputs
-  LOG.INFO log-stream fputs "Malloc segments: \n" log-stream fputs
-  log-stream debug-dynamic-memory
 end end
