@@ -1,5 +1,7 @@
 include libs/linux_x86/io/
 
+include CorthCompiler/debug.corth
+
 // TODO: Change these arrays with vectors.
 macro GLOBALS-MAX-COUNT   0x4000    endmacro
 macro MACROS-MAX-COUNT    0x4000    endmacro
@@ -207,3 +209,28 @@ macro fput-intrinsic let intrinsic file in
 
   intrinsic get-intrinsic-name file fputs
 end endmacro
+
+proc fput-token
+  // int: token-type ptr: token-address [int|ptr]: token-arg file-desc: file-desc
+  int ptr int file-desc --
+in let token-type token-addr token-arg file_ in
+  "( [" file_ fputs token-addr file_ fput-address "] " file_ fputs token-type file_ fput-type " '" file_ fputs
+
+  token-type TYPE-NAME = if
+    token-arg token-arg mlength file_ fputs
+  else token-type TYPE-INTEGER = if
+    token-arg file_ fputi
+  else token-type TYPE-KEYWORD = if
+    token-arg file_ fput-keyword
+  else token-type TYPE-INTRINSIC = if
+    token-arg file_ fput-intrinsic
+  else token-type TYPE-STRING = if
+    token-arg token-arg mlength file_ fputs
+  else token-type TYPE-TYPE = if
+    token-arg file_ fputi
+  else
+    token-arg file_ fputi
+  end end end end end end
+
+  "' )" file_ fputs
+end end

@@ -3,8 +3,6 @@ include libs/dynamic/utils.corth
 include libs/linux_x86/io/
 include libs/core/
 
-include CorthCompiler/enums.corth
-
 macro sizeof(address) 56 endmacro
 
 macro ADDR.FILE  0  endmacro
