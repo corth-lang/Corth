@@ -764,7 +764,7 @@ in
           end
 
           // TODO: Change this to GLOBAL ADDRESS DATA
-          "    mov     rax, data_" output-file fputs data-definitions-list list64.length @64 output-file fputu output-file fputnl
+          "    mov     rax, data_" output-file fputs data-definitions-list list64.length output-file fputu output-file fputnl
           "    push    rax\n" output-file fputs
           
           create-int local-stack local-stack-length queue64.append
