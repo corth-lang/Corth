@@ -125,66 +125,85 @@ macro TYPE-BOOL 2 endmacro
 macro TYPE-INT-STR  "int"  endmacro
 macro TYPE-BOOL-STR "bool" endmacro
 
-proc fput-type
-  // int: type file-desc: file-desc
-  int file-desc --
-  // Prints a type.
-in let type file in
-       type TYPE-NAME      = if TYPE-NAME-STR      file fputs
-  else type TYPE-INTEGER   = if TYPE-INTEGER-STR   file fputs
-  else type TYPE-KEYWORD   = if TYPE-KEYWORD-STR   file fputs
-  else type TYPE-INTRINSIC = if TYPE-INTRINSIC-STR file fputs
-  else type TYPE-STRING    = if TYPE-STRING-STR    file fputs
-  else type TYPE-TYPE      = if TYPE-TYPE-STR      file fputs
-  else                          TYPE-UNKNOWN-STR   file fputs
+proc get-type-name
+  // int: type -- ptr: type-name-ptr int: type-name-length
+  int -- ptr int
+in let type in
+       type TYPE-NAME      = if TYPE-NAME-STR      
+  else type TYPE-INTEGER   = if TYPE-INTEGER-STR   
+  else type TYPE-KEYWORD   = if TYPE-KEYWORD-STR   
+  else type TYPE-INTRINSIC = if TYPE-INTRINSIC-STR 
+  else type TYPE-STRING    = if TYPE-STRING-STR    
+  else type TYPE-TYPE      = if TYPE-TYPE-STR      
+  else                          TYPE-UNKNOWN-STR   
   end end end end end end
 end end
 
-proc fput-keyword
+proc get-keyword-name
+  // int: keyword -- ptr: type-keyword-ptr int: type-keyword-length
+  int -- ptr int
+in let keyword in
+       keyword KEYWORD-INCLUDE  = if KEYWORD-INCLUDE-STR  
+  else keyword KEYWORD-MACRO    = if KEYWORD-MACRO-STR    
+  else keyword KEYWORD-ENDMACRO = if KEYWORD-ENDMACRO-STR 
+  else keyword KEYWORD-PROC     = if KEYWORD-PROC-STR     
+  else keyword KEYWORD-END      = if KEYWORD-END-STR      
+  else keyword KEYWORD-RETURN   = if KEYWORD-RETURN-STR   
+  else keyword KEYWORD-RETURNS  = if KEYWORD-RETURNS-STR  
+  else keyword KEYWORD-MEMORY   = if KEYWORD-MEMORY-STR   
+  else keyword KEYWORD-AND      = if KEYWORD-AND-STR      
+  else keyword KEYWORD-IN       = if KEYWORD-IN-STR       
+  else keyword KEYWORD-LET      = if KEYWORD-LET-STR      
+  else keyword KEYWORD-IF       = if KEYWORD-IF-STR       
+  else keyword KEYWORD-ELSE     = if KEYWORD-ELSE-STR     
+  else keyword KEYWORD-WHILE    = if KEYWORD-WHILE-STR    
+  else keyword KEYWORD-DO       = if KEYWORD-DO-STR       
+  else keyword KEYWORD-BREAK    = if KEYWORD-BREAK-STR    
+  else                               KEYWORD-UNKNOWN-STR  
+  end end end end end end end end end end end end end end end end
+end end
+
+proc get-intrinsic-name
+  // int: intrinsic -- ptr: type-intrinsic-ptr int: type-intrinsic-length
+  int -- ptr int
+in let intrinsic in
+       intrinsic INTRINSIC-ADD      = if INTRINSIC-ADD-STR      
+  else intrinsic INTRINSIC-FULLMUL  = if INTRINSIC-FULLMUL-STR  
+  else intrinsic INTRINSIC-DIVMOD   = if INTRINSIC-DIVMOD-STR   
+  else intrinsic INTRINSIC-UFULLMUL = if INTRINSIC-UFULLMUL-STR 
+  else intrinsic INTRINSIC-UDIVMOD  = if INTRINSIC-UDIVMOD-STR  
+  else intrinsic INTRINSIC-BOR      = if INTRINSIC-BOR-STR      
+  else intrinsic INTRINSIC-BNOT     = if INTRINSIC-BNOT-STR     
+  else intrinsic INTRINSIC-NOTEQUAL = if INTRINSIC-NOTEQUAL-STR 
+  else intrinsic INTRINSIC-LESS     = if INTRINSIC-LESS-STR     
+  else intrinsic INTRINSIC-TRUE     = if INTRINSIC-TRUE-STR     
+  else intrinsic INTRINSIC-FALSE    = if INTRINSIC-FALSE-STR    
+  else intrinsic INTRINSIC-LOAD8    = if INTRINSIC-LOAD8-STR    
+  else intrinsic INTRINSIC-STORE8   = if INTRINSIC-STORE8-STR   
+  else intrinsic INTRINSIC-LOAD64   = if INTRINSIC-LOAD64-STR   
+  else intrinsic INTRINSIC-STORE64  = if INTRINSIC-STORE64-STR  
+  else intrinsic INTRINSIC-SYSCALL6 = if INTRINSIC-SYSCALL6-STR 
+  else                                   INTRINSIC-UNKNOWN-STR  
+  end end end end end end end end end end end end end end end end
+end end
+
+macro fput-type let type file in
+  // int: type file-desc: file-desc
+  // Prints a type.
+  
+  type get-type-name file fputs
+end endmacro
+
+macro fput-keyword let keyword file in
   // int: keyword file-desc: file-desc
-  int file-desc --
-in let keyword file in
-       keyword KEYWORD-INCLUDE  = if KEYWORD-INCLUDE-STR  file fputs
-  else keyword KEYWORD-MACRO    = if KEYWORD-MACRO-STR    file fputs
-  else keyword KEYWORD-ENDMACRO = if KEYWORD-ENDMACRO-STR file fputs
-  else keyword KEYWORD-PROC     = if KEYWORD-PROC-STR     file fputs
-  else keyword KEYWORD-END      = if KEYWORD-END-STR      file fputs
-  else keyword KEYWORD-RETURN   = if KEYWORD-RETURN-STR   file fputs
-  else keyword KEYWORD-RETURNS  = if KEYWORD-RETURNS-STR  file fputs
-  else keyword KEYWORD-MEMORY   = if KEYWORD-MEMORY-STR   file fputs
-  else keyword KEYWORD-AND      = if KEYWORD-AND-STR      file fputs
-  else keyword KEYWORD-IN       = if KEYWORD-IN-STR       file fputs
-  else keyword KEYWORD-LET      = if KEYWORD-LET-STR      file fputs
-  else keyword KEYWORD-IF       = if KEYWORD-IF-STR       file fputs
-  else keyword KEYWORD-ELSE     = if KEYWORD-ELSE-STR     file fputs
-  else keyword KEYWORD-WHILE    = if KEYWORD-WHILE-STR    file fputs
-  else keyword KEYWORD-DO       = if KEYWORD-DO-STR       file fputs
-  else keyword KEYWORD-BREAK    = if KEYWORD-BREAK-STR    file fputs
-  else                               KEYWORD-UNKNOWN-STR  file fputs
-  end end end end end end end end end end end end end end end end end
-end
+  // Prints a keyword.
+  
+  keyword get-keyword-name file fputs
+end endmacro
 
-proc fput-intrinsic
+macro fput-intrinsic let intrinsic file in
   // int: intrinsic file-desc: file-desc
-  int file-desc --
-in let intrinsic file in
-       intrinsic INTRINSIC-ADD      = if INTRINSIC-ADD-STR      file fputs
-  else intrinsic INTRINSIC-FULLMUL  = if INTRINSIC-FULLMUL-STR  file fputs
-  else intrinsic INTRINSIC-DIVMOD   = if INTRINSIC-DIVMOD-STR   file fputs
-  else intrinsic INTRINSIC-UFULLMUL = if INTRINSIC-UFULLMUL-STR file fputs
-  else intrinsic INTRINSIC-UDIVMOD  = if INTRINSIC-UDIVMOD-STR  file fputs
-  else intrinsic INTRINSIC-BOR      = if INTRINSIC-BOR-STR      file fputs
-  else intrinsic INTRINSIC-BNOT     = if INTRINSIC-BNOT-STR     file fputs
-  else intrinsic INTRINSIC-NOTEQUAL = if INTRINSIC-NOTEQUAL-STR file fputs
-  else intrinsic INTRINSIC-LESS     = if INTRINSIC-LESS-STR     file fputs
-  else intrinsic INTRINSIC-TRUE     = if INTRINSIC-TRUE-STR     file fputs
-  else intrinsic INTRINSIC-FALSE    = if INTRINSIC-FALSE-STR    file fputs
-  else intrinsic INTRINSIC-LOAD8    = if INTRINSIC-LOAD8-STR    file fputs
-  else intrinsic INTRINSIC-STORE8   = if INTRINSIC-STORE8-STR   file fputs
-  else intrinsic INTRINSIC-LOAD64   = if INTRINSIC-LOAD64-STR   file fputs
-  else intrinsic INTRINSIC-STORE64  = if INTRINSIC-STORE64-STR  file fputs
-  else intrinsic INTRINSIC-SYSCALL6 = if INTRINSIC-SYSCALL6-STR file fputs
-  else                                   INTRINSIC-UNKNOWN-STR  file fputs
-  end end end end end end end end end end end end end end end end end 
-end
+  // Prints an intrinsic.
 
+  intrinsic get-intrinsic-name file fputs
+end endmacro
