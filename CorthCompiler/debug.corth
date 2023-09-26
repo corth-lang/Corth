@@ -122,7 +122,7 @@ macro fputu-full let _value_ _file_ in
 
   memory _buffer_ 20 in
     _buffer_ _value_ intconvud let _buffer_start_ in
-      ' ' _buffer_ _buffer_start_ _buffer_ - memset8
+      _buffer_ _buffer_start_ _buffer_ - ' ' memset8
     end
 
     _buffer_ 20 _file_ fputs
