@@ -143,8 +143,8 @@ in let
       extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.pop-first
       
     else
-      memory buffer     TOKEN-MAX-LENGTH and
-             buffer-end sizeof(int)      in
+      memory buffer     TOKEN-MAX-LENGTH in
+      memory buffer-end sizeof(int)      in
 
         file line-no char-no strip-file if
           TYPE-UNKNOWN NULLPTR 0 false return
@@ -260,7 +260,7 @@ in let
             file-name file start-line start-char start-at line-no char-no buffer buffer-end log-stream create-name-token
           end end end end
         end
-      end
+      end end
     end
 
     extend-macros is-zero if
@@ -693,29 +693,29 @@ in
     
   "proc_" output-file fputs procedure-name procedure-name mlength output-file fputs ":\n" output-file fputs
 
-  memory levels-list      sizeof(ptr)                     and
+  memory levels-list      sizeof(ptr)                     in
 
          // level-id-counter allows to create unique IDs for level labels.
-         level-id-counter sizeof(int)                     and
+  memory level-id-counter sizeof(int)                     in
 
          // let-names, let-addresses and let-vars-length create a str_map64.
-         let-names        sizeof(ptr) LET-MAX-COUNT **    and
-         let-addresses    sizeof(ptr) LET-MAX-COUNT **    and
-         let-vars-length  sizeof(int)                     and
+  memory let-names        sizeof(ptr) LET-MAX-COUNT **    in
+  memory let-addresses    sizeof(ptr) LET-MAX-COUNT **    in
+  memory let-vars-length  sizeof(int)                     in
          
          // local-names, local-addresses and locals-length create a str_map64.
-         local-names      sizeof(ptr) LOCALS-MAX-COUNT ** and
-         local-addresses  sizeof(ptr) LOCALS-MAX-COUNT ** and
-         locals-length    sizeof(int)                     and
+  memory local-names      sizeof(ptr) LOCALS-MAX-COUNT ** in
+  memory local-addresses  sizeof(ptr) LOCALS-MAX-COUNT ** in
+  memory locals-length    sizeof(int)                     in
 
          // local-memory-end keeps track of the first available position on the local memory.
-         local-memory-end sizeof(int)                     and
+  memory local-memory-end sizeof(int)                     in
 
          // local-memory-max keeps track of the maximum length of the local memory, to later allocate enough space.
-         local-memory-max sizeof(int)                     and
+  memory local-memory-max sizeof(int)                     in
 
          // branch-active keeps track of if the branch of the code ended.
-         branch-active    1                               in
+  memory branch-active    1                               in
 
     16 list64.init let dynamic in
       dynamic is-null if
@@ -812,8 +812,8 @@ in
             
             let name-address in name-address proc-names-array - let delta in
               delta proc-inputs-array + delta proc-outputs-array + let input-address output-address in
-                memory input-length  sizeof(int) and
-                       output-length sizeof(int) in
+                memory input-length  sizeof(int) in
+                memory output-length sizeof(int) in
 
                   input-address  @64 mlength 8 / input-length  !64
                   output-address @64 mlength 8 / output-length !64
@@ -851,6 +851,7 @@ in
 
                   // TODO: This system must be changed.
                   0 while dup output-length @64 < do
+                    token-arg token-arg mlength log-stream fputs " " log-stream fputs dup 8 * output-address + @64 mlength log-stream fputu log-stream fputnl
                     dup 8 * output-address + @64 @64 let output in
                       output TYPE-INT = if
                         create-int local-stack local-stack-length queue64.append
@@ -864,7 +865,7 @@ in
                       end end
                     end
                   inc end drop
-                end
+                end end
               end
             end end
             
@@ -1311,8 +1312,8 @@ in
             end
 
             // New names are stored in new-names and new-names-length queue. When the 'end' of 'memory' is reached, new names are deleted from the namespace.
-            memory new-names        sizeof(ptr) VARS-MAX-ONCE ** and
-                   new-names-length sizeof(int)                  in
+            memory new-names        sizeof(ptr) VARS-MAX-ONCE ** in
+            memory new-names-length sizeof(int)                  in
 
               0 new-names-length !64
 
@@ -1421,7 +1422,7 @@ in
 
                 obj levels-list list64.append
               end
-            end
+            end end
 
           else token-arg KEYWORD-LET = if
             // -------- Keyword 'let' --------
@@ -1442,8 +1443,8 @@ in
 
             // New names are stored in new-names and new-names-length queue. When the 'end' of 'let' is reached, new names are deleted from the namespace.
             // TODO: Convert new-names and new-names-length to a vector, so that it can have infinite storage.
-            memory new-names        sizeof(ptr) VARS-MAX-ONCE ** and
-                   new-names-length sizeof(int)                  in
+            memory new-names        sizeof(ptr) VARS-MAX-ONCE ** in
+            memory new-names-length sizeof(int)                  in
 
               0 new-names-length !64
 
@@ -1544,7 +1545,7 @@ in
 
                 obj levels-list list64.append
               end
-            end
+            end end
             
           else token-arg KEYWORD-RETURN = if
             // -------- Keyword 'return' --------
@@ -1577,7 +1578,7 @@ in
         end end end end end
       end
     end
-  end
+  end end end end end end end end end end end
 end 0 end // dummy return
 
 
@@ -1629,12 +1630,12 @@ in
       ERROR-EXIT-CODE exit drop
     end
 
-    memory extended-array  sizeof(int) EXTENDED-MAX-LENGTH ** and
-           extended-start  sizeof(int)                        and
-           extended-end    sizeof(int)                        and
+    memory extended-array  sizeof(int) EXTENDED-MAX-LENGTH ** in
+    memory extended-start  sizeof(int)                        in
+    memory extended-end    sizeof(int)                        in
            
-           line-no         sizeof(int)                        and
-           char-no         sizeof(int)                        in
+    memory line-no         sizeof(int)                        in
+    memory char-no         sizeof(int)                        in
 
       // Reset extended-tokens.
       0 extended-start !64
@@ -1841,10 +1842,10 @@ in
                 end
 
                 // macro-tokens-array and macro-tokens-length are used to create a QUEUE for macro tokens.
-                memory inputs-array   sizeof(int) PROC-MAX-IO ** and
-                       inputs-length  sizeof(int)                and
-                       outputs-array  sizeof(int) PROC-MAX-IO ** and
-                       outputs-length sizeof(int)                in
+                memory inputs-array   sizeof(int) PROC-MAX-IO ** in
+                memory inputs-length  sizeof(int)                in
+                memory outputs-array  sizeof(int) PROC-MAX-IO ** in
+                memory outputs-length sizeof(int)                in
 
                   0 inputs-length !64
                   0 outputs-length !64
@@ -1959,8 +1960,8 @@ in
                     end
                   end
 
-                  memory local-stack        sizeof(int) STACK-MAX-ITEMS ** and
-                         local-stack-length sizeof(int)                    in
+                  memory local-stack        sizeof(int) STACK-MAX-ITEMS ** in
+                  memory local-stack-length sizeof(int)                    in
 
                     0 local-stack-length !64
 
@@ -2030,8 +2031,8 @@ in
                         ERROR-EXIT-CODE exit drop
                       end
                     end
-                  end
-                end
+                  end end
+                end end end end
               end
             else
               LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
@@ -2046,7 +2047,7 @@ in
           end
         end
       end drop drop drop
-    end
+    end end end end end
     
     source-file fclose drop
     LOG.INFO log-stream fputs "Successfully included '" log-stream fputs source-name source-name mlength log-stream fputs "'.\n" log-stream fputs
@@ -2093,22 +2094,22 @@ in let source-name output-name log-stream in
     "    pop     rdi\n"                                 output-file fputs
     "    syscall\n"                                     output-file fputs
 
-    memory global-names-array     sizeof(ptr) GLOBALS-MAX-COUNT   ** and
-           global-sizes-array     sizeof(ptr) GLOBALS-MAX-COUNT   ** and
-           globals-length         sizeof(int)                        and
+    memory global-names-array     sizeof(ptr) GLOBALS-MAX-COUNT   ** in
+    memory global-sizes-array     sizeof(ptr) GLOBALS-MAX-COUNT   ** in
+    memory globals-length         sizeof(int)                        in
 
-           proc-names-array       sizeof(ptr) PROCS-MAX-COUNT     ** and
-           proc-inputs-array      sizeof(ptr) PROCS-MAX-COUNT     ** and
-           proc-outputs-array     sizeof(ptr) PROCS-MAX-COUNT     ** and
-           procs-length           sizeof(int)                        and
+    memory proc-names-array       sizeof(ptr) PROCS-MAX-COUNT     ** in
+    memory proc-inputs-array      sizeof(ptr) PROCS-MAX-COUNT     ** in
+    memory proc-outputs-array     sizeof(ptr) PROCS-MAX-COUNT     ** in
+    memory procs-length           sizeof(int)                        in
 
-           macro-names-array      sizeof(ptr) MACROS-MAX-COUNT    ** and
-           macro-tokens-array     sizeof(ptr) MACROS-MAX-COUNT    ** and
-           macros-length          sizeof(int)                        and
+    memory macro-names-array      sizeof(ptr) MACROS-MAX-COUNT    ** in
+    memory macro-tokens-array     sizeof(ptr) MACROS-MAX-COUNT    ** in
+    memory macros-length          sizeof(int)                        in
 
-           data-definitions-list  sizeof(ptr)                        and
+    memory data-definitions-list  sizeof(ptr)                        in
 
-           libraries-set          sizeof(ptr)                        in
+    memory libraries-set          sizeof(ptr)                        in
 
       0 globals-length   !64
       0 procs-length     !64
@@ -2149,7 +2150,7 @@ in let source-name output-name log-stream in
         end
         output-file fputnl
       i end inc end drop
-    end
+    end end end end end end end end end end end end
 
     "segment .bss\n"                                    output-file fputs
     "    local_memory:   resb 67108864\n"               output-file fputs
