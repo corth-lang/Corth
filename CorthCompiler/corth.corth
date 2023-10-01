@@ -1841,14 +1841,11 @@ in
                   ERROR-EXIT-CODE exit drop
                 end
 
-                // macro-tokens-array and macro-tokens-length are used to create a QUEUE for macro tokens.
-                memory inputs-array   sizeof(int) PROC-MAX-IO ** in
-                memory inputs-length  sizeof(int)                in
-                memory outputs-array  sizeof(int) PROC-MAX-IO ** in
-                memory outputs-length sizeof(int)                in
+                memory input-list sizeof(ptr) in
+                memory output-list sizeof(ptr) in
 
-                  0 inputs-length !64
-                  0 outputs-length !64
+                  16 list64.init input-list !64
+                  16 list64.init output-list !64
 
                   while true do
                     source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream true get-next-token ! if
@@ -1872,7 +1869,7 @@ in
                       
                       input-token-type TYPE-TYPE = if
                         // TODO: Check if the input queue was filled.
-                        input-token-arg inputs-array inputs-length queue64.append
+                        input-token-arg input-list list64.append
                         
                       else
                         LOG.ERR log-stream fputs "Expected a 'type' for input type or '--', got '" log-stream fputs input-token-type log-stream fput-type "'.\n" log-stream fputs
@@ -1911,8 +1908,7 @@ in
                         ERROR-EXIT-CODE exit drop
                       end
 
-                      // TODO: Check if the output queue was filled.
-                      output-token-arg outputs-array outputs-length queue64.append
+                      output-token-arg output-list list64.append
                     end
                   end
 
@@ -1929,31 +1925,15 @@ in
                   let name-address in
                     name-address proc-names-array - let delta in
                       proc-inputs-array delta + proc-outputs-array delta + let input-address output-address in
+                        // Shift the array to insert the name, input and output.
                         name-address   name-address   8 + procs-length @64 name-address   proc-names-array   - 8 / - memcpy64i
                         input-address  input-address  8 + procs-length @64 input-address  proc-inputs-array  - 8 / - memcpy64i
                         output-address output-address 8 + procs-length @64 output-address proc-outputs-array - 8 / - memcpy64i
 
-                        proc-name-token-arg name-address !64
-
-                        inputs-array inputs-length @64 to-dynamic64 let inputs-copy in
-                          inputs-copy is-null if
-                            LOG.ERR log-stream fputs "'malloc' failed while copying inputs\n" log-stream fputs
-                            proc-name-token-address log-stream fput-here
-                            ERROR-EXIT-CODE exit drop
-                          end
-
-                          inputs-copy input-address !64
-                        end 
-
-                        outputs-array outputs-length @64 to-dynamic64 let outputs-copy in
-                          outputs-copy is-null if
-                            LOG.ERR log-stream fputs "'malloc' failed while copying outputs\n" log-stream fputs
-                            proc-name-token-address log-stream fput-here
-                            ERROR-EXIT-CODE exit drop
-                          end
-
-                          outputs-copy output-address !64
-                        end 
+                        // Save the name, inputs and outputs of the procedure.
+                        proc-name-token-arg name-address   !64
+                        input-list          input-address  !64
+                        output-list         output-address !64
 
                         procs-length @inc64
                       end
@@ -1966,8 +1946,8 @@ in
                     0 local-stack-length !64
 
                     // TODO: This system must be changed.
-                    0 while dup inputs-length @64 < do let i in
-                      inputs-array i 8 * + @64 let type in
+                    0 while dup input-list list64.length < do let i in
+                      i input-list list64.array-addr array64.get let type in
                         type TYPE-INT = if
                           create-int local-stack local-stack-length queue64.append
                         else type TYPE-BOOL = if
@@ -2004,7 +1984,7 @@ in
 
                     // TODO: This system must be changed.
                     memory temp-outputs-length sizeof(int) in
-                      outputs-length @64 temp-outputs-length !64
+                      output-list list64.length temp-outputs-length !64
                       
                       while local-stack-length @64 isn-zero do
                         local-stack local-stack-length queue64.pop-last let type in
@@ -2014,7 +1994,7 @@ in
                             ERROR-EXIT-CODE exit drop
                           end
                           
-                          outputs-array temp-outputs-length queue64.pop-last let check in
+                          output-list list64.array-addr temp-outputs-length queue64.pop-last let check in
                             type @64 check != if
                               LOG.ERR log-stream fputs "Procedure's stack does not match with its return types.\n" log-stream fputs
                               LOG.INFO log-stream fputs "Expected '" log-stream fputs check log-stream fputu "', got '" log-stream fputs type @64 log-stream fputu "'.\n" log-stream fputs
@@ -2032,7 +2012,7 @@ in
                       end
                     end
                   end end
-                end end end end
+                end end 
               end
             else
               LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
