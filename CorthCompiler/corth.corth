@@ -23,7 +23,7 @@ include CorthCompiler/enums.corth
 
 
 // TODO: Make not hard-coded.
-macro SOURCE-NAME "./example.corth" endmacro
+macro SOURCE-NAME "./CorthCompiler/corth.corth" endmacro
 macro OUTPUT-NAME "./o.asm"         endmacro
 
 proc create-name-token
@@ -652,6 +652,45 @@ in
 end end
 
 
+// NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
+macro compile-procedure.get-next-token let expect-address expect-length extend-macros in
+  // str: expect-message bool: extend-macros -- int: token-type ptr: address [int|ptr]: arg
+  // Calls get-next-token and checks if a token is available. If there are no tokens, prints an error message.
+  source-name source-file
+  line-no char-no
+  extended-array extended-start extended-end
+  macro-names macro-tokens macros-length
+  log-stream extend-macros isn-zero get-next-token ! if
+    LOG.ERR log-stream fputs "Reached EOF while expecting " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
+    procedure-name procedure-address log-stream fput-inside-procedure
+    ERROR-EXIT-CODE exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
+macro compile-procedure.check-null let expect-address expect-length in
+  is-null if
+    LOG.ERR log-stream fputs "malloc failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
+    
+    procedure-name procedure-address log-stream fput-inside-procedure
+    ERROR-EXIT-CODE exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
+macro compile-procedure.check-null-here let expect-address expect-length in
+  is-null if
+    LOG.ERR log-stream fputs "malloc failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
+
+    token-address log-stream fput-here
+    procedure-name procedure-address log-stream fput-inside-procedure
+    ERROR-EXIT-CODE exit drop
+  end
+end endmacro
+
+
 proc compile-procedure
   // ptr: source-name file-desc: source-file file-desc: output-file
   ptr file-desc file-desc
@@ -718,11 +757,7 @@ in
   memory branch-active    1                               in
 
     16 list64.init let dynamic in
-      dynamic is-null if
-        LOG.ERR log-stream fputs "Could not create a list dynamic object.\n" log-stream fputs
-        procedure-name procedure-address log-stream fput-inside-procedure
-        ERROR-EXIT-CODE exit drop
-      end
+      dynamic "creating a list dynamic object" compile-procedure.check-null
     dynamic levels-list !64 end
 
     0 level-id-counter !64
@@ -734,11 +769,7 @@ in
     0xff branch-active !8
 
     while true do
-      source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream true get-next-token ! if
-        LOG.ERR log-stream fputs "Reached EOF while expecting procedure definition or 'end'.\n" log-stream fputs
-        procedure-name procedure-address log-stream fput-inside-procedure
-        ERROR-EXIT-CODE exit drop
-      end
+      "end of procedure or procedure definition" true compile-procedure.get-next-token
 
       let token-type token-address token-arg in
         token-type TYPE-INTEGER = if
@@ -1082,20 +1113,10 @@ in
             local-stack-length @dec64
 
             local-stack local-stack-length @64 to-dynamic64 let copy-stack in
-              copy-stack is-null if
-                  LOG.ERR log-stream fputs "'malloc' failed while copying the stack for 'if'.\n" log-stream fputs
-                  token-address log-stream fput-here
-                  procedure-name procedure-address log-stream fput-inside-procedure
-                  ERROR-EXIT-CODE exit drop
-              end
+              copy-stack "copying the stack for 'if'" compile-procedure.check-null-here
 
               32 malloc let obj in
-                obj is-null if
-                  LOG.ERR log-stream fputs "'malloc' failed while creating a level object for 'if'.\n" log-stream fputs
-                  token-address log-stream fput-here
-                  procedure-name procedure-address log-stream fput-inside-procedure
-                  ERROR-EXIT-CODE exit drop
-                end
+                obj "creating a level object for 'if'" compile-procedure.check-null-here
 
                 KEYWORD-IF           obj      !64
                 token-address        obj 8  + !64
@@ -1156,20 +1177,10 @@ in
                 ".level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
 
                 local-stack local-stack-length @64 to-dynamic64 let copy-stack in
-                  copy-stack is-null if
-                    LOG.ERR log-stream fputs "'malloc' failed while copying the stack for 'while'.\n" log-stream fputs
-                    token-address log-stream fput-here
-                    procedure-name procedure-address log-stream fput-inside-procedure
-                    ERROR-EXIT-CODE exit drop
-                  end
+                  copy-stack "copying the stack for 'else'" compile-procedure.check-null-here
 
                   40 malloc let new-level in
-                    new-level is-null if
-                      LOG.ERR log-stream fputs "'malloc' failed while creating a level object for 'else'.\n" log-stream fputs
-                      token-address log-stream fput-here
-                      procedure-name procedure-address log-stream fput-inside-procedure
-                      ERROR-EXIT-CODE exit drop
-                    end
+                    new-level "creating a level object for 'else'" compile-procedure.check-null-here
 
                     KEYWORD-ELSE         new-level      !64
                     start-address        new-level 8  + !64
@@ -1203,20 +1214,10 @@ in
             end
             
             local-stack local-stack-length @64 to-dynamic64 let copy-stack in
-              copy-stack is-null if
-                  LOG.ERR log-stream fputs "'malloc' failed while copying the stack for 'while'.\n" log-stream fputs
-                  token-address log-stream fput-here
-                  procedure-name procedure-address log-stream fput-inside-procedure
-                  ERROR-EXIT-CODE exit drop
-              end
+              copy-stack "creating a level object for 'while'" compile-procedure.check-null-here
 
               32 malloc let new-level in
-                new-level is-null if
-                  LOG.ERR log-stream fputs "'malloc' failed while creating a level object for 'while'.\n" log-stream fputs
-                  token-address log-stream fput-here
-                  procedure-name procedure-address log-stream fput-inside-procedure
-                  ERROR-EXIT-CODE exit drop
-                end
+                new-level "creating a level object for 'while'" compile-procedure.check-null-here
 
                 KEYWORD-WHILE        new-level      !64
                 token-address        new-level 8  + !64
@@ -1260,27 +1261,17 @@ in
             local-stack local-stack-length queue64.pop-last drop
             
             local-stack local-stack-length @64 to-dynamic64 let copy-stack in
-              copy-stack is-null if
-                  LOG.ERR log-stream fputs "'malloc' failed while copying the stack for 'do'.\n" log-stream fputs
-                  token-address log-stream fput-here
-                  procedure-name procedure-address log-stream fput-inside-procedure
-                  ERROR-EXIT-CODE exit drop
-              end
+              copy-stack "copying the stack for 'while'" compile-procedure.check-null-here
 
-              32 malloc let obj in
-                obj is-null if
-                  LOG.ERR log-stream fputs "'malloc' failed while creating a level object for 'do'.\n" log-stream fputs
-                  token-address log-stream fput-here
-                  procedure-name procedure-address log-stream fput-inside-procedure
-                  ERROR-EXIT-CODE exit drop
-                end
+              32 malloc let new-level in
+                new-level "creating a level object for 'while'" compile-procedure.check-null-here
 
-                KEYWORD-DO           obj      !64
-                token-address        obj 8  + !64
-                level-id-counter @64 obj 16 + !64
-                copy-stack           obj 24 + !64
+                KEYWORD-DO           new-level      !64
+                token-address        new-level 8  + !64
+                level-id-counter @64 new-level 16 + !64
+                copy-stack           new-level 24 + !64
 
-                obj levels-list list64.append
+                new-level levels-list list64.append
 
                 "    pop     rax\n"      output-file fputs
                 "    test    rax, rax\n" output-file fputs
@@ -1316,28 +1307,18 @@ in
 
               0 new-names-length !64
 
-              32 malloc let obj in
-                obj is-null if
-                  LOG.ERR log-stream fputs "'malloc' failed while creating a level object for 'memory'.\n" log-stream fputs
-                  token-address log-stream fput-here
-                  procedure-name procedure-address log-stream fput-inside-procedure
-                  ERROR-EXIT-CODE exit drop
-                end
+              32 malloc let new-level in
+                new-level "creating a level object for 'memory'" compile-procedure.check-null-here
 
-                KEYWORD-MEMORY          obj      !64
-                token-address    dcopy8 obj  8 + !64
-                local-memory-end @64    obj 24 + !64
+                KEYWORD-MEMORY          new-level      !64
+                token-address    dcopy8 new-level  8 + !64
+                local-memory-end @64    new-level 24 + !64
 
                 // TODO: Add 'and' keyword.
                 // TODO: Add proper pre-compilation for memory size.
 
                 // Get the variable name.
-                source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream false get-next-token ! if
-                  LOG.ERR log-stream fputs "Reached EOF while expecting a local variable name after 'memory'.\n" log-stream fputs
-                  token-address log-stream fput-here
-                  procedure-name procedure-address log-stream fput-inside-procedure
-                  ERROR-EXIT-CODE exit drop
-                end
+                "a local variable name after 'memory'" false compile-procedure.get-next-token
 
                 let memory-name-type memory-name-address memory-name-arg in
                   memory-name-type TYPE-NAME != if
@@ -1348,12 +1329,7 @@ in
                   end
 
                   // Get the variable size.
-                  source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream true get-next-token ! if
-                    LOG.ERR log-stream fputs "Reached EOF while expecting a local variable size after 'memory'.\n" log-stream fputs
-                    token-address log-stream fput-here
-                    procedure-name procedure-address log-stream fput-inside-procedure
-                    ERROR-EXIT-CODE exit drop
-                  end
+                  "a local variable size after 'memory'" true compile-procedure.get-next-token
 
                   let memory-size-type memory-size-address memory-size-arg in
                     memory-size-type TYPE-INTEGER != if
@@ -1363,12 +1339,7 @@ in
                       ERROR-EXIT-CODE exit drop
                     end
 
-                    source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream true get-next-token ! if
-                      LOG.ERR log-stream fputs "Reached EOF while expecting a local variable size after 'memory'.\n" log-stream fputs
-                      token-address log-stream fput-here
-                      procedure-name procedure-address log-stream fput-inside-procedure
-                      ERROR-EXIT-CODE exit drop
-                    end
+                    "an 'end' after 'memory'" true compile-procedure.get-next-token
 
                     let memory-end-type memory-end-address memory-end-arg in
                       memory-end-type TYPE-KEYWORD != if
@@ -1409,17 +1380,12 @@ in
                 local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
 
                 new-names new-names-length @64 to-dynamic64 let new in
-                  new is-null if
-                    LOG.ERR log-stream fputs "'malloc' failed while allocating space for new-names after 'memory'.\n" log-stream fputs
-                    token-address log-stream fput-here
-                    procedure-name procedure-address log-stream fput-inside-procedure
-                    ERROR-EXIT-CODE exit drop
-                  end
+                  new "creating new-names object for 'memory'" compile-procedure.check-null-here
 
-                  new obj 16 + !64
+                  new new-level 16 + !64
                 end
 
-                obj levels-list list64.append
+                new-level levels-list list64.append
               end
             end end
 
@@ -1447,25 +1413,16 @@ in
 
               0 new-names-length !64
 
-              32 malloc let obj in
-                obj is-null if
-                  LOG.ERR log-stream fputs "'malloc' failed while creating a level object for 'let'.\n" log-stream fputs
-                  token-address log-stream fput-here
-                  procedure-name procedure-address log-stream fput-inside-procedure
-                  ERROR-EXIT-CODE exit drop
-                end
+              32 malloc let new-level in
+                new-level "creating a level object for 'let'" compile-procedure.check-null-here
 
-                KEYWORD-LET             obj      !64
-                token-address    dcopy8 obj  8 + !64
-                local-memory-end @64    obj 24 + !64
+                KEYWORD-LET             new-level      !64
+                token-address    dcopy8 new-level  8 + !64
+                local-memory-end @64    new-level 24 + !64
 
                 while true do
-                  source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream false get-next-token ! if
-                    LOG.ERR log-stream fputs "Reached EOF while expecting a name for let variable.\n" log-stream fputs
-                    token-address log-stream fput-here
-                    procedure-name procedure-address log-stream fput-inside-procedure
-                    ERROR-EXIT-CODE exit drop
-                  end
+                  // Get the name of the variable.
+                  "a 'name' for 'let' variable" false compile-procedure.get-next-token
 
                   let new-token-type new-token-address new-token-arg in
                     new-token-type TYPE-KEYWORD = if
@@ -1532,17 +1489,12 @@ in
                 local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
 
                 new-names new-names-length @64 to-dynamic64 let new in
-                  new is-null if
-                    LOG.ERR log-stream fputs "'malloc' failed while allocating space for new-names after 'memory'.\n" log-stream fputs
-                    token-address log-stream fput-here
-                    procedure-name procedure-address log-stream fput-inside-procedure
-                    ERROR-EXIT-CODE exit drop
-                  end
+                  new "creating new-names object for 'memory'" compile-procedure.check-null-here
 
-                  new obj 16 + !64
+                  new new-level 16 + !64
                 end
 
-                obj levels-list list64.append
+                new-level levels-list list64.append
               end
             end end
             
@@ -1581,6 +1533,45 @@ in
 end 0 end // dummy return
 
 
+// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
+macro compile-file.get-next-token let
+  expect-address expect-length extend-macros
+in
+  // str: expect-message bool: extend-macros --
+  // int: token-type ptr: address [int|ptr]: arg
+
+  source-name source-file
+  line-no char-no
+  extended-array extended-start extended-end
+  macro-names macro-tokens macros-length
+  log-stream extend-macros isn-zero get-next-token ! if
+    LOG.ERR log-stream fputs "Reached EOF while expecting " log-stream fputs expect-address expect-length log-stream fputs log-stream fputnl
+    ERROR-EXIT-CODE exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
+macro compile-file.check-null let expect-address expect-length in
+  is-null if
+    LOG.ERR log-stream fputs "malloc failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
+    
+    ERROR-EXIT-CODE exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
+macro compile-file.check-null-here let expect-address expect-length in
+  is-null if
+    LOG.ERR log-stream fputs "malloc failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
+
+    token-address log-stream fput-here
+    ERROR-EXIT-CODE exit drop
+  end
+end endmacro
+
+
 proc compile-file
   // ptr: source-name file-desc: output-file
   ptr file-desc
@@ -1590,7 +1581,7 @@ proc compile-file
   ptr ptr ptr
   // ptr: proc-names-array ptr: proc-inputs-array ptr: proc-outputs-array ptr: procs-length
   ptr ptr ptr ptr
-  // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
+  // ptr: macro-names ptr: macro-tokens-array ptr: macros-length
   ptr ptr ptr
   // libraries-set
   ptr 
@@ -1606,7 +1597,7 @@ in let
   data-definitions-list
   global-names-array global-sizes-array globals-length
   proc-names-array proc-inputs-array proc-outputs-array procs-length
-  macro-names-array macro-tokens-array macros-length
+  macro-names macro-tokens macros-length
   libraries-set
   log-stream
 in
@@ -1645,7 +1636,7 @@ in
       0 char-no !64
 
       // Get next token and check if there is one available.
-      while source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream true get-next-token do
+      while source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream true get-next-token do
         let token-type token-address token-arg in
           token-type TYPE-KEYWORD = if
             // -------- Global keywords --------
@@ -1656,11 +1647,7 @@ in
               // TODO: Add library search locations.
 
               // Get the next token, which should be the include path.
-              source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream false get-next-token ! if
-                LOG.ERR log-stream fputs "Reached EOF while expecting an include path.\n" log-stream fputs
-                token-address log-stream fput-here
-                ERROR-EXIT-CODE exit drop
-              end
+              "a 'name' for include path" false compile-file.get-next-token
 
               let path-token-type path-token-address path-token-arg in
                 path-token-type TYPE-NAME != if
@@ -1694,7 +1681,7 @@ in
                         data-definitions-list
                         global-names-array global-sizes-array globals-length
                         proc-names-array proc-inputs-array proc-outputs-array procs-length
-                        macro-names-array macro-tokens-array macros-length
+                        macro-names macro-tokens macros-length
                         libraries-set
                         log-stream compile-file
                         
@@ -1717,11 +1704,7 @@ in
               // -------- Keyword 'memory' --------
               
               // Get the next token, which sould be the include path.
-              source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream false get-next-token ! if
-                LOG.ERR log-stream fputs "Reached EOF while expecting a global variable name after 'memory'.\n" log-stream fputs
-                token-address log-stream fput-here
-                ERROR-EXIT-CODE exit drop
-              end
+              "a 'name' after 'memory' while creating a global varible" false compile-file.get-next-token
 
               let memory-name-type memory-name-address memory-name-arg in
                 memory-name-type TYPE-NAME != if
@@ -1731,24 +1714,17 @@ in
                 end
 
                 // TODO: Implement size calculation.
-                source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream false get-next-token ! if
-                  LOG.ERR log-stream fputs "Reached EOF while expecting a global variable size after 'memory'.\n" log-stream fputs
-                  token-address log-stream fput-here
-                  ERROR-EXIT-CODE exit drop
-                end
+                "size after 'memory' while creating a global varible" true compile-file.get-next-token
 
                 let memory-size-type memory-size-address memory-size-arg in
                   memory-size-type TYPE-INTEGER != if
-                    LOG.ERR log-stream fputs "Expected an 'int' for global variable size after 'memory', got '" log-stream fputs memory-size-type log-stream fput-type ".\n" log-stream fputs
-                    memory-size-type log-stream fput-here
+                    LOG.ERR log-stream fputs "Expected an 'int' for global variable size after 'memory', got '" log-stream fputs memory-size-type log-stream fput-type "'.\n" log-stream fputs
+                    memory-size-address log-stream fput-here
                     ERROR-EXIT-CODE exit drop
                   end
 
-                  source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream true get-next-token ! if
-                    LOG.ERR log-stream fputs "Reached EOF while expecting global variable size after 'memory'.\n" log-stream fputs
-                    token-address log-stream fput-here
-                    ERROR-EXIT-CODE exit drop
-                  end
+                  // Get the next keyword, which should be an end keyword.
+                  "an 'end' after 'memory' while creating a global varible" true compile-file.get-next-token
 
                   let end-token-type end-token-address end-token-arg in
                     end-token-type TYPE-KEYWORD != if
@@ -1773,11 +1749,7 @@ in
               // -------- Keyword 'macro' --------
 
               // Get the next token, which should be the name of the macro.
-              source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream false get-next-token ! if
-                LOG.ERR log-stream fputs "Reached EOF while expecting a macro name.\n" log-stream fputs
-                token-address log-stream fput-here
-                ERROR-EXIT-CODE exit drop
-              end
+              "a 'name' after 'macro'" false compile-file.get-next-token
 
               let macro-name-token-type macro-name-token-address macro-name-token-arg in
                 macro-name-token-type TYPE-NAME != if
@@ -1786,22 +1758,15 @@ in
                   ERROR-EXIT-CODE exit drop
                 end
 
-                // macro-tokens-array and macro-tokens-length are used to create a QUEUE for macro tokens.
+                // macro-tokens and macro-tokens-length are used to create a QUEUE for macro tokens.
                 memory macro-tokens-list sizeof(ptr) in
                   16 list64.init let dynamic in
-                    dynamic is-null if
-                      LOG.ERR log-stream fputs "Could not create list dynamic object.\n" log-stream fputs
-                      ERROR-EXIT-CODE exit drop
-                    end
+                    dynamic "creating list dynamic object for 'macro'" compile-file.check-null-here
                   dynamic macro-tokens-list !64 end
                        
                   while true do
                     // Get next tokens, until an 'endmacro' is found.
-                    source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream false get-next-token ! if
-                      LOG.ERR log-stream fputs "Reached EOF while expecting an 'endmacro' in macro '" log-stream fputs macro-name-token-arg macro-name-token-arg mlength log-stream fputs "'.\n" log-stream fputs
-                      token-address log-stream fput-here
-                      ERROR-EXIT-CODE exit drop
-                    end
+                    "an 'endmacro' after 'macro'" false compile-file.get-next-token
 
                     let macro-new-token-type macro-new-token-address macro-new-token-arg in
                       macro-new-token-type TYPE-KEYWORD = if
@@ -1818,7 +1783,7 @@ in
 
                   // TODO: Check if the macros queue was filled.
                   macro-tokens-list list64.array-addr macro-tokens-list list64.length to-dynamic64 let object in
-                    macro-name-token-arg object macro-names-array macro-tokens-array macros-length str-map64.set drop
+                    macro-name-token-arg object macro-names macro-tokens macros-length str-map64.set drop
                   end
                 end
               end
@@ -1827,11 +1792,7 @@ in
               // -------- 'proc' keyword --------
 
               // Get the next token, which should be the name of the procedure.
-              source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream false get-next-token ! if
-                LOG.ERR log-stream fputs "Reached EOF while expecting a procedure name.\n" log-stream fputs
-                token-address log-stream fput-here
-                ERROR-EXIT-CODE exit drop
-              end
+              "a 'name' after 'proc'" false compile-file.get-next-token
 
               let proc-name-token-type proc-name-token-address proc-name-token-arg in
                 proc-name-token-type TYPE-NAME != if
@@ -1849,12 +1810,7 @@ in
                   // Get the input types.
                   while true do
                     // Get the token.
-                    source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream true get-next-token ! if
-                      LOG.ERR log-stream fputs "Reached EOF while expecting procedure input type.\n" log-stream fputs
-                      token-address log-stream fput-here
-                      proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                      ERROR-EXIT-CODE exit drop
-                    end
+                    "a 'type' after 'proc' for input" true compile-file.get-next-token
 
                     let input-token-type input-token-address input-token-arg in
                       input-token-type TYPE-KEYWORD = if
@@ -1886,12 +1842,7 @@ in
                   // Get the output types.
                   while true do
                     // Get the token.
-                    source-name source-file line-no char-no extended-array extended-start extended-end macro-names-array macro-tokens-array macros-length log-stream true get-next-token ! if
-                      LOG.ERR log-stream fputs "Reached EOF while expecting procedure output type.\n" log-stream fputs
-                      token-address log-stream fput-here
-                      proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                      ERROR-EXIT-CODE exit drop
-                    end
+                    "a 'type' after 'proc' for output" true compile-file.get-next-token
 
                     let output-token-type output-token-address output-token-arg in
                       output-token-type TYPE-KEYWORD = if
@@ -1974,7 +1925,7 @@ in
                     data-definitions-list
                     global-names-array global-sizes-array globals-length
                     proc-names-array proc-inputs-array proc-outputs-array procs-length
-                    macro-names-array macro-tokens-array macros-length
+                    macro-names macro-tokens macros-length
                     proc-name-token-arg proc-name-token-address
                     local-stack local-stack-length
                     extended-array extended-start extended-end
@@ -2091,8 +2042,8 @@ in let source-name output-name log-stream in
     memory proc-outputs-array     sizeof(ptr) PROCS-MAX-COUNT     ** in
     memory procs-length           sizeof(int)                        in
 
-    memory macro-names-array      sizeof(ptr) MACROS-MAX-COUNT    ** in
-    memory macro-tokens-array     sizeof(ptr) MACROS-MAX-COUNT    ** in
+    memory macro-names      sizeof(ptr) MACROS-MAX-COUNT    ** in
+    memory macro-tokens     sizeof(ptr) MACROS-MAX-COUNT    ** in
     memory macros-length          sizeof(int)                        in
 
     memory data-definitions-list  sizeof(ptr)                        in
@@ -2104,18 +2055,14 @@ in let source-name output-name log-stream in
       0 macros-length    !64
 
       16 list64.init let dynamic in
-        dynamic is-null if
-          LOG.ERR log-stream fputs "Could not create a list dynamic object for data-definitions-list.\n" log-stream fputs
-          ERROR-EXIT-CODE exit drop
-        end
+        dynamic "creating a list dynamic object for data-definitions-list" compile-file.check-null
+        
         dynamic data-definitions-list !64
       end
 
       16 list64.init let dynamic in
-        dynamic is-null if
-          LOG.ERR log-stream fputs "Could not create a list dynamic object for libraries-set.\n" log-stream fputs
-          ERROR-EXIT-CODE exit drop
-        end
+        dynamic "creating a list dynamic object for libraries-set.\n" compile-file.check-null
+        
         dynamic libraries-set !64
       end
 
@@ -2123,7 +2070,7 @@ in let source-name output-name log-stream in
       data-definitions-list
       global-names-array global-sizes-array globals-length
       proc-names-array proc-inputs-array proc-outputs-array procs-length
-      macro-names-array macro-tokens-array macros-length
+      macro-names macro-tokens macros-length
       libraries-set
       log-stream
       compile-file
