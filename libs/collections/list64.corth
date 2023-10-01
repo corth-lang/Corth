@@ -29,6 +29,11 @@ macro list64.array-addr
   list64.get-dynamic 8 +
 endmacro
 
+macro list64.copy-array let _list_ in
+  // ptr: list64 -- ptr: array
+  _list_ list64.array-addr _list_ list64.length to-dynamic64
+end endmacro
+
 macro list64.length
   // ptr: list64 -- int: length
   list64.length-addr @64

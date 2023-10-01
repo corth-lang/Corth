@@ -850,9 +850,8 @@ in
                   level-id-counter @inc64
 
                   // TODO: This system must be changed.
-                  0 while dup output-length @64 < do
-                    token-arg token-arg mlength log-stream fputs " " log-stream fputs dup 8 * output-address + @64 mlength log-stream fputu log-stream fputnl
-                    dup 8 * output-address + @64 @64 let output in
+                  0 while dup output-length @64 < do let i in                    
+                    i 8 * output-address @64 + @64 let output in                      
                       output TYPE-INT = if
                         create-int local-stack local-stack-length queue64.append
                       else output TYPE-BOOL = if
@@ -864,7 +863,7 @@ in
                         ERROR-EXIT-CODE exit drop
                       end end
                     end
-                  inc end drop
+                  i end inc end drop
                 end end
               end
             end end
@@ -1931,9 +1930,9 @@ in
                         output-address output-address 8 + procs-length @64 output-address proc-outputs-array - 8 / - memcpy64i
 
                         // Save the name, inputs and outputs of the procedure.
-                        proc-name-token-arg name-address   !64
-                        input-list          input-address  !64
-                        output-list         output-address !64
+                        proc-name-token-arg            dcopy8 name-address   !64
+                        input-list          list64.copy-array input-address  !64 
+                        output-list         list64.copy-array output-address !64
 
                         procs-length @inc64
                       end
