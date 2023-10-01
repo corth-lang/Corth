@@ -669,6 +669,52 @@ end endmacro
 
 
 // NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
+macro compile-procedure.check-type let _token_type_ expect-address expect-length expected-token-type in
+  expected-token-type _token_type_ != if
+    LOG.ERR log-stream fputs "Expected a '" log-stream fputs expected-token-type log-stream fput-type  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_type_ log-stream fput-type "'.\n" log-stream fputs
+    
+    procedure-name procedure-address log-stream fput-inside-procedure
+    ERROR-EXIT-CODE exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
+macro compile-procedure.check-type-here let _token_type_ _token_addr_ expect-address expect-length expected-token-type in
+  expected-token-type _token_type_ != if
+    LOG.ERR log-stream fputs "Expected a '" log-stream fputs expected-token-type log-stream fput-type  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_type_ log-stream fput-type "'.\n" log-stream fputs
+
+    _token_addr_ log-stream fput-here
+    procedure-name procedure-address log-stream fput-inside-procedure
+    ERROR-EXIT-CODE exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
+macro compile-procedure.check-keyword let _token_arg_ expect-address expect-length expected-token-arg in
+  expected-token-arg _token_arg_ != if
+    LOG.ERR log-stream fputs "Expected a '" log-stream fputs expected-token-arg log-stream fput-keyword  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_arg_ log-stream fput-keyword "'.\n" log-stream fputs
+    
+    procedure-name procedure-address log-stream fput-inside-procedure
+    ERROR-EXIT-CODE exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
+macro compile-procedure.check-keyword-here let _token_arg_ _token_addr_ expect-address expect-length expected-token-arg in
+  expected-token-arg _token_arg_ != if
+    LOG.ERR log-stream fputs "Expected a '" log-stream fputs expected-token-arg log-stream fput-keyword  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_arg_ log-stream fput-keyword "'.\n" log-stream fputs
+
+    _token_addr_ log-stream fput-here
+    procedure-name procedure-address log-stream fput-inside-procedure
+    ERROR-EXIT-CODE exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
 macro compile-procedure.check-null let expect-address expect-length in
   is-null if
     LOG.ERR log-stream fputs "malloc failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
@@ -758,7 +804,9 @@ in
 
     16 list64.init let dynamic in
       dynamic "creating a list dynamic object" compile-procedure.check-null
-    dynamic levels-list !64 end
+
+      dynamic levels-list !64
+    end
 
     0 level-id-counter !64
     0 let-vars-length  !64
@@ -1302,10 +1350,13 @@ in
             end
 
             // New names are stored in new-names and new-names-length queue. When the 'end' of 'memory' is reached, new names are deleted from the namespace.
-            memory new-names        sizeof(ptr) VARS-MAX-ONCE ** in
-            memory new-names-length sizeof(int)                  in
+            // TODO: Change this queue to a list.
+            memory new-names-list sizeof(ptr) in
+              16 list64.init let dynamic in
+                dynamic "creating list dynamic object for 'memory'" compile-procedure.check-null-here
 
-              0 new-names-length !64
+                dynamic new-names-list !64
+              end
 
               32 malloc let new-level in
                 new-level "creating a level object for 'memory'" compile-procedure.check-null-here
@@ -1321,33 +1372,21 @@ in
                 "a local variable name after 'memory'" false compile-procedure.get-next-token
 
                 let memory-name-type memory-name-address memory-name-arg in
-                  memory-name-type TYPE-NAME != if
-                    LOG.ERR log-stream fputs "Expected 'name' for local variable name after 'memory', got '" log-stream fputs memory-name-type log-stream fput-type "'.\n" log-stream fputs
-                    memory-name-address log-stream fput-here
-                    procedure-name procedure-address log-stream fput-inside-procedure
-                    ERROR-EXIT-CODE exit drop
-                  end
+                  // The token after 'memory' should be a 'name'.
+                  memory-name-type memory-name-address "after 'memory' for local variable name" TYPE-NAME compile-procedure.check-type-here
 
                   // Get the variable size.
                   "a local variable size after 'memory'" true compile-procedure.get-next-token
 
                   let memory-size-type memory-size-address memory-size-arg in
-                    memory-size-type TYPE-INTEGER != if
-                      LOG.ERR log-stream fputs "Expected 'integer' for local variable size after 'memory', got '" log-stream fputs memory-size-type log-stream fput-type "'.\n" log-stream fputs
-                      memory-size-address log-stream fput-here
-                      procedure-name procedure-address log-stream fput-inside-procedure
-                      ERROR-EXIT-CODE exit drop
-                    end
+                    // The token after variable name should be an 'integer'.
+                    memory-size-type memory-size-address "after 'memory' for local variable size" TYPE-INTEGER compile-procedure.check-type-here
 
                     "an 'end' after 'memory'" true compile-procedure.get-next-token
 
                     let memory-end-type memory-end-address memory-end-arg in
-                      memory-end-type TYPE-KEYWORD != if
-                        LOG.ERR log-stream fputs "Expected 'keyword' after 'memory', got '" log-stream fputs memory-end-type log-stream fput-type "'.\n" log-stream fputs
-                        memory-end-address log-stream fput-here
-                        procedure-name procedure-address log-stream fput-inside-procedure
-                        ERROR-EXIT-CODE exit drop
-                      end
+                      // The token after variable size should be a 'keyword'.
+                      memory-end-type memory-end-address "after 'memory'" TYPE-KEYWORD compile-procedure.check-type-here
 
                       memory-end-arg KEYWORD-AND = if
                         LOG.TODO log-stream fputs "'and' after 'memory' for local variable allocation is not implemented yet.\n" log-stream fputs
@@ -1358,7 +1397,7 @@ in
                       else memory-end-arg KEYWORD-IN = if
                         // TODO: Check if the new-names queue is full.
 
-                        memory-name-arg new-names new-names-length queue64.append
+                        memory-name-arg new-names-list list64.append
                         memory-name-arg local-memory-end @64 local-names local-addresses locals-length str-map64.set if
                           LOG.ERR log-stream fputs "Local variable '" log-stream fputs memory-name-arg memory-name-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
                           memory-name-address log-stream fput-here
@@ -1367,6 +1406,7 @@ in
                         end
 
                         local-memory-end @64 memory-size-arg + local-memory-end !64
+                        
                       else
                         LOG.ERR log-stream fputs "Expected 'and' or 'in' after local variable, got '" log-stream fputs memory-end-arg log-stream fput-keyword "'.\n" log-stream fputs
                         memory-end-address log-stream fput-here
@@ -1379,15 +1419,11 @@ in
 
                 local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
 
-                new-names new-names-length @64 to-dynamic64 let new in
-                  new "creating new-names object for 'memory'" compile-procedure.check-null-here
-
-                  new new-level 16 + !64
-                end
+                new-names-list list64.copy-array new-level 16 + !64
 
                 new-level levels-list list64.append
               end
-            end end
+            end
 
           else token-arg KEYWORD-LET = if
             // -------- Keyword 'let' --------
@@ -1408,10 +1444,34 @@ in
 
             // New names are stored in new-names and new-names-length queue. When the 'end' of 'let' is reached, new names are deleted from the namespace.
             // TODO: Convert new-names and new-names-length to a vector, so that it can have infinite storage.
-            memory new-names        sizeof(ptr) VARS-MAX-ONCE ** in
-            memory new-names-length sizeof(int)                  in
+            memory new-names-list sizeof(ptr) in
+              16 list64.init let dynamic in
+                dynamic "creating list dynamic object for 'memory'" compile-procedure.check-null-here
 
-              0 new-names-length !64
+                dynamic new-names-list !64
+              end
+
+              // Get the names of the 'let' variables.
+              while true do
+                // Get the name of the variable.
+                "a 'name' for 'let' variable" false compile-procedure.get-next-token
+
+                let new-token-type new-token-address new-token-arg in
+                  new-token-type TYPE-KEYWORD = if
+                    // If token is a keyword, it must be a 'in' keyword.
+                    new-token-arg new-token-address "after 'let'" KEYWORD-IN compile-procedure.check-keyword-here
+
+                    // If the token is a 'in' keyword, break the loop.
+                    break
+                  end
+
+                  // Check the type of the token.
+                  new-token-type new-token-address "after 'let'" TYPE-NAME compile-procedure.check-type-here
+
+                  // TODO: Change the way that the variables are stored, so that we can also store their addresses.
+                  new-token-arg dcopy8 new-names-list list64.append
+                end
+              end
 
               32 malloc let new-level in
                 new-level "creating a level object for 'let'" compile-procedure.check-null-here
@@ -1420,46 +1480,8 @@ in
                 token-address    dcopy8 new-level  8 + !64
                 local-memory-end @64    new-level 24 + !64
 
-                while true do
-                  // Get the name of the variable.
-                  "a 'name' for 'let' variable" false compile-procedure.get-next-token
-
-                  let new-token-type new-token-address new-token-arg in
-                    new-token-type TYPE-KEYWORD = if
-                      new-token-arg KEYWORD-IN != if
-                        LOG.ERR log-stream fputs "Unexpected keyword while expecting a name for 'let' variable or 'in', got '" log-stream fputs new-token-arg log-stream fput-keyword "'.\n" log-stream fputs
-                        new-token-address log-stream fput-here
-                        token-address log-stream fput-here
-                        procedure-name procedure-address log-stream fput-inside-procedure
-                        ERROR-EXIT-CODE exit drop
-                      end
-
-                      break
-                    end
-
-                    new-token-type TYPE-NAME = if
-                      new-names-length VARS-MAX-ONCE = if
-                        LOG.ERR log-stream fputs "new-names-length was equal to VARS-MAX-ONCE.\n" log-stream fputs
-                        new-token-address log-stream fput-here
-                        procedure-name procedure-address log-stream fput-inside-procedure
-                        ERROR-EXIT-CODE exit drop
-                      end
-                      
-                      // TODO: Change the way that the variables are stored, so that we can also store their addresses.
-                      new-token-arg dcopy8 new-names new-names-length queue64.append
-
-                    else
-                      LOG.ERR log-stream fputs "Unexpected type while expecting a name for 'let' variable or 'in', got '" log-stream fputs new-token-type log-stream fput-type "'.\n" log-stream fputs
-                      new-token-address log-stream fput-here
-                      token-address log-stream fput-here
-                      procedure-name procedure-address log-stream fput-inside-procedure
-                      ERROR-EXIT-CODE exit drop
-                    end
-                  end
-                end
-
                 // This loop is seperated from the one above, since this loop must run in the reverse order.
-                new-names-length @64 while dup isn-zero do dec let i in
+                new-names-list list64.length while dup isn-zero do dec let i in
                   local-stack-length @64 is-zero if
                     LOG.ERR log-stream fputs "Expected a data before 'let' variable, but the stack was empty.\n" log-stream fputs
                     token-address log-stream fput-here
@@ -1467,36 +1489,35 @@ in
                     ERROR-EXIT-CODE exit drop
                   end
 
+                  // TODO: Save the type of the 'let' variable.
                   local-stack local-stack-length queue64.pop-last drop
 
-                  new-names i 8 * + @64 mlength 1 = if new-names i 8 * + @64 @8 '_' = else false end if
-                    "    pop     rax\n" output-file fputs
-                  else
-                    "    mov     rax, qword [local_ptr]\n" output-file fputs
-                    "    pop     qword [rax" output-file fputs local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "]\n" output-file fputs
+                  i new-names-list list64.get let variable-name in
+                    // If the length of the variable name is 1 and its first letter is _.
+                    variable-name mlength 1 = if variable-name @8 '_' = else false end if
+                      "    pop     rax\n" output-file fputs
+                    else
+                      "    mov     rax, qword [local_ptr]\n" output-file fputs
+                      "    pop     qword [rax" output-file fputs local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "]\n" output-file fputs
 
-                    new-names i 8 * + @64 local-memory-end @64 let-names let-addresses let-vars-length str-map64.set if
-                      LOG.ERR log-stream fputs "'let' variable '" log-stream fputs new-names i 8 * + @64 dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-                      procedure-name procedure-address log-stream fput-inside-procedure
-                      ERROR-EXIT-CODE exit drop
+                      variable-name local-memory-end @64 let-names let-addresses let-vars-length str-map64.set if
+                        LOG.ERR log-stream fputs "'let' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+                        procedure-name procedure-address log-stream fput-inside-procedure
+                        ERROR-EXIT-CODE exit drop
+                      end
+
+                      local-memory-end @64 8 + local-memory-end !64
                     end
-
-                    local-memory-end @64 8 + local-memory-end !64
                   end
-                  
                 i end end drop
 
                 local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
 
-                new-names new-names-length @64 to-dynamic64 let new in
-                  new "creating new-names object for 'memory'" compile-procedure.check-null-here
-
-                  new new-level 16 + !64
-                end
+                new-names-list list64.copy-array new-level 16 + !64
 
                 new-level levels-list list64.append
               end
-            end end
+            end
             
           else token-arg KEYWORD-RETURN = if
             // -------- Keyword 'return' --------
@@ -1546,6 +1567,48 @@ in
   macro-names macro-tokens macros-length
   log-stream extend-macros isn-zero get-next-token ! if
     LOG.ERR log-stream fputs "Reached EOF while expecting " log-stream fputs expect-address expect-length log-stream fputs log-stream fputnl
+    ERROR-EXIT-CODE exit drop
+  end
+end endmacro
+ 
+
+// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
+macro compile-file.check-type let _token_type_ expect-address expect-length expected-token-type in
+  expected-token-type _token_type_ != if
+    LOG.ERR log-stream fputs "Expected a '" log-stream fputs expected-token-type log-stream fput-type  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_type_ log-stream fput-type "'.\n" log-stream fputs
+    
+    ERROR-EXIT-CODE exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
+macro compile-file.check-type-here let _token_type_ _token_addr_ expect-address expect-length expected-token-type in
+  expected-token-type _token_type_ != if
+    LOG.ERR log-stream fputs "Expected a '" log-stream fputs expected-token-type log-stream fput-type  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_type_ log-stream fput-type "'.\n" log-stream fputs
+
+    _token_addr_ log-stream fput-here
+    ERROR-EXIT-CODE exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
+macro compile-file.check-keyword let _token_arg_ expect-address expect-length expected-token-arg in
+  expected-token-arg _token_arg_ != if
+    LOG.ERR log-stream fputs "Expected a '" log-stream fputs expected-token-arg log-stream fput-keyword  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_arg_ log-stream fput-keyword "'.\n" log-stream fputs
+    
+    ERROR-EXIT-CODE exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
+macro compile-file.check-keyword-here let _token_arg_ _token_addr_ expect-address expect-length expected-token-arg in
+  expected-token-arg _token_arg_ != if
+    LOG.ERR log-stream fputs "Expected a '" log-stream fputs expected-token-arg log-stream fput-keyword  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_arg_ log-stream fput-keyword "'.\n" log-stream fputs
+
+    _token_addr_ log-stream fput-here
     ERROR-EXIT-CODE exit drop
   end
 end endmacro
@@ -1650,11 +1713,7 @@ in
               "a 'name' for include path" false compile-file.get-next-token
 
               let path-token-type path-token-address path-token-arg in
-                path-token-type TYPE-NAME != if
-                  LOG.ERR log-stream fputs "Expected a 'name' for path after 'include', got '" log-stream fputs path-token-type log-stream fput-type "'.\n" log-stream fputs
-                  path-token-address log-stream fput-here
-                  ERROR-EXIT-CODE exit drop
-                end
+                path-token-type path-token-address "as path after 'include'" TYPE-NAME compile-file.check-type-here
 
                 path-token-arg null-term8 let termed-path in
                   memory stats sizeof(stat) in
@@ -1704,40 +1763,24 @@ in
               // -------- Keyword 'memory' --------
               
               // Get the next token, which sould be the include path.
-              "a 'name' after 'memory' while creating a global varible" false compile-file.get-next-token
+              "a 'name' after 'memory' while defining a global varible" false compile-file.get-next-token
 
               let memory-name-type memory-name-address memory-name-arg in
-                memory-name-type TYPE-NAME != if
-                  LOG.ERR log-stream fputs "Expected a 'name' for global variable name after 'memory', got '" log-stream fputs memory-name-type log-stream fput-type "'.\n" log-stream fputs
-                  memory-name-address log-stream fput-here
-                  ERROR-EXIT-CODE exit drop
-                end
+                memory-name-type memory-name-address "as global variable name after 'memory'" TYPE-NAME compile-file.check-type-here
 
                 // TODO: Implement size calculation.
-                "size after 'memory' while creating a global varible" true compile-file.get-next-token
+                "size after 'memory' while defining a global varible" true compile-file.get-next-token
 
                 let memory-size-type memory-size-address memory-size-arg in
-                  memory-size-type TYPE-INTEGER != if
-                    LOG.ERR log-stream fputs "Expected an 'int' for global variable size after 'memory', got '" log-stream fputs memory-size-type log-stream fput-type "'.\n" log-stream fputs
-                    memory-size-address log-stream fput-here
-                    ERROR-EXIT-CODE exit drop
-                  end
+                  memory-size-type memory-size-address "as global variable size after 'memory'" TYPE-INTEGER compile-file.check-type-here
 
-                  // Get the next keyword, which should be an end keyword.
-                  "an 'end' after 'memory' while creating a global varible" true compile-file.get-next-token
+                  // Get the next keyword, which should be an 'end' keyword.
+                  "an 'end' after 'memory' while defining a global varible" true compile-file.get-next-token
 
+                  // Check the token type and keyword.
                   let end-token-type end-token-address end-token-arg in
-                    end-token-type TYPE-KEYWORD != if
-                      LOG.ERR log-stream fputs "Expected an 'int' for global variable size after 'memory', got '" log-stream fputs end-token-type log-stream fput-type "'.\n" log-stream fputs
-                      end-token-address log-stream fput-here
-                      ERROR-EXIT-CODE exit drop
-                    end
-
-                    end-token-arg KEYWORD-END != if
-                      LOG.ERR log-stream fputs "Unexpected keyword while expecting global variable size, got '" log-stream fputs end-token-arg log-stream fput-keyword "'.\n" log-stream fputs
-                      end-token-address log-stream fput-here
-                      ERROR-EXIT-CODE exit drop
-                    end
+                    end-token-type end-token-address "after 'memory' while defining a global variable" TYPE-KEYWORD compile-file.check-type-here
+                    end-token-arg end-token-address "after 'memory' while defining a global variable" KEYWORD-END compile-file.check-keyword-here
                   end
 
                   // TODO: Check if the global variable queue was filled.
@@ -1752,29 +1795,29 @@ in
               "a 'name' after 'macro'" false compile-file.get-next-token
 
               let macro-name-token-type macro-name-token-address macro-name-token-arg in
-                macro-name-token-type TYPE-NAME != if
-                  LOG.ERR log-stream fputs "Expected a 'name' for macro name after 'macro', got '" log-stream fputs macro-name-token-type log-stream fput-type "'.\n" log-stream fputs
-                  macro-name-token-address log-stream fput-here
-                  ERROR-EXIT-CODE exit drop
-                end
+                macro-name-token-type macro-name-token-address "as macro name after 'macro'" TYPE-NAME compile-file.check-type-here
 
                 // macro-tokens and macro-tokens-length are used to create a QUEUE for macro tokens.
                 memory macro-tokens-list sizeof(ptr) in
                   16 list64.init let dynamic in
                     dynamic "creating list dynamic object for 'macro'" compile-file.check-null-here
-                  dynamic macro-tokens-list !64 end
+                    
+                    dynamic macro-tokens-list !64
+                  end
                        
                   while true do
                     // Get next tokens, until an 'endmacro' is found.
                     "an 'endmacro' after 'macro'" false compile-file.get-next-token
 
                     let macro-new-token-type macro-new-token-address macro-new-token-arg in
+                      // If the token is an 'endmacro' keyword, break the loop.
                       macro-new-token-type TYPE-KEYWORD = if
                         macro-new-token-arg KEYWORD-ENDMACRO = if
                           break
                         end
                       end
 
+                      // Add the token attributes to the macro-tokens-list.
                       macro-new-token-type    macro-tokens-list list64.append
                       macro-new-token-address macro-tokens-list list64.append
                       macro-new-token-arg     macro-tokens-list list64.append
@@ -1795,11 +1838,7 @@ in
               "a 'name' after 'proc'" false compile-file.get-next-token
 
               let proc-name-token-type proc-name-token-address proc-name-token-arg in
-                proc-name-token-type TYPE-NAME != if
-                  LOG.ERR log-stream fputs "Expected a 'name' for procedure name after 'proc', got " log-stream fputs proc-name-token-type log-stream fput-type "'.\n" log-stream fputs
-                  proc-name-token-address log-stream fput-here
-                  ERROR-EXIT-CODE exit drop
-                end
+                proc-name-token-type proc-name-token-address "as procedure name after 'procedure'" TYPE-NAME compile-file.check-type-here
 
                 memory input-list sizeof(ptr) in
                 memory output-list sizeof(ptr) in
@@ -1815,27 +1854,16 @@ in
                     let input-token-type input-token-address input-token-arg in
                       input-token-type TYPE-KEYWORD = if
                         // If the token was a keyword, it must be a 'KEYWORD-RETURN'.
-                        input-token-arg KEYWORD-RETURNS != if
-                          LOG.ERR log-stream fputs "Unexpected keyword while expecting input type or '--', got '" log-stream fputs input-token-arg log-stream fput-keyword "'.\n" log-stream fputs
-                          token-address log-stream fput-here
-                          proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                          ERROR-EXIT-CODE exit drop
-                        end
-
-                        // If the token was a 'KEYWORD-RETURN', break the loop.
+                        input-token-arg input-token-address "after 'proc' inputs" KEYWORD-RETURNS compile-file.check-keyword-here
+                        
+                        // If the token was a 'KEYWORD-RETURNS', break the loop.
                         break
                       end
-                      
-                      input-token-type TYPE-TYPE = if
-                        // TODO: Check if the input queue was filled.
-                        input-token-arg input-list list64.append
-                        
-                      else
-                        LOG.ERR log-stream fputs "Expected a 'type' for input type or '--', got '" log-stream fputs input-token-type log-stream fput-type "'.\n" log-stream fputs
-                        input-token-address log-stream fput-here
-                        proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                        ERROR-EXIT-CODE exit drop
-                      end
+
+                      // Check if the token is of type-type.
+                      input-token-type input-token-address "after 'proc'" TYPE-TYPE compile-file.check-type-here
+
+                      input-token-arg input-list list64.append
                     end
                   end
 
@@ -1847,24 +1875,14 @@ in
                     let output-token-type output-token-address output-token-arg in
                       output-token-type TYPE-KEYWORD = if
                         // If the token is a keyword, it must be a 'KEYWORD-IN'.
-                        output-token-arg KEYWORD-IN != if
-                          LOG.ERR log-stream fputs "Unexpected keyword while expecting output type or 'in', got '" log-stream fputs output-token-arg log-stream fput-keyword "'.\n" log-stream fputs
-                          token-address log-stream fput-here
-                          proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                          ERROR-EXIT-CODE exit drop
-                        end
+                        output-token-arg output-token-address "after 'proc' outputs" KEYWORD-IN compile-file.check-keyword-here
 
                         // If the token was a 'KEYWORD-IN', break the loop.
                         break
                       end
 
                       // Check if the token is of type-type.
-                      output-token-type TYPE-TYPE != if
-                        LOG.ERR log-stream fputs "Expected a 'type' for output type or 'in', got '" log-stream fputs output-token-type log-stream fput-type "'.\n" log-stream fputs
-                        output-token-address log-stream fput-here
-                        proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                        ERROR-EXIT-CODE exit drop
-                      end
+                      output-token-type output-token-address "after '--'" TYPE-TYPE compile-file.check-type-here
 
                       output-token-arg output-list list64.append
                     end
