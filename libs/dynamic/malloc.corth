@@ -69,9 +69,9 @@ in
       NULLPTR return
     end
     
-    memory available-group sizeof(ptr) and
-           available-size  sizeof(int) and
-           available-id    sizeof(int) in
+    memory available-group sizeof(ptr) in
+    memory available-size  sizeof(int) in
+    memory available-id    sizeof(int) in
 
       // available-id is the ID of queue item that points to the group.
       // group = queue[id]
@@ -112,7 +112,7 @@ in
         end
         available-group @64 8 +
       end
-    end
+    end end end
   end
 end
 

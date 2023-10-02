@@ -1,5 +1,5 @@
 include libs/collections/str_sorted8.corth
-include libs/core/
+include libs/core/stack.corth
 
 /*
   str-map64 library for Corth
