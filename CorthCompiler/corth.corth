@@ -1756,7 +1756,8 @@ in
                         
                       else masked S_IFDIR = if
                         // Directory including, should include all sub paths.
-                        LOG.TODO log-stream fputs "Including directories is not implemented yet.\n" log-stream fputs 
+                        LOG.TODO log-stream fputs "Including directories is not implemented yet.\n" log-stream fputs
+                        path-token-address log-stream fput-here
                         ERROR-EXIT-CODE exit drop
                         
                       else
