@@ -874,7 +874,7 @@ in
             end
             
           else drop token-arg local-names local-addresses locals-length str-map64.get if
-            // -------- 'memory' variables --------
+            // -------- local 'memory' variables --------
             
             let address in
               "    push    qword [local_ptr]\n" output-file fputs
@@ -882,6 +882,16 @@ in
               address isn-zero if
                 "    add     qword [rsp], " output-file fputs address output-file fputu output-file fputnl
               end
+              
+              create-int local-stack local-stack-length queue64.append
+            end
+
+          else drop token-arg global-names-array global-sizes-array globals-length str-map64.get if
+            // -------- global 'memory' variables --------
+
+            let address in
+              "    rax     global_" output-file fputs token-arg token-arg mlength output-file fputs output-file fputnl
+              "    push    rax\n" output-file fputs
               
               create-int local-stack local-stack-length queue64.append
             end
@@ -954,7 +964,7 @@ in
             token-address log-stream fput-here
             procedure-name procedure-address log-stream fput-inside-procedure
             ERROR-EXIT-CODE exit drop
-          end end end
+          end end end end
 
         else token-type TYPE-INTRINSIC = if
           // -------- Intrinsics --------
@@ -1778,6 +1788,7 @@ in
                   "an 'end' after 'memory' while defining a global varible" true compile-file.get-next-token
 
                   // Check the token type and keyword.
+                  // Add 'and' keyword.
                   let end-token-type end-token-address end-token-arg in
                     end-token-type end-token-address "after 'memory' while defining a global variable" TYPE-KEYWORD compile-file.check-type-here
                     end-token-arg end-token-address "after 'memory' while defining a global variable" KEYWORD-END compile-file.check-keyword-here
