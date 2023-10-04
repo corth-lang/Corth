@@ -3,7 +3,8 @@ include libs/dynamic/utils.corth
 include libs/linux_x86/io/output.corth
 include libs/core/stack.corth
 
-macro sizeof(address) 56 endmacro
+macro sizeof(position) 24 endmacro
+macro sizeof(address)  56 endmacro
 
 macro ADDR.FILE  0  endmacro
 macro ADDR.START 8  endmacro
@@ -42,7 +43,26 @@ proc debug-init -- in
 end
 
 
-// TODO: Add fput-token
+proc generate-position
+  // int: line-no int: char-no int: at -- ptr: position
+  int int int -- ptr
+in
+  sizeof(position) malloc let position in
+    position isn-null if
+      // Store the arguments.
+      position POS.AT   + !64
+      position POS.CHAR + !64
+      position POS.LINE + !64
+    else
+      // Remove the unused arguments.
+      drop drop drop
+    end
+    
+    // Return the position.
+    position
+  end
+end 
+
 
 proc generate-address
   // ptr: file-name int: start-line int: start-char int: start-at int: end-line int: end-char int: end-at -- ptr: address
@@ -136,7 +156,7 @@ proc fput-address
   // Prints the formatted address of a token.
 in let address log-stream in
   address @64 address ADDR.START + address ADDR.END + let file-name start-pos end-pos in
-    "from file '" log-stream fputs file-name dup mlength log-stream fputs "' between [" log-stream fputs start-pos log-stream fput-position "] to [" log-stream fputs end-pos log-stream fput-position "]" log-stream fputs
+    "file '" log-stream fputs file-name dup mlength log-stream fputs "' [" log-stream fputs start-pos log-stream fput-position "]-[" log-stream fputs end-pos log-stream fput-position "]" log-stream fputs
   end
 end end
 
@@ -147,16 +167,12 @@ proc fput-lines
   // Prints the formatted lines of a token.
 in let address log-stream in
   address @64 address ADDR.START + address ADDR.END + let file-name start-pos end-pos in
-    // Add a null character for fopen
-    file-name null-term8 let c-file-name in
-      c-file-name fopen-r c-file-name drop
-    end
-
-    // Open the source file.
-    let file in
+    // Add a null character and open the file.
+    file-name null-term8 fopen-r let file in
       // Check if file could be opened.
       file isn-pos if
         "<file-unavailable>\n" log-stream fputs
+        return
       end
 
       start-pos POS.LINE + @64 start-pos POS.CHAR + @64 end-pos POS.LINE + @64 end-pos POS.CHAR + @64 let start-line start-char end-line end-char in
@@ -173,11 +189,11 @@ in let address log-stream in
             "                      " log-stream fputs space-buffer start-char log-stream fputs tilde-buffer length start-char - log-stream fputs log-stream fputnl
           end
 
-          start-line inc while dup end-line < do let line-no in
-            line-no log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
+          start-line inc while dup end-line < do
+            dup log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
               "                      " log-stream fputs tilde-buffer length log-stream fputs log-stream fputnl
             end
-          line-no end inc end drop
+          inc end drop
 
           end-line log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
             "                      " log-stream fputs tilde-buffer end-char log-stream fputs log-stream fputnl
@@ -192,10 +208,45 @@ in let address log-stream in
 end end
 
 
+proc fput-lines-position
+  // ptr: position ptr: file-name file-desc: log-stream
+  ptr ptr file-desc --
+  // Prints the formatted linees of a token.
+in let position file-name log-stream in
+  // Add a null character for fopen.
+  file-name null-term8 fopen-r let file in
+    // Check if the file could be opened.
+    file isn-pos if
+      "<file-unavailable>\n" log-stream fputs
+      return
+    end
+
+    position POS.LINE + @64 position POS.CHAR + @64 position POS.AT + @64 let line-no char-no at in
+      // Move the file pointer to the start,
+      file 0 SEEK-SET lseek drop line-no dec file seek-line
+
+      line-no log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
+        "                    " log-stream fputs tilde-buffer 1 log-stream fputs log-stream fputnl
+      end
+    end
+
+    // Close the file.
+    file fclose drop
+  end
+end end
+
+
 macro fput-here let _address_ _log_stream_ in
   // ptr: _address_ file-desc: _log_stream_ --
   LOG.HERE _log_stream_ fputs _address_ _log_stream_ fput-address ":\n" _log_stream_ fputs
   _address_ _log_stream_ fput-lines
+end endmacro
+
+
+macro fput-here-position let _position_ _log_stream_ in
+  // ptr: position file-desc: log-stream --
+  LOG.HERE _log_stream_ fputs _position_ _log_stream_ fput-position ":\n" _log_stream_ fputs
+  _position_ _log_stream_ fput-lines-position
 end endmacro
 
 
