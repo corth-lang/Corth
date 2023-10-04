@@ -187,21 +187,38 @@ in let
             // Get the character
             buffer inc @8 let character in
               character '\\' = if
-                // -------- Escapes --------
-                // TODO: Add escapes.
-                LOG.TODO log-stream fputs "Escapes are not implemented yet.\n" log-stream fputs
-                ERROR-EXIT-CODE exit drop
-              end
+                // If the character is a backslash, start escape mode.
+                buffer 2 + 1 file fgets is-zero if
+                  // Reached EOF while expecting a character after backslash.
+                  LOG.ERR log-stream fputs "Reached EOF before finding a single quote after single quote and backslash.\n" log-stream fputs
+                  ERROR-EXIT-CODE exit drop
+                end
 
-              buffer 2 + 1 file fgets is-zero if
+                buffer 2 + @8 let escape-character in
+                  // Get the escape character according to the character.
+                       escape-character 'n'  = if '\n'
+                  else escape-character '\\' = if '\\'
+                  else
+                    LOG.ERR log-stream fputs "Invalid escape character." log-stream fputs
+                    ERROR-EXIT-CODE exit drop
+                  0 end end
+                end
+              else
+                // Return the character itself and the 3rd character.
+                character
+              end
+            end
+
+            let character in
+              buffer 1 file fgets is-zero if
                 // Reached EOF while expecting a single quote.
                 LOG.ERR log-stream fputs "Reached EOF before finding a single quote after single quote and character.\n" log-stream fputs
                 ERROR-EXIT-CODE exit drop
               end
 
-              buffer 2 + @8 '\'' != if
+              buffer @8 '\'' != if
                 // Was expecting a single quote, but found another character.
-                LOG.ERR log-stream fputs "Expected a single quote, found '" log-stream fputs buffer 2 + 1 log-stream fputs "'.\n" log-stream fputs
+                LOG.ERR log-stream fputs "Expected a single quote, found '" log-stream fputs buffer 1 log-stream fputs "'.\n" log-stream fputs
                 ERROR-EXIT-CODE exit drop
               end
 
