@@ -6,10 +6,8 @@ include CorthCompiler/debug.corth
 macro GLOBALS-MAX-COUNT   0x4000    endmacro
 macro MACROS-MAX-COUNT    0x4000    endmacro
 macro PROCS-MAX-COUNT     0x400     endmacro
-macro LIBRARIES-MAX-COUNT 0x4000    endmacro
 macro LET-MAX-COUNT       0x400     endmacro
 macro LOCALS-MAX-COUNT    0x400     endmacro
-macro VARS-MAX-ONCE       0x10      endmacro
 
 macro EXTENDED-MAX-LENGTH 0x400000  endmacro
 macro TOKEN-MAX-LENGTH    0x4000    endmacro
