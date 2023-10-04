@@ -226,7 +226,7 @@ in let position file-name log-stream in
       file 0 SEEK-SET lseek drop line-no dec file seek-line
 
       line-no log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
-        "                    " log-stream fputs tilde-buffer 1 log-stream fputs log-stream fputnl
+        "                      " log-stream fputs space-buffer char-no log-stream fputs tilde-buffer 1 log-stream fputs log-stream fputnl
       end
     end
 
@@ -243,10 +243,10 @@ macro fput-here let _address_ _log_stream_ in
 end endmacro
 
 
-macro fput-here-position let _position_ _log_stream_ in
+macro fput-here-position let _position_ _file_name_ _log_stream_ in
   // ptr: position file-desc: log-stream --
-  LOG.HERE _log_stream_ fputs _position_ _log_stream_ fput-position ":\n" _log_stream_ fputs
-  _position_ _log_stream_ fput-lines-position
+  LOG.HERE _log_stream_ fputs "At " _log_stream_ fputs _position_ _log_stream_ fput-position " in '" _log_stream_ fputs _file_name_ _file_name_ mlength _log_stream_ fputs "':\n" _log_stream_ fputs
+  _position_ _file_name_ _log_stream_ fput-lines-position
 end endmacro
 
 
@@ -254,6 +254,7 @@ macro fput-inside-procedure let _procedure_name_ _procedure_address_ _log_stream
   // ptr: _address_ ptr: _procedure_name_ ptr: _procedure_address_ file-desc: _log_stream_ --
   LOG.INFO _log_stream_ fputs "Inside procedure '" _log_stream_ fputs _procedure_name_ _procedure_name_ mlength _log_stream_ fputs "'.\n" _log_stream_ fputs
   LOG.HERE _log_stream_ fputs _procedure_address_ _log_stream_ fput-address ":\n" _log_stream_ fputs
+  
   _procedure_address_ _log_stream_ fput-lines
 end endmacro
 

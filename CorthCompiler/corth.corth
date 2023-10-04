@@ -51,7 +51,7 @@ in let
   in
 
   // Get full token.
-  file line-no char-no buffer buffer-end log-stream parse-next-token
+  file file-name line-no char-no buffer buffer-end log-stream parse-next-token
 
   buffer-end @64 buffer - let buffer-size in
     // Check if the token is a keyword.
@@ -160,7 +160,7 @@ in let
             // -------- Integer type --------
 
             // Get full token.
-            file line-no char-no buffer buffer-end log-stream parse-next-token
+            file file-name line-no char-no buffer buffer-end log-stream parse-next-token
 
             file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address let address in
               memory number sizeof(int) in
@@ -187,24 +187,10 @@ in let
             // Get the character
             buffer inc @8 let character in
               character '\\' = if
-                // If the character is a backslash, start escape mode.
-                buffer 2 + 1 file fgets is-zero if
-                  // Reached EOF while expecting a character after backslash.
-                  LOG.ERR log-stream fputs "Reached EOF before finding a single quote after single quote and backslash.\n" log-stream fputs
-                  ERROR-EXIT-CODE exit drop
-                end
-
-                buffer 2 + @8 let escape-character in
-                  // Get the escape character according to the character.
-                       escape-character 'n'  = if '\n'
-                  else escape-character '\\' = if '\\'
-                  else
-                    LOG.ERR log-stream fputs "Invalid escape character." log-stream fputs
-                    ERROR-EXIT-CODE exit drop
-                  0 end end
-                end
+                // Return the escape sequence character.
+                file file-name line-no char-no log-stream parse-escape-sequence
               else
-                // Return the character itself and the 3rd character.
+                // Return the character itself.
                 character
               end
             end
@@ -219,6 +205,7 @@ in let
               buffer @8 '\'' != if
                 // Was expecting a single quote, but found another character.
                 LOG.ERR log-stream fputs "Expected a single quote, found '" log-stream fputs buffer 1 log-stream fputs "'.\n" log-stream fputs
+                line-no @64 char-no @64 file ftell generate-position file-name log-stream fput-here-position
                 ERROR-EXIT-CODE exit drop
               end
 
@@ -235,7 +222,7 @@ in let
             char-no @inc64
 
             // Get full string.
-            file line-no char-no buffer buffer-end log-stream parse-next-string
+            file file-name line-no char-no buffer buffer-end log-stream parse-next-string
 
             // Return token type, address and argument.
             TYPE-STRING file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address buffer buffer-end @64 buffer - to-dynamic8
@@ -252,7 +239,7 @@ in let
               // -------- Single line comment --------
 
               // Skip this line.
-              file line-no char-no log-stream skip-line
+              file file-name line-no char-no log-stream skip-line
 
               // Get next token and return it.
               file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros isn-zero get-next-token ! if false return end
@@ -261,7 +248,7 @@ in let
               // -------- Block comment --------
 
               // Skip the block comment.
-              file line-no char-no log-stream skip-block-comment
+              file file-name line-no char-no log-stream skip-block-comment
 
               // Get next token and return it.
               file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros isn-zero get-next-token ! if false return end

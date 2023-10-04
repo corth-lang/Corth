@@ -52,12 +52,12 @@ end false end  // dummy return
 
 
 proc parse-next-token
-  // file-desc: file-desc ptr: line-no ptr: char-no ptr: buffer ptr: buffer-end file-desc: log-stream --
-  file-desc ptr ptr ptr ptr file-desc --
+  // file-desc: file ptr: file-name ptr: line-no ptr: char-no ptr: buffer ptr: buffer-end file-desc: log-stream --
+  file-desc ptr ptr ptr ptr ptr file-desc --
   // Gets the next token string before any newline or space and fills a buffer.
   // Keeps track of the line and char number as the bytes are read.
   // NOTE: If buffer-end exceeds buffer + TOKEN-MAX-LENGTH, exits program.
-in let file line-no char-no buffer buffer-end log-stream in
+in let file file-name line-no char-no buffer buffer-end log-stream in
   while true do
     buffer-end @64 1 file fgets-keep is-zero if
       // Reached EOF.
@@ -78,8 +78,8 @@ in let file line-no char-no buffer buffer-end log-stream in
     end
       
     buffer-end @64 buffer - TOKEN-MAX-LENGTH >= if   // Reached the end of the buffer.
-      LOG.ERR  log-stream fputs "Found a token longer than TOKEN-MAX-LENGTH, stopping execution.\n" log-stream fputs
-      LOG.INFO log-stream fputs "Last read token was '" log-stream fputs buffer buffer-end @64 buffer - log-stream fputs "'.\n" log-stream fputs
+      LOG.ERR log-stream fputs "Found a token longer than TOKEN-MAX-LENGTH, stopping execution.\n" log-stream fputs
+      line-no @64 char-no @64 file ftell generate-position file-name log-stream fput-here-position
       ERROR-EXIT-CODE exit drop
     else                                                  // There is still space in the buffer.
       file 1 SEEK-CUR lseek drop
@@ -90,19 +90,69 @@ in let file line-no char-no buffer buffer-end log-stream in
 end end
 
 
+proc parse-escape-sequence
+  // file-desc: file ptr: file-name ptr: line-no ptr: char-no file-desc: log-stream -- int: escape-character
+  file-desc ptr ptr ptr file-desc -- int
+in let file file-name line-no char-no log-stream in
+  // Buffer is 2 bytes because after \x, 2 new bytes are required.
+  memory buffer 2 in
+    // Check if we reached EOF before an escape sequence.
+    buffer 1 file fgets is-zero if
+      LOG.ERR log-stream fputs "Reached EOF while expecting escape sequence.\n" log-stream fputs
+      line-no @64 char-no @64 file ftell generate-position file-name log-stream fput-here-position
+      ERROR-EXIT-CODE exit drop
+    end
+
+    // Increase the char-no, as the next character should not be a newline character.
+    char-no @inc64
+
+    // Get the mapping of the escape character.
+         buffer @8 'n'  = if '\n'
+    else buffer @8 '\'' = if '\''
+    else buffer @8 '\"' = if '\"'
+    else buffer @8 '\\' = if '\\'
+    else buffer @8 'x'  = if
+      // Check if we reached EOF before the escape sequence ends.
+      buffer 2 file fgets 2 < if
+        LOG.ERR log-stream fputs "Reached EOF while expecting 2 characters after escape sequence '\\x'.\n" log-stream fputs
+        line-no @64 char-no @64 file ftell generate-position file-name log-stream fput-here-position
+        ERROR-EXIT-CODE exit drop
+      end
+
+      // Get the hexadecimal value after '\x'.
+      memory number sizeof(int) in
+        buffer 2 number convx ! if
+          LOG.ERR log-stream fputs "Expected 2 hexadecimal digits after '\\x', however the characters were not digits.\n" log-stream fputs
+          line-no @64 char-no @64 file ftell generate-position file-name log-stream fput-here-position
+          ERROR-EXIT-CODE exit drop
+        end
+
+        // Return the hexadecimal number.
+        number @64
+      end
+    else
+      LOG.ERR log-stream fputs "Invalid escape sequence.\n" log-stream fputs
+      line-no @64 char-no @64 file ftell generate-position file-name log-stream fput-here-position
+      ERROR-EXIT-CODE exit drop
+    0 end end end end  end
+  end
+end end
+
+
 proc parse-next-string
-  // file-desc: file-desc ptr: line-no ptr: char-no ptr: buffer ptr: buffer-end file-desc: log-stream --
-  file-desc ptr ptr ptr ptr file-desc --
+  // file-desc: file ptr: file-name ptr: line-no ptr: char-no ptr: buffer ptr: buffer-end file-desc: log-stream --
+  file-desc ptr ptr ptr ptr ptr file-desc --
   // Gets the next string before a double quote.
   // Keeps track of the line and char number as the bytes are read.
   // NOTE: If buffer-end exceeds buffer + TOKEN-MAX-LENGTH, exits program.
   // NOTE: If EOF is reached before a double quote is found, exits program.
   // TODO: Add escapes.
-in let file line-no char-no buffer buffer-end log-stream in
+in let file file-name line-no char-no buffer buffer-end log-stream in
   while true do buffer-end @64 let char-addr in
     // Check if we reached EOF before an end of string.
     char-addr 1 file fgets is-zero if
       LOG.ERR log-stream fputs "Reached EOF before finding any '\"'.\n" log-stream fputs
+      line-no @64 char-no @64 file ftell generate-position file-name log-stream fput-here-position
       ERROR-EXIT-CODE exit drop
     end
     
@@ -115,7 +165,7 @@ in let file line-no char-no buffer buffer-end log-stream in
     // Reached the end of the buffer.
     char-addr buffer - TOKEN-MAX-LENGTH >= if
       LOG.ERR log-stream fputs "Found a string longer than TOKEN-MAX-LENGTH, stopping execution.\n" log-stream fputs
-      LOG.INFO log-stream fputs "Last read token was '" log-stream fputs buffer buffer-end @64 buffer - log-stream fputs "'.\n" log-stream fputs
+      line-no @64 char-no @64 file ftell generate-position file-name log-stream fput-here-position
       ERROR-EXIT-CODE exit drop
     end
       
@@ -123,10 +173,14 @@ in let file line-no char-no buffer buffer-end log-stream in
       // Reached new line, reset char-no and increase line-no.
       line-no   @inc64
       0 char-no !64
+    else char-addr @8 '\\' = if
+      // Reached a backslash, check for escape sequence.
+      char-no @inc64
+      file file-name line-no char-no log-stream parse-escape-sequence char-addr !8
     else
       // Reached any character, increase char-no. 
-      char-no    @inc64
-    end
+      char-no @inc64
+    end end
     
     buffer-end @inc64
   end end
@@ -134,11 +188,11 @@ end end
 
 
 proc skip-line
-  // file-desc: file-desc ptr: line-no ptr: char-no file-desc: log-stream --
-  file-desc ptr ptr file-desc --
+  // file-desc: file-desc ptr: file-name ptr: line-no ptr: char-no file-desc: log-stream --
+  file-desc ptr ptr ptr file-desc --
   // Moves the file pointer until it passes a newline, or EOF is reached.
   // Keeps track of the line and char number as the bytes are read.
-in let file line-no char-no log-stream in
+in let file file-name line-no char-no log-stream in
   line-no @inc64
   0 char-no !64
   
@@ -155,21 +209,23 @@ end end
 
 
 proc skip-block-comment
-  // file-desc: file-desc ptr: line-no ptr: char-np file-desc: log-stream --
-  file-desc ptr ptr file-desc -- 
+  // file-desc: file-desc ptr: file-name ptr: line-no ptr: char-np file-desc: log-stream --
+  file-desc ptr ptr ptr file-desc -- 
   // Moves the file pointer until it passes a block comment end, or EOF is reached.
   // Keeps track of the line and char number as the bytes are read.
-in let file line-no char-no log-stream in
+in let file file-name line-no char-no log-stream in
   memory char 1 in
     while true do
       char 1 file fgets is-zero if                          // Reached EOF while expecting a block comment end.
         LOG.WARN log-stream fputs "Reached EOF while expecting a block comment end.\n" log-stream fputs
+        line-no @64 char-no @64 file ftell generate-position file-name log-stream fput-here-position
         return
       end
         
       char @8 '*' = if                       // Reached asterisk.
         char 1 file fgets is-zero if                        // Reached EOF while expecting a block comment end.
           LOG.WARN log-stream fputs "Reached EOF while expecting a block comment end.\n" log-stream fputs
+          line-no @64 char-no @64 file ftell generate-position file-name log-stream fput-here-position
           return
         end
 
