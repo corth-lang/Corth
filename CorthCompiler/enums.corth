@@ -3,18 +3,18 @@ include libs/linux_x86/io/output.corth
 include CorthCompiler/debug.corth
 
 // TODO: Change these arrays with vectors.
-macro GLOBALS-MAX-COUNT   0x4000    endmacro
-macro MACROS-MAX-COUNT    0x4000    endmacro
-macro PROCS-MAX-COUNT     0x400     endmacro
-macro LET-MAX-COUNT       0x400     endmacro
-macro LOCALS-MAX-COUNT    0x400     endmacro
+macro GLOBALS-MAX-COUNT   0x8000     endmacro
+macro MACROS-MAX-COUNT    0x8000     endmacro
+macro PROCS-MAX-COUNT     0x8000     endmacro
+macro LET-MAX-COUNT       0x8000     endmacro
+macro LOCALS-MAX-COUNT    0x8000     endmacro
 
-macro EXTENDED-MAX-LENGTH 0x400000  endmacro
-macro TOKEN-MAX-LENGTH    0x4000    endmacro
-macro STACK-MAX-ITEMS     0x100     endmacro
+macro EXTENDED-MAX-LENGTH 0x80000    endmacro
+macro TOKEN-MAX-LENGTH    0x8000     endmacro
+macro STACK-MAX-ITEMS     0x8000     endmacro
 
-macro LOCAL-MEMORY-SIZE   0x40000   endmacro
-macro CALL-STACK-SIZE     0x40000   endmacro
+macro LOCAL-MEMORY-SIZE   0x80000    endmacro
+macro CALL-STACK-SIZE     0x80000    endmacro
 
 // Exit codes
 macro SUCCESS-EXIT-CODE    0 endmacro

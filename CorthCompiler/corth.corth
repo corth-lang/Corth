@@ -801,23 +801,23 @@ in
   memory level-id-counter sizeof(int)                     in
 
          // let-names, let-addresses and let-vars-length create a str_map64.
-  memory let-names        sizeof(ptr) LET-MAX-COUNT **    in
-  memory let-addresses    sizeof(ptr) LET-MAX-COUNT **    in
-  memory let-vars-length  sizeof(int)                     in
+  memory let-names        LET-MAX-COUNT    in
+  memory let-addresses    LET-MAX-COUNT    in
+  memory let-vars-length  sizeof(int)      in
          
          // local-names, local-addresses and locals-length create a str_map64.
-  memory local-names      sizeof(ptr) LOCALS-MAX-COUNT ** in
-  memory local-addresses  sizeof(ptr) LOCALS-MAX-COUNT ** in
-  memory locals-length    sizeof(int)                     in
+  memory local-names      LOCALS-MAX-COUNT in
+  memory local-addresses  LOCALS-MAX-COUNT in
+  memory locals-length    sizeof(int)      in
 
          // local-memory-end keeps track of the first available position on the local memory.
-  memory local-memory-end sizeof(int)                     in
+  memory local-memory-end sizeof(int)      in
 
          // local-memory-max keeps track of the maximum length of the local memory, to later allocate enough space.
-  memory local-memory-max sizeof(int)                     in
+  memory local-memory-max sizeof(int)      in
 
          // branch-active keeps track of if the branch of the code ended.
-  memory branch-active    1                               in
+  memory branch-active    1                in
 
     16 list64.init let dynamic in
       dynamic "creating a list dynamic object" compile-procedure.check-null
@@ -1710,12 +1710,12 @@ in
       ERROR-EXIT-CODE exit drop
     end
 
-    memory extended-array  sizeof(int) EXTENDED-MAX-LENGTH ** in
-    memory extended-start  sizeof(int)                        in
-    memory extended-end    sizeof(int)                        in
+    memory extended-array  EXTENDED-MAX-LENGTH in
+    memory extended-start  sizeof(int)         in
+    memory extended-end    sizeof(int)         in
            
-    memory line-no         sizeof(int)                        in
-    memory char-no         sizeof(int)                        in
+    memory line-no         sizeof(int)         in
+    memory char-no         sizeof(int)         in
 
       // Reset extended-tokens.
       0 extended-start !64
@@ -1946,8 +1946,8 @@ in
                   end
 
                   // Create the stack for the procedure.
-                  memory local-stack        sizeof(int) STACK-MAX-ITEMS ** in
-                  memory local-stack-length sizeof(int)                    in
+                  memory local-stack        STACK-MAX-ITEMS in
+                  memory local-stack-length sizeof(int)     in
 
                     0 local-stack-length !64
 
@@ -2080,22 +2080,22 @@ in let source-name output-name log-stream in
     "    pop     rdi\n"                                 output-file fputs
     "    syscall\n"                                     output-file fputs
 
-    memory global-names-array     sizeof(ptr) GLOBALS-MAX-COUNT   ** in
-    memory global-sizes-array     sizeof(ptr) GLOBALS-MAX-COUNT   ** in
-    memory globals-length         sizeof(int)                        in
+    memory global-names-array     GLOBALS-MAX-COUNT in
+    memory global-sizes-array     GLOBALS-MAX-COUNT in
+    memory globals-length         sizeof(int)       in
 
-    memory proc-names-array       sizeof(ptr) PROCS-MAX-COUNT     ** in
-    memory proc-inputs-array      sizeof(ptr) PROCS-MAX-COUNT     ** in
-    memory proc-outputs-array     sizeof(ptr) PROCS-MAX-COUNT     ** in
-    memory procs-length           sizeof(int)                        in
+    memory proc-names-array       PROCS-MAX-COUNT   in
+    memory proc-inputs-array      PROCS-MAX-COUNT   in
+    memory proc-outputs-array     PROCS-MAX-COUNT   in
+    memory procs-length           sizeof(int)       in
 
-    memory macro-names      sizeof(ptr) MACROS-MAX-COUNT    ** in
-    memory macro-tokens     sizeof(ptr) MACROS-MAX-COUNT    ** in
-    memory macros-length          sizeof(int)                        in
+    memory macro-names            MACROS-MAX-COUNT  in
+    memory macro-tokens           MACROS-MAX-COUNT  in
+    memory macros-length          sizeof(int)       in
 
-    memory data-definitions-list  sizeof(ptr)                        in
+    memory data-definitions-list  sizeof(ptr)       in
 
-    memory libraries-set          sizeof(ptr)                        in
+    memory libraries-set          sizeof(ptr)       in
 
       0 globals-length   !64
       0 procs-length     !64
