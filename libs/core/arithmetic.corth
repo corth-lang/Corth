@@ -116,11 +116,30 @@ macro usqr dup u* endmacro
 // Returns the decimal ASCII character match of the number. (0 <= number <= 9)
 macro int-to-ddigit '0' + endmacro
 
-// Returns the number match of the decimal ASCII character. ('0' <= number <= '9')
-macro ddigit-to-int '0' - endmacro
-
 // Returns the hexadecimal ASCII character match of the number. (0 <= number <= 15)
 macro int-to-xdigit dup 9 > if 'W' else '0' end + endmacro
+
+
+// -------------------------------------------------------------
+
+// int: x -- int: f(x) bool: valid
+// uint: x -- uint: f(x) bool: valid
+
+// Returns the number match of the decimal ASCII character. ('0' <= number <= '9')
+// Also returns if the digit is a valid decimal character.
+macro ddigit-to-int let _digit_ in _digit_ '0' - _digit_ '0' '9' is-range end endmacro
+
+// Returns the number match of the hexadecimal ASCII character.
+// Also returns if the digit is a valid hexadecimal character.
+macro xdigit-to-int let _digit_ in 
+  _digit_ is-ddigit if
+    _digit_ '0' - true
+  else _digit_ is-xeldigit if
+    _digit_ 'W' - true
+  else
+    _digit_ '7' - _digit_ is-xeudigit
+  end end
+end endmacro
 
 
 // -------------------------------------------------------------

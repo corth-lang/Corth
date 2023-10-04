@@ -36,11 +36,7 @@ in let start length number in
   0 number !64
 
   start while dup start length + < do let i in
-    i @8 isn-ddigit if
-      false return
-    end
-
-    i @8 ddigit-to-int number @64 10 * + number !64
+    i @8 ddigit-to-int ! if drop false return end number @64 10 * + number !64 
   i end inc end drop
 end true end
 
@@ -70,7 +66,7 @@ in let start length number in
       false return
     end
 
-    i @8 ddigit-to-int number @64 8 * + number !64
+    i @8 ddigit-to-int ! if drop false return end number @64 8 * + number !64
   i end inc end drop
 end true end
 
