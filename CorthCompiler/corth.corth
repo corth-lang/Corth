@@ -56,47 +56,47 @@ in let
   buffer-end @64 buffer - let buffer-size in
     // Check if the token is a keyword.
     // I hate my life.
-         buffer buffer-size KEYWORD-INCLUDE-STR    memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-INCLUDE    
-    else buffer buffer-size KEYWORD-MACRO-STR      memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-MACRO      
-    else buffer buffer-size KEYWORD-ENDMACRO-STR   memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-ENDMACRO   
-    else buffer buffer-size KEYWORD-PROC-STR       memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-PROC       
-    else buffer buffer-size KEYWORD-END-STR        memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-END        
-    else buffer buffer-size KEYWORD-RETURN-STR     memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-RETURN     
-    else buffer buffer-size KEYWORD-RETURNS-STR    memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-RETURNS    
-    else buffer buffer-size KEYWORD-MEMORY-STR     memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-MEMORY     
-    else buffer buffer-size KEYWORD-AND-STR        memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-AND        
-    else buffer buffer-size KEYWORD-IN-STR         memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-IN         
-    else buffer buffer-size KEYWORD-LET-STR        memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-LET        
-    else buffer buffer-size KEYWORD-IF-STR         memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-IF         
-    else buffer buffer-size KEYWORD-ELSE-STR       memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-ELSE       
-    else buffer buffer-size KEYWORD-WHILE-STR      memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-WHILE      
-    else buffer buffer-size KEYWORD-DO-STR         memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-DO         
-    else buffer buffer-size KEYWORD-BREAK-STR      memeq8 if TYPE-KEYWORD   file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-BREAK      
+         buffer buffer-size KEYWORD-INCLUDE-STR    memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-INCLUDE    
+    else buffer buffer-size KEYWORD-MACRO-STR      memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-MACRO      
+    else buffer buffer-size KEYWORD-ENDMACRO-STR   memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-ENDMACRO
+    else buffer buffer-size KEYWORD-PROC-STR       memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-PROC       
+    else buffer buffer-size KEYWORD-END-STR        memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-END        
+    else buffer buffer-size KEYWORD-RETURN-STR     memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-RETURN     
+    else buffer buffer-size KEYWORD-RETURNS-STR    memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-RETURNS    
+    else buffer buffer-size KEYWORD-MEMORY-STR     memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-MEMORY     
+    else buffer buffer-size KEYWORD-AND-STR        memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-AND        
+    else buffer buffer-size KEYWORD-IN-STR         memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-IN         
+    else buffer buffer-size KEYWORD-LET-STR        memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-LET        
+    else buffer buffer-size KEYWORD-IF-STR         memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-IF         
+    else buffer buffer-size KEYWORD-ELSE-STR       memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-ELSE       
+    else buffer buffer-size KEYWORD-WHILE-STR      memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-WHILE      
+    else buffer buffer-size KEYWORD-DO-STR         memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-DO         
+    else buffer buffer-size KEYWORD-BREAK-STR      memeq8 if TYPE-KEYWORD file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address KEYWORD-BREAK      
     
     // I still hate my life.
-    else buffer buffer-size INTRINSIC-ADD-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-ADD      
-    else buffer buffer-size INTRINSIC-FULLMUL-STR  memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-FULLMUL  
-    else buffer buffer-size INTRINSIC-DIVMOD-STR   memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-DIVMOD   
-    else buffer buffer-size INTRINSIC-UFULLMUL-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-UFULLMUL 
-    else buffer buffer-size INTRINSIC-UDIVMOD-STR  memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-UDIVMOD  
-    else buffer buffer-size INTRINSIC-BOR-STR      memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-BOR      
-    else buffer buffer-size INTRINSIC-BNOT-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-BNOT     
-    else buffer buffer-size INTRINSIC-NOTEQUAL-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-NOTEQUAL 
-    else buffer buffer-size INTRINSIC-LESS-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-LESS     
-    else buffer buffer-size INTRINSIC-TRUE-STR     memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-TRUE     
-    else buffer buffer-size INTRINSIC-FALSE-STR    memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-FALSE    
-    else buffer buffer-size INTRINSIC-LOAD8-STR    memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-LOAD8    
-    else buffer buffer-size INTRINSIC-STORE8-STR   memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-STORE8   
-    else buffer buffer-size INTRINSIC-LOAD64-STR   memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-LOAD64   
-    else buffer buffer-size INTRINSIC-STORE64-STR  memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-STORE64  
-    else buffer buffer-size INTRINSIC-SYSCALL6-STR memeq8 if TYPE-INTRINSIC file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-SYSCALL6 
+    else buffer buffer-size INTRINSIC-ADD-STR      memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-ADD      
+    else buffer buffer-size INTRINSIC-FULLMUL-STR  memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-FULLMUL  
+    else buffer buffer-size INTRINSIC-DIVMOD-STR   memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-DIVMOD   
+    else buffer buffer-size INTRINSIC-UFULLMUL-STR memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-UFULLMUL 
+    else buffer buffer-size INTRINSIC-UDIVMOD-STR  memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-UDIVMOD  
+    else buffer buffer-size INTRINSIC-BOR-STR      memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-BOR      
+    else buffer buffer-size INTRINSIC-BNOT-STR     memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-BNOT     
+    else buffer buffer-size INTRINSIC-NOTEQUAL-STR memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-NOTEQUAL 
+    else buffer buffer-size INTRINSIC-LESS-STR     memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-LESS     
+    else buffer buffer-size INTRINSIC-TRUE-STR     memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-TRUE     
+    else buffer buffer-size INTRINSIC-FALSE-STR    memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-FALSE    
+    else buffer buffer-size INTRINSIC-LOAD8-STR    memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-LOAD8    
+    else buffer buffer-size INTRINSIC-STORE8-STR   memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-STORE8   
+    else buffer buffer-size INTRINSIC-LOAD64-STR   memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-LOAD64   
+    else buffer buffer-size INTRINSIC-STORE64-STR  memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-STORE64  
+    else buffer buffer-size INTRINSIC-SYSCALL6-STR memeq8 if TYPE-INTRINSIC file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address INTRINSIC-SYSCALL6 
     
-    else buffer buffer-size TYPE-INT-STR           memeq8 if TYPE-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address TYPE-INT           
-    else buffer buffer-size TYPE-BOOL-STR          memeq8 if TYPE-TYPE file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address TYPE-BOOL          
+    else buffer buffer-size TYPE-INT-STR           memeq8 if TYPE-TYPE file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address TYPE-INT           
+    else buffer buffer-size TYPE-BOOL-STR          memeq8 if TYPE-TYPE file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address TYPE-BOOL          
     
     else
       // Return token type, address and argument.
-      TYPE-NAME file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address buffer buffer-size to-dynamic8
+      TYPE-NAME file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address buffer buffer-size to-dynamic8
 
     // This is nightmare fuel.
     end end end end end end end end end end end end end end end end end
@@ -162,7 +162,7 @@ in let
             // Get full token.
             file file-name line-no char-no buffer buffer-end log-stream parse-next-token
 
-            file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address let address in
+            file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address let address in
               memory number sizeof(int) in
                 buffer buffer-end @64 buffer - number convint ! if
                   LOG.ERR log-stream fputs "Could not convert integer.\n" log-stream fputs
@@ -210,7 +210,7 @@ in let
               end
 
               // Return token type, address and argument.
-              TYPE-INTEGER file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address character
+              TYPE-INTEGER NULLPTR file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address character
             end
 
           else buffer @8 '"' = if
@@ -225,7 +225,7 @@ in let
             file file-name line-no char-no buffer buffer-end log-stream parse-next-string
 
             // Return token type, address and argument.
-            TYPE-STRING file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address buffer buffer-end @64 buffer - to-dynamic8
+            TYPE-STRING NULLPTR file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address buffer buffer-end @64 buffer - to-dynamic8
 
           else buffer @8 '/' = if
             // -------- Slash (Name and comments) --------
@@ -276,8 +276,21 @@ in let
       type TYPE-NAME = if
         arg macro-names macro-tokens macros-length str-map64.get if
           let tokens in
-            tokens tokens mlength 8 / extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.extend-left
-            file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros isn-zero get-next-token
+            tokens tokens mlength + while dup tokens > do 24 - let i in
+              // Token argument
+              i 16 + @64 extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.append-first
+              
+              // Token address
+              i 8 + @64 let token-address in
+                address token-address ADDR.PREV + !64
+                token-address extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.append-first
+              end 
+              
+              // Token argument
+              i @64 extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.append-first
+            i end end drop
+            
+            file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros isn-zero get-next-token  
           end
         else drop
           type address arg true
