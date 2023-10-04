@@ -45,29 +45,29 @@ end
 // TODO: Add fput-token
 
 proc generate-address
-  // ptr: file-name int: start-line int: start-char int: start-at int: end-line int: end-char int: end-at file-sc: log-stream -- ptr: address
-  ptr int int int int int int file-desc -- ptr
+  // ptr: file-name int: start-line int: start-char int: start-at int: end-line int: end-char int: end-at -- ptr: address
+  ptr int int int int int int -- ptr
   // Returns a dynamicly-placed object to store the address of token.
-in let log-stream in
+in
   sizeof(address) malloc let address in
-    address is-null if
-      LOG.ERR log-stream fputs "'malloc' failed while generating address.\n" log-stream fputs
-      1 exit drop
+    address isn-null if
+      // Store the arguments.
+      address ADDR.END   + POS.AT   + !64
+      address ADDR.END   + POS.CHAR + !64
+      address ADDR.END   + POS.LINE + !64
+      address ADDR.START + POS.AT   + !64
+      address ADDR.START + POS.CHAR + !64
+      address ADDR.START + POS.LINE + !64
+      address ADDR.FILE  + !64
+    else
+      // Remove the unused arguments.
+      drop drop drop drop drop drop drop
     end
-
-    // Store the arguments.
-    address ADDR.END   + POS.AT   + !64
-    address ADDR.END   + POS.CHAR + !64
-    address ADDR.END   + POS.LINE + !64
-    address ADDR.START + POS.AT   + !64
-    address ADDR.START + POS.CHAR + !64
-    address ADDR.START + POS.LINE + !64
-    address ADDR.FILE  + !64
 
     // Return the address.
     address
   end
-end end
+end
 
 
 proc fput-position
