@@ -1051,7 +1051,7 @@ in
                     ERROR-EXIT-CODE exit drop
                   end
 
-                  ".level_" output-file fputs level 16 + @64 output-file fputu ":\n" output-file fputs
+                  ".level_" output-file fputs level 24 + @64 output-file fputu ":\n" output-file fputs
                 else start-keyword KEYWORD-WHILE = if
                   // -------- End of 'while' --------
                   
