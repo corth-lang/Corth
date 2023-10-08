@@ -743,6 +743,18 @@ end endmacro
 
 
 // NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
+macro compile-procedure.check-level-here let _token_arg_ _old_token_addr_ _token_addr_ expect-address expect-length expected-token-arg in
+  // ptr: token-arg ptr: old-token-addr ptr: new-token-addr ptr: expect-addr int: expect-length int: expected-token-arg
+  expected-token-arg _token_arg_ != if
+    LOG.ERR log-stream fputs "Expected a '" log-stream fputs expected-token-arg log-stream fput-keyword  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_arg_ log-stream fput-keyword "'.\n" log-stream fputs
+    _old_token_addr_ compile-procedure.show-here
+    _token_addr_ compile-procedure.show-here
+    ERROR-EXIT-CODE exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
 macro compile-procedure.check-null let expect-address expect-length in
   is-null if
     LOG.ERR log-stream fputs "malloc failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
@@ -784,6 +796,12 @@ macro compile-procedure.check-branch-here let _token_addr_ expect-address expect
     ERROR-EXIT-CODE exit drop
   end
 end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
+macro compile-procedure.new-level-id
+  level-id-counter @64 dup inc level-id-counter !64
+endmacro
 
 
 proc compile-procedure
@@ -964,15 +982,16 @@ in
                     end
                   end
 
-                  "    xchg    rsp, [call_ptr]\n"              output-file fputs         
-                  "    push    .level_"                        output-file fputs level-id-counter @64 output-file fputu output-file fputnl
-                  "    push    qword [local_ptr]\n"            output-file fputs         
-                  "    add     qword [local_ptr], "            output-file fputs local-memory-end @64 output-file fputu output-file fputnl
-                  "    xchg    rsp, [call_ptr]\n"              output-file fputs         
-                  "    jmp     proc_"                          output-file fputs token-arg token-arg mlength output-file fputs output-file fputnl
-                  ".level_"                                    output-file fputs level-id-counter @64 output-file fputu ":\n" output-file fputs
+                  compile-procedure.new-level-id let level-id in
+                    "    xchg    rsp, [call_ptr]\n"              output-file fputs         
+                    "    push    .level_"                        output-file fputs level-id output-file fputu output-file fputnl
+                    "    push    qword [local_ptr]\n"            output-file fputs         
+                    "    add     qword [local_ptr], "            output-file fputs local-memory-end @64 output-file fputu output-file fputnl
+                    "    xchg    rsp, [call_ptr]\n"              output-file fputs         
+                    "    jmp     proc_"                          output-file fputs token-arg token-arg mlength output-file fputs output-file fputnl
+                    ".level_"                                    output-file fputs level-id output-file fputu ":\n" output-file fputs
+                  end
 
-                  level-id-counter @inc64
                   // TODO: This system must be changed.
                   0 while dup output-length @64 < do let i in                    
                     i 8 * output-address @64 + @64 let output in                      
@@ -1063,6 +1082,7 @@ in
                   LOG.ERR  log-stream fputs "You probably forgot a 'do' after 'while'.\n" log-stream fputs
                   LOG.INFO log-stream fputs "A 'while-do' loop can be created as: 'while <condition> do <code> end'\n" log-stream fputs
                   token-address log-stream fput-here
+
                   start-address compile-procedure.show-here
                   ERROR-EXIT-CODE exit drop
 
@@ -1071,38 +1091,12 @@ in
                   
                   // Branch should not be cut before the end of do.
                   token-address "finish a while-do loop" compile-procedure.check-branch-here
-                  
-                  level 16 + @64 level 24 + @64 let  start-id start-stack in
-                    levels-list list64.length is-zero if
-                      LOG.ERR  log-stream fputs "Expected a 'while' before 'do'.\n" log-stream fputs
-                      LOG.INFO log-stream fputs "A 'while-do' loop can be created as: 'while <condition> do <code> end'\n" log-stream fputs
-                      token-address log-stream fput-here
-                      start-address compile-procedure.show-here
-                      ERROR-EXIT-CODE exit drop
-                    end
-
-                    levels-list list64.pop-last let while-level in
-                      while-level @64 while-level 8 + @64 let while-keyword while-address in
-                        while-keyword KEYWORD-WHILE != if
-                          LOG.ERR  log-stream fputs "Expected a 'while' before 'do', got '" log-stream fputs while-keyword log-stream fput-keyword "'.\n" log-stream fputs
-                          LOG.INFO log-stream fputs "A 'while-do' loop can be created as: 'while <condition> do <code> end'\n" log-stream fputs
-                          token-address log-stream fput-here
-                          while-address log-stream fput-here
-                          start-address compile-procedure.show-here
-                          ERROR-EXIT-CODE exit drop
-                        end
-
-                        while-level 16 + @64 while-level 24 + @64 let while-id while-stack in
-                          // TODO: Check for stack changes.
-
-                          "    jmp     .level_" output-file fputs while-id output-file fputu output-file fputnl
-                          ".level_"             output-file fputs start-id output-file fputu ":\n" output-file fputs
-
-                          start-stack local-stack start-stack mlength 8 / memcpy64
-                          start-stack mlength 8 / local-stack-length !64
-                        end
-                      end
-                    end
+            
+                  level 16 + @64 level 24 + @64 level 32 + @64 level 40 + @64 level 48 + @64 let while-level-id do-address unbroken-end-id broken-end-id old-stack in
+                    "    jmp     .level_" output-file fputs while-level-id output-file fputu output-file fputnl
+                     
+                    ".level_" output-file fputs unbroken-end-id output-file fputu ":\n" output-file fputs
+                    ".level_" output-file fputs broken-end-id   output-file fputu ":\n" output-file fputs
                   end
 
                 else start-keyword KEYWORD-LET = if
@@ -1182,18 +1176,18 @@ in
               32 malloc let obj in
                 obj "creating a level object for 'if'" compile-procedure.check-null-here
 
-                KEYWORD-IF           obj      !64
-                token-address        obj 8  + !64
-                level-id-counter @64 obj 16 + !64
-                copy-stack           obj 24 + !64
+                compile-procedure.new-level-id let level-id in
+                  KEYWORD-IF           obj      !64
+                  token-address        obj 8  + !64
+                  level-id             obj 16 + !64
+                  copy-stack           obj 24 + !64
 
-                obj levels-list list64.append
+                  obj levels-list list64.append
 
-                "    pop     rax\n"      output-file fputs
-                "    test    rax, rax\n" output-file fputs
-                "    jz      .level_"    output-file fputs level-id-counter @64 output-file fputu output-file fputnl
-
-                level-id-counter @inc64
+                  "    pop     rax\n"      output-file fputs
+                  "    test    rax, rax\n" output-file fputs
+                  "    jz      .level_"    output-file fputs level-id output-file fputu output-file fputnl
+                end
               end
             end
 
@@ -1220,37 +1214,34 @@ in
             end
 
             levels-list list64.pop-last let level in
-              level @64 KEYWORD-IF != if
-                LOG.ERR log-stream fputs "'else' requires an 'if', but there was an unclosed '" log-stream fputs level @64 log-stream fput-keyword "'.\n" log-stream fputs
-                token-address log-stream fput-here
-                level 8 + @64 compile-procedure.show-here
-                ERROR-EXIT-CODE exit drop
-              end
+              level @64 level 8 + @64 let old-keyword old-address in
+                old-keyword old-address token-address "before 'else'" KEYWORD-IF compile-procedure.check-level-here
 
-              level 8 + @64 level 16 + @64 level 24 + @64 let start-address start-id start-stack in
-                start-stack local-stack start-stack mlength 8 / memcpy64
-                start-stack mlength 8 / local-stack-length !64
+                level 16 + @64 level 24 + @64 let start-id start-stack in
+                  start-stack local-stack start-stack mlength 8 / memcpy64
+                  start-stack mlength 8 / local-stack-length !64
 
-                "    jmp     .level_" output-file fputs level-id-counter @64 output-file fputu output-file fputnl
-                ".level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
+                  compile-procedure.new-level-id let level-id in
+                    "    jmp     .level_" output-file fputs level-id output-file fputu output-file fputnl
+                    ".level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
 
-                local-stack local-stack-length @64 to-dynamic64 let copy-stack in
-                  copy-stack "copying the stack for 'else'" compile-procedure.check-null-here
+                    local-stack local-stack-length @64 to-dynamic64 let copy-stack in
+                      copy-stack "copying the stack for 'else'" compile-procedure.check-null-here
 
-                  40 malloc let new-level in
-                    new-level "creating a level object for 'else'" compile-procedure.check-null-here
+                      40 malloc let new-level in
+                        new-level "creating a level object for 'else'" compile-procedure.check-null-here
 
-                    KEYWORD-ELSE         new-level      !64
-                    start-address        new-level 8  + !64
-                    token-address        new-level 16 + !64
-                    level-id-counter @64 new-level 24 + !64
-                    copy-stack           new-level 32 + !64
+                        KEYWORD-ELSE         new-level      !64
+                        old-address          new-level 8  + !64
+                        token-address        new-level 16 + !64
+                        level-id             new-level 24 + !64
+                        copy-stack           new-level 32 + !64
 
-                    new-level levels-list list64.append
+                        new-level levels-list list64.append
+                      end
+                    end
                   end
                 end
-
-                level-id-counter @inc64
               end
             end
 
@@ -1270,65 +1261,84 @@ in
             local-stack local-stack-length @64 to-dynamic64 let copy-stack in
               copy-stack "creating a level object for 'while'" compile-procedure.check-null-here
 
-              32 malloc let new-level in
-                new-level "creating a level object for 'while'" compile-procedure.check-null-here
+              compile-procedure.new-level-id let level-id in
+                ".level_" output-file fputs level-id output-file fputu ":\n" output-file fputs
+                
+                32 malloc let new-level in
+                  new-level "creating a level object for 'while'" compile-procedure.check-null-here
 
-                KEYWORD-WHILE        new-level      !64
-                token-address        new-level 8  + !64
-                level-id-counter @64 new-level 16 + !64
-                copy-stack           new-level 24 + !64
+                  KEYWORD-WHILE        new-level      !64
+                  token-address        new-level 8  + !64
+                  level-id             new-level 16 + !64
+                  copy-stack           new-level 24 + !64
 
-                new-level levels-list list64.append
+                  new-level levels-list list64.append
+                end
               end
             end
             
-            ".level_" output-file fputs level-id-counter @64 output-file fputu ":\n" output-file fputs
-            level-id-counter @inc64
-
           else token-arg KEYWORD-DO = if
             // -------- Keyword 'do' --------
             // while <condition> do <any> end
+
+            // TODO: These are not implemented yet.
+            // while <condition> do <any> [else <any>] end
             
             // Level structure:
             //  0- 7 -> KEYWORD-DO
-            //  8-15 -> Starter address
-            // 16-23 -> Level ID
-            // 24-32 -> Old stack
+            //  8-15 -> While address
+            // 16-23 -> While label level ID
+            // 24-31 -> Do address
+            // 32-39 -> Unbroken loop end level ID
+            // 40-47 -> Broken loop end level ID
+            // 48-55 -> Old stack
 
-            // TODO: 'do' level struct should contain the 'while' level components.
             // Branch should not be cut between 'while' and 'do'.
             token-address "call 'do'" compile-procedure.check-branch-here
 
-            
+            // Check if the local stack contains any item.
             local-stack-length @64 is-zero if
               LOG.ERR log-stream fputs "'do' requires a bool, there was no items in the stack.\n" log-stream fputs
               token-address compile-procedure.show-here
               ERROR-EXIT-CODE exit drop
             end
 
+            // Remove the bool value from the local-stack.
             // TODO: Unfinished, should add stack value type check.
+            // TODO: Fix the memory leak.
             local-stack local-stack-length queue64.pop-last drop
-            
-            local-stack local-stack-length @64 to-dynamic64 let copy-stack in
-              copy-stack "copying the stack for 'while'" compile-procedure.check-null-here
 
-              32 malloc let new-level in
-                new-level "creating a level object for 'while'" compile-procedure.check-null-here
+            // Get the 'while' level.
+            levels-list list64.pop-last let old-level in
+              old-level @64 old-level 8 + @64 let old-keyword old-address in
+                // Check if the level type is 'while'.
+                old-keyword old-address token-address "before 'do'" KEYWORD-WHILE compile-procedure.check-level-here
 
-                KEYWORD-DO           new-level      !64
-                token-address        new-level 8  + !64
-                level-id-counter @64 new-level 16 + !64
-                copy-stack           new-level 24 + !64
+                old-level 16 + @64 old-level 24 + @64 let old-level-id old-stack in
+                  compile-procedure.new-level-id compile-procedure.new-level-id let unbroken-end-level-id broken-end-level-id in
+                    compile-procedure.new-level-id compile-procedure.new-level-id let unbroken-end-id broken-end-id in
+                      "    pop     rax\n"      output-file fputs
+                      "    test    rax, rax\n" output-file fputs
+                      "    jz      .level_"    output-file fputs unbroken-end-id output-file fputu output-file fputnl
+                      
+                      56 malloc let new-level in
+                        new-level "creating a level object for 'do' after 'while'" compile-procedure.check-null-here
 
-                new-level levels-list list64.append
+                        KEYWORD-DO               new-level      !64
+                        old-address              new-level 8  + !64
+                        old-level-id             new-level 16 + !64
+                        token-address            new-level 24 + !64
+                        unbroken-end-id          new-level 32 + !64
+                        broken-end-id            new-level 40 + !64
+                        old-stack                new-level 48 + !64
 
-                "    pop     rax\n"      output-file fputs
-                "    test    rax, rax\n" output-file fputs
-                "    jz      .level_"    output-file fputs level-id-counter @64 output-file fputu output-file fputnl
-
-                level-id-counter @inc64
+                        new-level levels-list list64.append
+                      end
+                    end
+                  end
+                end
               end
-            end
+            end        
 
           else token-arg KEYWORD-MEMORY = if
             // -------- Keyword 'memory' -------
@@ -1347,7 +1357,6 @@ in
             token-address "call 'memory'" compile-procedure.check-branch-here
 
             // New names are stored in new-names and new-names-length queue. When the 'end' of 'memory' is reached, new names are deleted from the namespace.
-            // TODO: Change this queue to a list.
             memory new-names-list sizeof(ptr) in
               16 list64.init let dynamic in
                 dynamic "creating list dynamic object for 'memory'" compile-procedure.check-null-here
@@ -1355,61 +1364,60 @@ in
                 dynamic new-names-list !64
               end
 
-              32 malloc let new-level in
-                new-level "creating a level object for 'memory'" compile-procedure.check-null-here
+              // TODO: Add 'and' keyword.
+              // TODO: Add proper pre-compilation for memory size.
 
-                KEYWORD-MEMORY          new-level      !64
-                token-address    dcopy8 new-level  8 + !64
-                local-memory-end @64    new-level 24 + !64
+              // Get the variable name.
+              "a local variable name after 'memory'" false compile-procedure.get-next-token
 
-                // TODO: Add 'and' keyword.
-                // TODO: Add proper pre-compilation for memory size.
+              let memory-name-type memory-name-address memory-name-arg in
+                // The token after 'memory' should be a 'name'.
+                memory-name-type memory-name-address "after 'memory' for local variable name" TYPE-NAME compile-procedure.check-type-here
 
-                // Get the variable name.
-                "a local variable name after 'memory'" false compile-procedure.get-next-token
+                // Get the variable size.
+                "a local variable size after 'memory'" true compile-procedure.get-next-token
 
-                let memory-name-type memory-name-address memory-name-arg in
-                  // The token after 'memory' should be a 'name'.
-                  memory-name-type memory-name-address "after 'memory' for local variable name" TYPE-NAME compile-procedure.check-type-here
+                let memory-size-type memory-size-address memory-size-arg in
+                  // The token after variable name should be an 'integer'.
+                  memory-size-type memory-size-address "after 'memory' for local variable size" TYPE-INTEGER compile-procedure.check-type-here
 
-                  // Get the variable size.
-                  "a local variable size after 'memory'" true compile-procedure.get-next-token
+                  "an 'end' after 'memory'" true compile-procedure.get-next-token
 
-                  let memory-size-type memory-size-address memory-size-arg in
-                    // The token after variable name should be an 'integer'.
-                    memory-size-type memory-size-address "after 'memory' for local variable size" TYPE-INTEGER compile-procedure.check-type-here
+                  let memory-end-type memory-end-address memory-end-arg in
+                    // The token after variable size should be a 'keyword'.
+                    memory-end-type memory-end-address "after 'memory'" TYPE-KEYWORD compile-procedure.check-type-here
 
-                    "an 'end' after 'memory'" true compile-procedure.get-next-token
+                    memory-end-arg KEYWORD-AND = if
+                      LOG.TODO log-stream fputs "'and' after 'memory' for local variable allocation is not implemented yet.\n" log-stream fputs
+                      memory-end-address compile-procedure.show-here
+                      ERROR-EXIT-CODE exit drop
 
-                    let memory-end-type memory-end-address memory-end-arg in
-                      // The token after variable size should be a 'keyword'.
-                      memory-end-type memory-end-address "after 'memory'" TYPE-KEYWORD compile-procedure.check-type-here
+                    else
+                      // Check if the keyword is 'in'.
+                      memory-end-arg memory-end-address "after 'memory'" KEYWORD-IN compile-procedure.check-keyword-here
 
-                      memory-end-arg KEYWORD-AND = if
-                        LOG.TODO log-stream fputs "'and' after 'memory' for local variable allocation is not implemented yet.\n" log-stream fputs
-                        memory-end-address compile-procedure.show-here
+                      memory-name-arg new-names-list list64.append
+                      memory-name-arg local-memory-end @64 local-names local-addresses locals-length str-map64.set if
+                        LOG.ERR log-stream fputs "Local variable '" log-stream fputs memory-name-arg memory-name-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+                        memory-name-address compile-procedure.show-here
                         ERROR-EXIT-CODE exit drop
-                        
-                      else
-                        // Check if the keyword is 'in'.
-                        memory-end-type memory-end-address "after 'memory'" KEYWORD-IN compile-procedure.check-keyword-here
-
-                        memory-name-arg new-names-list list64.append
-                        memory-name-arg local-memory-end @64 local-names local-addresses locals-length str-map64.set if
-                          LOG.ERR log-stream fputs "Local variable '" log-stream fputs memory-name-arg memory-name-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-                          memory-name-address compile-procedure.show-here
-                          ERROR-EXIT-CODE exit drop
-                        end
-
-                        local-memory-end @64 memory-size-arg + local-memory-end !64
                       end
+
+                      local-memory-end @64 memory-size-arg + local-memory-end !64
                     end
                   end
                 end
+              end
 
-                local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
+              local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
 
+              32 malloc let new-level in
+                new-level "creating a level object for 'memory'" compile-procedure.check-null-here
+
+                KEYWORD-MEMORY                   new-level      !64
+                token-address                    new-level  8 + !64
                 new-names-list list64.copy-array new-level 16 + !64
+                local-memory-end @64             new-level 24 + !64
 
                 new-level levels-list list64.append
               end
@@ -1459,46 +1467,45 @@ in
                 end
               end
 
+              // This loop is seperated from the one above, since this loop must run in the reverse order.
+              new-names-list list64.length while dup isn-zero do dec let i in
+                local-stack-length @64 is-zero if
+                  LOG.ERR log-stream fputs "Expected a data before 'let' variable, but the stack was empty.\n" log-stream fputs
+                  token-address compile-procedure.show-here
+                  ERROR-EXIT-CODE exit drop
+                end
+
+                // TODO: Save the type of the 'let' variable.
+                local-stack local-stack-length queue64.pop-last drop
+
+                i new-names-list list64.get let variable-name in
+                  // If the length of the variable name is 1 and its first letter is _.
+                  variable-name mlength 1 = if variable-name @8 '_' = else false end if
+                    "    pop     rax\n" output-file fputs
+                  else
+                    "    mov     rax, qword [local_ptr]\n" output-file fputs
+                    "    pop     qword [rax" output-file fputs local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "]\n" output-file fputs
+
+                    variable-name local-memory-end @64 let-names let-addresses let-vars-length str-map64.set if
+                      LOG.ERR log-stream fputs "'let' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+                      procedure-name procedure-address log-stream fput-inside-procedure
+                      ERROR-EXIT-CODE exit drop
+                    end
+
+                    local-memory-end @64 8 + local-memory-end !64
+                  end
+                end
+              i end end drop
+
+              local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
+
               32 malloc let new-level in
                 new-level "creating a level object for 'let'" compile-procedure.check-null-here
 
-                KEYWORD-LET             new-level      !64
-                token-address    dcopy8 new-level  8 + !64
-                local-memory-end @64    new-level 24 + !64
-
-                // This loop is seperated from the one above, since this loop must run in the reverse order.
-                new-names-list list64.length while dup isn-zero do dec let i in
-                  local-stack-length @64 is-zero if
-                    LOG.ERR log-stream fputs "Expected a data before 'let' variable, but the stack was empty.\n" log-stream fputs
-                    token-address compile-procedure.show-here
-                    ERROR-EXIT-CODE exit drop
-                  end
-
-                  // TODO: Save the type of the 'let' variable.
-                  local-stack local-stack-length queue64.pop-last drop
-
-                  i new-names-list list64.get let variable-name in
-                    // If the length of the variable name is 1 and its first letter is _.
-                    variable-name mlength 1 = if variable-name @8 '_' = else false end if
-                      "    pop     rax\n" output-file fputs
-                    else
-                      "    mov     rax, qword [local_ptr]\n" output-file fputs
-                      "    pop     qword [rax" output-file fputs local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "]\n" output-file fputs
-
-                      variable-name local-memory-end @64 let-names let-addresses let-vars-length str-map64.set if
-                        LOG.ERR log-stream fputs "'let' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-                        procedure-name procedure-address log-stream fput-inside-procedure
-                        ERROR-EXIT-CODE exit drop
-                      end
-
-                      local-memory-end @64 8 + local-memory-end !64
-                    end
-                  end
-                i end end drop
-
-                local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
-
+                KEYWORD-LET                      new-level      !64
+                token-address                    new-level  8 + !64
                 new-names-list list64.copy-array new-level 16 + !64
+                local-memory-end @64             new-level 24 + !64
 
                 new-level levels-list list64.append
               end
