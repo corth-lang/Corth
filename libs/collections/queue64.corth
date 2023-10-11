@@ -33,6 +33,14 @@ macro queue64.set
   queue64.get-addr !64
 endmacro
 
+proc queue64.overwrite
+  // ptr: array-start int: array-length ptr: queue-start ptr: queue-length --
+  ptr int ptr ptr --
+in let array-start array-length queue-start queue-length in
+  array-start queue-start array-length memcpy64
+  array-length queue-length !64
+end end
+
 proc queue64.insert
   // int: byte-to-insert int: index-to-insert ptr: queue-start ptr: queue-length
   int int ptr ptr --
