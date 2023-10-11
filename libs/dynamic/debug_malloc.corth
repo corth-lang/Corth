@@ -1,21 +1,38 @@
 // Can be used to debug malloc segments.
 proc debug-dynamic-memory
   file-desc --
-  // Prints the segments of the memory for debug purposes.
+  // Prints the blocks of the memory for debug purposes.
 in let  log-stream in
   "Reached debug-dynamic-memory.\n" log-stream fputs
   "--------------------\n" log-stream fputs
-  "Available segments:\n" log-stream fputs
+  "Available blocks table:\n" log-stream fputs
   0 while dup malloc.avail-queue-length @64 < do let i in
-    i log-stream fputi ". 0x" log-stream fputs i malloc.avail-queue queue64.get log-stream fputx " (size: 0x" log-stream fputs i malloc.avail-queue queue64.get dup @64 - neg log-stream fputx ")\n" log-stream fputs
+    i log-stream fputi ". 0x" log-stream fputs i malloc.avail-queue queue64.get log-stream fputx " (size: 0x" log-stream fputs i malloc.avail-queue queue64.get malloc.block-size log-stream fputx ")\n" log-stream fputs
   i end inc end drop
   "--------------------\n" log-stream fputs
-  "Segments:\n" log-stream fputs
-  malloc.array while dup malloc.array malloc.ARRAY-SIZE + < do let group in
-    "Segment at 0x" log-stream fputs group log-stream fputx ", points to 0x" log-stream fputs group @64 log-stream fputx log-stream fputnl
-    "Status: " log-stream fputs group malloc.avail-queue-array malloc.avail-queue-array malloc.avail-queue-length @64 8 * + sorted64.available if "Free" else "Occupied" end log-stream fputs drop log-stream fputnl
-    "Size: " log-stream fputs group @64 group - log-stream fputi " (" log-stream fputs group @64 group - 8 - log-stream fputi " usable)\n" log-stream fputs
-  group @64 end end drop
+  "Blocks:\n" log-stream fputs
+  malloc.array while dup malloc.array malloc.ARRAY-SIZE + < do let block in
+    block malloc.next-block block <= if
+      "Block at 0x" log-stream fputs block log-stream fputx " points to itself or backwards, stopping iteration.\n" log-stream fputs
+      block break
+    end
+    
+    block malloc.avail-queue-array malloc.avail-queue-array malloc.avail-queue-length @64 8 * + sorted64.available if
+      "#"
+    else
+      "@"
+    end log-stream fputs drop
+    
+    " 0x" log-stream fputs
+    block log-stream fputx
+    " -> 0x" log-stream fputs
+    block malloc.next-block log-stream fputx
+    " (" log-stream fputs
+    block malloc.block-size log-stream fputu
+    ", " log-stream fputs
+    block malloc.container-size log-stream fputu
+    ")\n" log-stream fputs
+  block malloc.next-block end end drop
   "--------------------\n" log-stream fputs
   "End of debug-dynamic-memory.\n" log-stream fputs
 end end

@@ -6,26 +6,54 @@ macro malloc.AVAIL-QUEUE-SIZE 0x100  endmacro
 include libs/dynamic/malloc.corth
 include libs/dynamic/debug_malloc.corth
 
+proc allocate-space
+  int -- ptr
+in let size in
+  size malloc let object in
+    object mlength size != if
+      "[INFO] Size does not match.\n" puts
+    else
+      "[INFO] Successfully allocated object.\n" puts
+    end
+
+    STDOUT debug-dynamic-memory
+    object
+  end
+end end
+
+proc deallocate-space
+  ptr --
+in let container in
+  container mfree if
+    "[INFO] Successfully deallocated object.\n" puts
+  else
+    "[INFO] Could not deallocate object.\n" puts
+  end
+
+  STDOUT debug-dynamic-memory
+end end 
+
 proc main
   int int -- int
 in let argc argv in
   malloc.init
 
-  56 malloc let a in
-    56 malloc let b in
-      56 malloc let c in 
-        56 malloc let d in
-          56 malloc let e in
-            56 malloc let f in
-              56 malloc let g in
-                56 malloc let h in
-                  a mfree
-                  c mfree
-                  e mfree
-                  g mfree
-                  STDOUT debug-dynamic-memory
-                  b mfree
-                  STDOUT debug-dynamic-memory
+  STDOUT debug-dynamic-memory
+
+  56 allocate-space let a in
+    56 allocate-space let b in
+      56 allocate-space let c in 
+        56 allocate-space let d in
+          56 allocate-space let e in
+            56 allocate-space let f in
+              56 allocate-space let g in
+                56 allocate-space let h in
+                  b deallocate-space
+                  d deallocate-space
+                  f deallocate-space
+                  h deallocate-space
+                  c deallocate-space
+                  a deallocate-space
                 end
               end
             end
