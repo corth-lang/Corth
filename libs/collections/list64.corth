@@ -91,13 +91,14 @@ endmacro
 proc list64.inc-capacity
   // int: extend ptr: list64 --
   int ptr --
+  // NOTE: If a problem with mfree occurs, it is ignored. This behavior should be changed in the future.
 in let extend list in
   list list64.get-dynamic let old_dynamic in
     // Resize and save the dynamic object.
     old_dynamic old_dynamic mlength extend 8 * + dresize-up list !64
 
     // Free the old dynamic resources.
-    old_dynamic mfree
+    old_dynamic mfree drop
   end
 end end
 
