@@ -108,6 +108,7 @@ in let file file-name line-no char-no log-stream in
 
     // Get the mapping of the escape character.
          buffer @8 'n'  = if '\n'
+    else buffer @8 't'  = if '\t'
     else buffer @8 '\'' = if '\''
     else buffer @8 '\"' = if '\"'
     else buffer @8 '\\' = if '\\'
@@ -136,7 +137,7 @@ in let file file-name line-no char-no log-stream in
       LOG.ERR log-stream fputs "Invalid escape sequence.\n" log-stream fputs
       line-no @64 char-no @64 file ftell generate-position file-name log-stream fput-here-position
       ERROR-EXIT-CODE exit drop
-    0 end end end end  end
+    0 end end end end end end
   end
 end end
 
