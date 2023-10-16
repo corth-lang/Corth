@@ -119,6 +119,8 @@ in let file file-name line-no char-no log-stream in
         ERROR-EXIT-CODE exit drop
       end
 
+      // Increase the char-no.
+      char-no @64 2 + char-no !64
       // Get the hexadecimal value after '\x'.
       memory number sizeof(int) in
         buffer 2 number convx ! if
