@@ -207,10 +207,10 @@ macro fput-intrinsic let intrinsic file in
 end endmacro
 
 proc fput-token
-  // int: token-type ptr: token-address [int|ptr]: token-arg file-desc: file-desc
-  int ptr int file-desc --
-in let token-type token-addr token-arg file_ in
-  "( [" file_ fputs token-addr file_ fput-address "] " file_ fputs token-type file_ fput-type " '" file_ fputs
+  // int: token-type [int|ptr]: token-arg file-desc: file-desc
+  int int file-desc --
+in let token-type token-arg file_ in
+  token-type file_ fput-type " '" file_ fputs
 
   token-type TYPE-NAME = if
     token-arg token-arg mlength file_ fputs
@@ -228,5 +228,5 @@ in let token-type token-addr token-arg file_ in
     token-arg file_ fputi
   end end end end end end
 
-  "' )" file_ fputs
+  "'" file_ fputs
 end end
