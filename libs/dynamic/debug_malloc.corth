@@ -36,3 +36,14 @@ in let  log-stream in
   "--------------------\n" log-stream fputs
   "End of debug-dynamic-memory.\n" log-stream fputs
 end end
+
+
+// Can be used to debug malloc segments.
+proc check-dynamic-memory-integrity
+  -- bool
+  // Returns false if there are any problems with malloc.array.
+in
+  malloc.array while dup malloc.array malloc.ARRAY-SIZE + < do let block in
+    block malloc.next-block block <= if false return end
+  block malloc.next-block end end drop
+true end 
