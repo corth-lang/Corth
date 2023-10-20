@@ -860,28 +860,28 @@ in
     
   "proc_" output-file fputs procedure-name procedure-name mlength output-file fputs ":\n" output-file fputs
 
-  memory levels-list      sizeof(ptr)                     in
+  memory levels-list      sizeof(ptr)      in
 
-         // level-id-counter allows to create unique IDs for level labels.
-  memory level-id-counter sizeof(int)                     in
+  // level-id-counter allows to create unique IDs for level labels.
+  memory level-id-counter sizeof(int)      in
 
-         // let-names, let-addresses and let-vars-length create a str_map64.
+  // let-names, let-addresses and let-vars-length create a str_map64.
   memory let-names        LET-MAX-COUNT    in
   memory let-addresses    LET-MAX-COUNT    in
   memory let-vars-length  sizeof(int)      in
          
-         // local-names, local-addresses and locals-length create a str_map64.
+  // local-names, local-addresses and locals-length create a str_map64.
   memory local-names      LOCALS-MAX-COUNT in
   memory local-addresses  LOCALS-MAX-COUNT in
   memory locals-length    sizeof(int)      in
 
-         // local-memory-end keeps track of the first available position on the local memory.
+  // local-memory-end keeps track of the first available position on the local memory.
   memory local-memory-end sizeof(int)      in
 
-         // local-memory-max keeps track of the maximum length of the local memory, to later allocate enough space.
+  // local-memory-max keeps track of the maximum length of the local memory, to later allocate enough space.
   memory local-memory-max sizeof(int)      in
 
-         // branch-active keeps track of if the branch of the code ended.
+  // branch-active keeps track of if the branch of the code ended.
   memory branch-active    1                in
 
     16 list64.init let dynamic in
@@ -929,7 +929,7 @@ in
         else token-type TYPE-NAME = if
           // -------- Names --------
 
-          // Branch should not be cut before 'else'.
+          // Branch should not be cut before name.
           token-address "calling a name" compile-procedure.check-branch-here
             
           token-arg let-names let-addresses let-vars-length str-map64.get if
@@ -1171,7 +1171,7 @@ in
             //  0- 7 -> KEYWORD-IF
             //  8-15 -> Starter address
             // 16-23 -> Level ID
-            // 24-32 -> Old stack
+            // 24-31 -> Old stack
 
             // Branch should not be cut before 'else'.
             token-address "before 'if'" compile-procedure.check-branch-here
@@ -1452,11 +1452,10 @@ in
             token-address "call 'let'" compile-procedure.check-branch-here
 
             // New names are stored in new-names and new-names-length queue. When the 'end' of 'let' is reached, new names are deleted from the namespace.
-            // TODO: Convert new-names and new-names-length to a vector, so that it can have infinite storage.
             memory new-names-list sizeof(ptr) in
               16 list64.init let dynamic in
-                dynamic "creating list dynamic object for 'memory'" compile-procedure.check-null-here
-
+                dynamic "creating list dynamic object for 'let'" compile-procedure.check-null-here
+                
                 dynamic new-names-list !64
               end
 
