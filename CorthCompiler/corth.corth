@@ -26,6 +26,16 @@ include CorthCompiler/enums.corth
 macro SOURCE-NAME "./CorthCompiler/corth.corth" endmacro
 macro OUTPUT-NAME "./o.asm"         endmacro
 
+
+// NOTE: Designed to be used inside 'get-next-token'. Variable names used inside this macro should not be changed as they come from 'get-next-token'.
+macro get-next-token.generate-address
+  file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address dup is-null if
+    "'malloc' failed while generating an address.\n" STDERR fputs
+    ERROR-EXIT-CODE exit drop
+  end
+endmacro
+
+
 proc create-name-token
   // ptr: file-name file-desc: file-desc
   ptr file-desc
@@ -104,7 +114,7 @@ in let
 
     let token-type token-arg in
       // Generate the address and return.
-      token-type file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address token-arg
+      token-type get-next-token.generate-address token-arg
     end
   end
 end end
@@ -167,7 +177,7 @@ in let
             // Get full token.
             file file-name line-no char-no buffer buffer-end log-stream parse-next-token
 
-            file-name NULLPTR start-line start-char start-at line-no @64 char-no @64 file ftell generate-address let address in
+            get-next-token.generate-address let address in
               memory number sizeof(int) in
                 buffer buffer-end @64 buffer - number convint ! if
                   LOG.ERR log-stream fputs "Could not convert integer.\n" log-stream fputs
@@ -215,7 +225,7 @@ in let
               end
 
               // Return token type, address and argument.
-              TYPE-INTEGER NULLPTR file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address character
+              TYPE-INTEGER get-next-token.generate-address character
             end
 
           else buffer @8 '"' = if
@@ -230,7 +240,7 @@ in let
             file file-name line-no char-no buffer buffer-end log-stream parse-next-string
 
             // Return token type, address and argument.
-            TYPE-STRING NULLPTR file-name start-line start-char start-at line-no @64 char-no @64 file ftell generate-address buffer buffer-end @64 buffer - to-dynamic8
+            TYPE-STRING get-next-token.generate-address buffer buffer-end @64 buffer - to-dynamic8
 
           else buffer @8 '/' = if
             // -------- Slash (Name and comments) --------
