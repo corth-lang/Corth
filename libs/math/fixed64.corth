@@ -1,4 +1,4 @@
-include libs/core/
+include libs/core/stack.corth
 include libs/math/constants.corth
 
 /*
@@ -208,8 +208,8 @@ proc sqrt-f
   // x' = 1/2 (x + E/x)
 in let epsilon in
   epsilon FONE-HALF umul-ff let h-epsilon in
-    memory x sizeof(fixed64) and
-           i sizeof(int)     in
+    memory x sizeof(fixed64) in
+    memory i sizeof(int)     in
 
       0 i !64
       FONE x !64
@@ -220,7 +220,7 @@ in let epsilon in
         i @64 SQRT.DEPTH >= if break end
       end
       x @64
-    end
+    end end
   end
 end end
 
@@ -237,27 +237,27 @@ in
   PI 2 * %
   
   let x in
-    memory sum sizeof(fixed64) and
-           a   sizeof(fixed64) and
-           i   sizeof(int)     in
+    memory sum sizeof(fixed64) in
+    memory a   sizeof(fixed64) in
+    memory i   sizeof(int)     in
 
       a   x !64
       sum x !64
 
       3 while dup TRIGONOMETRY.ITER < do
-	i swp !64
+        i swp !64
 
-	// a *= -x^2 / (i * (i - 1))
-	x sqr-f neg i @64 / i @64 dec / a @64 mul-ff a !64
+        // a *= -x^2 / (i * (i - 1))
+        x sqr-f neg i @64 / i @64 dec / a @64 mul-ff a !64
 
-	// sum += a
-	sum dup @64 a @64 + !64
+        // sum += a
+        sum dup @64 a @64 + !64
 
-	i @64 inc inc
+        i @64 inc inc
       end drop
 
       sum @64
-    end
+    end end end
   end
 end
 
@@ -269,27 +269,27 @@ in
   PI 2 * %
   
   let x in
-    memory sum sizeof(fixed64) and
-           a   sizeof(fixed64) and
-           i   sizeof(int)     in
+    memory sum sizeof(fixed64) in
+    memory a   sizeof(fixed64) in
+    memory i   sizeof(int)     in
 
       a   0x0000000100000000 !64
       sum 0x0000000100000000 !64
 
       2 while dup TRIGONOMETRY.ITER < do
-	i swp !64
+        i swp !64
 
-	// a *= -x^2 / (i * (i - 1))
-	x sqr-f neg i @64 / i @64 dec / a @64 mul-ff a !64
+        // a *= -x^2 / (i * (i - 1))
+        x sqr-f neg i @64 / i @64 dec / a @64 mul-ff a !64
 
-	// sum += a
-	sum dup @64 a @64 + !64
+        // sum += a
+        sum dup @64 a @64 + !64
 
-	i @64 inc inc
+        i @64 inc inc
       end drop
 
       sum @64
-    end
+    end end end
   end
 end
 
