@@ -581,7 +581,7 @@ in
 
     "    pop     rax\n"               output-file fputs
     "    pop     rbx\n"               output-file fputs
-    "    sub     rax, rbx\n"          output-file fputs
+    "    sub     rbx, rax\n"          output-file fputs
     "    pushf\n"                     output-file fputs
     "    and     qword [rsp], 0x80\n" output-file fputs
 
