@@ -6,8 +6,8 @@ include libs/core/arithmetic.corth
 include libs/core/memory.corth
 
 
-macro malloc.ARRAY-SIZE       0x4000000 endmacro
-macro malloc.AVAIL-QUEUE-SIZE 0x10000 endmacro
+macro malloc.ARRAY-SIZE       0x8000000 endmacro
+macro malloc.AVAIL-QUEUE-SIZE 0x100000 endmacro
 include libs/dynamic/malloc.corth
 include libs/dynamic/utils.corth
 
@@ -34,6 +34,32 @@ macro get-next-token.generate-address
     ERROR-EXIT-CODE exit drop
   end
 endmacro
+
+
+proc fput-alpha
+  ptr file-desc --
+in let name file in
+  name mlength malloc let object in
+    object is-null if
+      "'malloc' failed while allocating space for fput-alpha.\n" STDERR fputs
+      ERROR-EXIT-CODE exit drop
+    end
+
+    0 while dup name mlength < do let i in
+      name i + @8 let char in
+        char 'a' 'z' is-range char 'A' 'Z' is-range | char '1' '9' is-range | if
+          char object i + !8
+        else
+          '_' object i + !8
+        end
+      end
+    i end inc end drop
+
+    object object mlength file fputs
+
+    object mfree drop
+  end
+end end
 
 
 proc create-name-token
@@ -858,7 +884,7 @@ in let
   log-stream
 in
     
-  "proc_" output-file fputs procedure-name procedure-name mlength output-file fputs ":\n" output-file fputs
+  "proc_" output-file fputs procedure-name output-file fput-alpha ":\n" output-file fputs
 
   memory levels-list      sizeof(ptr)      in
 
@@ -902,6 +928,10 @@ in
       "end of procedure or procedure definition" true compile-procedure.get-next-token
 
       let token-type token-address token-arg in
+        // -- debug --
+        // LOG.INFO log-stream fputs token-type token-arg log-stream fput-token log-stream fputnl
+        // token-address log-stream fput-here
+
         token-type TYPE-INTEGER = if
           // -------- Constant integer --------
 
@@ -960,7 +990,7 @@ in
             // -------- global 'memory' variables --------
 
             let address in
-              "    rax     global_" output-file fputs token-arg token-arg mlength output-file fputs output-file fputnl
+              "    mov     rax, global_" output-file fputs token-arg output-file fput-alpha output-file fputnl
               "    push    rax\n" output-file fputs
               
               create-int local-stack local-stack-length queue64.append
@@ -1003,7 +1033,7 @@ in
                     "    push    qword [local_ptr]\n"            output-file fputs         
                     "    add     qword [local_ptr], "            output-file fputs local-memory-end @64 output-file fputu output-file fputnl
                     "    xchg    rsp, [call_ptr]\n"              output-file fputs         
-                    "    jmp     proc_"                          output-file fputs token-arg token-arg mlength output-file fputs output-file fputnl
+                    "    jmp     proc_"                          output-file fputs token-arg output-file fput-alpha output-file fputnl
                     ".level_"                                    output-file fputs level-id output-file fputu ":\n" output-file fputs
                   end
 
@@ -1068,17 +1098,14 @@ in
                   // -------- End of 'if' --------
                   // TODO: Check for stack change.
 
-                  branch-active @8 is-zero if
-                    level 16 + @64 level 24 + @64 let start-id start-stack in
-                      start-stack local-stack start-stack mlength 8 / memcpy64
-                      start-stack mlength 8 / local-stack-length !64
-                    end
-
-                    // Reset the branch.
-                    0xff branch-active !8
-                  end
-
                   level 16 + @64 level 24 + @64 let start-id start-stack in
+                    branch-active @8 is-zero if
+                      start-stack start-stack mlength 8 / local-stack local-stack-length queue64.overwrite
+
+                      // Reset the branch.
+                      0xff branch-active !8
+                    end
+                    
                     ".level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
                   end
 
@@ -1107,7 +1134,9 @@ in
                   // Branch should not be cut before the end of do.
                   token-address "finish a while-do loop" compile-procedure.check-branch-here
             
-                  level 16 + @64 level 24 + @64 level 32 + @64 level 40 + @64 level 48 + @64 let while-level-id do-address unbroken-end-id broken-end-id old-stack in
+                  level 16 + @64 level 24 + @64 level 32 + @64 level 40 + @64 level 48 + @64 level 56 + @64 let while-level-id do-address unbroken-end-id broken-end-id while-stack do-stack in
+                    do-stack do-stack mlength 8 / local-stack local-stack-length queue64.overwrite
+
                     "    jmp     .level_" output-file fputs while-level-id output-file fputu output-file fputnl
                      
                     ".level_" output-file fputs unbroken-end-id output-file fputu ":\n" output-file fputs
@@ -1183,7 +1212,7 @@ in
             end
 
             // TODO: Check for the data type
-            local-stack-length @dec64
+            local-stack local-stack-length queue64.pop-last drop
 
             local-stack local-stack-length @64 to-dynamic64 let copy-stack in
               copy-stack "copying the stack for 'if'" compile-procedure.check-null-here
@@ -1233,8 +1262,7 @@ in
                 old-keyword old-address token-address "before 'else'" KEYWORD-IF compile-procedure.check-level-here
 
                 level 16 + @64 level 24 + @64 let start-id start-stack in
-                  start-stack local-stack start-stack mlength 8 / memcpy64
-                  start-stack mlength 8 / local-stack-length !64
+                  start-stack start-stack mlength 8 / local-stack local-stack-length queue64.overwrite
 
                   compile-procedure.new-level-id let level-id in
                     "    jmp     .level_" output-file fputs level-id output-file fputu output-file fputnl
@@ -1306,7 +1334,8 @@ in
             // 24-31 -> Do address
             // 32-39 -> Unbroken loop end level ID
             // 40-47 -> Broken loop end level ID
-            // 48-55 -> Old stack
+            // 48-55 -> While stack
+            // 56-63 -> Do stack
 
             // Branch should not be cut between 'while' and 'do'.
             token-address "call 'do'" compile-procedure.check-branch-here
@@ -1336,24 +1365,55 @@ in
                       "    test    rax, rax\n" output-file fputs
                       "    jz      .level_"    output-file fputs unbroken-end-id output-file fputu output-file fputnl
                       
-                      56 malloc let new-level in
-                        new-level "creating a level object for 'do' after 'while'" compile-procedure.check-null-here
+                      local-stack local-stack-length @64 to-dynamic64 let copy-stack in
+                        copy-stack "copying the stack for 'do'" compile-procedure.check-null-here
 
-                        KEYWORD-DO               new-level      !64
-                        old-address              new-level 8  + !64
-                        old-level-id             new-level 16 + !64
-                        token-address            new-level 24 + !64
-                        unbroken-end-id          new-level 32 + !64
-                        broken-end-id            new-level 40 + !64
-                        old-stack                new-level 48 + !64
+                        64 malloc let new-level in
+                          new-level "creating a level object for 'do' after 'while'" compile-procedure.check-null-here
 
-                        new-level levels-list list64.append
+                          KEYWORD-DO               new-level      !64
+                          old-address              new-level 8  + !64
+                          old-level-id             new-level 16 + !64
+                          token-address            new-level 24 + !64
+                          unbroken-end-id          new-level 32 + !64
+                          broken-end-id            new-level 40 + !64
+                          old-stack                new-level 48 + !64
+                          copy-stack               new-level 56 + !64
+                          new-level levels-list list64.append
+                        end
                       end
                     end
                   end
                 end
               end
             end        
+
+          else token-arg KEYWORD-BREAK = if 
+            // -------- Keyword 'break' -------
+            // break
+            
+            // Branch should not be cut before 'break'.
+            token-address "call 'break'" compile-procedure.check-branch-here
+            
+            levels-list list64.end-addr while dup levels-list list64.array-addr > do 8 - let level-addr in
+              level-addr @64 @64 level-addr @64 8 + @64 let old-keyword old-address in
+                old-keyword KEYWORD-DO = if
+                  level-addr @64 32 + @64 let broken-end-id in
+                    "    jmp     .level_" output-file fputs broken-end-id output-file fputu output-file fputnl
+                  end
+
+                  0 branch-active !8
+                  0 break
+                end
+              end
+            level-addr end end drop
+
+            // TODO: Unfinished, should add stack value type check.
+            branch-active @8 isn-zero if
+              LOG.ERR log-stream fputs "Expected a 'while-do' structure before 'break'.\n" log-stream fputs
+              token-address compile-procedure.show-here
+              ERROR-EXIT-CODE exit drop
+            end
 
           else token-arg KEYWORD-MEMORY = if
             // -------- Keyword 'memory' -------
@@ -1541,7 +1601,7 @@ in
             LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
             token-address compile-procedure.show-here
             ERROR-EXIT-CODE exit drop
-          end end end end end end end end
+          end end end end end end end end end
 
         else
           LOG.ERR log-stream fputs "Unexpected type while expecting a keyword, an intrinsic, a string or an integer, got '" log-stream fputs token-type log-stream fput-type "'.\n" log-stream fputs
@@ -2105,15 +2165,23 @@ in let source-name output-name log-stream in
         end
         output-file fputnl
       i end inc end drop
+      
+      "segment .bss\n"                                    output-file fputs
+      "    local_memory:   resb 67108864\n"               output-file fputs
+      "    local_ptr:      resq 1\n"                      output-file fputs
+      "    call_stack:     resb 67108864\n"               output-file fputs
+      "    call_ptr:       resq 1\n"                      output-file fputs
+
+      0 while dup globals-length @64 < do let i in
+        i global-names-array array64.get i global-sizes-array array64.get let variable-name variable-size in
+          "    global_"  output-file fputs
+          i global-names-array array64.get output-file fput-alpha
+          ": resb " output-file fputs
+          variable-size output-file fputu
+          output-file fputnl
+        end
+      i end inc end drop
     end end end end end end end end end end end end
-
-    "segment .bss\n"                                    output-file fputs
-    "    local_memory:   resb 67108864\n"               output-file fputs
-    "    local_ptr:      resq 1\n"                      output-file fputs
-    "    call_stack:     resb 67108864\n"               output-file fputs
-    "    call_ptr:       resq 1\n"                      output-file fputs
-
-    // TODO: Print the global variables to file.
 
     output-file fclose drop
   end
@@ -2139,6 +2207,7 @@ in let argc argv in
     OUTPUT-NAME to-dynamic8 null-term8 let output-name in
       output-name is-null if
         "'malloc' failed while making the output name dynamic.\n" STDERR fputs
+        ERROR-EXIT-CODE exit drop
       end
 
       source-name output-name STDERR compile-nasm
