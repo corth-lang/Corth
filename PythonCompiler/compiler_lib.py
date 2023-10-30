@@ -116,6 +116,16 @@ def compile_nasm_program(file_name: str, program: deque, debug_mode: bool = Fals
         file.write("    push    CORTH_endofprogram\n")
         file.write("    push    QWORD [local]\n")
         file.write("    xchg    rsp, [callptr]\n")
+
+        file.write("    mov     rax, [rsp]\n")
+        file.write("    mov     rbx, rsp\n")
+        file.write("    add     rbx, 8\n")
+        file.write("    mov     rdx, rax\n")
+        file.write("    shl     rdx, 3\n")
+        file.write("    sub     rsp, rdx\n")
+        file.write("    push    rax\n")
+        file.write("    push    rbx\n")
+        
         file.write("    jmp     PROC_main\n")
 
         file.write("CORTH_endofprogram:\n")

@@ -1,0 +1,14 @@
+include libs/linux_x86/stdio.corth
+include libs/collections/array64.corth
+include libs/str.corth
+
+proc main
+  int ptr -- int
+in let argc argv in
+  "argc = " puts argc putu putnl
+  "argv = 0x" puts argv putx putnl
+
+  0 while dup argc < do let i in
+    "argv[" puts i putu "] = \"" puts i argv array64.get dup strc.get-len puts "\"\n" puts
+  i end inc end drop
+end 0 end

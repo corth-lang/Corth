@@ -2106,6 +2106,16 @@ in let source-name output-name log-stream in
     "    push    corth_endofprogram\n"                  output-file fputs
     "    push    qword [local_ptr]\n"                   output-file fputs
     "    xchg    rsp, [call_ptr]\n"                     output-file fputs
+
+    "    mov     rax, [rsp]\n"                          output-file fputs
+    "    mov     rbx, rsp\n"                            output-file fputs
+    "    add     rbx, 8\n"                              output-file fputs
+    "    mov     rdx, rax\n"                            output-file fputs
+    "    shl     rdx, 3\n"                              output-file fputs
+    "    sub     rsp, rdx\n"                            output-file fputs
+    "    push    rax\n"                                 output-file fputs
+    "    push    rbx\n"                                 output-file fputs
+
     "    jmp     proc_main\n"                           output-file fputs
 
     "corth_endofprogram:\n"                             output-file fputs
