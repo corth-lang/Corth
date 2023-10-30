@@ -31,19 +31,6 @@ macro u!= !=                              endmacro
 
 // -------------------------------------------------------------
 
-// int: x int: y -- int: cmp(x, y)
-// fixed64: x fixed64: y -- int: cmp(x, y)
-
-// Returns -1 if a<b.
-// Returns  0 if a=b.
-// Returns +1 if a>b.
-macro cmp let _a_ _b_ in
-  _a_ _b_ < if 0xffffffffffffffff else _b_ _a_ < if 1 else 0 end end
-end endmacro
-
-
-// -------------------------------------------------------------
-
 // int: x int: y -- int: op(x, y)
 // uint: x uint: y -- uint: op(x, y)
 

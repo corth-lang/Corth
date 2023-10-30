@@ -1,0 +1,20 @@
+macro array8.get-addr
+  // int: index ptr: array -- ptr: addr
+  // ptr: array int: index -- ptr: addr
+  
+  +
+endmacro
+
+macro array8.get
+  // int: index ptr: array -- int: value
+  // ptr: array int: index -- int: value
+
+  array8.get-addr @8
+endmacro
+
+macro array8.set
+  // int: value int: index ptr: array --
+  // int: value ptr: array int: index --
+
+  array8.get-addr !8
+endmacro

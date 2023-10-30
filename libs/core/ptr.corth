@@ -1,0 +1,2 @@
+macro ptr int endmacro
+macro sizeof(ptr)  8 endmacro

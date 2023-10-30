@@ -1,10 +1,9 @@
+include libs/core/ptr.corth
 include libs/core/arithmetic.corth
+include libs/collections/array8.corth
+include libs/collections/array64.corth
 
 
-macro ptr int endmacro
-
-
-macro sizeof(ptr)  8 endmacro
 macro sizeof(bool) 8 endmacro
 macro sizeof(char) 1 endmacro
 
@@ -19,61 +18,68 @@ macro isn-null NULLPTR != endmacro
 
 
 proc memcmp8
-  // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: cmp(a, b)
-  ptr int ptr int -- int
-  // Returns -1 if a<b.
+  // ptr: a-src ptr: b-src int: len -- int: cmp(a, b)
+  ptr ptr int -- int
+  // Returns <0 if a<b.
   // Returns  0 if a=b.
-  // Returns +1 if a>b.
-in let a-start a-length b-start b-length in
-  a-length b-length min2 let compare-length in
-    0 while dup compare-length < do let item-addr in
-      // Get a[i] and b[i].
-      a-start item-addr + @8 b-start item-addr + @8 let a-item b-item in
-        // If a[i]<b[i], return -1.
-        a-item b-item < if 0xffffffffffffffff return end
-
-        // If a[i]>b[i], return 1.
-        b-item a-item < if 1 return end
+  // Returns >0 if a>b.
+in let a-src b-src len in
+  0 while dup len < do let i in
+    i a-src array8.get i b-src array8.get - let cmp in
+      cmp isn-zero if
+        cmp return
       end
-    item-addr end inc end drop
-  end
-
-  // Compare the lengths.
-  a-length b-length cmp
-end end
+    end
+  i end inc end drop
+end 0 end
 
 proc memcmp64
-  // ptr: a-start int: a-length ptr: b-start int: b-length -- bool: cmp(a, b)
-  ptr int ptr int -- int
-  // Returns -1 if a<b.
+  // ptr: a-src ptr: b-src int: len -- int: cmp(a, b)
+  ptr ptr int -- int
+  // Returns <0 if a<b.
   // Returns  0 if a=b.
-  // Returns +1 if a>b.
-in let a-start a-length b-start b-length in
-  a-length b-length min2 8 * let compare-length in
-    0 while dup compare-length < do let item-addr in
-      // Get a[i] and b[i].
-      a-start item-addr + @64 b-start item-addr + @64 let a-item b-item in
-        // If a[i]<b[i], return -1.
-        a-item b-item < if 0xffffffffffffffff return end
-
-        // If a[i]>b[i], return 1.
-        b-item a-item < if 1 return end
+  // Returns >0 if a>b.
+in let a-src b-src len in
+  0 while dup len < do let i in
+    i a-src array64.get i b-src array64.get - let cmp in
+      cmp isn-zero if
+        cmp return
       end
-    item-addr end 8 + end drop
-  end
+    end
+  i end inc end drop
+end 0 end
 
-  // Compare the lengths.
-  a-length b-length cmp
+proc memcmp8-wl
+  // ptr: a-src int: a-len ptr: b-src int: b-len -- int: cmp(a, b)
+  ptr int ptr int -- int
+  // Returns <0 if a<b.
+  // Returns  0 if a=b.
+  // Returns >0 if a>b.
+in let a-src a-len b-src b-len in
+  a-src b-src a-len b-len min2 memcmp8 let cmp in
+    cmp isn-zero if
+      cmp return
+    end
+
+    a-len b-len -
+  end
 end end
 
+proc memcmp64-wl
+  // ptr: a-src int: a-len ptr: b-src int: b-len -- int: cmp(a, b)
+  ptr int ptr int -- int
+  // Returns <0 if a<b.
+  // Returns  0 if a=b.
+  // Returns >0 if a>b.
+in let a-src a-len b-src b-len in
+  a-src b-src a-len b-len min2 memcmp64 let cmp in
+    cmp isn-zero if
+      cmp return
+    end
 
-macro memlt8  memcmp8  is-neg  endmacro
-macro memeq8  memcmp8  is-zero endmacro
-macro memgt8  memcmp8  is-pos  endmacro
-
-macro memlt64 memcmp64 is-neg  endmacro
-macro memeq64 memcmp64 is-zero endmacro
-macro memgt64 memcmp64 is-pos  endmacro
+    a-len b-len -
+  end
+end end
 
 
 proc memset8

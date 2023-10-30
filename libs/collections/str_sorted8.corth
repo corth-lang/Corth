@@ -28,16 +28,19 @@ in
         end
 
         lower @64 upper @64 avg2 offset - 8 lower-base offset + let middle in
-          // Check if found the exact value, if so, return true.
-          middle @64 value dmemeq8 if
-            middle true return
-          end
+          // Compare the two strings.
+          middle @64 value dmemcmp8 let cmp in
+            // Check if found the exact value, if so, return true.
+            cmp is-zero if
+              middle true return
+            end
 
-          // Move the end search points.
-          middle @64 value dmemlt8 if
-            middle 8 + lower !64
-          else
-            middle upper !64
+            // Move the end search points.
+            cmp is-neg if
+              middle 8 + lower !64
+            else
+              middle upper !64
+            end
           end
         end
       end
