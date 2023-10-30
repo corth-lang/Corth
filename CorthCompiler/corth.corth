@@ -5,9 +5,6 @@ include libs/core/stack.corth
 include libs/core/arithmetic.corth
 include libs/core/memory.corth
 
-
-macro malloc.ARRAY-SIZE       0x8000000 endmacro
-macro malloc.AVAIL-QUEUE-SIZE 0x100000 endmacro
 include libs/dynamic/malloc.corth
 include libs/dynamic/utils.corth
 
@@ -20,11 +17,6 @@ include libs/collections/str_set8.corth
 include CorthCompiler/lexer.corth
 include CorthCompiler/debug.corth
 include CorthCompiler/enums.corth
-
-
-// TODO: Make not hard-coded.
-macro SOURCE-NAME "./CorthCompiler/corth.corth" endmacro
-macro OUTPUT-NAME "./o.asm"         endmacro
 
 
 // NOTE: Designed to be used inside 'get-next-token'. Variable names used inside this macro should not be changed as they come from 'get-next-token'.
@@ -92,43 +84,43 @@ in let
   buffer-end @64 buffer - let buffer-size in
     // Check if the token is a keyword.
     // I hate my life.
-         buffer buffer-size KEYWORD-INCLUDE-STR    memeq8 if TYPE-KEYWORD KEYWORD-INCLUDE    
-    else buffer buffer-size KEYWORD-MACRO-STR      memeq8 if TYPE-KEYWORD KEYWORD-MACRO      
-    else buffer buffer-size KEYWORD-ENDMACRO-STR   memeq8 if TYPE-KEYWORD KEYWORD-ENDMACRO
-    else buffer buffer-size KEYWORD-PROC-STR       memeq8 if TYPE-KEYWORD KEYWORD-PROC       
-    else buffer buffer-size KEYWORD-END-STR        memeq8 if TYPE-KEYWORD KEYWORD-END        
-    else buffer buffer-size KEYWORD-RETURN-STR     memeq8 if TYPE-KEYWORD KEYWORD-RETURN     
-    else buffer buffer-size KEYWORD-RETURNS-STR    memeq8 if TYPE-KEYWORD KEYWORD-RETURNS    
-    else buffer buffer-size KEYWORD-MEMORY-STR     memeq8 if TYPE-KEYWORD KEYWORD-MEMORY     
-    else buffer buffer-size KEYWORD-AND-STR        memeq8 if TYPE-KEYWORD KEYWORD-AND        
-    else buffer buffer-size KEYWORD-IN-STR         memeq8 if TYPE-KEYWORD KEYWORD-IN         
-    else buffer buffer-size KEYWORD-LET-STR        memeq8 if TYPE-KEYWORD KEYWORD-LET        
-    else buffer buffer-size KEYWORD-IF-STR         memeq8 if TYPE-KEYWORD KEYWORD-IF         
-    else buffer buffer-size KEYWORD-ELSE-STR       memeq8 if TYPE-KEYWORD KEYWORD-ELSE       
-    else buffer buffer-size KEYWORD-WHILE-STR      memeq8 if TYPE-KEYWORD KEYWORD-WHILE      
-    else buffer buffer-size KEYWORD-DO-STR         memeq8 if TYPE-KEYWORD KEYWORD-DO         
-    else buffer buffer-size KEYWORD-BREAK-STR      memeq8 if TYPE-KEYWORD KEYWORD-BREAK      
+         buffer buffer-size KEYWORD-INCLUDE-STR    memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-INCLUDE    
+    else buffer buffer-size KEYWORD-MACRO-STR      memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-MACRO      
+    else buffer buffer-size KEYWORD-ENDMACRO-STR   memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-ENDMACRO
+    else buffer buffer-size KEYWORD-PROC-STR       memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-PROC       
+    else buffer buffer-size KEYWORD-END-STR        memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-END        
+    else buffer buffer-size KEYWORD-RETURN-STR     memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-RETURN     
+    else buffer buffer-size KEYWORD-RETURNS-STR    memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-RETURNS    
+    else buffer buffer-size KEYWORD-MEMORY-STR     memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-MEMORY     
+    else buffer buffer-size KEYWORD-AND-STR        memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-AND        
+    else buffer buffer-size KEYWORD-IN-STR         memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-IN         
+    else buffer buffer-size KEYWORD-LET-STR        memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-LET        
+    else buffer buffer-size KEYWORD-IF-STR         memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-IF         
+    else buffer buffer-size KEYWORD-ELSE-STR       memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-ELSE       
+    else buffer buffer-size KEYWORD-WHILE-STR      memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-WHILE      
+    else buffer buffer-size KEYWORD-DO-STR         memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-DO         
+    else buffer buffer-size KEYWORD-BREAK-STR      memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-BREAK      
     
     // I still hate my life.
-    else buffer buffer-size INTRINSIC-ADD-STR      memeq8 if TYPE-INTRINSIC INTRINSIC-ADD      
-    else buffer buffer-size INTRINSIC-FULLMUL-STR  memeq8 if TYPE-INTRINSIC INTRINSIC-FULLMUL  
-    else buffer buffer-size INTRINSIC-DIVMOD-STR   memeq8 if TYPE-INTRINSIC INTRINSIC-DIVMOD   
-    else buffer buffer-size INTRINSIC-UFULLMUL-STR memeq8 if TYPE-INTRINSIC INTRINSIC-UFULLMUL 
-    else buffer buffer-size INTRINSIC-UDIVMOD-STR  memeq8 if TYPE-INTRINSIC INTRINSIC-UDIVMOD  
-    else buffer buffer-size INTRINSIC-BOR-STR      memeq8 if TYPE-INTRINSIC INTRINSIC-BOR      
-    else buffer buffer-size INTRINSIC-BNOT-STR     memeq8 if TYPE-INTRINSIC INTRINSIC-BNOT     
-    else buffer buffer-size INTRINSIC-NOTEQUAL-STR memeq8 if TYPE-INTRINSIC INTRINSIC-NOTEQUAL 
-    else buffer buffer-size INTRINSIC-LESS-STR     memeq8 if TYPE-INTRINSIC INTRINSIC-LESS     
-    else buffer buffer-size INTRINSIC-TRUE-STR     memeq8 if TYPE-INTRINSIC INTRINSIC-TRUE     
-    else buffer buffer-size INTRINSIC-FALSE-STR    memeq8 if TYPE-INTRINSIC INTRINSIC-FALSE    
-    else buffer buffer-size INTRINSIC-LOAD8-STR    memeq8 if TYPE-INTRINSIC INTRINSIC-LOAD8    
-    else buffer buffer-size INTRINSIC-STORE8-STR   memeq8 if TYPE-INTRINSIC INTRINSIC-STORE8   
-    else buffer buffer-size INTRINSIC-LOAD64-STR   memeq8 if TYPE-INTRINSIC INTRINSIC-LOAD64   
-    else buffer buffer-size INTRINSIC-STORE64-STR  memeq8 if TYPE-INTRINSIC INTRINSIC-STORE64  
-    else buffer buffer-size INTRINSIC-SYSCALL6-STR memeq8 if TYPE-INTRINSIC INTRINSIC-SYSCALL6 
+    else buffer buffer-size INTRINSIC-ADD-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-ADD      
+    else buffer buffer-size INTRINSIC-FULLMUL-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-FULLMUL  
+    else buffer buffer-size INTRINSIC-DIVMOD-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-DIVMOD   
+    else buffer buffer-size INTRINSIC-UFULLMUL-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UFULLMUL 
+    else buffer buffer-size INTRINSIC-UDIVMOD-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UDIVMOD  
+    else buffer buffer-size INTRINSIC-BOR-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-BOR      
+    else buffer buffer-size INTRINSIC-BNOT-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-BNOT     
+    else buffer buffer-size INTRINSIC-NOTEQUAL-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-NOTEQUAL 
+    else buffer buffer-size INTRINSIC-LESS-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LESS     
+    else buffer buffer-size INTRINSIC-TRUE-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-TRUE     
+    else buffer buffer-size INTRINSIC-FALSE-STR    memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-FALSE    
+    else buffer buffer-size INTRINSIC-LOAD8-STR    memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD8    
+    else buffer buffer-size INTRINSIC-STORE8-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE8   
+    else buffer buffer-size INTRINSIC-LOAD64-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD64   
+    else buffer buffer-size INTRINSIC-STORE64-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE64  
+    else buffer buffer-size INTRINSIC-SYSCALL6-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL6 
     
-    else buffer buffer-size TYPE-INT-STR           memeq8 if TYPE-TYPE TYPE-INT           
-    else buffer buffer-size TYPE-BOOL-STR          memeq8 if TYPE-TYPE TYPE-BOOL          
+    else buffer buffer-size TYPE-INT-STR           memcmp8-wl is-zero if TYPE-TYPE TYPE-INT           
+    else buffer buffer-size TYPE-BOOL-STR          memcmp8-wl is-zero if TYPE-TYPE TYPE-BOOL          
     
     else
       // Return token type and argument.
@@ -2010,9 +2002,7 @@ in
                     local-stack local-stack-length
                     extended-array extended-start extended-end
                     log-stream
-                    compile-procedure
-                    
-                    LOG.INFO log-stream fputs "Procedure '" log-stream fputs proc-name-token-arg proc-name-token-arg mlength log-stream fputs "' requires at least " log-stream fputs log-stream fputu " bytes of allocated local memory.\n" log-stream fputs
+                    compile-procedure drop
                     
                     ".return:\n"                        output-file fputs
                     "    xchg    rsp, [call_ptr]\n"     output-file fputs
@@ -2198,32 +2188,6 @@ in let source-name output-name log-stream in
 end end
 
 
-proc main
-  int int -- int
-in let argc argv in
-  // Initialize malloc.
-  malloc.init
-
-  // Initialize debug.
-  debug-init
-
-  // Make file name dynamic.
-  SOURCE-NAME to-dynamic8 let source-name in
-    source-name is-null if
-      "'malloc' failed while making the source name dynamic.\n" STDERR fputs
-      ERROR-EXIT-CODE exit drop
-    end
-
-    OUTPUT-NAME to-dynamic8 null-term8 let output-name in
-      output-name is-null if
-        "'malloc' failed while making the output name dynamic.\n" STDERR fputs
-        ERROR-EXIT-CODE exit drop
-      end
-
-      source-name output-name STDERR compile-nasm
-    end
-  end
-end SUCCESS-EXIT-CODE end
 
 
 /*

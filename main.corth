@@ -1,0 +1,90 @@
+include libs/linux_x86/stdio.corth
+include libs/cstr.corth
+
+macro malloc.ARRAY-SIZE       0x8000000 endmacro
+macro malloc.AVAIL-QUEUE-SIZE 0x100000 endmacro
+
+include CorthCompiler/corth.corth
+
+
+macro EXIT-SUCCESS         0 endmacro
+macro EXIT-INVALID-USAGE   1 endmacro
+macro EXIT-NOT-IMPLEMENTED 2 endmacro
+
+// Usage information messages
+macro use-info-basic
+  "usage: corth <compile-nasm|compile|run> [args]\n" eputs
+  EXIT-INVALID-USAGE exit drop
+endmacro
+
+macro use-info-compile-nasm
+  "usage: corth compile-nasm <file> [<output>]" eputs
+  EXIT-INVALID-USAGE exit drop
+endmacro
+
+macro use-info-compile
+  "usage: corth compile <file> [<output>]" eputs
+  EXIT-INVALID-USAGE exit drop
+endmacro
+
+macro use-info-compile-corth
+  "usage: corth compile-corth" eputs
+  EXIT-INVALID-USAGE exit drop
+endmacro
+
+macro use-info-run
+  "usage: corth run <file> [<output>]" eputs
+  EXIT-INVALID-USAGE exit drop
+endmacro
+
+macro use-info-quick-test
+  "usage: corth quick-test" eputs
+  EXIT-INVALID-USAGE exit drop
+endmacro
+
+macro not-implemented
+  "not implemented yet\n" eputs
+  EXIT-NOT-IMPLEMENTED exit drop
+endmacro 
+
+
+proc main
+  int int -- int
+in let argc argv in
+  // Initialize malloc.
+  malloc.init
+
+  // Initialize debug.
+  debug-init
+
+  argc 2 < if
+    use-info-basic
+  end
+
+  1 argv array64.get "compile-nasm" drop cstr.cmp is-zero if
+    argc 3 = if
+      2 argv array64.get cstr.to-dynamic
+      "output.asm" inc to-dynamic8
+      STDERR compile-nasm
+      
+    else argc 4 = if
+      2 argv array64.get cstr.to-dynamic
+      3 argv array64.get cstr.to-dynamic
+      STDERR compile-nasm
+      
+    else
+      use-info-compile-nasm
+    end end
+    
+  else 1 argv array64.get "compile" drop cstr.cmp is-zero if
+    not-implemented
+  else 1 argv array64.get "compile-corth" drop cstr.cmp is-zero if
+    not-implemented
+  else 1 argv array64.get "run" drop cstr.cmp is-zero if
+    not-implemented
+  else 1 argv array64.get "quick-test" drop cstr.cmp is-zero if
+    not-implemented
+  else
+    use-info-basic
+  end end end end end
+end SUCCESS-EXIT-CODE end
