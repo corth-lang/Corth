@@ -13,6 +13,11 @@ macro cstr.str
   dup cstr.len
 endmacro
 
+// ptr: cstr -- ptr: copy
+macro cstr.to-dynamic
+  dup cstr.len inc to-dynamic8
+endmacro
+
 proc cstr.cmp
   // ptr: a-src ptr: b-src -- int: cmp(a, b)
   ptr ptr -- int
