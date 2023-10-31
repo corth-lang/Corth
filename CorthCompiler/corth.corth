@@ -944,7 +944,7 @@ in
           
           create-int local-stack local-stack-length queue64.append
           
-          output-file local-stack local-stack-length token-arg mlength push-int-constant
+          output-file local-stack local-stack-length token-arg mlength dec push-int-constant
 
           token-arg data-definitions-list list64.append
 
