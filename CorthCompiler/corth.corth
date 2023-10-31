@@ -1753,307 +1753,308 @@ in
       // Get next token and check if there is one available.
       while source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream true get-next-token do
         let token-type token-address token-arg in
-          token-type TYPE-KEYWORD = if
-            // -------- Global keywords --------
-            token-arg KEYWORD-INCLUDE = if
-              // -------- Keyword 'include' -------- 
-              // TODO: Create a function to include.
-              // TODO: Allow including packages.
-              // TODO: Add library search locations.
+          token-type TYPE-NAME = if
+            token-arg token-arg mlength log-stream fputs log-stream fputnl
+            token-arg mlength log-stream fputi log-stream fputnl
+            "include" log-stream fputi drop log-stream fputnl
+            token-arg token-arg mlength "include" memcmp8-wl log-stream fputi log-stream fputnl
+          end
+          token-type token-address "" TYPE-KEYWORD compile-file.check-type-here
+                
+          // -------- Global keywords --------
+          token-arg KEYWORD-INCLUDE = if
+            // -------- Keyword 'include' -------- 
+            // TODO: Create a function to include.
+            // TODO: Allow including packages.
+            // TODO: Add library search locations.
 
-              // Get the next token, which should be the include path.
-              "a 'name' for include path" false compile-file.get-next-token
+            // Get the next token, which should be the include path.
+            "a 'name' for include path" false compile-file.get-next-token
 
-              let path-token-type path-token-address path-token-arg in
-                path-token-type path-token-address "as path after 'include'" TYPE-NAME compile-file.check-type-here
+            let path-token-type path-token-address path-token-arg in
+              path-token-type path-token-address "as path after 'include'" TYPE-NAME compile-file.check-type-here
 
-                path-token-arg null-term8 let termed-path in
-                  memory stats sizeof(stat) in
-                    termed-path stats stat drop
+              path-token-arg null-term8 let termed-path in
+                memory stats sizeof(stat) in
+                  termed-path stats stat drop
 
-                    stats 24 + @64 S_IFMT && let masked in
-                      // Check if the include path exists.
-                      termed-path F_OK access isn-zero if
-                        LOG.ERR log-stream fputs "Path '" log-stream fputs path-token-arg path-token-arg mlength log-stream fputs "' does not exist.\n" log-stream fputs
-                        path-token-address log-stream fput-here
-                        ERROR-EXIT-CODE exit drop
+                  stats 24 + @64 S_IFMT && let masked in
+                    // Check if the include path exists.
+                    termed-path F_OK access isn-zero if
+                      LOG.ERR log-stream fputs "Path '" log-stream fputs path-token-arg path-token-arg mlength log-stream fputs "' does not exist.\n" log-stream fputs
+                      path-token-address log-stream fput-here
+                      ERROR-EXIT-CODE exit drop
+                    end
+
+                    // Check if the user has read permission for this file.
+                    termed-path R_OK access isn-zero if
+                      LOG.ERR log-stream fputs "Path '" log-stream fputs path-token-arg path-token-arg mlength log-stream fputs "' can not be read, because the user does not have permissions.\n" log-stream fputs
+                      path-token-address log-stream fput-here
+                      ERROR-EXIT-CODE exit drop
+                    end
+
+                    masked S_IFREG = if
+                      // File including, call compile-file on the file.
+                      path-token-arg output-file
+                      data-definitions-list
+                      global-names-array global-sizes-array globals-length
+                      proc-names-array proc-inputs-array proc-outputs-array procs-length
+                      macro-names macro-tokens macros-length
+                      libraries-set
+                      log-stream compile-file
+
+                    else masked S_IFDIR = if
+                      // Directory including, should include all sub paths.
+                      LOG.TODO log-stream fputs "Including directories is not implemented yet.\n" log-stream fputs
+                      path-token-address log-stream fput-here
+                      ERROR-EXIT-CODE exit drop
+
+                    else
+                      LOG.ERR log-stream fputs "Invalid file type, got " log-stream fputs masked log-stream fputo ".\n" log-stream fputs
+                      path-token-address log-stream fput-here
+                      ERROR-EXIT-CODE exit drop
+                    end end
+                  end
+                end
+              end
+            end
+
+          else token-arg KEYWORD-MEMORY = if
+            // -------- Keyword 'memory' --------
+
+            // Get the next token, which sould be the include path.
+            "a 'name' after 'memory' while defining a global varible" false compile-file.get-next-token
+
+            let memory-name-type memory-name-address memory-name-arg in
+              memory-name-type memory-name-address "as global variable name after 'memory'" TYPE-NAME compile-file.check-type-here
+
+              // TODO: Implement size calculation.
+              "size after 'memory' while defining a global varible" true compile-file.get-next-token
+
+              let memory-size-type memory-size-address memory-size-arg in
+                memory-size-type memory-size-address "as global variable size after 'memory'" TYPE-INTEGER compile-file.check-type-here
+
+                // Get the next keyword, which should be an 'end' keyword.
+                "an 'end' after 'memory' while defining a global varible" true compile-file.get-next-token
+
+                // Check the token type and keyword.
+                // Add 'and' keyword.
+                let end-token-type end-token-address end-token-arg in
+                  end-token-type end-token-address "after 'memory' while defining a global variable" TYPE-KEYWORD compile-file.check-type-here
+                  end-token-arg end-token-address "after 'memory' while defining a global variable" KEYWORD-END compile-file.check-keyword-here
+                end
+
+                // TODO: Check if the global variable queue was filled.
+                memory-name-arg memory-size-arg global-names-array global-sizes-array globals-length str-map64.set drop
+              end
+            end
+
+          else token-arg KEYWORD-MACRO = if
+            // -------- Keyword 'macro' --------
+
+            // Get the next token, which should be the name of the macro.
+            "a 'name' after 'macro'" false compile-file.get-next-token
+
+            let macro-name-token-type macro-name-token-address macro-name-token-arg in
+              macro-name-token-type macro-name-token-address "as macro name after 'macro'" TYPE-NAME compile-file.check-type-here
+
+              // macro-tokens and macro-tokens-length are used to create a QUEUE for macro tokens.
+              memory macro-tokens-list sizeof(ptr) in
+                16 list64.init let dynamic in
+                  dynamic "creating list dynamic object for 'macro'" compile-file.check-null-here
+
+                  dynamic macro-tokens-list !64
+                end
+
+                while true do
+                  // Get next tokens, until an 'endmacro' is found.
+                  "an 'endmacro' after 'macro'" false compile-file.get-next-token
+
+                  let macro-new-token-type macro-new-token-address macro-new-token-arg in
+                    // If the token is an 'endmacro' keyword, break the loop.
+                    macro-new-token-type TYPE-KEYWORD = if
+                      macro-new-token-arg KEYWORD-ENDMACRO = if
+                        break
                       end
+                    end
 
-                      // Check if the user has read permission for this file.
-                      termed-path R_OK access isn-zero if
-                        LOG.ERR log-stream fputs "Path '" log-stream fputs path-token-arg path-token-arg mlength log-stream fputs "' can not be read, because the user does not have permissions.\n" log-stream fputs
-                        path-token-address log-stream fput-here
-                        ERROR-EXIT-CODE exit drop
-                      end
-                      
-                      masked S_IFREG = if
-                        // File including, call compile-file on the file.
-                        path-token-arg output-file
-                        data-definitions-list
-                        global-names-array global-sizes-array globals-length
-                        proc-names-array proc-inputs-array proc-outputs-array procs-length
-                        macro-names macro-tokens macros-length
-                        libraries-set
-                        log-stream compile-file
-                        
-                      else masked S_IFDIR = if
-                        // Directory including, should include all sub paths.
-                        LOG.TODO log-stream fputs "Including directories is not implemented yet.\n" log-stream fputs
-                        path-token-address log-stream fput-here
-                        ERROR-EXIT-CODE exit drop
-                        
+                    // Add the token attributes to the macro-tokens-list.
+                    macro-new-token-type    macro-tokens-list list64.append
+                    macro-new-token-address macro-tokens-list list64.append
+                    macro-new-token-arg     macro-tokens-list list64.append
+                  end
+                end
+
+                // TODO: Check if the macros queue was filled.
+                macro-tokens-list list64.array-addr macro-tokens-list list64.length to-dynamic64 let object in
+                  macro-name-token-arg object macro-names macro-tokens macros-length str-map64.set drop
+                end
+              end
+            end
+
+          else token-arg KEYWORD-PROC = if
+            // -------- 'proc' keyword --------
+
+            // Get the next token, which should be the name of the procedure.
+            "a 'name' after 'proc'" false compile-file.get-next-token
+
+            let proc-name-token-type proc-name-token-address proc-name-token-arg in
+              proc-name-token-type proc-name-token-address "as procedure name after 'procedure'" TYPE-NAME compile-file.check-type-here
+
+              memory input-list sizeof(ptr) in
+              memory output-list sizeof(ptr) in
+
+                16 list64.init input-list !64
+                16 list64.init output-list !64
+
+                // Get the input types.
+                while true do
+                  // Get the token.
+                  "a 'type' after 'proc' for input" true compile-file.get-next-token
+
+                  let input-token-type input-token-address input-token-arg in
+                    input-token-type TYPE-KEYWORD = if
+                      // If the token was a keyword, it must be a 'KEYWORD-RETURN'.
+                      input-token-arg input-token-address "after 'proc' inputs" KEYWORD-RETURNS compile-file.check-keyword-here
+
+                      // If the token was a 'KEYWORD-RETURNS', break the loop.
+                      break
+                    end
+
+                    // Check if the token is of type-type.
+                    input-token-type input-token-address "after 'proc'" TYPE-TYPE compile-file.check-type-here
+
+                    input-token-arg input-list list64.append
+                  end
+                end
+
+                // Get the output types.
+                while true do
+                  // Get the token.
+                  "a 'type' after 'proc' for output" true compile-file.get-next-token
+
+                  let output-token-type output-token-address output-token-arg in
+                    output-token-type TYPE-KEYWORD = if
+                      // If the token is a keyword, it must be a 'KEYWORD-IN'.
+                      output-token-arg output-token-address "after 'proc' outputs" KEYWORD-IN compile-file.check-keyword-here
+
+                      // If the token was a 'KEYWORD-IN', break the loop.
+                      break
+                    end
+
+                    // Check if the token is of type-type.
+                    output-token-type output-token-address "after '--'" TYPE-TYPE compile-file.check-type-here
+
+                    output-token-arg output-list list64.append
+                  end
+                end
+
+                // Store the procedure name, input and outputs.
+                // Check if the procedure was defined already.
+                proc-name-token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available if
+                  drop
+                  LOG.ERR log-stream fputs "Procedure '" log-stream fputs proc-name-token-arg proc-name-token-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+                  proc-name-token-address log-stream fput-here
+                  ERROR-EXIT-CODE exit drop
+                  return
+                end
+
+                let name-address in
+                  name-address proc-names-array - let delta in
+                    proc-inputs-array delta + proc-outputs-array delta + let input-address output-address in
+                      // Shift the array to insert the name, input and output.
+                      name-address   name-address   8 + procs-length @64 name-address   proc-names-array   - 8 / - memcpy64i
+                      input-address  input-address  8 + procs-length @64 input-address  proc-inputs-array  - 8 / - memcpy64i
+                      output-address output-address 8 + procs-length @64 output-address proc-outputs-array - 8 / - memcpy64i
+
+                      // Save the name, inputs and outputs of the procedure.
+                      proc-name-token-arg            dcopy8 name-address   !64
+                      input-list          list64.copy-array input-address  !64 
+                      output-list         list64.copy-array output-address !64
+
+                      procs-length @inc64
+                    end
+                  end
+                end
+
+                // Create the stack for the procedure.
+                memory local-stack        STACK-MAX-ITEMS in
+                memory local-stack-length sizeof(int)     in
+
+                  0 local-stack-length !64
+
+                  // TODO: This system must be changed.
+                  0 while dup input-list list64.length < do let i in
+                    i input-list list64.array-addr array64.get let type in
+                      type TYPE-INT = if
+                        create-int local-stack local-stack-length queue64.append
+                      else type TYPE-BOOL = if
+                        create-bool local-stack local-stack-length queue64.append
                       else
-                        LOG.ERR log-stream fputs "Invalid file type, got " log-stream fputs masked log-stream fputo ".\n" log-stream fputs
-                        path-token-address log-stream fput-here
+                        LOG.ERR log-stream fputs "Input types for procedure '" log-stream fputs proc-name-token-arg proc-name-token-arg mlength log-stream fputs "' had an unknown type, got '" log-stream fputs type log-stream fputu "'.\n" log-stream fputs
+                        log-stream report-bug
+                        proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
                         ERROR-EXIT-CODE exit drop
                       end end
                     end
-                  end
-                end
-              end
-              
-            else token-arg KEYWORD-MEMORY = if
-              // -------- Keyword 'memory' --------
-              
-              // Get the next token, which sould be the include path.
-              "a 'name' after 'memory' while defining a global varible" false compile-file.get-next-token
+                  i end inc end drop
 
-              let memory-name-type memory-name-address memory-name-arg in
-                memory-name-type memory-name-address "as global variable name after 'memory'" TYPE-NAME compile-file.check-type-here
+                  source-name source-file output-file
+                  line-no char-no
+                  data-definitions-list
+                  global-names-array global-sizes-array globals-length
+                  proc-names-array proc-inputs-array proc-outputs-array procs-length
+                  macro-names macro-tokens macros-length
+                  proc-name-token-arg proc-name-token-address
+                  local-stack local-stack-length
+                  extended-array extended-start extended-end
+                  log-stream
+                  compile-procedure drop
 
-                // TODO: Implement size calculation.
-                "size after 'memory' while defining a global varible" true compile-file.get-next-token
+                  ".return:\n"                        output-file fputs
+                  "    xchg    rsp, [call_ptr]\n"     output-file fputs
+                  "    pop     qword [local_ptr]\n"   output-file fputs
+                  "    pop     rax\n"                 output-file fputs
+                  "    xchg    rsp, [call_ptr]\n"     output-file fputs
+                  "    jmp     rax\n"                 output-file fputs
 
-                let memory-size-type memory-size-address memory-size-arg in
-                  memory-size-type memory-size-address "as global variable size after 'memory'" TYPE-INTEGER compile-file.check-type-here
+                  // TODO: This system must be changed.
+                  memory temp-outputs-length sizeof(int) in
+                    output-list list64.length temp-outputs-length !64
 
-                  // Get the next keyword, which should be an 'end' keyword.
-                  "an 'end' after 'memory' while defining a global varible" true compile-file.get-next-token
-
-                  // Check the token type and keyword.
-                  // Add 'and' keyword.
-                  let end-token-type end-token-address end-token-arg in
-                    end-token-type end-token-address "after 'memory' while defining a global variable" TYPE-KEYWORD compile-file.check-type-here
-                    end-token-arg end-token-address "after 'memory' while defining a global variable" KEYWORD-END compile-file.check-keyword-here
-                  end
-
-                  // TODO: Check if the global variable queue was filled.
-                  memory-name-arg memory-size-arg global-names-array global-sizes-array globals-length str-map64.set drop
-                end
-              end
-              
-            else token-arg KEYWORD-MACRO = if
-              // -------- Keyword 'macro' --------
-
-              // Get the next token, which should be the name of the macro.
-              "a 'name' after 'macro'" false compile-file.get-next-token
-
-              let macro-name-token-type macro-name-token-address macro-name-token-arg in
-                macro-name-token-type macro-name-token-address "as macro name after 'macro'" TYPE-NAME compile-file.check-type-here
-
-                // macro-tokens and macro-tokens-length are used to create a QUEUE for macro tokens.
-                memory macro-tokens-list sizeof(ptr) in
-                  16 list64.init let dynamic in
-                    dynamic "creating list dynamic object for 'macro'" compile-file.check-null-here
-                    
-                    dynamic macro-tokens-list !64
-                  end
-                       
-                  while true do
-                    // Get next tokens, until an 'endmacro' is found.
-                    "an 'endmacro' after 'macro'" false compile-file.get-next-token
-
-                    let macro-new-token-type macro-new-token-address macro-new-token-arg in
-                      // If the token is an 'endmacro' keyword, break the loop.
-                      macro-new-token-type TYPE-KEYWORD = if
-                        macro-new-token-arg KEYWORD-ENDMACRO = if
-                          break
-                        end
-                      end
-
-                      // Add the token attributes to the macro-tokens-list.
-                      macro-new-token-type    macro-tokens-list list64.append
-                      macro-new-token-address macro-tokens-list list64.append
-                      macro-new-token-arg     macro-tokens-list list64.append
-                    end
-                  end
-
-                  // TODO: Check if the macros queue was filled.
-                  macro-tokens-list list64.array-addr macro-tokens-list list64.length to-dynamic64 let object in
-                    macro-name-token-arg object macro-names macro-tokens macros-length str-map64.set drop
-                  end
-                end
-              end
-              
-            else token-arg KEYWORD-PROC = if
-              // -------- 'proc' keyword --------
-
-              // Get the next token, which should be the name of the procedure.
-              "a 'name' after 'proc'" false compile-file.get-next-token
-
-              let proc-name-token-type proc-name-token-address proc-name-token-arg in
-                proc-name-token-type proc-name-token-address "as procedure name after 'procedure'" TYPE-NAME compile-file.check-type-here
-
-                memory input-list sizeof(ptr) in
-                memory output-list sizeof(ptr) in
-
-                  16 list64.init input-list !64
-                  16 list64.init output-list !64
-
-                  // Get the input types.
-                  while true do
-                    // Get the token.
-                    "a 'type' after 'proc' for input" true compile-file.get-next-token
-
-                    let input-token-type input-token-address input-token-arg in
-                      input-token-type TYPE-KEYWORD = if
-                        // If the token was a keyword, it must be a 'KEYWORD-RETURN'.
-                        input-token-arg input-token-address "after 'proc' inputs" KEYWORD-RETURNS compile-file.check-keyword-here
-                        
-                        // If the token was a 'KEYWORD-RETURNS', break the loop.
-                        break
-                      end
-
-                      // Check if the token is of type-type.
-                      input-token-type input-token-address "after 'proc'" TYPE-TYPE compile-file.check-type-here
-
-                      input-token-arg input-list list64.append
-                    end
-                  end
-
-                  // Get the output types.
-                  while true do
-                    // Get the token.
-                    "a 'type' after 'proc' for output" true compile-file.get-next-token
-
-                    let output-token-type output-token-address output-token-arg in
-                      output-token-type TYPE-KEYWORD = if
-                        // If the token is a keyword, it must be a 'KEYWORD-IN'.
-                        output-token-arg output-token-address "after 'proc' outputs" KEYWORD-IN compile-file.check-keyword-here
-
-                        // If the token was a 'KEYWORD-IN', break the loop.
-                        break
-                      end
-
-                      // Check if the token is of type-type.
-                      output-token-type output-token-address "after '--'" TYPE-TYPE compile-file.check-type-here
-
-                      output-token-arg output-list list64.append
-                    end
-                  end
-
-                  // Store the procedure name, input and outputs.
-                  // Check if the procedure was defined already.
-                  proc-name-token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available if
-                    drop
-                    LOG.ERR log-stream fputs "Procedure '" log-stream fputs proc-name-token-arg proc-name-token-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-                    proc-name-token-address log-stream fput-here
-                    ERROR-EXIT-CODE exit drop
-                    return
-                  end
-
-                  let name-address in
-                    name-address proc-names-array - let delta in
-                      proc-inputs-array delta + proc-outputs-array delta + let input-address output-address in
-                        // Shift the array to insert the name, input and output.
-                        name-address   name-address   8 + procs-length @64 name-address   proc-names-array   - 8 / - memcpy64i
-                        input-address  input-address  8 + procs-length @64 input-address  proc-inputs-array  - 8 / - memcpy64i
-                        output-address output-address 8 + procs-length @64 output-address proc-outputs-array - 8 / - memcpy64i
-
-                        // Save the name, inputs and outputs of the procedure.
-                        proc-name-token-arg            dcopy8 name-address   !64
-                        input-list          list64.copy-array input-address  !64 
-                        output-list         list64.copy-array output-address !64
-
-                        procs-length @inc64
-                      end
-                    end
-                  end
-
-                  // Create the stack for the procedure.
-                  memory local-stack        STACK-MAX-ITEMS in
-                  memory local-stack-length sizeof(int)     in
-
-                    0 local-stack-length !64
-
-                    // TODO: This system must be changed.
-                    0 while dup input-list list64.length < do let i in
-                      i input-list list64.array-addr array64.get let type in
-                        type TYPE-INT = if
-                          create-int local-stack local-stack-length queue64.append
-                        else type TYPE-BOOL = if
-                          create-bool local-stack local-stack-length queue64.append
-                        else
-                          LOG.ERR log-stream fputs "Input types for procedure '" log-stream fputs proc-name-token-arg proc-name-token-arg mlength log-stream fputs "' had an unknown type, got '" log-stream fputs type log-stream fputu "'.\n" log-stream fputs
-                          log-stream report-bug
+                    while local-stack-length @64 isn-zero do
+                      local-stack local-stack-length queue64.pop-last let type in
+                        temp-outputs-length @64 is-zero if
+                          LOG.ERR log-stream fputs "Procedure's stack has " log-stream fputs local-stack-length @64 inc log-stream fputu " items more than what was defined\n" log-stream fputs
                           proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
                           ERROR-EXIT-CODE exit drop
-                        end end
-                      end
-                    i end inc end drop
+                        end
 
-                    source-name source-file output-file
-                    line-no char-no
-                    data-definitions-list
-                    global-names-array global-sizes-array globals-length
-                    proc-names-array proc-inputs-array proc-outputs-array procs-length
-                    macro-names macro-tokens macros-length
-                    proc-name-token-arg proc-name-token-address
-                    local-stack local-stack-length
-                    extended-array extended-start extended-end
-                    log-stream
-                    compile-procedure drop
-                    
-                    ".return:\n"                        output-file fputs
-                    "    xchg    rsp, [call_ptr]\n"     output-file fputs
-                    "    pop     qword [local_ptr]\n"   output-file fputs
-                    "    pop     rax\n"                 output-file fputs
-                    "    xchg    rsp, [call_ptr]\n"     output-file fputs
-                    "    jmp     rax\n"                 output-file fputs
-
-                    // TODO: This system must be changed.
-                    memory temp-outputs-length sizeof(int) in
-                      output-list list64.length temp-outputs-length !64
-                      
-                      while local-stack-length @64 isn-zero do
-                        local-stack local-stack-length queue64.pop-last let type in
-                          temp-outputs-length @64 is-zero if
-                            LOG.ERR log-stream fputs "Procedure's stack has " log-stream fputs local-stack-length @64 inc log-stream fputu " items more than what was defined\n" log-stream fputs
+                        output-list list64.array-addr temp-outputs-length queue64.pop-last let check in
+                          type @64 check != if
+                            LOG.ERR log-stream fputs "Procedure's stack does not match with its return types.\n" log-stream fputs
+                            LOG.INFO log-stream fputs "Expected '" log-stream fputs check log-stream fputu "', got '" log-stream fputs type @64 log-stream fputu "'.\n" log-stream fputs
                             proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
                             ERROR-EXIT-CODE exit drop
                           end
-                          
-                          output-list list64.array-addr temp-outputs-length queue64.pop-last let check in
-                            type @64 check != if
-                              LOG.ERR log-stream fputs "Procedure's stack does not match with its return types.\n" log-stream fputs
-                              LOG.INFO log-stream fputs "Expected '" log-stream fputs check log-stream fputu "', got '" log-stream fputs type @64 log-stream fputu "'.\n" log-stream fputs
-                              proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                              ERROR-EXIT-CODE exit drop
-                            end
-                          end
                         end
                       end
-                      
-                      temp-outputs-length @64 isn-zero if
-                        LOG.ERR log-stream fputs "Procedure's stack is missing " log-stream fputs temp-outputs-length @64 log-stream fputu " returns.\n" log-stream fputs 
-                        proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                        ERROR-EXIT-CODE exit drop
-                      end
                     end
-                  end end
-                end end 
-              end
-            else
-              LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
-              token-address log-stream fput-here
-              ERROR-EXIT-CODE exit drop
-            end end end end
-            
+
+                    temp-outputs-length @64 isn-zero if
+                      LOG.ERR log-stream fputs "Procedure's stack is missing " log-stream fputs temp-outputs-length @64 log-stream fputu " returns.\n" log-stream fputs 
+                      proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
+                      ERROR-EXIT-CODE exit drop
+                    end
+                  end
+                end end
+              end end 
+            end
           else
-            LOG.ERR log-stream fputs "Expected a keyword type, got '" log-stream fputs token-type log-stream fput-type "'.\n" log-stream fputs
+            LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
             token-address log-stream fput-here
             ERROR-EXIT-CODE exit drop
-          end
+          end end end end
         end
       end drop drop drop
     end end end end end
