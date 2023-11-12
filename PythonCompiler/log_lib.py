@@ -1,6 +1,6 @@
 import subprocess
 
-from PythonCompiler import enum_lib
+import enum_lib
 
 
 def log(type_, message):
