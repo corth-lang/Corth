@@ -1,31 +1,31 @@
 # TODO LIST:
 
-## New compiler:
-
-- Implement global variables.
-- Add types for let variables.
-- Implement more complex patterns of scopes.
-- Implement an optimization model.
-- Implement directory including.
-- Make 'argc' and 'argv' arguments useful.
-- Single quotes can contain more than one character, this will put more integers to the stack.
-
 ## New ideas:
 
+#### Important: 
+
+- Add 'break' stacking. Stacking 'break' n times will cause the program to break the nth loop.
+- Implement 'promise' keyword, which allows to 'promise' to create procedures or global variables for cyclic procedure dependencies.
+- Add types for let variables.
+- Implement directory including.
+
+#### Less important:
+
+- Implement an optimization model.
+- Single quotes can contain more than one character, this will put more integers to the stack.
 - Implement local labels. (label here)
 - Implement label type. (label <type>* end)
 - Implement 'goto'. (goto here)
 - Add promise for local labels.
 - Implement local macros.
-- Implement 'promise' (not sure) keyword, which allows to 'promise' to create procedures for cyclic procedure dependencies.
 - Add calling standard C functions. (this would make life so damn simple)
 - Add 'addrof' and 'proc' types. (addrof p) will be usable to get the address of a procedure, (proc <type>* -- <type>* end) will be usable to define the type of a procedure and (call p) will be usable to call a procedure address. That way, the types will be kept static.
 - Add 'expect' which checks if the stack contains the right types. (expect type1 type2 ... end)
-- Add 'switch' and 'case'. (<value> switch (case <case1> <code1>)* end)
-   
+- Add 'switch' and 'case'. (<value> switch (case <case1> in <code1>)* end)
+- Add compiler symbols.
+
 ## Libraries:
 
-- Rewrite string library.
 - Remake core library macros to take advantage of precompilation.
 - Remove malloc.sew and remake malloc.mfree.
 - Add mmap and remake malloc and mfree using mmap.
@@ -49,7 +49,7 @@
       (<modifier>* <type> <name>)*
     in
       <any>
-    end      
+    end
 
 ## Modifier ideas:
 
@@ -84,10 +84,6 @@ Will act similar to
       [code]
       x
     end
-
-## Other:
-
-- Add compiler symbols.
 
 ## Notes:
 
