@@ -14,9 +14,9 @@ include libs/collections/queue64.corth
 include libs/collections/str_map64.corth
 include libs/collections/str_set8.corth
 
-include CorthCompiler/lexer.corth
-include CorthCompiler/debug.corth
-include CorthCompiler/enums.corth
+include Corth/compiler/lexer.corth
+include Corth/compiler/debug.corth
+include Corth/compiler/enums.corth
 
 
 // NOTE: Designed to be used inside 'get-next-token'. Variable names used inside this macro should not be changed as they come from 'get-next-token'.
@@ -1753,12 +1753,6 @@ in
       // Get next token and check if there is one available.
       while source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream true get-next-token do
         let token-type token-address token-arg in
-          token-type TYPE-NAME = if
-            token-arg token-arg mlength log-stream fputs log-stream fputnl
-            token-arg mlength log-stream fputi log-stream fputnl
-            "include" log-stream fputi drop log-stream fputnl
-            token-arg token-arg mlength "include" memcmp8-wl log-stream fputi log-stream fputnl
-          end
           token-type token-address "" TYPE-KEYWORD compile-file.check-type-here
                 
           // -------- Global keywords --------

@@ -4,7 +4,7 @@ include libs/cstr.corth
 macro malloc.ARRAY-SIZE       0x8000000 endmacro
 macro malloc.AVAIL-QUEUE-SIZE 0x100000 endmacro
 
-include CorthCompiler/corth.corth
+include Corth/compiler/compiler.corth
 
 
 macro EXIT-SUCCESS         0 endmacro
@@ -18,27 +18,27 @@ macro use-info-basic
 endmacro
 
 macro use-info-compile-nasm
-  "usage: corth compile-nasm <file> [<output>]" eputs
+  "usage: corth compile-nasm <file> [<output>]\n" eputs
   EXIT-INVALID-USAGE exit drop
 endmacro
 
 macro use-info-compile
-  "usage: corth compile <file> [<output>]" eputs
+  "usage: corth compile <file> [<output>]\n" eputs
   EXIT-INVALID-USAGE exit drop
 endmacro
 
 macro use-info-compile-corth
-  "usage: corth compile-corth" eputs
+  "usage: corth compile-corth\n" eputs
   EXIT-INVALID-USAGE exit drop
 endmacro
 
 macro use-info-run
-  "usage: corth run <file> [<output>]" eputs
+  "usage: corth run <file> [<output>]\n" eputs
   EXIT-INVALID-USAGE exit drop
 endmacro
 
 macro use-info-quick-test
-  "usage: corth quick-test" eputs
+  "usage: corth quick-test\n" eputs
   EXIT-INVALID-USAGE exit drop
 endmacro
 
