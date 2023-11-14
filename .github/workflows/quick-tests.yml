@@ -11,4 +11,4 @@ jobs:
           node-version: '14'
       - run: sudo apt install nasm
       - run: sudo apt install python3
-      - run: python3 main.py quick-test
+      - run: python3 PythonCompiler/main.py quick-test

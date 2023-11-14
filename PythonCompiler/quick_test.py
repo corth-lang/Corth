@@ -16,7 +16,7 @@ def quick_test(path="./examples/", log_path="./log"):
         for item in os.listdir(path):
             full_path = os.path.join(path, item)
             
-            process = subprocess.run([f"python3", "main.py", "compile", full_path], capture_output=True)
+            process = subprocess.run([f"python3", "PythonCompiler/main.py", "compile", full_path], capture_output=True)
 
             output = process.stdout.decode()
 
