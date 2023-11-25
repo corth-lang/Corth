@@ -235,7 +235,13 @@ in let file file-name line-no char-no log-stream in
         end
 
         char @8 '/' = if                             // Reached block comment end.
+          char-no @inc64
           return
+        end
+
+        char @8 '\n' = if
+          line-no @inc64
+          0 char-no !64
         end
         
       else char @8 '\n' = if                        // Reached a newline.
