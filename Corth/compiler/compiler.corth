@@ -1835,6 +1835,13 @@ in
                 // Add 'and' keyword.
                 let end-token-type end-token-address end-token-arg in
                   end-token-type end-token-address "after 'memory' while defining a global variable" TYPE-KEYWORD compile-file.check-type-here
+                  
+                  end-token-arg KEYWORD-AND = if
+                    LOG.TODO log-stream fputs "'and' after 'memory' for global variable allocation is not implemented yet.\n" log-stream fputs
+                    end-token-address log-stream fput-here
+                    ERROR-EXIT-CODE exit drop
+                  end
+                  
                   end-token-arg end-token-address "after 'memory' while defining a global variable" KEYWORD-END compile-file.check-keyword-here
                 end
 
