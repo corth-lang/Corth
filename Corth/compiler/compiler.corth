@@ -1458,20 +1458,19 @@ in
                       LOG.TODO log-stream fputs "'and' after 'memory' for local variable allocation is not implemented yet.\n" log-stream fputs
                       memory-end-address compile-procedure.show-here
                       ERROR-EXIT-CODE exit drop
-
-                    else
-                      // Check if the keyword is 'in'.
-                      memory-end-arg memory-end-address "after 'memory'" KEYWORD-IN compile-procedure.check-keyword-here
-
-                      memory-name-arg new-names-list list64.append
-                      memory-name-arg local-memory-end @64 local-names local-addresses locals-length str-map64.set if
-                        LOG.ERR log-stream fputs "Local variable '" log-stream fputs memory-name-arg memory-name-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-                        memory-name-address compile-procedure.show-here
-                        ERROR-EXIT-CODE exit drop
-                      end
-
-                      local-memory-end @64 memory-size-arg + local-memory-end !64
                     end
+
+                    // Check if the keyword is 'in'.
+                    memory-end-arg memory-end-address "after 'memory'" KEYWORD-IN compile-procedure.check-keyword-here
+
+                    memory-name-arg new-names-list list64.append
+                    memory-name-arg local-memory-end @64 local-names local-addresses locals-length str-map64.set if
+                      LOG.ERR log-stream fputs "Local variable '" log-stream fputs memory-name-arg memory-name-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+                      memory-name-address compile-procedure.show-here
+                      ERROR-EXIT-CODE exit drop
+                    end
+
+                    local-memory-end @64 memory-size-arg + local-memory-end !64
                   end
                 end
               end
