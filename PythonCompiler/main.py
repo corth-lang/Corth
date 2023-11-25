@@ -1,7 +1,5 @@
 #! /usr/bin/python3 -B
 
-from collections import deque
-
 import sys
 import argparse
 
@@ -54,11 +52,47 @@ def compile_command():
     
 
 def test_command():
-    import quick_test
+    import os
+    import subprocess
 
-    error_count = quick_test.quick_test()
+    dev_null = "/dev/null"
+    
+    if args.compiler:
+        process = subprocess.run(["./Corth/build/corth", "compile-nasm", "./Corth/compiler/corth.corth", dev_null], capture_output=True)
 
-    sys.exit(error_count)
+        output = process.stdout.decode()
+        error = process.stderr.decode()
+
+        if process.returncode:
+            print(f"Got '{process.returncode}' while trying to compile Corth compiler to NASM.")
+            print(f"stdout:")
+            print(output)
+            print(f"stderr:")
+            print(error)
+
+            if args.once:
+                return
+
+    if args.examples:
+        for item in os.listdir("./examples/"):
+            full_path = os.path.join("./examples/", item)
+
+            process = subprocess.run(['./Corth/build/corth', 'compile-nasm', full_path, dev_null], capture_output=True)
+
+            output = process.stdout.decode()
+            error = process.stderr.decode()
+
+            if process.returncode:
+                print(f"File '{full_path}' returned error code '{process.returncode}'")
+                print(f"stdout:")
+                print(output)
+                print(f"stderr:")
+                print(error)
+
+                if args.once:
+                    return
+
+    sys.exit(1)
 
 
 parser = argparse.ArgumentParser(
@@ -80,7 +114,10 @@ compile_parser.add_argument("-k", "--keep", help="Keep the NASM file", action="s
 compile_parser.add_argument("-d", "--debug", help="Debug mode", action="store_true")
 compile_parser.set_defaults(func=compile_command)
 
-test_parser = subparsers.add_parser("quick-test", help="Try to compile every example and print the errors")
+test_parser = subparsers.add_parser("test", help="Test the compiler or examples")
+test_parser.add_argument("-c", "--compiler", help="Try to compile ./Corth/compiler/corth.corth", action="store_true")
+test_parser.add_argument("-e", "--examples", help="Try to compile examples in ./examples", action="store_true")
+test_parser.add_argument("-o", "--once", help="Break after one fail", action="store_true")
 test_parser.set_defaults(func=test_command)
 
 args = parser.parse_args()
