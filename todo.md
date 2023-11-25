@@ -8,6 +8,7 @@
 - Implement 'promise' keyword, which allows to 'promise' to create procedures or global variables for cyclic procedure dependencies.
 - Add types for let variables.
 - Implement directory including.
+- Add include paths set.
 
 #### Less important:
 
@@ -35,6 +36,7 @@
 - Add the information about the time complexity to collection libraries.
 - deque64 library requires an insert and pop procedure.
 - Add a string mapping library that uses hash instead of strings.
+- Command line arguments parsing library.
 
 ## New compiler symbols:
 
