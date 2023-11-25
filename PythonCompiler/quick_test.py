@@ -16,18 +16,21 @@ def quick_test(path="./examples/", log_path="./log"):
         for item in os.listdir(path):
             full_path = os.path.join(path, item)
             
-            process = subprocess.run([f"python3", "PythonCompiler/main.py", "compile", full_path], capture_output=True)
+            process = subprocess.run(['./Corth/build/corth', 'compile-nasm', full_path], capture_output=True)
 
             output = process.stdout.decode()
+            error = process.stderr.decode()
 
             file.write(f"File: '{full_path}'\n")
             file.write(output)
+            file.write(error)
 
             if process.returncode:
                 error_files.append(full_path)
 
                 print(f"File '{full_path}' returned error code '{process.returncode}'")
                 print(output)
+                print(error)
 
     print(f"{len(error_files)} files returned error.")
 
