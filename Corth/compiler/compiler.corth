@@ -2019,7 +2019,7 @@ in
                     while local-stack-length @64 isn-zero do
                       local-stack local-stack-length queue64.pop-last let type in
                         temp-outputs-length @64 is-zero if
-                          LOG.ERR log-stream fputs "Procedure's stack has " log-stream fputs local-stack-length @64 inc log-stream fputu " items more than what was defined\n" log-stream fputs
+                          LOG.ERR log-stream fputs "Procedure's stack has " log-stream fputs local-stack-length @64 inc log-stream fputu " more item than its definition.\n" log-stream fputs
                           proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
                           ERROR-EXIT-CODE exit drop
                         end
