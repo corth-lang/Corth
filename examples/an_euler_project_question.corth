@@ -57,8 +57,9 @@ endmacro
 proc main
   int int -- int
 in let argc argv in
-  memory steps sizeof(int) and
-         best  sizeof(int) in
+  memory steps sizeof(int) in
+  memory best  sizeof(int) in
+         
     START while dup END <= do
       dup
       0 steps !64
@@ -77,5 +78,5 @@ in let argc argv in
         steps @64 best !64
       end
     inc end drop
-  end
+  end end
 end 0 end

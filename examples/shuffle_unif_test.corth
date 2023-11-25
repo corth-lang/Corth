@@ -14,12 +14,13 @@ in let array-start array-length in
   " ]" puts
 end end
 
+
 proc main
   int int -- int
 in let argc argv in
   NULLPTR time rng-seed !64
 
-  memory array sizeof(int) 12 ** in
+  memory array 96 in
     0  array      !64
     1  array 8  + !64
     2  array 16 + !64

@@ -5,13 +5,13 @@ include libs/linux_x86/stdio.corth
 // UNKNOWN is used to indicate that the value is unknown.
 // Any other number means the value is known and it can be used.
 
-macro MAX-SIZE 256 endmacro
-macro UNKNOWN 0xff endmacro
+macro MAX-SIZE 0x100 endmacro
+macro UNKNOWN  0xff endmacro
 
-memory ptr1 sizeof(ptr) and
-       ptr2 sizeof(ptr) end
+memory ptr1 sizeof(ptr) end
+memory ptr2 sizeof(ptr) end
 
-memory remember MAX-SIZE MAX-SIZE ** end
+memory remember 0x10000 end
 
 memory number-of-calls sizeof(int) end
 memory number-of-rembs sizeof(int) end

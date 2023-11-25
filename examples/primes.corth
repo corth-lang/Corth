@@ -5,7 +5,7 @@ include libs/linux_x86/stdio.corth
 macro END 1000000 endmacro
 macro BUFFER-SIZE 500000 endmacro
 
-memory primes-list sizeof(int) BUFFER-SIZE ** end
+memory primes-list 4000000 end
 memory primes-end sizeof(int) end
 
 proc is-prime

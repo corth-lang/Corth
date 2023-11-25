@@ -87,9 +87,9 @@ proc ipow
   int uint -- int
   // Calculates integer exponents.
 in
-  memory result sizeof(int) and
-         frag   sizeof(int) and
-         exp    sizeof(int) in
+  memory result sizeof(int) in
+  memory frag   sizeof(int) in
+  memory exp    sizeof(int) in
          
     exp      !64     
     frag     !64
@@ -105,7 +105,7 @@ in
     end
 
     result @64
-  end
+  end end end
 end
 
 
@@ -114,9 +114,9 @@ proc upow
   uint uint -- int
   // Calculates unsigned integer exponents.
 in
-  memory result sizeof(int) and
-         frag   sizeof(int) and
-         exp    sizeof(int) in
+  memory result sizeof(int) in
+  memory frag   sizeof(int) in
+  memory exp    sizeof(int) in
          
     exp      !64     
     frag     !64
@@ -132,5 +132,5 @@ in
     end
 
     result @64
-  end
+  end end end
 end

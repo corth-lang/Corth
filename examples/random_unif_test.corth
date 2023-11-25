@@ -1,7 +1,7 @@
 include libs/linux_x86/stdio.corth
 include libs/math/fixed64.corth
 include libs/random.corth
-include libs/core/
+include libs/core/stack.corth
 
 
 macro numbers 30 endmacro
@@ -14,7 +14,7 @@ in let argc argv in
   NULLPTR time rng-seed !64
 
   "Generating " puts numbers tries u* putu " random numbers between 0 and " puts numbers putu "...\n" puts
-  memory array sizeof(int) numbers ** in
+  memory array 240 in
     0 while dup numbers < do
       let i in
         0 i 8 * array + !64
