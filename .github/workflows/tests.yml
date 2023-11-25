@@ -1,5 +1,5 @@
 name: quick-tests
-run-name: Quick tests for Corth
+run-name: Tests for Corth
 on: [push]
 jobs:
   check-bats-version:
@@ -9,6 +9,5 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '14'
-      - run: sudo apt install nasm
       - run: sudo apt install python3
-      - run: python3 PythonCompiler/main.py quick-test
+      - run: python3 PythonCompiler/main.py test -ceo

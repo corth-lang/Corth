@@ -56,6 +56,8 @@ def test_command():
     import subprocess
 
     dev_null = "/dev/null"
+
+    errors = False
     
     if args.compiler:
         process = subprocess.run(["./Corth/build/corth", "compile-nasm", "./Corth/compiler/corth.corth", dev_null], capture_output=True)
@@ -64,6 +66,8 @@ def test_command():
         error = process.stderr.decode()
 
         if process.returncode:
+            errors = True
+                
             print(f"Got '{process.returncode}' while trying to compile Corth compiler to NASM.")
             print(f"stdout:")
             print(output)
@@ -71,7 +75,7 @@ def test_command():
             print(error)
 
             if args.once:
-                return
+                sys.exit(1)
 
     if args.examples:
         for item in os.listdir("./examples/"):
@@ -83,6 +87,8 @@ def test_command():
             error = process.stderr.decode()
 
             if process.returncode:
+                errors = True
+                
                 print(f"File '{full_path}' returned error code '{process.returncode}'")
                 print(f"stdout:")
                 print(output)
@@ -90,9 +96,9 @@ def test_command():
                 print(error)
 
                 if args.once:
-                    return
+                    sys.exit(1)
 
-    sys.exit(1)
+    sys.exit(errors)
 
 
 parser = argparse.ArgumentParser(
