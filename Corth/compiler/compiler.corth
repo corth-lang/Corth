@@ -1716,14 +1716,8 @@ in let
   log-stream
 in
   // Check if the library was included already.
-  source-name libraries-set str-set8.add ! if
-    // TODO: Use called-from to improve debugging.
-    LOG.INFO log-stream fputs "Skipping library '" log-stream fputs source-name source-name mlength log-stream fputs "' because it was already included.\n" log-stream fputs
-    return
-  end
+  source-name libraries-set str-set8.add ! if return end
   
-  LOG.INFO log-stream fputs "Including library '" log-stream fputs source-name source-name mlength log-stream fputs "'.\n" log-stream fputs
-
   // Open the source file.
   source-name null-term8 fopen-r
 
@@ -2060,7 +2054,6 @@ in
     end end end end end
     
     source-file fclose drop
-    LOG.INFO log-stream fputs "Successfully included '" log-stream fputs source-name source-name mlength log-stream fputs "'.\n" log-stream fputs
   end
 end end
 
