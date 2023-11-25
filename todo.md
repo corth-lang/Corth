@@ -2,18 +2,9 @@
 
 ## New ideas:
 
-#### Important: 
-
-- Add 'break' stacking. Stacking 'break' n times will cause the program to break the nth loop.
-- Implement 'promise' keyword, which allows to 'promise' to create procedures or global variables for cyclic procedure dependencies.
-- Add types for let variables.
-- Implement directory including.
-- Add include paths set.
-
 #### Less important:
 
 - Implement an optimization model.
-- Single quotes can contain more than one character, this will put more integers to the stack.
 - Implement local labels. (label here)
 - Implement label type. (label <type>* end)
 - Implement 'goto'. (goto here)
@@ -28,15 +19,10 @@
 ## Libraries:
 
 - Remake core library macros to take advantage of precompilation.
-- Remove malloc.sew and remake malloc.mfree.
-- Add mmap and remake malloc and mfree using mmap.
 - I/O macro and procedures should be rewritten for performance reasons.
 - Implement a new I/O library that allows buffered writes.
-- Most of ./libs/core/memory.corth macro and procedures would be more efficient if they worked with pointers and not indexes.
 - Add the information about the time complexity to collection libraries.
-- deque64 library requires an insert and pop procedure.
 - Add a string mapping library that uses hash instead of strings.
-- Command line arguments parsing library.
 
 ## New compiler symbols:
 
