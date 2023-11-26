@@ -1,6 +1,16 @@
 include libs/core/memory.corth
 include libs/core/ptr.corth
 
+// ptr: cstr -- bool: is-empty
+macro cstr.is-empty
+  @8 '\0' =
+endmacro
+
+// ptr: cstr -- bool: isn-empty
+macro cstr.isn-empty
+  @8 '\0' !=
+endmacro
+
 // ptr: cstr -- int: len
 macro cstr.len
   let _src_ in
