@@ -1,4 +1,6 @@
+include libs/core/ptr.corth
 include libs/core/stack.corth
+include libs/core/memory.corth
 
 
 /*
