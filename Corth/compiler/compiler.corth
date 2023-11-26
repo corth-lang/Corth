@@ -1553,7 +1553,8 @@ in
 
                     variable-name local-memory-end @64 let-names let-addresses let-vars-length str-map64.set if
                       LOG.ERR log-stream fputs "'let' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-                      procedure-name procedure-address log-stream fput-inside-procedure
+                      // TODO: This does not show the address of the let variable. This should be changed.
+                      token-address compile-procedure.show-here
                       ERROR-EXIT-CODE exit drop
                     end
 
