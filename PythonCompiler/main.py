@@ -51,10 +51,10 @@ def compile_command():
         log_lib.command((f'./{args.output}',))
 
 
-def test_file(corth_directory='./Corth/corth', output_directory='/dev/null'):
+def test_file(corth_directory='./Corth/corth', test_file='./Corth/compiler/corth.corth', output_directory='/dev/null'):
     import subprocess
     
-    process = subprocess.run([corth_directory, 'compile-nasm', './Corth/compiler/corth.corth', output_directory], capture_output=True)
+    process = subprocess.run([corth_directory, 'compile-nasm', test_file, output_directory], capture_output=True)
 
     output = process.stdout.decode()
     error = process.stderr.decode()
@@ -85,7 +85,7 @@ def test_command():
         exit(1)
     
     if args.compiler:
-        if not test_file(args.path):
+        if not test_file(corth_directory=args.path):
             errors = True
 
             if args.once:
@@ -95,7 +95,7 @@ def test_command():
         for item in os.listdir('./examples/'):
             full_path = os.path.join('./examples/', item)
 
-            if not test_file():
+            if not test_file(corth_directory=args.path, test_file=full_path):
                 errors = True
 
                 if args.once:
