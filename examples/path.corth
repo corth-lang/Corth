@@ -1,0 +1,20 @@
+macro malloc.ARRAY-SIZE       0x4000 endmacro
+macro malloc.AVAIL-QUEUE-SIZE 0x100  endmacro
+include libs/dynamic/malloc.corth
+
+macro path.merge.BUFFER-SIZE 0x400 endmacro
+
+include libs/linux_x86/stdio.corth
+include libs/linux_x86/path.corth
+
+proc main
+  int int -- int
+in let argc argv in
+  malloc.init
+
+  path.merge.start
+    1 while dup argc < do let i in
+      i argv array64.get path.merge.append
+    i end inc end drop
+  path.merge.end dup mlength puts putnl
+end 0 end
