@@ -51,10 +51,10 @@ def compile_command():
         log_lib.command((f'./{args.output}',))
 
 
-def test_file(corth_directory='./Corth/corth', test_file='./Corth/compiler/corth.corth', output_directory='/dev/null'):
+def test_file(corth_directory='./Corth/corth', standard_library='.', test_file='./Corth/compiler/corth.corth', output_directory='/dev/null'):
     import subprocess
     
-    process = subprocess.run([corth_directory, 'compile-nasm', test_file, output_directory], capture_output=True)
+    process = subprocess.run([corth_directory, 'compile-nasm', standard_library, test_file, output_directory], capture_output=True)
 
     output = process.stdout.decode()
     error = process.stderr.decode()

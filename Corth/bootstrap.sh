@@ -17,7 +17,7 @@ echo -e '[build.sh] '$INFO' Starting to compile ./Corth/compiler/corth.corth'
 echo -e '[build.sh] '$INFO' Iteration depth is '$BUILD_ITERATION.
 
 for i in $(seq 1 $BUILD_ITERATION); do
-  ./Corth/build/corth compile-nasm ./Corth/compiler/corth.corth ./Corth/build/corth.asm
+  ./Corth/build/corth compile-nasm . ./Corth/compiler/corth.corth ./Corth/build/corth.asm
   compile_exit=$?
 
   if [[ $compile_exit != 0 ]]; then
