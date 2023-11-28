@@ -1,4 +1,8 @@
-BUILD_ITERATION=3
+BUILD_ITERATION=$1
+
+if [[ $BUILD_ITERATION = '' ]]; then
+  BUILD_ITERATION=3
+fi
 
 ERROR='\x1b[1;31m[ERROR]\x1b[0;97m'
 INFO='\x1b[1;97m[INFO]\x1b[0;97m'
