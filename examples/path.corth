@@ -14,7 +14,7 @@ in let argc argv in
 
   path.merge.start
     1 while dup argc < do let i in
-      i argv array64.get path.merge.append
+      i argv array64.get path.merge.append-cstr
     i end inc end drop
-  path.merge.end dup mlength puts putnl
+  path.merge.end-str dup mlength puts putnl
 end 0 end

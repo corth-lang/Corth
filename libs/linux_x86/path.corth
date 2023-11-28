@@ -9,27 +9,65 @@ include libs/string_builder.corth
 macro path.is-root @8 '/' = endmacro
 
 proc path.merge2
-  // cstr: path1 cstr: path2 -- cstr: combined
-  ptr ptr -- ptr
+  // str: path1 int: len1 str: path2 int: len2 -- dstr: combined
+  ptr int ptr int -- ptr
   // NOTE: Result is a dynamic object.
-in let path1 path2 in
-  path1 cstr.len path2 cstr.len let len1 len2 in
-    len1 len2 + inc malloc let object in
-      object is-null if NULLPTR return end
+in let path1 len1 path2 len2 in
+  path1 len1 + dec @8 '/' = if
+    len1 len2 + malloc let object in object is-null if NULLPTR return end
 
       // Copy first path.
       path1 object len1 memcpy8
 
-      len1 dec @8 '/' = if
-        // Copy second path.
-        path2 object len1 + len2 memcpy8
-      else
-        // Append a slash character.
-        '/' object len1 + !8
+      // Copy second path.
+      path2 object len1 + len2 memcpy8
+    object end
 
-        // Copy second path.
-        path2 object len1 + inc len2 memcpy8
-      end
+  else
+    len1 len2 + inc malloc let object in object is-null if NULLPTR return end
+      // Copy first path.
+      path1 object len1 memcpy8
+
+      // Append a slash character.
+      '/' object len1 + !8
+
+      // Copy second path.
+      path2 object len1 + inc len2 memcpy8
+    object end
+  end
+end end
+
+proc path.merge2-cstr
+  // str: path1 int: len1 str: path2 int: len2 -- cstr: combined
+  ptr int ptr int -- ptr
+  // NOTE: Arguments are NOT cstr's. The output is.
+  // NOTE: Result is a dynamic object.
+in let path1 len1 path2 len2 in
+  path1 len1 + dec @8 '/' = if
+    len1 len2 + inc malloc let object in object is-null if NULLPTR return end
+      // Copy first path.
+      path1 object len1 memcpy8
+
+      // Copy second path.
+      path2 object len1 + len2 memcpy8
+      
+      // Append a null terminator character.
+      '\0' object len1 + len2 + !8
+    object end
+
+  else
+    len1 len2 + 2 + malloc let object in object is-null if NULLPTR return end
+      // Copy first path.
+      path1 object len1 memcpy8
+
+      // Append a slash character.
+      '/' object len1 + !8
+
+      // Copy second path.
+      path2 object len1 + inc len2 memcpy8
+
+      // Append a null terminator character.
+      '\0' object len1 + len2 + inc !8
     object end
   end
 end end
@@ -61,7 +99,7 @@ macro path.merge.start
     64 _path.merge.builder.array_ _path.merge.builder.ptr_ string-builder.init
 endmacro
 
-macro path.merge.end // -- ptr: merged-string
+macro path.merge.end-str // -- ptr: merged-string
     _path.merge.builder.array_ @64 _path.merge.builder.ptr_ @64 != if
       _path.merge.builder.ptr_ @dec64
     end
@@ -74,7 +112,18 @@ macro path.merge.end // -- ptr: merged-string
   end end
 endmacro
 
-macro path.merge.append let _string_ in // cstr: string
+macro path.merge.end-cstr // -- cstr: merge-string
+    '\0' _path.merge.builder.ptr_ !8
+
+    // Get the generated string.
+    _path.merge.builder.array_ _path.merge.builder.ptr_ string-builder.to-string
+
+    // Free the allocated resources.
+    _path.merge.builder.array_ @64 mfree drop
+  end end
+endmacro
+
+macro path.merge.append-cstr let _string_ in // cstr: string
   _string_ cstr.len let _length_ in
     _string_ _length_ _path.merge.builder.array_ _path.merge.builder.ptr_ string-builder.append-str
     _string_ _length_ + dec @8 '/' != if
@@ -82,3 +131,10 @@ macro path.merge.append let _string_ in // cstr: string
     end
   end
 end endmacro
+
+macro path.merge.append-str let _string_ _length_ in // ptr: string int: length
+  _string_ _length_ _path.merge.builder.array_ _path.merge.builder.ptr_ string-builder.append-str
+  _string_ _length_ + dec @8 '/' != if
+    '/' _path.merge.builder.array_ _path.merge.builder.ptr_ string-builder.append-char
+  end
+end end endmacro
