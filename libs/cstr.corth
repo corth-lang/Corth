@@ -25,6 +25,11 @@ endmacro
 
 // ptr: cstr -- ptr: copy
 macro cstr.to-dynamic
+  dup cstr.len to-dynamic8
+endmacro
+
+// ptr: cstr -- ptr: copy
+macro cstr.to-dynamic-termed
   dup cstr.len inc to-dynamic8
 endmacro
 
