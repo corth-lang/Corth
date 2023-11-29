@@ -14,6 +14,20 @@ macro list64.init
   _dynamic_ end
 endmacro
 
+macro list64.mfree
+  // ptr: list64 -- bool: successful
+  list64.get-dynamic mfree
+endmacro
+
+macro list64.mfree-deep let _list_ in
+  // ptr: list64 -- bool: successful
+  0 while dup _list_ list64.length < do let i in
+    i _list_ list64.get mfree
+  i end inc end drop
+
+  _list_ list64.mfree
+end endmacro
+
 macro list64.get-dynamic
   // ptr: list64 -- ptr: dynamic
   @64
