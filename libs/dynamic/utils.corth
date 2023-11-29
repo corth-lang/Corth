@@ -59,17 +59,10 @@ in let old length in
 end end
 
 
-macro dcopy8
+macro dcopy
   // ptr: x -- ptr: y
   // Copies a dynamicly-placed collection.
   dup mlength to-dynamic8
-endmacro
-
-
-macro dcopy64
-  // ptr: x -- ptr: y
-  // Copies a dynamicly-placed collection.
-  dup mlength to-dynamic64
 endmacro
 
 
