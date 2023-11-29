@@ -1,3 +1,8 @@
+include libs/linux_x86/sys.corth
+include libs/linux_x86/io/output.corth
+include libs/dynamic/malloc.corth
+
+
 // Can be used to debug malloc segments.
 proc debug-dynamic-memory
   file-desc --
@@ -47,3 +52,19 @@ in
     block malloc.next-block block <= if false return end
   block malloc.next-block end end drop
 true end 
+
+
+// Can bu used to see how much space is available and to check memory leaks.
+proc get-available-dynamic-memory
+  -- int
+in
+  memory sum sizeof(int) in
+    0 sum !64
+    
+    0 while dup malloc.avail-queue-length @64 < do let i in
+      i malloc.avail-queue queue64.get malloc.block-size sum @64 + sum !64
+    i end inc end drop
+
+    sum @64 
+  end
+end
