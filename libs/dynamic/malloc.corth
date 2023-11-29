@@ -219,6 +219,16 @@ in malloc.block let block in
 end true end
 
 
+// Deallocates both the array and ALL of its sub items.
+macro mfree-deep let _array_ in // ptr: array -- bool: success
+  _array_ while dup _array_ malloc.block malloc.next-block < do
+    dup @64 mfree drop
+  8 + end drop
+
+  _array_ mfree
+end endmacro
+
+
 macro mlength
   // ptr: addr -- int: length
   // Returns the length of an object created using malloc.
