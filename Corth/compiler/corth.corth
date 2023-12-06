@@ -91,6 +91,9 @@ in let argc argv in
       else
         use-info-compile-nasm
       end end
+
+      // Deallocate 'include-paths-set'.
+      include-paths-set list64.mfree
     end
     
   else 1 argv array64.get "compile" drop cstr.cmp is-zero if

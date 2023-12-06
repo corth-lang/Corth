@@ -312,20 +312,26 @@ in let
         arg macro-names macro-tokens macros-length str-map64.get if
           let tokens in
             tokens tokens mlength + while dup tokens > do 24 - let i in
-              // Token argument
-              i 16 + @64 extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.append-first
-              
-              // Token address
-              i 8 + @64 let token-address in
+              i @64 i 8 + @64 i 16 + @64 let token-type token-address token-argument in
+                // -- Token argument --
+                // If the type of the token is a 'name' or a 'string', we need to copy the argument.
+                token-argument token-type TYPE-NAME = token-type TYPE-STRING = | if dcopy end
+                extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.append-first
+
+                // -- Token address --
+                // Change the ADDR.PREV of the address.
                 address token-address ADDR.PREV + !64
-                token-address extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.append-first
-              end 
-              
-              // Token argument
-              i @64 extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.append-first
+                token-address dcopy extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.append-first
+
+                // -- Token type --
+                token-type extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.append-first
+              end
             i end end drop
             
-            file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros isn-zero get-next-token  
+            file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros isn-zero get-next-token
+
+            // Deallocate 'arg'.
+            arg mfree drop
           end
         else drop
           type address arg true
@@ -384,6 +390,12 @@ in let output-file local-stack local-stack-length constant in
 end end
 
 
+macro compile-intrinsic.pop-item
+  // Pop the item from the stack and deallocate.
+  local-stack local-stack-length queue64.pop-last mfree drop
+endmacro
+
+
 proc compile-intrinsic-inside-procedure
   // ptr: source-name file-desc: source-file file-desc: output-file
   ptr file-desc file-desc
@@ -422,8 +434,8 @@ in
     "    pop     rax\n"        output-file fputs
     "    add     [rsp], rax\n" output-file fputs
 
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
     create-int local-stack local-stack-length queue64.append
 
   else token-arg INTRINSIC-BOR = if
@@ -439,8 +451,8 @@ in
     "    pop     rax\n"        output-file fputs
     "    or      [rsp], rax\n" output-file fputs
     
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
     create-int local-stack local-stack-length queue64.append
 
   else token-arg INTRINSIC-BNOT = if
@@ -455,7 +467,7 @@ in
 
     "    not     qword [rsp]\n"    output-file fputs
     
-    local-stack local-stack-length queue64.pop-last drop
+    compile-intrinsic.pop-item
     create-int local-stack local-stack-length queue64.append
     
   else token-arg INTRINSIC-FULLMUL = if
@@ -475,8 +487,8 @@ in
     "    mov     [rsp], rax\n"      output-file fputs
     "    mov     [rsp+8], rdx\n"    output-file fputs
     
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
     create-int local-stack local-stack-length queue64.append
     create-int local-stack local-stack-length queue64.append
     
@@ -497,8 +509,8 @@ in
     "    mov     [rsp+8], rax\n"    output-file fputs
     "    mov     [rsp], rdx\n"      output-file fputs
     
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
     create-int local-stack local-stack-length queue64.append
     create-int local-stack local-stack-length queue64.append
     
@@ -519,8 +531,8 @@ in
     "    mov     [rsp], rax\n"      output-file fputs
     "    mov     [rsp+8], rdx\n"    output-file fputs
     
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
     create-int local-stack local-stack-length queue64.append
     create-int local-stack local-stack-length queue64.append
     
@@ -541,8 +553,8 @@ in
     "    mov     [rsp+8], rax\n"    output-file fputs
     "    mov     [rsp], rdx\n"      output-file fputs
     
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
     create-int local-stack local-stack-length queue64.append
     create-int local-stack local-stack-length queue64.append
 
@@ -559,8 +571,8 @@ in
     "    pop     rax\n"         output-file fputs
     "    sub     [rsp], rax\n"  output-file fputs
 
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
     create-bool local-stack local-stack-length queue64.append
 
   else token-arg INTRINSIC-LESS = if
@@ -579,8 +591,8 @@ in
     "    pushf\n"                     output-file fputs
     "    and     qword [rsp], 0x80\n" output-file fputs
 
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
     create-bool local-stack local-stack-length queue64.append
 
   else token-arg INTRINSIC-LOAD8 = if
@@ -598,7 +610,7 @@ in
     "    mov     al, byte[rbx]\n" output-file fputs
     "    push    rax\n"           output-file fputs
 
-    local-stack local-stack-length queue64.pop-last drop
+    compile-intrinsic.pop-item
     create-int local-stack local-stack-length queue64.append
 
   else token-arg INTRINSIC-STORE8 = if
@@ -615,8 +627,8 @@ in
     "    pop     rbx\n"            output-file fputs
     "    mov     byte [rax], bl\n" output-file fputs
 
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
 
   else token-arg INTRINSIC-LOAD64 = if
     // -------- Intrinsic '@64' --------
@@ -631,7 +643,7 @@ in
     "    pop     rax\n"         output-file fputs
     "    push    qword [rax]\n" output-file fputs
 
-    local-stack local-stack-length queue64.pop-last drop
+    compile-intrinsic.pop-item
     create-int local-stack local-stack-length queue64.append
 
   else token-arg INTRINSIC-STORE64 = if
@@ -647,8 +659,8 @@ in
     "    pop     rax\n"         output-file fputs
     "    pop     qword [rax]\n" output-file fputs
 
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
 
   else token-arg INTRINSIC-TRUE = if
     // -------- Intrinsic 'true' --------
@@ -686,13 +698,13 @@ in
     "    syscall\n"     output-file fputs
     "    push    rax\n" output-file fputs
 
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
-    local-stack local-stack-length queue64.pop-last drop
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
     create-int local-stack local-stack-length queue64.append
 
   else
@@ -1101,6 +1113,9 @@ in
                     end
                     
                     ".level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
+
+                    // Deallocate 'start-stack'.
+                    start-stack mfree drop
                   end
 
                 else start-keyword KEYWORD-ELSE = if
@@ -1110,7 +1125,13 @@ in
                   // Branch should not be cut before the end of else.
                   token-address "finish an 'if-else'" compile-procedure.check-branch-here
 
-                  ".level_" output-file fputs level 24 + @64 output-file fputu ":\n" output-file fputs
+                  level 16 + @64 level 24 + @64 level 32 + @64 let else-address start-id start-stack in
+                    ".level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
+
+                    // Deallocate 'else-address' and 'start-stack'.
+                    else-address mfree drop
+                    start-stack mfree drop
+                  end
                   
                 else start-keyword KEYWORD-WHILE = if
                   // -------- End of 'while' --------
@@ -1128,13 +1149,22 @@ in
                   // Branch should not be cut before the end of do.
                   token-address "finish a while-do loop" compile-procedure.check-branch-here
             
-                  level 16 + @64 level 24 + @64 level 32 + @64 level 40 + @64 level 48 + @64 level 56 + @64 let while-level-id do-address unbroken-end-id broken-end-id while-stack do-stack in
+                  level 16 + @64 level 24 + @64 level 32 + @64 level 40 + @64 level 48 + @64 level 56 + @64 let
+                    while-level-id do-address unbroken-end-id broken-end-id while-stack do-stack
+                  in
                     do-stack do-stack mlength 8 / local-stack local-stack-length queue64.overwrite
 
                     "    jmp     .level_" output-file fputs while-level-id output-file fputu output-file fputnl
                      
                     ".level_" output-file fputs unbroken-end-id output-file fputu ":\n" output-file fputs
                     ".level_" output-file fputs broken-end-id   output-file fputu ":\n" output-file fputs
+
+                    // TODO: Add stack checks for 'while-do' loops.
+
+                    // Deallocate 'do-address', 'while-stack' and 'do-stack'.
+                    do-address mfree drop
+                    while-stack mfree drop
+                    do-stack mfree drop
                   end
 
                 else start-keyword KEYWORD-LET = if
@@ -1145,8 +1175,7 @@ in
                       name mlength 1 = if name @8 '_' != else true end if
                         name let-names let-addresses let-vars-length str-map64.remove ! if
                           LOG.ERR  log-stream fputs "Could not find the 'let' variable name '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
-                          LOG.INFO log-stream fputs "This is probably caused by a bug in the compiler.\n" log-stream fputs
-                          token-address log-stream fput-here
+                          log-stream report-bug
                           start-address compile-procedure.show-here
                           ERROR-EXIT-CODE exit drop
                         end
@@ -1154,16 +1183,26 @@ in
                     end i end inc end drop
 
                     old-local-memory-end local-memory-end !64
+
+                    // Deallocate 'new-names'.
+                    new-names mfree drop
                   end
 
                 else start-keyword KEYWORD-MEMORY = if
                   // -------- End of 'memory' --------
 
+                  // -- debug --
+                  // token-address log-stream fput-here
+                  // 0 while dup locals-length @64 < do let j in
+                  //  j local-names array64.get dup mlength log-stream fputs log-stream fputnl
+                  // j end inc end drop
+
                   level 16 + @64 level 24 + @64 let new-names old-local-memory-end in
                     0 while dup new-names mlength 8 / < do let i in i 8 * new-names + @64 let name in
                       name local-names local-addresses locals-length str-map64.remove ! if
                         LOG.ERR  log-stream fputs "Could not find the local variable name '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
-                        LOG.INFO log-stream fputs "This is probably caused by a bug in the compiler.\n" log-stream fputs
+
+                        log-stream report-bug
                         token-address log-stream fput-here
                         start-address compile-procedure.show-here
                         ERROR-EXIT-CODE exit drop
@@ -1171,6 +1210,9 @@ in
                     end i end inc end drop
 
                     old-local-memory-end local-memory-end !64
+
+                    // Deallocate 'new-names'.
+                    new-names mfree drop
                   end
 
                 else
@@ -1179,7 +1221,13 @@ in
                   start-address compile-procedure.show-here
                   ERROR-EXIT-CODE exit drop
                 end end end end end end
+
+                // Deallocate 'start-address'.
+                start-address mfree drop
               end
+
+              // Deallocate level object.
+              level mfree drop
             end
 
           else token-arg KEYWORD-IF = if
@@ -1206,7 +1254,7 @@ in
             end
 
             // TODO: Check for the data type
-            local-stack local-stack-length queue64.pop-last drop
+            local-stack local-stack-length queue64.pop-last mfree drop
 
             local-stack local-stack-length @64 to-dynamic64 let copy-stack in
               copy-stack "copying the stack for 'if'" compile-procedure.check-null-here
@@ -1216,7 +1264,7 @@ in
 
                 compile-procedure.new-level-id let level-id in
                   KEYWORD-IF           obj      !64
-                  token-address        obj 8  + !64
+                  token-address dcopy  obj 8  + !64
                   level-id             obj 16 + !64
                   copy-stack           obj 24 + !64
 
@@ -1270,7 +1318,7 @@ in
 
                         KEYWORD-ELSE         new-level      !64
                         old-address          new-level 8  + !64
-                        token-address        new-level 16 + !64
+                        token-address dcopy  new-level 16 + !64
                         level-id             new-level 24 + !64
                         copy-stack           new-level 32 + !64
 
@@ -1278,8 +1326,14 @@ in
                       end
                     end
                   end
+
+                  // Deallocate 'start-stack'.
+                  start-stack mfree drop
                 end
               end
+
+              // Deallocate level object.
+              level mfree drop
             end
 
           else token-arg KEYWORD-WHILE = if
@@ -1305,7 +1359,7 @@ in
                   new-level "creating a level object for 'while'" compile-procedure.check-null-here
 
                   KEYWORD-WHILE        new-level      !64
-                  token-address        new-level 8  + !64
+                  token-address dcopy  new-level 8  + !64
                   level-id             new-level 16 + !64
                   copy-stack           new-level 24 + !64
 
@@ -1344,7 +1398,7 @@ in
             // Remove the bool value from the local-stack.
             // TODO: Unfinished, should add stack value type check.
             // TODO: Fix the memory leak.
-            local-stack local-stack-length queue64.pop-last drop
+            local-stack local-stack-length queue64.pop-last mfree drop
 
             // Get the 'while' level.
             levels-list list64.pop-last let old-level in
@@ -1368,7 +1422,7 @@ in
                           KEYWORD-DO               new-level      !64
                           old-address              new-level 8  + !64
                           old-level-id             new-level 16 + !64
-                          token-address            new-level 24 + !64
+                          token-address dcopy      new-level 24 + !64
                           unbroken-end-id          new-level 32 + !64
                           broken-end-id            new-level 40 + !64
                           old-stack                new-level 48 + !64
@@ -1473,8 +1527,17 @@ in
                     end
 
                     local-memory-end @64 memory-size-arg + local-memory-end !64
+
+                    // Deallocate 'memory-end-address'.
+                    memory-end-address mfree drop
                   end
+
+                  // Deallocate 'memory-size-address'.
+                  memory-size-address mfree drop
                 end
+
+                // Deallocate 'memory-name-address'.
+                memory-name-address mfree drop
               end
 
               local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
@@ -1483,12 +1546,15 @@ in
                 new-level "creating a level object for 'memory'" compile-procedure.check-null-here
 
                 KEYWORD-MEMORY                   new-level      !64
-                token-address                    new-level  8 + !64
+                token-address dcopy              new-level  8 + !64
                 new-names-list list64.copy-array new-level 16 + !64
                 local-memory-end @64             new-level 24 + !64
 
                 new-level levels-list list64.append
               end
+
+              // Deallocate 'new-names-list' but keep the 'memory' variable names.
+              new-names-list list64.mfree
             end
 
           else token-arg KEYWORD-LET = if
@@ -1522,6 +1588,9 @@ in
                     // If token is a keyword, it must be a 'in' keyword.
                     new-token-arg new-token-address "after 'let'" KEYWORD-IN compile-procedure.check-keyword-here
 
+                    // TODO: Deallocate 'new-token-address'.
+                    // new-token-address mfree drop
+
                     // If the token is a 'in' keyword, break the loop.
                     break
                   end
@@ -1530,11 +1599,14 @@ in
                   new-token-type new-token-address "after 'let'" TYPE-NAME compile-procedure.check-type-here
 
                   // TODO: Change the way that the variables are stored, so that we can also store their addresses.
-                  new-token-arg dcopy8 new-names-list list64.append
+                  new-token-arg new-names-list list64.append
+
+                  // TODO: Deallocate 'new-token-address'.
+                  // new-token-address mfree drop
                 end
               end
 
-              // This loop is seperated from the one above, since this loop must run in the reverse order.
+              // This loop is separated from the one above, since this loop must run in the reverse order.
               new-names-list list64.length while dup isn-zero do dec let i in
                 local-stack-length @64 is-zero if
                   LOG.ERR log-stream fputs "Expected a data before 'let' variable, but the stack was empty.\n" log-stream fputs
@@ -1543,6 +1615,9 @@ in
                 end
 
                 // TODO: Save the type of the 'let' variable.
+
+                // TODO: Change this part to something like this.
+                // local-stack local-stack-length queue64.pop-last mfree drop
                 local-stack local-stack-length queue64.pop-last drop
 
                 i new-names-list list64.get let variable-name in
@@ -1555,7 +1630,8 @@ in
 
                     variable-name local-memory-end @64 let-names let-addresses let-vars-length str-map64.set if
                       LOG.ERR log-stream fputs "'let' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-                      // TODO: This does not show the address of the let variable. This should be changed.
+                      
+                      // TODO: This does not show the address of the 'let' variable. This should be changed.
                       token-address compile-procedure.show-here
                       ERROR-EXIT-CODE exit drop
                     end
@@ -1571,12 +1647,15 @@ in
                 new-level "creating a level object for 'let'" compile-procedure.check-null-here
 
                 KEYWORD-LET                      new-level      !64
-                token-address                    new-level  8 + !64
+                token-address dcopy              new-level  8 + !64
                 new-names-list list64.copy-array new-level 16 + !64
                 local-memory-end @64             new-level 24 + !64
 
                 new-level levels-list list64.append
               end
+              
+              // Deallocate 'new-names-list' but keep the 'let' variable names.
+              new-names-list list64.mfree drop
             end
             
           else token-arg KEYWORD-RETURN = if
@@ -1602,8 +1681,14 @@ in
           token-address compile-procedure.show-here
           ERROR-EXIT-CODE exit drop
         end end end end end
+
+        // Deallocate the space allocated for token-address.
+        token-address mfree drop
       end
     end
+
+    // Deallocate 'levels-list'.
+    levels-list list64.mfree-deep drop
   end end end end end end end end end end end
 end 0 end // dummy return
 
@@ -1721,10 +1806,6 @@ in let
   libraries-set
   log-stream
 in
-  // -- debug --
-  // NOTE: This appears to make the program faster?
-  source-name dup mlength log-stream fputs log-stream fputnl
-
   // Check if the library was included already.
   source-name libraries-set str-set8.add ! if return end
   
@@ -1735,6 +1816,10 @@ in
       LOG.ERR log-stream fputs "Could not open source file '" log-stream fputs source-name source-name mlength dec log-stream fputs "'\n" log-stream fputs
       ERROR-EXIT-CODE exit drop
     end
+    
+    // -- debug --
+    // NOTE: This appears to make the program faster?
+    // source-name dup mlength log-stream fputs log-stream fputnl
 
     memory extended-array  EXTENDED-MAX-LENGTH in
     memory extended-start  sizeof(int)         in
@@ -1811,6 +1896,9 @@ in
                           break
                         end
                       end
+
+                      // Deallocate 'include-path'.
+                      include-path mfree drop
                     end
                   end
                 i end inc end drop
@@ -1854,11 +1942,20 @@ in
                   end
                   
                   end-token-arg end-token-address "after 'memory' while defining a global variable" KEYWORD-END compile-file.check-keyword-here
+
+                  // Deallocate 'end-token-address'.
+                  end-token-address mfree drop
                 end
 
                 // TODO: Check if the global variable queue was filled.
                 memory-name-arg memory-size-arg global-names-array global-sizes-array globals-length str-map64.set drop
+
+                // Deallocate 'memory-size-address'.
+                memory-size-address mfree drop
               end
+
+              // Deallocate 'memory-name-address'.
+              memory-name-address mfree drop
             end
 
           else token-arg KEYWORD-MACRO = if
@@ -1898,10 +1995,14 @@ in
                 end
 
                 // TODO: Check if the macros queue was filled.
-                macro-tokens-list list64.array-addr macro-tokens-list list64.length to-dynamic64 let object in
-                  macro-name-token-arg object macro-names macro-tokens macros-length str-map64.set drop
-                end
+                macro-name-token-arg macro-tokens-list list64.copy-array macro-names macro-tokens macros-length str-map64.set drop
+
+                // Deallocate 'macro-tokens-list'.
+                macro-tokens-list list64.mfree drop
               end
+
+              // Deallocate 'macro-name-token-address'.
+              macro-name-token-address mfree drop
             end
 
           else token-arg KEYWORD-PROC = if
@@ -1916,6 +2017,7 @@ in
               memory input-list sizeof(ptr) in
               memory output-list sizeof(ptr) in
 
+                // TODO: Check if the dynamic object is NULLPTR or not.
                 16 list64.init input-list !64
                 16 list64.init output-list !64
 
@@ -1929,6 +2031,9 @@ in
                       // If the token was a keyword, it must be a 'KEYWORD-RETURN'.
                       input-token-arg input-token-address "after 'proc' inputs" KEYWORD-RETURNS compile-file.check-keyword-here
 
+                      // Deallocate 'input-token-address'.
+                      input-token-address mfree drop
+
                       // If the token was a 'KEYWORD-RETURNS', break the loop.
                       break
                     end
@@ -1937,6 +2042,9 @@ in
                     input-token-type input-token-address "after 'proc'" TYPE-TYPE compile-file.check-type-here
 
                     input-token-arg input-list list64.append
+
+                    // Deallocate 'input-token-address'.
+                    input-token-address mfree drop
                   end
                 end
 
@@ -1950,6 +2058,9 @@ in
                       // If the token is a keyword, it must be a 'KEYWORD-IN'.
                       output-token-arg output-token-address "after 'proc' outputs" KEYWORD-IN compile-file.check-keyword-here
 
+                      // Deallocate 'output-token-address'.
+                      output-token-address mfree drop
+
                       // If the token was a 'KEYWORD-IN', break the loop.
                       break
                     end
@@ -1958,6 +2069,9 @@ in
                     output-token-type output-token-address "after '--'" TYPE-TYPE compile-file.check-type-here
 
                     output-token-arg output-list list64.append
+
+                    // Deallocate 'output-token-address'.
+                    output-token-address mfree drop
                   end
                 end
 
@@ -1980,7 +2094,7 @@ in
                       output-address output-address 8 + procs-length @64 output-address proc-outputs-array - 8 / - memcpy64i
 
                       // Save the name, inputs and outputs of the procedure.
-                      proc-name-token-arg            dcopy8 name-address   !64
+                      proc-name-token-arg             dcopy name-address   !64
                       input-list          list64.copy-array input-address  !64 
                       output-list         list64.copy-array output-address !64
 
@@ -2060,6 +2174,10 @@ in
                     end
                   end
                 end end
+
+                // Deallocate input-list and output-list.
+                input-list  list64.mfree drop
+                output-list list64.mfree drop
               end end 
             end
           else
@@ -2168,6 +2286,38 @@ in let source-name output-name include-paths-set log-stream in
       log-stream
       compile-file
 
+      // Deallocate space allocated for procedures.
+      0 while dup procs-length @64 < do let i in
+        i proc-names-array   array64.get mfree drop
+        i proc-inputs-array  array64.get mfree drop
+        i proc-outputs-array array64.get mfree drop
+      i end inc end drop
+
+      // Deallocate space allocated for macros.
+      0 while dup macros-length @64 < do let i in
+        i macro-names array64.get mfree drop
+
+        i macro-tokens array64.get let tokens in
+          0 while dup tokens mlength 24 / < do let j in
+            j tokens array64.get j inc tokens array64.get j 2 + tokens array64.get let token-type token-address token-arg in
+              // Deallocate 'token-address'.
+              token-address mfree drop
+
+              // Deallocate 'token-arg' if the token is either a 'name' or a 'string'.
+              token-type TYPE-NAME = token-type TYPE-STRING = | if
+                token-arg mfree drop
+              end
+            end
+          j end 3 + end drop
+
+          // Deallocate 'tokens'.
+          tokens mfree
+        end
+      i end inc end drop
+
+      // Deallocate the space allocated for libraries-set.
+      libraries-set list64.mfree-deep drop
+
       "segment .data\n" output-file fputs
       0 while dup data-definitions-list list64.length < do let i in
         "    data_" output-file fputs i output-file fputu ": db " output-file fputs
@@ -2178,6 +2328,9 @@ in let source-name output-name include-paths-set log-stream in
         end
         output-file fputnl
       i end inc end drop
+
+      // Deallocate the space allocated for data-definitions-list
+      data-definitions-list list64.mfree-deep drop
       
       "segment .bss\n"                                    output-file fputs
       "    local_memory:   resb 67108864\n"               output-file fputs
@@ -2192,6 +2345,9 @@ in let source-name output-name include-paths-set log-stream in
           ": resb " output-file fputs
           variable-size output-file fputu
           output-file fputnl
+
+          // Deallocate the name of the variable.
+          variable-name mfree drop
         end
       i end inc end drop
     end end end end end end end end end end end end
