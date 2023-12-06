@@ -8,6 +8,7 @@
 
 
 include libs/core/integer.corth
+include libs/core/ptr.corth
 
 
 macro array64.get-addr
