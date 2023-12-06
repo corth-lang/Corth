@@ -1,4 +1,3 @@
-include libs/dynamic/debug_malloc.corth
 include libs/dynamic/utils.corth
 include libs/linux_x86/io/output.corth
 include libs/core/stack.corth
