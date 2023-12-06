@@ -1,0 +1,42 @@
+include libs/linux_x86/stdio.corth
+include libs/linux_x86/sys.corth
+include libs/collections/array64.corth
+
+include libs/cstr.corth
+
+macro BUFFER-SIZE 0x100 endmacro
+
+proc main
+  int int -- int
+in let argc argv in
+  1 while dup argc < do let i in
+    i argv array64.get let directory-name in
+      directory-name diropen-r let directory in
+        directory isn-pos if
+          "Could not open directory '" puts directory-name cstr.str puts "'.\n" puts
+        else
+          memory buffer BUFFER-SIZE in
+            while true do
+              directory buffer BUFFER-SIZE getdents64 let length in
+                // If the length is negative, getdents64 failed; break the loop.
+                length is-neg if
+                  "Could not get directory entries from '" puts directory-name cstr.str puts "'.\n" puts
+                  break
+                end
+
+                // If the length is zero, we reached end of the list; break the loop.
+                length is-zero if break end
+
+                buffer while dup buffer length + < do let p in
+                  p 18 + cstr.str puts putnl
+                p 16 + @16 p + end end drop
+              end
+            end
+          end
+
+          directory fclose drop
+        end
+      end
+    end
+  i end inc end drop
+end 0 end
