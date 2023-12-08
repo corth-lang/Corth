@@ -117,6 +117,10 @@ in let
     else buffer buffer-size INTRINSIC-FALSE-STR    memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-FALSE    
     else buffer buffer-size INTRINSIC-LOAD8-STR    memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD8    
     else buffer buffer-size INTRINSIC-STORE8-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE8   
+    else buffer buffer-size INTRINSIC-LOAD16-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD16  
+    else buffer buffer-size INTRINSIC-STORE16-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE16
+    else buffer buffer-size INTRINSIC-LOAD32-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD32  
+    else buffer buffer-size INTRINSIC-STORE32-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE32
     else buffer buffer-size INTRINSIC-LOAD64-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD64   
     else buffer buffer-size INTRINSIC-STORE64-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE64  
     else buffer buffer-size INTRINSIC-SYSCALL6-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL6 
@@ -129,8 +133,8 @@ in let
       TYPE-NAME buffer buffer-size to-dynamic8
 
     // This is nightmare fuel.
-    end end end end end end end end end end end end end end end end end
-    end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end 
+    end end end end end end end end end end end end end end end end end end end
 
     let token-type token-arg in
       // Generate the address and return.
@@ -629,6 +633,76 @@ in
 
     compile-intrinsic.pop-item
     compile-intrinsic.pop-item
+    
+  else token-arg INTRINSIC-LOAD16 = if
+    // -------- Intrinsic '@16' --------
+    
+    // TODO: Check the type of arguments.
+    local-stack-length @64 is-zero if
+      LOG.ERR log-stream fputs "Intrinsic '@16' requires an integer, there was no item in the stack.\n" log-stream fputs
+      token-address log-stream fput-here
+      ERROR-EXIT-CODE exit drop
+    end
+
+    "    xor     rax, rax\n"       output-file fputs
+    "    pop     rbx\n"            output-file fputs
+    "    mov     ax, word [rbx]\n" output-file fputs
+    "    push    rax\n"            output-file fputs
+
+    compile-intrinsic.pop-item
+    create-int local-stack local-stack-length queue64.append
+
+  else token-arg INTRINSIC-STORE16 = if
+    // -------- Intrinsic '!16' --------
+
+    // TODO: Check the type of arguments.
+    local-stack-length @64 2 < if
+      LOG.ERR log-stream fputs "Intrinsic '!16' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
+      token-address log-stream fput-here
+      ERROR-EXIT-CODE exit drop
+    end
+
+    "    pop     rax\n"            output-file fputs
+    "    pop     rbx\n"            output-file fputs
+    "    mov     word [rax], bx\n" output-file fputs
+
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
+    
+  else token-arg INTRINSIC-LOAD32 = if
+    // -------- Intrinsic '@32' --------
+    
+    // TODO: Check the type of arguments.
+    local-stack-length @64 is-zero if
+      LOG.ERR log-stream fputs "Intrinsic '@32' requires an integer, there was no item in the stack.\n" log-stream fputs
+      token-address log-stream fput-here
+      ERROR-EXIT-CODE exit drop
+    end
+
+    "    xor     rax, rax\n"         output-file fputs
+    "    pop     rbx\n"              output-file fputs
+    "    mov     eax, dword [rbx]\n" output-file fputs
+    "    push    rax\n"              output-file fputs
+
+    compile-intrinsic.pop-item
+    create-int local-stack local-stack-length queue64.append
+
+  else token-arg INTRINSIC-STORE32 = if
+    // -------- Intrinsic '!32' --------
+
+    // TODO: Check the type of arguments.
+    local-stack-length @64 2 < if
+      LOG.ERR log-stream fputs "Intrinsic '!32' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
+      token-address log-stream fput-here
+      ERROR-EXIT-CODE exit drop
+    end
+
+    "    pop     rax\n"             output-file fputs
+    "    pop     rbx\n"             output-file fputs
+    "    mov     dword [rax], ebx\n" output-file fputs
+
+    compile-intrinsic.pop-item
+    compile-intrinsic.pop-item
 
   else token-arg INTRINSIC-LOAD64 = if
     // -------- Intrinsic '@64' --------
@@ -712,7 +786,7 @@ in
     token-address log-stream fput-here
     procedure-name procedure-address log-stream fput-inside-procedure
     ERROR-EXIT-CODE exit drop
-  end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end end end end end
 end end
 
 

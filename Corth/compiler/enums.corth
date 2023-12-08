@@ -92,9 +92,13 @@ macro INTRINSIC-TRUE     10 endmacro
 macro INTRINSIC-FALSE    11 endmacro
 macro INTRINSIC-LOAD8    12 endmacro
 macro INTRINSIC-STORE8   13 endmacro
-macro INTRINSIC-LOAD64   14 endmacro
-macro INTRINSIC-STORE64  15 endmacro
-macro INTRINSIC-SYSCALL6 16 endmacro
+macro INTRINSIC-LOAD16   14 endmacro
+macro INTRINSIC-STORE16  15 endmacro
+macro INTRINSIC-LOAD32   16 endmacro
+macro INTRINSIC-STORE32  17 endmacro
+macro INTRINSIC-LOAD64   18 endmacro
+macro INTRINSIC-STORE64  19 endmacro
+macro INTRINSIC-SYSCALL6 20 endmacro
 
 // Intrinsic strings
 macro INTRINSIC-UNKNOWN-STR  "<unknown>" endmacro
@@ -111,6 +115,10 @@ macro INTRINSIC-TRUE-STR     "true"      endmacro
 macro INTRINSIC-FALSE-STR    "false"     endmacro
 macro INTRINSIC-LOAD8-STR    "@8"        endmacro
 macro INTRINSIC-STORE8-STR   "!8"        endmacro
+macro INTRINSIC-LOAD16-STR   "@16"       endmacro
+macro INTRINSIC-STORE16-STR  "!16"       endmacro
+macro INTRINSIC-LOAD32-STR   "@32"       endmacro
+macro INTRINSIC-STORE32-STR  "!32"       endmacro
 macro INTRINSIC-LOAD64-STR   "@64"       endmacro
 macro INTRINSIC-STORE64-STR  "!64"       endmacro
 macro INTRINSIC-SYSCALL6-STR "syscall6"  endmacro
@@ -178,11 +186,15 @@ in let intrinsic in
   else intrinsic INTRINSIC-FALSE    = if INTRINSIC-FALSE-STR    
   else intrinsic INTRINSIC-LOAD8    = if INTRINSIC-LOAD8-STR    
   else intrinsic INTRINSIC-STORE8   = if INTRINSIC-STORE8-STR   
+  else intrinsic INTRINSIC-LOAD16   = if INTRINSIC-LOAD16-STR    
+  else intrinsic INTRINSIC-STORE16  = if INTRINSIC-STORE16-STR   
+  else intrinsic INTRINSIC-LOAD32   = if INTRINSIC-LOAD32-STR    
+  else intrinsic INTRINSIC-STORE32  = if INTRINSIC-STORE32-STR   
   else intrinsic INTRINSIC-LOAD64   = if INTRINSIC-LOAD64-STR   
   else intrinsic INTRINSIC-STORE64  = if INTRINSIC-STORE64-STR  
   else intrinsic INTRINSIC-SYSCALL6 = if INTRINSIC-SYSCALL6-STR 
   else                                   INTRINSIC-UNKNOWN-STR  
-  end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end end end end end
 end end
 
 macro fput-type let type file in
