@@ -22,7 +22,6 @@ for i in $(seq 1 $BUILD_ITERATION); do
 
   if [[ $compile_exit != 0 ]]; then
      echo -e '[build.sh] '$ERROR' ['$i/$BUILD_ITERATION'] Could not compile to NASM.'
-     rm -rf ./Corth/build/
      exit $compile_exit
   fi
 
@@ -33,7 +32,6 @@ for i in $(seq 1 $BUILD_ITERATION); do
 
   if [[ $nasm_exit != 0 ]]; then
      echo -e '[build.sh] '$ERROR' ['$i/$BUILD_ITERATION'] Could not compile NASM program.'
-     rm -rf ./Corth/build/
      exit $nasm_exit
   fi
 
@@ -44,7 +42,6 @@ for i in $(seq 1 $BUILD_ITERATION); do
 
   if [[ $linker_exit != 0 ]]; then
      echo -e '[build.sh] '$ERROR' ['$i/$BUILD_ITERATION'] Could not link program.'
-     rm -rf ./Corth/build/
      exit $linker_exit
   fi
 
@@ -58,7 +55,6 @@ tests_exit=$?
 
 if [[ $tests_exit != 0 ]]; then
     echo -e '[build.sh] '$ERROR' Tests failed.'
-    rm -rf ./Corth/build/
     exit $tests_exit
 fi
 
