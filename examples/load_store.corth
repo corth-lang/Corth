@@ -1,0 +1,17 @@
+include libs/linux_x86/stdio.corth
+
+proc main
+  int int -- int
+in let argc argv in
+  memory variable 8 in
+    0xfedcba9876543210 variable !64
+    0xfedcba98         variable !32
+    0xfedc             variable !16
+    0xfe               variable !8
+
+    variable @64 putx putnl
+    variable @32 putx putnl
+    variable @16 putx putnl
+    variable @8  putx putnl
+  end
+end 0 end
