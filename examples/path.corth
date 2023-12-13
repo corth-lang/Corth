@@ -13,7 +13,7 @@ proc main
 in let argc argv in
   malloc.init
 
-  path.merge.start
+  path.merge.init
     1 while dup argc < do let i in
       i argv array64.get path.merge.append-cstr
     i end inc end drop

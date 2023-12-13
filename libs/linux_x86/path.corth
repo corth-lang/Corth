@@ -2,7 +2,10 @@ include libs/core/ptr.corth
 include libs/cstr.corth
 include libs/string_builder.corth
 
-// This library requires malloc.
+// path.merge.builder string-builder objects are not designed to have a long life time, unlike a list.
+
+// NOTE: This library uses the string builder library. Therefore, string-builder.RESIZING must be defined.
+// NOTE: This library requires malloc.
 
 // cstr: path -- bool: is-root
 // Returns if the path starts with a slash.
@@ -74,7 +77,7 @@ end end
 
 /*
 Usage:
-  path.merge.start
+  path.merge.init
     path1 path1l path.merge.append
     path2 path2l path.merge.append
     path3 path3l path.merge.append
@@ -89,11 +92,10 @@ You can also loop through the items.
     inc end drop
   path.merge.end
 
-NOTE: path.merge.init defines the variable name path.merge.buffer and path.merge.ptr. Do not use these names inside it.
-NOTE: path.merge.init can not be used inside another path.merge.
+NOTE: path.merge can not be used inside another path.merge in the same procedure.
 */
 
-macro path.merge.start
+macro path.merge.init
   memory _path.merge.builder.array_ sizeof(ptr) in
   memory _path.merge.builder.ptr_   sizeof(ptr) in
     64 _path.merge.builder.array_ _path.merge.builder.ptr_ string-builder.init
