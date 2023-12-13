@@ -1,6 +1,7 @@
 include libs/core/memory.corth
 include libs/dynamic/utils.corth
 include libs/collections/array64.corth
+include libs/cstr.corth
 
 // string-builder is not designed to have a long life, unlike a list.
 // This library requires malloc.
@@ -94,6 +95,56 @@ in let array length builder.array builder.ptr in
 end end
 
 // cstr: string ptr: builder.array ptr: builder.ptr --
-macro string-builder.append-cstr let _builder.array_ _builder.ptr_ in
-  dup cstr.len _builder.array_ _builder.ptr_ string-builder.append-str
+macro string-builder.append-cstr let _string_ _builder.array_ _builder.ptr_ in
+  _string_ _string_ cstr.len _builder.array_ _builder.ptr_ string-builder.append-str
+end endmacro
+
+// dstr: string ptr: builder.array ptr: builder.ptr --
+macro string-builder.append-dstr let string _builder.array_ _builder.ptr_ in
+  _string_ _string_ mlength _builder.array_ _builder.ptr_ string-builder.append-str
+end endmacro
+
+// int: number ptr: builder.array ptr: builder.ptr --
+macro string-builder.append-uint let _number_ _builder.array_ _builder.ptr_ in
+  memory _buffer_ 20 in
+    _buffer_ _number_ intconvud let _buffer-start_ in
+      _buffer-start_ _buffer_ 20 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
+    end
+  end
+end endmacro
+
+// int: number ptr: builder.array ptr: builder.ptr --
+macro string-builder.append-int let _number_ _builder.array_ _builder.ptr_ in
+  memory _buffer_ 20 in
+    _buffer_ _number_ intconvd let _buffer-start_ in
+      _buffer-start_ _buffer_ 20 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
+    end
+  end
+end endmacro
+
+// int: number ptr: builder.array ptr: builder.ptr --
+macro string-builder.append-hex let _number_ _builder.array_ _builder.ptr_ in
+  memory _buffer_ 16 in
+    _buffer_ _number_ intconvx let _buffer-start_ in
+      _buffer-start_ _buffer_ 16 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
+    end
+  end
+end endmacro
+
+// int: number ptr: builder.array ptr: builder.ptr --
+macro string-builder.append-oct let _number_ _builder.array_ _builder.ptr_ in
+  memory _buffer_ 22 in
+    _buffer_ _number_ intconvo let _buffer-start_ in
+      _buffer-start_ _buffer_ 22 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
+    end
+  end
+end endmacro
+
+// int: number ptr: builder.array ptr: builder.ptr --
+macro string-builder.append-bin let _number_ _builder.array_ _builder.ptr_ in
+  memory _buffer_ 64 in
+    _buffer_ _number_ intconvb let _buffer-start_ in
+      _buffer-start_ _buffer_ 64 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
+    end
+  end
 end endmacro
