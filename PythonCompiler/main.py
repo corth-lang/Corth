@@ -60,7 +60,7 @@ def test_file(corth_directory='./Corth/corth', standard_library='.', test_file='
     error = process.stderr.decode()
 
     if process.returncode:
-        print(f'Got \'{process.returncode}\' while trying to compile Corth compiler to NASM.')
+        print(f'Got \'{process.returncode}\' while trying to compile file \'{test_file}\' to NASM.')
         print(f'stdout:')
         print(output)
         print(f'stderr:')
