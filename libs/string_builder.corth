@@ -15,9 +15,14 @@ macro string-builder.init let _builder.array_ _builder.ptr_ in
   malloc dup _builder.array_ !64 _builder.ptr_ !64
 end endmacro
 
-macro string-builder.to-string let _builder.array_ _builder.ptr_ in
+macro string-builder.to-string
   // ptr: builder.array ptr: builder.ptr -- ptr: string
-  _builder.array_ @64 _builder.ptr_ @64 _builder.array_ @64 - to-dynamic8
+  string-builder.to-array to-dynamic8
+endmacro
+
+macro string-builder.to-array let _builder.array_ _builder.ptr_ in
+  // ptr: builder.array ptr: builder.ptr -- ptr: array int: length
+  _builder.array_ @64 _builder.ptr_ @64 _builder.array_ @64 -
 end endmacro
 
 macro string-builder.length let _builder.array_ _builder.ptr_ in
