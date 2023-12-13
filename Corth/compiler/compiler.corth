@@ -8,6 +8,8 @@ include libs/core/memory.corth
 include libs/dynamic/malloc.corth
 include libs/dynamic/utils.corth
 
+macro string-builder.RESIZING 64 endmacro
+
 include libs/linux_x86/path.corth
 
 include libs/collections/list64.corth

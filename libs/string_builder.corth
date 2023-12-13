@@ -5,7 +5,8 @@ include libs/collections/array64.corth
 // string-builder is not designed to have a long life, unlike a list.
 // This library requires malloc.
 
-macro string-builder.RESIZING 64 endmacro
+// NOTE: This library requires malloc.
+// NOTE: string-builder.RESIZING must be defined as an integer constant.
 
 macro string-builder.init let _builder.array_ _builder.ptr_ in
   // int: start-size ptr: builder.array ptr: builder.ptr --

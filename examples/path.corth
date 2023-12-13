@@ -2,6 +2,7 @@ macro malloc.ARRAY-SIZE       0x4000 endmacro
 macro malloc.AVAIL-QUEUE-SIZE 0x100  endmacro
 include libs/dynamic/malloc.corth
 
+macro string-builder.RESIZING 64 endmacro
 macro path.merge.BUFFER-SIZE 0x400 endmacro
 
 include libs/linux_x86/stdio.corth
