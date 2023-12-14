@@ -22,7 +22,7 @@ endmacro
 macro list64.mfree-deep let _list_ in
   // ptr: list64 -- bool: successful
   0 while dup _list_ list64.length < do let i in
-    i _list_ list64.get mfree
+    i _list_ list64.get mfree drop
   i end inc end drop
 
   _list_ list64.mfree

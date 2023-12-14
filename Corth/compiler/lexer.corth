@@ -335,8 +335,8 @@ in let
     else buffer buffer-size INTRINSIC-STORE64-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE64  
     else buffer buffer-size INTRINSIC-SYSCALL6-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL6 
     
-    else buffer buffer-size TYPE-INT-STR           memcmp8-wl is-zero if TYPE-TYPE TYPE-INT           
-    else buffer buffer-size TYPE-BOOL-STR          memcmp8-wl is-zero if TYPE-TYPE TYPE-BOOL          
+    else buffer buffer-size INT-TYPE-INT-STR       memcmp8-wl is-zero if TYPE-INT-TYPE INT-TYPE-INT           
+    else buffer buffer-size INT-TYPE-BOOL-STR      memcmp8-wl is-zero if TYPE-INT-TYPE INT-TYPE-BOOL          
     
     else
       // Return token type and argument.

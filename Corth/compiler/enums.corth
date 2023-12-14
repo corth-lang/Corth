@@ -28,7 +28,7 @@ macro TYPE-INTEGER   2 endmacro
 macro TYPE-KEYWORD   3 endmacro
 macro TYPE-INTRINSIC 4 endmacro
 macro TYPE-STRING    5 endmacro
-macro TYPE-TYPE      6 endmacro
+macro TYPE-INT-TYPE  6 endmacro
 
 // Type strings
 macro TYPE-UNKNOWN-STR   "<unknown>" endmacro
@@ -37,7 +37,7 @@ macro TYPE-INTEGER-STR   "integer"   endmacro
 macro TYPE-KEYWORD-STR   "keyword"   endmacro
 macro TYPE-INTRINSIC-STR "intrinsic" endmacro
 macro TYPE-STRING-STR    "string"    endmacro
-macro TYPE-TYPE-STR      "type"      endmacro
+macro TYPE-INT-TYPE-STR  "int-type"  endmacro
 
 // Keyword IDs
 macro KEYWORD-UNKNOWN  0  endmacro
@@ -123,13 +123,15 @@ macro INTRINSIC-LOAD64-STR   "@64"       endmacro
 macro INTRINSIC-STORE64-STR  "!64"       endmacro
 macro INTRINSIC-SYSCALL6-STR "syscall6"  endmacro
 
-// Type IDs
-macro TYPE-INT  1 endmacro
-macro TYPE-BOOL 2 endmacro
+// Intrinsic type IDs
+macro INT-TYPE-UNKNOWN 0 endmacro
+macro INT-TYPE-INT     1 endmacro
+macro INT-TYPE-BOOL    2 endmacro
 
-// Type strings
-macro TYPE-INT-STR  "int"  endmacro
-macro TYPE-BOOL-STR "bool" endmacro
+// Intrinsic type strings
+macro INT-TYPE-UNKNOWN-STR "<unknown>" endmacro
+macro INT-TYPE-INT-STR     "int"       endmacro
+macro INT-TYPE-BOOL-STR    "bool"      endmacro
 
 proc get-type-name
   // int: type -- ptr: type-name-ptr int: type-name-length
@@ -140,13 +142,13 @@ in let type in
   else type TYPE-KEYWORD   = if TYPE-KEYWORD-STR   
   else type TYPE-INTRINSIC = if TYPE-INTRINSIC-STR 
   else type TYPE-STRING    = if TYPE-STRING-STR    
-  else type TYPE-TYPE      = if TYPE-TYPE-STR      
+  else type TYPE-INT-TYPE  = if TYPE-INT-TYPE-STR      
   else                          TYPE-UNKNOWN-STR   
   end end end end end end
 end end
 
 proc get-keyword-name
-  // int: keyword -- ptr: type-keyword-ptr int: type-keyword-length
+  // int: keyword -- ptr: keyword-name-ptr int: keyword-name-length
   int -- ptr int
 in let keyword in
        keyword KEYWORD-INCLUDE  = if KEYWORD-INCLUDE-STR  
@@ -170,7 +172,7 @@ in let keyword in
 end end
 
 proc get-intrinsic-name
-  // int: intrinsic -- ptr: type-intrinsic-ptr int: type-intrinsic-length
+  // int: intrinsic -- ptr: intrinsic-name-ptr int: intrinsic-name-length
   int -- ptr int
 in let intrinsic in
        intrinsic INTRINSIC-ADD      = if INTRINSIC-ADD-STR      
@@ -197,6 +199,16 @@ in let intrinsic in
   end end end end end end end end end end end end end end end end end end end end
 end end
 
+proc get-int-type-name
+  // int: int-type -- ptr: int-type-name-ptr int: int-type-name-length
+  int -- ptr int
+in let int-type in
+       int-type INT-TYPE-INT  = if INT-TYPE-INT-STR
+  else int-type INT-TYPE-BOOL = if INT-TYPE-BOOL-STR
+  else                             INT-TYPE-UNKNOWN-STR
+  end end
+end end
+
 macro fput-type let type file in
   // int: type file-desc: file-desc
   // Prints a type.
@@ -218,6 +230,13 @@ macro fput-intrinsic let intrinsic file in
   intrinsic get-intrinsic-name file fputs
 end endmacro
 
+macro fput-int-type let int-type file in
+  // int: int-type file-desc: file-desc
+  // Prints an intrinsic type.
+  
+  int-type get-int-type-name file fputs
+end endmacro
+
 proc fput-token
   // int: token-type [int|ptr]: token-arg file-desc: file-desc
   int int file-desc --
@@ -234,8 +253,8 @@ in let token-type token-arg file_ in
     token-arg file_ fput-intrinsic
   else token-type TYPE-STRING = if
     token-arg token-arg mlength file_ fputs
-  else token-type TYPE-TYPE = if
-    token-arg file_ fputi
+  else token-type TYPE-INT-TYPE = if
+    token-arg file_ fput-int-type
   else
     token-arg file_ fputi
   end end end end end end

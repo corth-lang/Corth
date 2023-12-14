@@ -74,7 +74,7 @@ in let argc argv in
       end
 
       // Add the standard library.
-      2 argv array64.get include-paths-set str-set8.add
+      2 argv array64.get include-paths-set str-set8.add drop
 
       argc 4 = if
         3 argv array64.get cstr.to-dynamic-termed
@@ -93,7 +93,7 @@ in let argc argv in
       end end
 
       // Deallocate 'include-paths-set'.
-      include-paths-set list64.mfree
+      include-paths-set list64.mfree drop
     end
     
   else 1 argv array64.get "compile" drop cstr.cmp is-zero if

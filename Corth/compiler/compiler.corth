@@ -184,56 +184,232 @@ in let name file in
 end end
 
 
-proc create-int
-  // -- ptr: stack-data
-  -- ptr
-in
-  8 malloc let x in
-    x is-null if
-      "'malloc' failed while creating an integer stack value.\n" STDERR fputs
+/*
+
+items:
+  type (8)
+  mode (8)
+
+bool:
+  real:
+    type (8)
+    mode (8)
+
+int:
+  real:
+    type (8)
+    mode (8)
+
+*/
+
+macro get-type @64 endmacro
+macro set-type !64 endmacro
+macro get-mode 8 + @64 endmacro
+macro set-mode 8 + !64 endmacro
+
+macro MODE-REAL 0 endmacro
+
+
+proc create-real
+  // int: int-type -- ptr: item
+  int -- ptr
+in let int-type in
+  16 malloc let object in
+    object is-null if
+      "'malloc' failed while creating a real stack item.\n" STDERR fputs
       ERROR-EXIT-CODE exit drop
     end
 
-    TYPE-INT x !64
-  x end
-end
+    int-type  object set-type
+    MODE-REAL object set-mode
 
-
-proc create-bool
-  // -- ptr: stack-data
-  -- ptr
-in
-  8 malloc let x in
-    x is-null if
-      "'malloc' failed while creating a boolean stack value.\n" STDERR fputs
-      ERROR-EXIT-CODE exit drop
-    end
-
-    TYPE-BOOL x !64
-  x end
-end
-
-
-proc push-int-constant
-  // file-desc: output-file ptr: local-stack ptr: local-stack-length int: constant --
-  file-desc ptr ptr int --
-in let output-file local-stack local-stack-length constant in
-  constant is-zero if
-      "    xor     rax, rax\n" output-file fputs
-  else
-      "    mov     rax, " output-file fputs constant output-file fputu output-file fputnl
+    object
   end
-
-  "    push    rax\n" output-file fputs
-  
-  create-int local-stack local-stack-length queue64.append
 end end
 
 
-macro compile-intrinsic.pop-item
-  // Pop the item from the stack and deallocate.
-  local-stack local-stack-length queue64.pop-last mfree drop
+// ptr: item --
+macro push-item
+  local-stack local-stack-length queue64.append
 endmacro
+
+// -- ptr: item
+macro pop-item
+  local-stack local-stack-length queue64.pop-last
+endmacro
+
+// int: int-type --
+macro push-real
+  create-real push-item
+endmacro
+
+
+// int: immediate-value
+macro push-int-immediate let immediate in
+  immediate is-zero if
+    "    xor     rax, rax\n" output-file fputs
+  else
+    "    mov     rax, " output-file fputs immediate output-file fputu output-file fputnl
+  end
+  "    push    rax\n" output-file fputs
+
+  INT-TYPE-INT push-real
+end endmacro
+
+
+macro invalid-usage-of-intrinsic
+  LOG.ERR log-stream fputs "Invalid argument types.\n" log-stream fputs
+  token-address compile-procedure.show-here
+  ERROR-EXIT-CODE exit drop
+endmacro
+
+
+proc compare-stack-types
+  // ptr: old-stack ptr: local-stack ptr: local-stack-length -- bool: is-equal
+  ptr ptr ptr -- bool
+in let old-stack local-stack local-stack-length in
+  local-stack-length @64 8 * old-stack mlength != if false return end
+
+  0 while dup local-stack-length @64 < do let i in
+    i old-stack array64.get get-type i local-stack array64.get get-type != if false return end
+  i end inc end drop
+end true end
+
+
+proc compare-stack-types-types
+  // ptr: types-array int: types-length ptr: local-stack ptr: local-stack-length -- bool: is-equal
+  ptr int ptr ptr -- bool
+in let
+  types-array types-length
+  local-stack local-stack-length
+in
+  types-length local-stack-length @64 != if false return end
+
+  0 while dup types-length < do let i in
+    i local-stack array64.get get-type i types-array array64.get != if false return end
+  i end inc end drop
+end true end
+
+
+proc compare-sub-stack-types-types
+  // ptr: types-array int: types-length ptr: local-stack ptr: local-stack-length -- bool: is-equal
+  ptr int ptr ptr -- bool
+in let
+  types-array types-length
+  local-stack local-stack-length
+in
+  types-length local-stack-length @64 > if false return end
+
+  types-length while dup isn-zero do dec let i in
+    pop-item let item in
+      i types-array array64.get let expected in
+        item get-type expected != if false return end
+      end
+    end
+  i end end drop
+end true end
+
+
+proc fput-stack-contents
+  // ptr: stack-ptr int: stack-length file-desc: log-stream --
+  ptr int file-desc --
+in let stack length log-stream in
+  length is-zero if
+    "<empty>\n" log-stream fputs
+    return
+  end
+
+  0 while dup length dec < do let i in
+    i stack array64.get get-type log-stream fput-int-type " " log-stream fputs
+  i end inc end drop
+
+  length dec stack array64.get get-type log-stream fput-int-type
+end end
+
+
+proc fput-types
+  // ptr: types-array int: types-length file-desc: log-stream --
+  ptr int file-desc --
+in let types-array types-length log-stream in
+  types-length is-zero if
+    "<empty>\n" log-stream fputs
+    return
+  end
+
+  0 while dup types-length dec < do let i in
+    i types-array array64.get log-stream fput-int-type " " log-stream fputs
+  i end inc end drop
+
+  types-length dec types-array array64.get log-stream fput-int-type
+end end
+
+
+proc check-stack-types
+  // ptr: old-stack ptr: old-address ptr: local-stack ptr: local-stack-length ptr: token-address file-desc: log-stream --
+  ptr ptr ptr ptr ptr file-desc --
+in let old-stack old-address local-stack local-stack-length token-address log-stream in
+  old-stack local-stack local-stack-length compare-stack-types ! if
+    LOG.ERR log-stream fputs "Stack contents do not match.\n" log-stream fputs
+    old-address log-stream fput-here
+    LOG.INFO log-stream fputs old-stack old-stack mlength 8 / log-stream fput-stack-contents log-stream fputnl
+    token-address log-stream fput-here
+    LOG.INFO log-stream fputs local-stack local-stack-length @64 log-stream fput-stack-contents log-stream fputnl
+
+    ERROR-EXIT-CODE exit drop
+  end
+end end
+
+
+proc check-stack-types-types
+  // ptr: types-array int: types-length
+  ptr int
+  // ptr: token-address
+  ptr
+  // ptr: local-stack ptr: local-stack-length
+  ptr ptr
+  // file-desc: log-stream
+  file-desc --
+in let
+  types-array types-length
+  token-address
+  local-stack local-stack-length
+  log-stream
+in
+  types-array types-length local-stack local-stack-length compare-stack-types-types ! if
+    LOG.ERR log-stream fputs "Stack contents do not match.\n" log-stream fputs
+    token-address log-stream fput-here
+    LOG.INFO log-stream fputs "Expected '" log-stream fputs types-array types-length log-stream fput-types "'.\n" log-stream fputs
+    LOG.INFO log-stream fputs "Got '" log-stream fputs local-stack local-stack-length @64 log-stream fput-stack-contents "'.\n" log-stream fputs
+
+    ERROR-EXIT-CODE exit drop
+  end
+end end
+
+
+proc check-sub-stack-types-types
+  // ptr: types-array int: types-length
+  ptr int
+  // ptr: token-address
+  ptr
+  // ptr: local-stack ptr: local-stack-length
+  ptr ptr
+  // file-desc: log-stream
+  file-desc --
+in let
+  types-array types-length
+  token-address
+  local-stack local-stack-length
+  log-stream
+in
+  types-array types-length local-stack local-stack-length compare-sub-stack-types-types ! if
+    LOG.ERR log-stream fputs "Stack contents do not match.\n" log-stream fputs
+    token-address log-stream fput-here
+    LOG.INFO log-stream fputs "Expected '" log-stream fputs types-array types-length log-stream fput-types "'.\n" log-stream fputs
+    LOG.INFO log-stream fputs "Got '" log-stream fputs local-stack local-stack-length @64 log-stream fput-stack-contents "'.\n" log-stream fputs
+
+    ERROR-EXIT-CODE exit drop
+  end
+end end
 
 
 proc compile-intrinsic
@@ -260,325 +436,315 @@ in let
   token-type token-address token-arg
   log-stream
 in
-  
   token-arg INTRINSIC-ADD = if
     // -------- Intrinsic '+' --------
 
-    // TODO: Check the type of arguments.
-    local-stack-length @64 2 < if
-      LOG.ERR log-stream fputs "Intrinsic '+' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT = if
+        item2 get-type INT-TYPE-INT = if
+          "    pop     rax\n"        output-file fputs
+          "    add     [rsp], rax\n" output-file fputs
+
+          item1 push-item
+          item2 mfree drop
+        else invalid-usage-of-intrinsic end
+      else invalid-usage-of-intrinsic end
     end
-
-    "    pop     rax\n"        output-file fputs
-    "    add     [rsp], rax\n" output-file fputs
-
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-    create-int local-stack local-stack-length queue64.append
 
   else token-arg INTRINSIC-BOR = if
     // -------- Intrinsic '||' --------
 
-    // TODO: Check the type of arguments.
-    local-stack-length @64 2 < if
-      LOG.ERR log-stream fputs "Intrinsic '||' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT = if
+        item2 get-type INT-TYPE-INT = if
+          "    pop     rax\n"        output-file fputs
+          "    or      [rsp], rax\n" output-file fputs
+          
+          item1 push-item
+          item2 mfree drop
+        else invalid-usage-of-intrinsic end
+      else invalid-usage-of-intrinsic end
     end
-
-    "    pop     rax\n"        output-file fputs
-    "    or      [rsp], rax\n" output-file fputs
     
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-    create-int local-stack local-stack-length queue64.append
-
   else token-arg INTRINSIC-BNOT = if
     // -------- Intrinsic '!!' --------
 
-    // TODO: Check the type of arguments.
-    local-stack-length @64 1 < if
-      LOG.ERR log-stream fputs "Intrinsic '!!' requires an integer, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
-    end
+    local-stack-length @64 1 < if invalid-usage-of-intrinsic end
 
-    "    not     qword [rsp]\n"    output-file fputs
-    
-    compile-intrinsic.pop-item
-    create-int local-stack local-stack-length queue64.append
+    pop-item let item in
+      item get-type INT-TYPE-INT = if
+        "    not     qword [rsp]\n" output-file fputs
+
+        item push-item
+      else invalid-usage-of-intrinsic end
+    end
     
   else token-arg INTRINSIC-FULLMUL = if
     // -------- Intrinsic '**' --------
 
-    // TODO: Check the type of arguments.
-    local-stack-length @64 2 < if
-      LOG.ERR log-stream fputs "Intrinsic '**' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
-    end
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
-    "    xor     rdx, rdx\n"        output-file fputs
-    "    mov     rbx, [rsp]\n"      output-file fputs
-    "    mov     rax, [rsp+8]\n"    output-file fputs
-    "    imul    rbx\n"             output-file fputs
-    "    mov     [rsp], rax\n"      output-file fputs
-    "    mov     [rsp+8], rdx\n"    output-file fputs
-    
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-    create-int local-stack local-stack-length queue64.append
-    create-int local-stack local-stack-length queue64.append
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT = if
+        item2 get-type INT-TYPE-INT = if
+            "    xor     rdx, rdx\n"        output-file fputs
+            "    mov     rbx, [rsp]\n"      output-file fputs
+            "    mov     rax, [rsp+8]\n"    output-file fputs
+            "    imul    rbx\n"             output-file fputs
+            "    mov     [rsp], rax\n"      output-file fputs
+            "    mov     [rsp+8], rdx\n"    output-file fputs
+          
+          item1 push-item
+          item2 push-item
+        else invalid-usage-of-intrinsic end
+      else invalid-usage-of-intrinsic end
+    end
     
   else token-arg INTRINSIC-DIVMOD = if
     // -------- Intrinsic '/%' --------
 
-    // TODO: Check the type of arguments.
-    local-stack-length @64 2 < if
-      LOG.ERR log-stream fputs "Intrinsic '/%' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
-    end
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
-    "    xor     rdx, rdx\n"        output-file fputs
-    "    mov     rbx, [rsp]\n"      output-file fputs
-    "    mov     rax, [rsp+8]\n"    output-file fputs
-    "    idiv    rbx\n"             output-file fputs
-    "    mov     [rsp+8], rax\n"    output-file fputs
-    "    mov     [rsp], rdx\n"      output-file fputs
-    
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-    create-int local-stack local-stack-length queue64.append
-    create-int local-stack local-stack-length queue64.append
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT = if
+        item2 get-type INT-TYPE-INT = if
+            "    xor     rdx, rdx\n"        output-file fputs
+            "    mov     rbx, [rsp]\n"      output-file fputs
+            "    mov     rax, [rsp+8]\n"    output-file fputs
+            "    idiv    rbx\n"             output-file fputs
+            "    mov     [rsp+8], rax\n"    output-file fputs
+            "    mov     [rsp], rdx\n"      output-file fputs
+            
+          item1 push-item
+          item2 push-item
+        else invalid-usage-of-intrinsic end
+      else invalid-usage-of-intrinsic end
+    end
     
   else token-arg INTRINSIC-UFULLMUL = if
     // -------- Intrinsic 'u**' --------
 
-    // TODO: Check the type of arguments.
-    local-stack-length @64 2 < if
-      LOG.ERR log-stream fputs "Intrinsic 'u**' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
-    end
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
-    "    xor     rdx, rdx\n"        output-file fputs
-    "    mov     rbx, [rsp]\n"      output-file fputs
-    "    mov     rax, [rsp+8]\n"    output-file fputs
-    "    mul     rbx\n"             output-file fputs
-    "    mov     [rsp], rax\n"      output-file fputs
-    "    mov     [rsp+8], rdx\n"    output-file fputs
-    
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-    create-int local-stack local-stack-length queue64.append
-    create-int local-stack local-stack-length queue64.append
-    
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT = if
+        item2 get-type INT-TYPE-INT = if
+            "    xor     rdx, rdx\n"        output-file fputs
+            "    mov     rbx, [rsp]\n"      output-file fputs
+            "    mov     rax, [rsp+8]\n"    output-file fputs
+            "    mul     rbx\n"             output-file fputs
+            "    mov     [rsp], rax\n"      output-file fputs
+            "    mov     [rsp+8], rdx\n"    output-file fputs
+          
+          item1 push-item
+          item2 push-item
+        else invalid-usage-of-intrinsic end
+      else invalid-usage-of-intrinsic end
+    end
+        
   else token-arg INTRINSIC-UDIVMOD = if
     // -------- Intrinsic 'u/%' --------
 
-    // TODO: Check the type of arguments.
-    local-stack-length @64 2 < if
-      LOG.ERR log-stream fputs "Intrinsic 'u/%' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT = if
+        item2 get-type INT-TYPE-INT = if
+            "    xor     rdx, rdx\n"        output-file fputs
+            "    mov     rbx, [rsp]\n"      output-file fputs
+            "    mov     rax, [rsp+8]\n"    output-file fputs
+            "    div     rbx\n"             output-file fputs
+            "    mov     [rsp+8], rax\n"    output-file fputs
+            "    mov     [rsp], rdx\n"      output-file fputs
+            
+          item1 push-item
+          item2 push-item
+        else invalid-usage-of-intrinsic end
+      else invalid-usage-of-intrinsic end
     end
-
-    "    xor     rdx, rdx\n"        output-file fputs
-    "    mov     rbx, [rsp]\n"      output-file fputs
-    "    mov     rax, [rsp+8]\n"    output-file fputs
-    "    div     rbx\n"             output-file fputs
-    "    mov     [rsp+8], rax\n"    output-file fputs
-    "    mov     [rsp], rdx\n"      output-file fputs
     
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-    create-int local-stack local-stack-length queue64.append
-    create-int local-stack local-stack-length queue64.append
-
   else token-arg INTRINSIC-NOTEQUAL = if
     // -------- Intrinsic '!=' --------
 
-    // TODO: Check the type of arguments.
-    local-stack-length @64 2 < if
-      LOG.ERR log-stream fputs "Intrinsic '!=' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT = if
+        item2 get-type INT-TYPE-INT = if
+          "    pop     rax\n"        output-file fputs
+          "    sub     [rsp], rax\n" output-file fputs
+
+          INT-TYPE-BOOL push-real
+        else invalid-usage-of-intrinsic end
+      else invalid-usage-of-intrinsic end
     end
-
-    "    pop     rax\n"         output-file fputs
-    "    sub     [rsp], rax\n"  output-file fputs
-
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-    create-bool local-stack local-stack-length queue64.append
 
   else token-arg INTRINSIC-LESS = if
     // -------- Intrinsic '<' --------
+    
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
-    // TODO: Check the type of arguments.
-    local-stack-length @64 2 < if
-      LOG.ERR log-stream fputs "Intrinsic '<' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT = if
+        item2 get-type INT-TYPE-INT = if
+          "    pop     rax\n"               output-file fputs
+          "    pop     rbx\n"               output-file fputs
+          "    sub     rbx, rax\n"          output-file fputs
+          "    pushf\n"                     output-file fputs
+          "    and     qword [rsp], 0x80\n" output-file fputs
+
+          INT-TYPE-BOOL push-real
+        else invalid-usage-of-intrinsic end
+      else invalid-usage-of-intrinsic end
     end
-
-    "    pop     rax\n"               output-file fputs
-    "    pop     rbx\n"               output-file fputs
-    "    sub     rbx, rax\n"          output-file fputs
-    "    pushf\n"                     output-file fputs
-    "    and     qword [rsp], 0x80\n" output-file fputs
-
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-    create-bool local-stack local-stack-length queue64.append
 
   else token-arg INTRINSIC-LOAD8 = if
     // -------- Intrinsic '@8' --------
-    
-    // TODO: Check the type of arguments.
-    local-stack-length @64 is-zero if
-      LOG.ERR log-stream fputs "Intrinsic '@8' requires an integer, there was no item in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
+
+    local-stack-length @64 1 < if invalid-usage-of-intrinsic end
+
+    pop-item let item in
+      item get-type INT-TYPE-INT = if      
+        "    xor     rax, rax\n"      output-file fputs
+        "    pop     rbx\n"           output-file fputs
+        "    mov     al, [rbx]\n"     output-file fputs
+        "    push    rax\n"           output-file fputs
+
+        item push-item
+      else invalid-usage-of-intrinsic end
     end
-
-    "    xor     rax, rax\n"      output-file fputs
-    "    pop     rbx\n"           output-file fputs
-    "    mov     al, byte[rbx]\n" output-file fputs
-    "    push    rax\n"           output-file fputs
-
-    compile-intrinsic.pop-item
-    create-int local-stack local-stack-length queue64.append
-
-  else token-arg INTRINSIC-STORE8 = if
-    // -------- Intrinsic '!8' --------
-
-    // TODO: Check the type of arguments.
-    local-stack-length @64 2 < if
-      LOG.ERR log-stream fputs "Intrinsic '!8' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
-    end
-
-    "    pop     rax\n"            output-file fputs
-    "    pop     rbx\n"            output-file fputs
-    "    mov     byte [rax], bl\n" output-file fputs
-
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
     
   else token-arg INTRINSIC-LOAD16 = if
     // -------- Intrinsic '@16' --------
-    
-    // TODO: Check the type of arguments.
-    local-stack-length @64 is-zero if
-      LOG.ERR log-stream fputs "Intrinsic '@16' requires an integer, there was no item in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
+
+    local-stack-length @64 1 < if invalid-usage-of-intrinsic end
+
+    pop-item let item in
+      item get-type INT-TYPE-INT = if      
+        "    xor     rax, rax\n"       output-file fputs
+        "    pop     rbx\n"            output-file fputs
+        "    mov     ax, [rbx]\n"      output-file fputs
+        "    push    rax\n"            output-file fputs
+
+        item push-item
+      else invalid-usage-of-intrinsic end
     end
 
-    "    xor     rax, rax\n"       output-file fputs
-    "    pop     rbx\n"            output-file fputs
-    "    mov     ax, word [rbx]\n" output-file fputs
-    "    push    rax\n"            output-file fputs
+  else token-arg INTRINSIC-LOAD32 = if
+    // -------- Intrinsic '@32' --------
 
-    compile-intrinsic.pop-item
-    create-int local-stack local-stack-length queue64.append
+    local-stack-length @64 1 < if invalid-usage-of-intrinsic end
+
+    pop-item let item in
+      item get-type INT-TYPE-INT = if      
+        "    xor     rax, rax\n"       output-file fputs
+        "    pop     rbx\n"            output-file fputs
+        "    mov     eax, [rbx]\n"     output-file fputs
+        "    push    rax\n"            output-file fputs
+
+        item push-item
+      else invalid-usage-of-intrinsic end
+    end
+    
+  else token-arg INTRINSIC-LOAD64 = if
+    // -------- Intrinsic '@64' --------
+
+    local-stack-length @64 1 < if invalid-usage-of-intrinsic end
+
+    pop-item let item in
+      item get-type INT-TYPE-INT = if      
+        "    xor     rax, rax\n"       output-file fputs
+        "    pop     rbx\n"            output-file fputs
+        "    mov     rax, [rbx]\n"     output-file fputs
+        "    push    rax\n"            output-file fputs
+
+        item push-item
+      else invalid-usage-of-intrinsic end
+    end
+
+  else token-arg INTRINSIC-STORE8 = if
+    // -------- Intrinsic '!8' --------
+    
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT = if
+        item2 get-type INT-TYPE-INT = if
+          "    pop     rax\n"            output-file fputs
+          "    pop     rbx\n"            output-file fputs
+          "    mov     [rax], bl\n"      output-file fputs
+
+          item1 mfree drop
+          item2 mfree drop
+        else invalid-usage-of-intrinsic end
+      else invalid-usage-of-intrinsic end
+    end
 
   else token-arg INTRINSIC-STORE16 = if
     // -------- Intrinsic '!16' --------
-
-    // TODO: Check the type of arguments.
-    local-stack-length @64 2 < if
-      LOG.ERR log-stream fputs "Intrinsic '!16' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
-    end
-
-    "    pop     rax\n"            output-file fputs
-    "    pop     rbx\n"            output-file fputs
-    "    mov     word [rax], bx\n" output-file fputs
-
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
     
-  else token-arg INTRINSIC-LOAD32 = if
-    // -------- Intrinsic '@32' --------
-    
-    // TODO: Check the type of arguments.
-    local-stack-length @64 is-zero if
-      LOG.ERR log-stream fputs "Intrinsic '@32' requires an integer, there was no item in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT = if
+        item2 get-type INT-TYPE-INT = if
+          "    pop     rax\n"            output-file fputs
+          "    pop     rbx\n"            output-file fputs
+          "    mov     [rax], bx\n"      output-file fputs
+
+          item1 mfree drop
+          item2 mfree drop
+        else invalid-usage-of-intrinsic end
+      else invalid-usage-of-intrinsic end
     end
-
-    "    xor     rax, rax\n"         output-file fputs
-    "    pop     rbx\n"              output-file fputs
-    "    mov     eax, dword [rbx]\n" output-file fputs
-    "    push    rax\n"              output-file fputs
-
-    compile-intrinsic.pop-item
-    create-int local-stack local-stack-length queue64.append
-
+    
   else token-arg INTRINSIC-STORE32 = if
     // -------- Intrinsic '!32' --------
-
-    // TODO: Check the type of arguments.
-    local-stack-length @64 2 < if
-      LOG.ERR log-stream fputs "Intrinsic '!32' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
-    end
-
-    "    pop     rax\n"             output-file fputs
-    "    pop     rbx\n"             output-file fputs
-    "    mov     dword [rax], ebx\n" output-file fputs
-
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-
-  else token-arg INTRINSIC-LOAD64 = if
-    // -------- Intrinsic '@64' --------
     
-    // TODO: Check the type of arguments.
-    local-stack-length @64 is-zero if
-      LOG.ERR log-stream fputs "Intrinsic '@64' requires an integer, there was no item in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT = if
+        item2 get-type INT-TYPE-INT = if
+          "    pop     rax\n"            output-file fputs
+          "    pop     rbx\n"            output-file fputs
+          "    mov     [rax], ebx\n"     output-file fputs
+
+          item1 mfree drop
+          item2 mfree drop
+        else invalid-usage-of-intrinsic end
+      else invalid-usage-of-intrinsic end
     end
-
-    "    pop     rax\n"         output-file fputs
-    "    push    qword [rax]\n" output-file fputs
-
-    compile-intrinsic.pop-item
-    create-int local-stack local-stack-length queue64.append
 
   else token-arg INTRINSIC-STORE64 = if
     // -------- Intrinsic '!64' --------
+    
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
-    // TODO: Check the type of arguments.
-    local-stack-length @64 2 < if
-      LOG.ERR log-stream fputs "Intrinsic '!64' requires 2 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT = if
+        item2 get-type INT-TYPE-INT = if
+          "    pop     rax\n"            output-file fputs
+          "    pop     rbx\n"            output-file fputs
+          "    mov     [rax], rbx\n"     output-file fputs
+
+          item1 mfree drop
+          item2 mfree drop
+        else invalid-usage-of-intrinsic end
+      else invalid-usage-of-intrinsic end
     end
-
-    "    pop     rax\n"         output-file fputs
-    "    pop     qword [rax]\n" output-file fputs
-
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-
+    
   else token-arg INTRINSIC-TRUE = if
     // -------- Intrinsic 'true' --------
 
     "    mov     rax, 0xffffffffffffffff\n" output-file fputs
     "    push    rax\n"                     output-file fputs
 
-    create-bool local-stack local-stack-length queue64.append
+    INT-TYPE-BOOL push-real
 
   else token-arg INTRINSIC-FALSE = if
     // -------- Intrinsic 'false' -------
@@ -586,36 +752,46 @@ in
     "    xor     rax, rax\n" output-file fputs
     "    push    rax\n"      output-file fputs
 
-    create-bool local-stack local-stack-length queue64.append
+    INT-TYPE-BOOL push-real
     
   else token-arg INTRINSIC-SYSCALL6 = if
     // -------- Intrinsic 'syscall6' --------
 
-    // TODO: Check the type of arguments.
-    local-stack-length @64 7 < if
-      LOG.ERR log-stream fputs "'syscall6' requires 7 integers, there was " log-stream fputs local-stack-length @64 log-stream fputu " items in the stack.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
+    local-stack-length @64 7 < if invalid-usage-of-intrinsic end
+
+    pop-item pop-item pop-item pop-item pop-item pop-item pop-item let item7 item6 item5 item4 item3 item2 item1 in
+      item1 get-type INT-TYPE-INT = if
+        item2 get-type INT-TYPE-INT = if
+          item3 get-type INT-TYPE-INT = if
+            item4 get-type INT-TYPE-INT = if
+              item5 get-type INT-TYPE-INT = if
+                item6 get-type INT-TYPE-INT = if
+                  item7 get-type INT-TYPE-INT = if
+                    "    pop     rax\n" output-file fputs
+                    "    pop     r9\n"  output-file fputs
+                    "    pop     r8\n"  output-file fputs
+                    "    pop     r10\n" output-file fputs
+                    "    pop     rdx\n" output-file fputs
+                    "    pop     rsi\n" output-file fputs
+                    "    pop     rdi\n" output-file fputs
+                    "    syscall\n"     output-file fputs
+                    "    push    rax\n" output-file fputs
+
+                    item1 push-item
+                    item2 mfree drop
+                    item3 mfree drop
+                    item4 mfree drop
+                    item5 mfree drop
+                    item6 mfree drop
+                    item7 mfree drop
+                  else invalid-usage-of-intrinsic end
+                else invalid-usage-of-intrinsic end
+              else invalid-usage-of-intrinsic end
+            else invalid-usage-of-intrinsic end
+          else invalid-usage-of-intrinsic end
+        else invalid-usage-of-intrinsic end
+      else invalid-usage-of-intrinsic end
     end
-
-    "    pop     rax\n" output-file fputs
-    "    pop     r9\n" output-file fputs
-    "    pop     r8\n" output-file fputs
-    "    pop     r10\n" output-file fputs
-    "    pop     rdx\n" output-file fputs
-    "    pop     rsi\n" output-file fputs
-    "    pop     rdi\n" output-file fputs
-    "    syscall\n"     output-file fputs
-    "    push    rax\n" output-file fputs
-
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-    compile-intrinsic.pop-item
-    create-int local-stack local-stack-length queue64.append
 
   else
     LOG.TODO log-stream fputs "Intrinsic '" log-stream fputs token-arg log-stream fput-intrinsic "' is not implemented yet.\n" log-stream fputs
@@ -651,10 +827,12 @@ proc compile-keyword
   ptr ptr ptr
   // ptr: branch-active
   ptr
+  // ptr: output-array int: output-length
+  ptr int
   // file-desc: log-stream
   file-desc
-  // int: local-memory-max
-  int
+  // ptr: local-memory-max
+  ptr
   --
   // bool: end-of-procedure
   bool
@@ -671,6 +849,7 @@ in let
   local-memory-end
   let-names let-addresses let-vars-length
   branch-active
+  output-array output-length
   log-stream
   local-memory-max
 in
@@ -683,7 +862,14 @@ in
       // Branch should not be cut before the main procedure return.
       token-address "finish a procedure" compile-procedure.check-branch-here
 
-      local-memory-max @64 true return
+      // Check if the stack is correct.
+      output-array output-length
+      token-address
+      local-stack local-stack-length
+      log-stream
+      check-stack-types-types
+      
+      true return
     end
 
     levels-list list64.pop-last let level in
@@ -691,12 +877,15 @@ in
         start-keyword KEYWORD-IF = if
           // -------- End of 'if' --------
           level 16 + @64 level 24 + @64 let start-id start-stack in
-            branch-active @8 is-zero if
+            branch-active @8 is-zero if              
               start-stack start-stack mlength 8 / local-stack local-stack-length queue64.overwrite
 
               // Reset the branch.
               0xff branch-active !8
             end
+
+            // Check for the stack changes.
+            start-stack start-address local-stack local-stack-length token-address log-stream check-stack-types
 
             ".level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
 
@@ -706,12 +895,14 @@ in
 
         else start-keyword KEYWORD-ELSE = if
           // -------- End of 'else' --------
-          // TODO: Check for stack change.
 
           // Branch should not be cut before the end of else.
           token-address "finish an 'if-else'" compile-procedure.check-branch-here
 
           level 16 + @64 level 24 + @64 level 32 + @64 let else-address start-id start-stack in
+            // Check for the stack changes.
+            start-stack else-address local-stack local-stack-length token-address log-stream check-stack-types
+            
             ".level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
 
             // Deallocate 'else-address' and 'start-stack'.
@@ -724,9 +915,10 @@ in
 
           LOG.ERR  log-stream fputs "You probably forgot a 'do' after 'while'.\n" log-stream fputs
           LOG.INFO log-stream fputs "A 'while-do' loop can be created as: 'while <condition> do <code> end'\n" log-stream fputs
+          
           token-address log-stream fput-here
-
           start-address compile-procedure.show-here
+          
           ERROR-EXIT-CODE exit drop
 
         else start-keyword KEYWORD-DO = if
@@ -738,6 +930,9 @@ in
           level 16 + @64 level 24 + @64 level 32 + @64 level 40 + @64 level 48 + @64 level 56 + @64 let
             while-level-id do-address unbroken-end-id broken-end-id while-stack do-stack
           in
+            // Check for the stack changes.
+            while-stack start-address local-stack local-stack-length token-address log-stream check-stack-types
+          
             do-stack do-stack mlength 8 / local-stack local-stack-length queue64.overwrite
 
             "    jmp     .level_" output-file fputs while-level-id output-file fputu output-file fputnl
@@ -839,8 +1034,15 @@ in
       ERROR-EXIT-CODE exit drop
     end
 
-    // TODO: Check for the data type
-    local-stack local-stack-length queue64.pop-last mfree drop
+    pop-item let item in
+      item get-type INT-TYPE-BOOL != if
+        LOG.ERR log-stream fputs "'if' requires a bool\n" log-stream fputs
+        token-address compile-procedure.show-here
+        ERROR-EXIT-CODE exit drop
+      end
+
+      item mfree drop
+    end
 
     local-stack local-stack-length @64 to-dynamic64 let copy-stack in
       copy-stack "copying the stack for 'if'" compile-procedure.check-null-here
@@ -874,8 +1076,6 @@ in
     // 24-31 -> Level ID
     // 32-39 -> Old stack
 
-    // TODO: Add stack check.
-
     // Branch should not be cut before 'else'.
     token-address "before 'else'" compile-procedure.check-branch-here
 
@@ -890,14 +1090,14 @@ in
         old-keyword old-address token-address "before 'else'" KEYWORD-IF compile-procedure.check-level-here
 
         level 16 + @64 level 24 + @64 let start-id start-stack in
-          start-stack start-stack mlength 8 / local-stack local-stack-length queue64.overwrite
+          local-stack local-stack-length @64 to-dynamic64 let copy-stack in
+            copy-stack "copying the stack for 'else'" compile-procedure.check-null-here
 
-          compile-procedure.new-level-id let level-id in
-            "    jmp     .level_" output-file fputs level-id output-file fputu output-file fputnl
-            ".level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
+            start-stack start-stack mlength 8 / local-stack local-stack-length queue64.overwrite
 
-            local-stack local-stack-length @64 to-dynamic64 let copy-stack in
-              copy-stack "copying the stack for 'else'" compile-procedure.check-null-here
+            compile-procedure.new-level-id let level-id in
+              "    jmp     .level_" output-file fputs level-id output-file fputu output-file fputnl
+              ".level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
 
               40 malloc let new-level in
                 new-level "creating a level object for 'else'" compile-procedure.check-null-here
@@ -982,9 +1182,15 @@ in
     end
 
     // Remove the bool value from the local-stack.
-    // TODO: Unfinished, should add stack value type check.
-    // TODO: Fix the memory leak.
-    local-stack local-stack-length queue64.pop-last mfree drop
+    pop-item let item in
+      item get-type INT-TYPE-BOOL != if        
+        LOG.ERR log-stream fputs "'do' requires a bool.\n" log-stream fputs
+        token-address compile-procedure.show-here
+        ERROR-EXIT-CODE exit drop
+      end
+      
+      item mfree drop
+    end
 
     // Get the 'while' level.
     levels-list list64.pop-last let old-level in
@@ -1032,7 +1238,10 @@ in
     levels-list list64.end-addr while dup levels-list list64.array-addr > do 8 - let level-addr in
       level-addr @64 @64 level-addr @64 8 + @64 let old-keyword old-address in
         old-keyword KEYWORD-DO = if
-          level-addr @64 32 + @64 let broken-end-id in
+          level-addr @64 32 + @64 level-addr @64 24 + @64 level-addr @64 56 + @64 let broken-end-id do-address do-stack in
+            // Check for the stack contents.
+            do-stack do-address local-stack local-stack-length token-address log-stream check-stack-types
+          
             "    jmp     .level_" output-file fputs broken-end-id output-file fputu output-file fputnl
           end
 
@@ -1042,7 +1251,6 @@ in
       end
     level-addr end end drop
 
-    // TODO: Unfinished, should add stack value type check.
     branch-active @8 isn-zero if
       LOG.ERR log-stream fputs "Expected a 'while-do' structure before 'break'.\n" log-stream fputs
       token-address compile-procedure.show-here
@@ -1140,7 +1348,7 @@ in
       end
 
       // Deallocate 'new-names-list' but keep the 'memory' variable names.
-      new-names-list list64.mfree
+      new-names-list list64.mfree drop
     end
 
   else token-arg KEYWORD-LET = if
@@ -1174,8 +1382,8 @@ in
             // If token is a keyword, it must be a 'in' keyword.
             new-token-arg new-token-address "after 'let'" KEYWORD-IN compile-procedure.check-keyword-here
 
-            // TODO: Deallocate 'new-token-address'.
-            // new-token-address mfree drop
+            // Deallocate 'new-token-address'.
+            new-token-address mfree drop
 
             // If the token is a 'in' keyword, break the loop.
             break
@@ -1187,8 +1395,8 @@ in
           // TODO: Change the way that the variables are stored, so that we can also store their addresses.
           new-token-arg new-names-list list64.append
 
-          // TODO: Deallocate 'new-token-address'.
-          // new-token-address mfree drop
+          // Deallocate 'new-token-address'.
+          new-token-address mfree drop
         end
       end
 
@@ -1250,7 +1458,11 @@ in
     // Branch should not be cut before 'return'.
     token-address "call 'return'" compile-procedure.check-branch-here
 
-    // TODO: Add stack checks.
+    output-array output-length
+    token-address
+    local-stack local-stack-length
+    log-stream
+    check-stack-types-types
 
     "    jmp     .return\n" output-file fputs
 
@@ -1283,6 +1495,8 @@ proc compile-procedure
   ptr ptr
   // ptr: extended-array ptr: extended-start ptr: extended-end
   ptr ptr ptr
+  // ptr: output-array int: output-length
+  ptr int
   // file-desc: log-stream -- 
   file-desc --
   // local-memory-max: int
@@ -1300,6 +1514,7 @@ in let
   procedure-name procedure-address
   local-stack local-stack-length
   extended-array extended-start extended-end
+  output-types-array output-types-length
   log-stream
 in
     
@@ -1357,7 +1572,7 @@ in
           // Branch should not be cut before integer immediate.
           token-address "push an integer" compile-procedure.check-branch-here
 
-          output-file local-stack local-stack-length token-arg push-int-constant
+          token-arg push-int-immediate
 
         else token-type TYPE-STRING = if
           // -------- Strings --------
@@ -1369,9 +1584,9 @@ in
           "    mov     rax, data_" output-file fputs data-definitions-list list64.length output-file fputu output-file fputnl
           "    push    rax\n" output-file fputs
           
-          create-int local-stack local-stack-length queue64.append
+          INT-TYPE-INT push-real
           
-          output-file local-stack local-stack-length token-arg mlength dec push-int-constant
+          token-arg mlength dec push-int-immediate
 
           token-arg data-definitions-list list64.append
 
@@ -1389,7 +1604,7 @@ in
               
               "    push    qword [rax" output-file fputs address isn-zero if " + " output-file fputs address output-file fputu end "]\n" output-file fputs
 
-              create-int local-stack local-stack-length queue64.append
+              INT-TYPE-INT push-real
             end
             
           else drop token-arg local-names local-addresses locals-length str-map64.get if
@@ -1402,7 +1617,7 @@ in
                 "    add     qword [rsp], " output-file fputs address output-file fputu output-file fputnl
               end
               
-              create-int local-stack local-stack-length queue64.append
+              INT-TYPE-INT push-real
             end
 
           else drop token-arg global-names-array global-sizes-array globals-length str-map64.get if
@@ -1412,7 +1627,7 @@ in
               "    mov     rax, global_" output-file fputs token-arg output-file fput-alpha output-file fputnl
               "    push    rax\n" output-file fputs
               
-              create-int local-stack local-stack-length queue64.append
+              INT-TYPE-INT push-real
             end
 
           else drop token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available if
@@ -1420,57 +1635,27 @@ in
             
             let name-address in name-address proc-names-array - let delta in
               delta proc-inputs-array + delta proc-outputs-array + let input-address output-address in
-                memory input-length  sizeof(int) in
-                memory output-length sizeof(int) in
-                
-                  input-address  @64 mlength 8 / input-length  !64
-                  output-address @64 mlength 8 / output-length !64
+                input-address @64 input-address @64 mlength 8 /
+                token-address
+                local-stack local-stack-length
+                log-stream
+                check-sub-stack-types-types
 
-                  // TODO: This system must be changed.
-                  while input-length @64 isn-zero do
-                    input-address @64 input-length queue64.pop-last let expect in
+                compile-procedure.new-level-id let level-id in
+                  "    xchg    rsp, [call_ptr]\n"              output-file fputs         
+                  "    push    .level_"                        output-file fputs level-id output-file fputu output-file fputnl
+                  "    push    qword [local_ptr]\n"            output-file fputs         
+                  "    add     qword [local_ptr], "            output-file fputs local-memory-end @64 output-file fputu output-file fputnl
+                  "    xchg    rsp, [call_ptr]\n"              output-file fputs         
+                  "    jmp     proc_"                          output-file fputs token-arg output-file fput-alpha output-file fputnl
+                  ".level_"                                    output-file fputs level-id output-file fputu ":\n" output-file fputs
+                end
 
-                      local-stack-length @64 is-zero if
-                        LOG.ERR log-stream fputs "Not enough items in the stack to call procedure '" log-stream fputs token-arg token-arg mlength log-stream fputs "'.\n" log-stream fputs
-                        token-address compile-procedure.show-here
-                        ERROR-EXIT-CODE exit drop
-                      end
-
-                      local-stack local-stack-length queue64.pop-last let got in
-                        expect got @64 != if
-                          LOG.ERR log-stream fputs "Stack does not match with the argument types of procedure '" log-stream fputs token-arg token-arg mlength log-stream fputs "'.\n" log-stream fputs
-                          token-address compile-procedure.show-here
-                          ERROR-EXIT-CODE exit drop
-                        end
-                      end
-                    end
+                0 while dup output-address @64 mlength 8 / < do let i in                    
+                  i output-address @64 array64.get let output in
+                    output push-real
                   end
-
-                  compile-procedure.new-level-id let level-id in
-                    "    xchg    rsp, [call_ptr]\n"              output-file fputs         
-                    "    push    .level_"                        output-file fputs level-id output-file fputu output-file fputnl
-                    "    push    qword [local_ptr]\n"            output-file fputs         
-                    "    add     qword [local_ptr], "            output-file fputs local-memory-end @64 output-file fputu output-file fputnl
-                    "    xchg    rsp, [call_ptr]\n"              output-file fputs         
-                    "    jmp     proc_"                          output-file fputs token-arg output-file fput-alpha output-file fputnl
-                    ".level_"                                    output-file fputs level-id output-file fputu ":\n" output-file fputs
-                  end
-
-                  // TODO: This system must be changed.
-                  0 while dup output-length @64 < do let i in                    
-                    i 8 * output-address @64 + @64 let output in                      
-                      output TYPE-INT = if
-                        create-int local-stack local-stack-length queue64.append
-                      else output TYPE-BOOL = if
-                        create-bool local-stack local-stack-length queue64.append
-                      else
-                        log-stream report-bug
-                        token-address compile-procedure.show-here
-                        ERROR-EXIT-CODE exit drop
-                      end end
-                    end
-                  i end inc end drop
-                end end
+                i end inc end drop
               end
             end end
             
@@ -1511,9 +1696,10 @@ in
           local-memory-end
           let-names let-addresses let-vars-length
           branch-active
+          output-types-array output-types-length
           log-stream
           local-memory-max
-          compile-keyword if return end
+          compile-keyword if local-memory-max @64 return end
 
         else
           LOG.ERR log-stream fputs "Unexpected type while expecting a keyword, an intrinsic, a string or an integer, got '" log-stream fputs token-type log-stream fput-type "'.\n" log-stream fputs
@@ -1685,7 +1871,6 @@ in
             // -------- Keyword 'include' -------- 
             // TODO: Create a function to include.
             // TODO: Allow including packages.
-            // TODO: Add library search locations.
 
             // Get the next token, which should be the include path.
             "a 'name' for include path" false compile-file.get-next-token
@@ -1732,7 +1917,7 @@ in
                             end end
                           end
                           
-                          break
+                          i break
                         end
                       end
 
@@ -1849,7 +2034,7 @@ in
 
             // Get the next token, which should be the name of the procedure.
             "a 'name' after 'proc'" false compile-file.get-next-token
-
+            
             let proc-name-token-type proc-name-token-address proc-name-token-arg in
               proc-name-token-type proc-name-token-address "as procedure name after 'procedure'" TYPE-NAME compile-file.check-type-here
 
@@ -1878,7 +2063,7 @@ in
                     end
 
                     // Check if the token is of type-type.
-                    input-token-type input-token-address "after 'proc'" TYPE-TYPE compile-file.check-type-here
+                    input-token-type input-token-address "after 'proc'" TYPE-INT-TYPE compile-file.check-type-here
 
                     input-token-arg input-list list64.append
 
@@ -1905,7 +2090,7 @@ in
                     end
 
                     // Check if the token is of type-type.
-                    output-token-type output-token-address "after '--'" TYPE-TYPE compile-file.check-type-here
+                    output-token-type output-token-address "after '--'" TYPE-INT-TYPE compile-file.check-type-here
 
                     output-token-arg output-list list64.append
 
@@ -1948,19 +2133,9 @@ in
 
                   0 local-stack-length !64
 
-                  // TODO: This system must be changed.
                   0 while dup input-list list64.length < do let i in
-                    i input-list list64.array-addr array64.get let type in
-                      type TYPE-INT = if
-                        create-int local-stack local-stack-length queue64.append
-                      else type TYPE-BOOL = if
-                        create-bool local-stack local-stack-length queue64.append
-                      else
-                        LOG.ERR log-stream fputs "Input types for procedure '" log-stream fputs proc-name-token-arg proc-name-token-arg mlength log-stream fputs "' had an unknown type, got '" log-stream fputs type log-stream fputu "'.\n" log-stream fputs
-                        log-stream report-bug
-                        proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                        ERROR-EXIT-CODE exit drop
-                      end end
+                    i input-list list64.get let type in
+                      type push-real
                     end
                   i end inc end drop
 
@@ -1973,6 +2148,7 @@ in
                   proc-name-token-arg proc-name-token-address
                   local-stack local-stack-length
                   extended-array extended-start extended-end
+                  output-list list64.to-array
                   log-stream
                   compile-procedure drop
 
@@ -1982,36 +2158,6 @@ in
                   "    pop     rax\n"                 output-file fputs
                   "    xchg    rsp, [call_ptr]\n"     output-file fputs
                   "    jmp     rax\n"                 output-file fputs
-
-                  // TODO: This system must be changed.
-                  memory temp-outputs-length sizeof(int) in
-                    output-list list64.length temp-outputs-length !64
-
-                    while local-stack-length @64 isn-zero do
-                      local-stack local-stack-length queue64.pop-last let type in
-                        temp-outputs-length @64 is-zero if
-                          LOG.ERR log-stream fputs "Procedure's stack has " log-stream fputs local-stack-length @64 inc log-stream fputu " more item than its definition.\n" log-stream fputs
-                          proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                          ERROR-EXIT-CODE exit drop
-                        end
-
-                        output-list list64.array-addr temp-outputs-length queue64.pop-last let check in
-                          type @64 check != if
-                            LOG.ERR log-stream fputs "Procedure's stack does not match with its return types.\n" log-stream fputs
-                            LOG.INFO log-stream fputs "Expected '" log-stream fputs check log-stream fputu "', got '" log-stream fputs type @64 log-stream fputu "'.\n" log-stream fputs
-                            proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                            ERROR-EXIT-CODE exit drop
-                          end
-                        end
-                      end
-                    end
-
-                    temp-outputs-length @64 isn-zero if
-                      LOG.ERR log-stream fputs "Procedure's stack is missing " log-stream fputs temp-outputs-length @64 log-stream fputu " returns.\n" log-stream fputs 
-                      proc-name-token-arg proc-name-token-address log-stream fput-inside-procedure
-                      ERROR-EXIT-CODE exit drop
-                    end
-                  end
                 end end
 
                 // Deallocate input-list and output-list.
@@ -2150,7 +2296,7 @@ in let source-name output-name include-paths-set log-stream in
           j end 3 + end drop
 
           // Deallocate 'tokens'.
-          tokens mfree
+          tokens mfree drop
         end
       i end inc end drop
 
