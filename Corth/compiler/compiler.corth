@@ -412,6 +412,93 @@ in
 end end
 
 
+proc stack-item.mfree
+  // ptr: item --
+  ptr --
+in let item in
+  // For now, this only mfrees the dynamic object.
+  // This may change in the future.
+
+  item mfree drop
+end end
+
+
+proc stack-item.copy
+  // ptr: item -- ptr: copied
+    ptr -- ptr
+in let item in
+  // For now, this only copies the dynamic object.
+  // This may change in the future.
+
+  item dcopy
+end end
+
+
+proc __local-stack.mfree-items
+  // ptrL local-stack int: local-stack-length
+  ptr int --
+in let local-stack local-stack-length in
+  // TODO: Something is wrong here.
+  // Iterate through the items and mfree them.
+  0 while dup local-stack-length < do let i in
+    // i local-stack array64.get stack-item.mfree
+  i end inc end drop
+end end
+
+
+proc _local-stack.mfree
+  // ptr: local-stack
+  ptr --
+  // Can be used on copies of local-stack.
+in let local-stack in
+  local-stack local-stack mlength 8 / __local-stack.mfree-items
+end end
+
+
+proc local-stack.clean
+  // ptr: local-stack ptr: local-stack-length --
+  ptr ptr --
+in let local-stack local-stack-length in
+  local-stack local-stack-length @64 __local-stack.mfree-items
+
+  // Set the local-stack-length to 0.
+  0 local-stack-length !64
+end end
+
+
+proc local-stack.copy
+  // ptr: local-stack ptr: local-stack-length -- ptr: copied
+  ptr ptr -- ptr
+in let local-stack local-stack-length in 
+  local-stack-length @64 8 * malloc let copy-array in
+    copy-array is-null if
+      LOG.ERR STDERR fputs "'malloc' failed while copying the local stack.\n" STDERR fputs
+      ERROR-EXIT-CODE exit drop
+    end
+
+    // Copy the items from the local-stack to the copy-array.
+    0 while dup local-stack-length @64 < do let i in
+      i local-stack array64.get stack-item.copy i copy-array array64.set
+    i end inc end drop
+
+    // Return copy array.
+    copy-array
+  end
+end end
+
+
+proc local-stack.overwrite
+  // ptr: overwrite ptr: local-stack ptr: local-stack-length --
+  ptr ptr ptr --
+in let overwrite local-stack local-stack-length in
+  // Deallocate all of the items in the local-stack.
+  local-stack local-stack-length @64 __local-stack.mfree-items
+
+  // Overwrite the local-stack.
+  overwrite overwrite mlength 8 / local-stack local-stack-length queue64.overwrite
+end end
+
+
 proc compile-intrinsic
   // ptr: source-name file-desc: source-file file-desc: output-file
   ptr file-desc file-desc
@@ -877,8 +964,9 @@ in
         start-keyword KEYWORD-IF = if
           // -------- End of 'if' --------
           level 16 + @64 level 24 + @64 let start-id start-stack in
-            branch-active @8 is-zero if              
-              start-stack start-stack mlength 8 / local-stack local-stack-length queue64.overwrite
+            branch-active @8 is-zero if
+              // Overwrite the contents of the local-stack with the old contents.
+              start-stack local-stack local-stack-length local-stack.overwrite
 
               // Reset the branch.
               0xff branch-active !8
@@ -890,7 +978,7 @@ in
             ".level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
 
             // Deallocate 'start-stack'.
-            start-stack mfree drop
+            start-stack _local-stack.mfree
           end
 
         else start-keyword KEYWORD-ELSE = if
@@ -907,7 +995,7 @@ in
 
             // Deallocate 'else-address' and 'start-stack'.
             else-address mfree drop
-            start-stack mfree drop
+            start-stack _local-stack.mfree
           end
 
         else start-keyword KEYWORD-WHILE = if
@@ -932,20 +1020,19 @@ in
           in
             // Check for the stack changes.
             while-stack start-address local-stack local-stack-length token-address log-stream check-stack-types
-          
-            do-stack do-stack mlength 8 / local-stack local-stack-length queue64.overwrite
+
+            // Overwrite the contents of the local-stack.
+            do-stack local-stack local-stack-length local-stack.overwrite
 
             "    jmp     .level_" output-file fputs while-level-id output-file fputu output-file fputnl
 
             ".level_" output-file fputs unbroken-end-id output-file fputu ":\n" output-file fputs
             ".level_" output-file fputs broken-end-id   output-file fputu ":\n" output-file fputs
 
-            // TODO: Add stack checks for 'while-do' loops.
-
             // Deallocate 'do-address', 'while-stack' and 'do-stack'.
             do-address mfree drop
-            while-stack mfree drop
-            do-stack mfree drop
+            while-stack _local-stack.mfree
+            do-stack _local-stack.mfree
           end
 
         else start-keyword KEYWORD-LET = if
@@ -1044,9 +1131,7 @@ in
       item mfree drop
     end
 
-    local-stack local-stack-length @64 to-dynamic64 let copy-stack in
-      copy-stack "copying the stack for 'if'" compile-procedure.check-null-here
-
+    local-stack local-stack-length local-stack.copy let copy-stack in
       32 malloc let obj in
         obj "creating a level object for 'if'" compile-procedure.check-null-here
 
@@ -1090,10 +1175,9 @@ in
         old-keyword old-address token-address "before 'else'" KEYWORD-IF compile-procedure.check-level-here
 
         level 16 + @64 level 24 + @64 let start-id start-stack in
-          local-stack local-stack-length @64 to-dynamic64 let copy-stack in
-            copy-stack "copying the stack for 'else'" compile-procedure.check-null-here
-
-            start-stack start-stack mlength 8 / local-stack local-stack-length queue64.overwrite
+          local-stack local-stack-length local-stack.copy let copy-stack in
+            // Overwrite the contents of the local-stack.
+            start-stack local-stack local-stack-length local-stack.overwrite
 
             compile-procedure.new-level-id let level-id in
               "    jmp     .level_" output-file fputs level-id output-file fputu output-file fputnl
@@ -1114,7 +1198,7 @@ in
           end
 
           // Deallocate 'start-stack'.
-          start-stack mfree drop
+          start-stack _local-stack.mfree
         end
       end
 

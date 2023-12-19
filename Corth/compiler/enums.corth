@@ -261,3 +261,17 @@ in let token-type token-arg file_ in
 
   "'" file_ fputs
 end end
+
+proc get-type-size-modifier
+  // int: int-type -- ptr: int-type-size-mod-address int: int-type-size-mod-length
+  int -- ptr int
+in let type in
+  type INT-TYPE-INT = if       "qword"
+  else type INT-TYPE-BOOL = if "word"
+  else
+    LOG.ERR STDERR fputs "Unknown stack data type for 'get-type-size-modifier'.\n" STDERR fputs
+    STDERR report-bug
+    ERROR-EXIT-CODE exit drop
+    NULLPTR 0 // dummy
+  end end
+end end
