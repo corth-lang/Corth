@@ -273,8 +273,8 @@ in
     memory a   sizeof(fixed64) in
     memory i   sizeof(int)     in
 
-      a   0x0000000100000000 !64
-      sum 0x0000000100000000 !64
+      0x0000000100000000 a   !64
+      0x0000000100000000 sum !64
 
       2 while dup TRIGONOMETRY.ITER < do
         i swp !64

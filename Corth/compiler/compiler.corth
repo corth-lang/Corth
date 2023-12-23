@@ -111,7 +111,7 @@ end endmacro
 // NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
 macro compile-procedure.check-null let expect-address expect-length in
   is-null if
-    LOG.ERR log-stream fputs "malloc failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
+    LOG.ERR log-stream fputs "'malloc' failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
     
     procedure-name procedure-address log-stream fput-inside-procedure
     ERROR-EXIT-CODE exit drop
@@ -122,7 +122,7 @@ end endmacro
 // NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
 macro compile-procedure.check-null-here let expect-address expect-length in
   is-null if
-    LOG.ERR log-stream fputs "malloc failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
+    LOG.ERR log-stream fputs "'malloc' failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
 
     token-address compile-procedure.show-here
     ERROR-EXIT-CODE exit drop
@@ -202,26 +202,77 @@ int:
 
 */
 
-macro get-type @64 endmacro
-macro set-type !64 endmacro
-macro get-mode 8 + @64 endmacro
-macro set-mode 8 + !64 endmacro
+macro get-type      @64 endmacro
+macro set-type      !64 endmacro
+macro get-mode 8  + @64 endmacro
+macro set-mode 8  + !64 endmacro
+macro get-arg1 16 + @64 endmacro
+macro set-arg1 16 + !64 endmacro
 
-macro MODE-REAL 0 endmacro
+macro MODE-REAL     0 endmacro
+macro MODE-IMM      1 endmacro
 
 
-proc create-real
-  // int: int-type -- ptr: item
-  int -- ptr
-in let int-type in
-  16 malloc let object in
+proc convert-int-to-real
+  // ptr: item file-desc: output-file
+  ptr file-desc --
+in let item output-file in
+  item get-mode MODE-IMM = if
+    item get-arg1 isn-zero if
+      "    mov     rax, " output-file fputs item get-arg1 output-file fputu output-file fputnl
+    else
+      "    xor     rax, rax\n" output-file fputs
+    end
+    "    push    rax\n" output-file fputs
+  else item get-mode MODE-REAL != if
+    LOG.ERR STDOUT fputs "Unknown integer mode.\n" STDERR fputs
+    ERROR-EXIT-CODE exit drop
+  end end
+
+  MODE-REAL item set-mode
+end end
+
+
+proc convert-bool-to-real
+  // ptr: item file-desc: output-file
+  ptr file-desc --
+in let item output-file in
+  item get-mode MODE-REAL != if
+    LOG.ERR STDOUT fputs "Unknown bool mode.\n" STDERR fputs
+    ERROR-EXIT-CODE exit drop
+  end
+
+  MODE-REAL item set-mode
+end end
+
+
+proc convert-to-real
+  // ptr: item file-desc: output-file
+  ptr file-desc --
+in let item output-file in
+  item output-file
+  
+       item get-type INT-TYPE-INT  = if convert-int-to-real
+  else item get-type INT-TYPE-BOOL = if convert-bool-to-real
+  else drop drop
+    LOG.ERR STDOUT fputs item get-type STDERR fputu "Unknown intrinsic type to convert to real.\n" STDERR fputs
+    ERROR-EXIT-CODE exit drop
+  end end
+end end
+
+
+proc create-stack-item
+  // int: int-type int: mode -- ptr: item
+  int int -- ptr
+in let int-type mode in
+  24 malloc let object in
     object is-null if
       "'malloc' failed while creating a real stack item.\n" STDERR fputs
       ERROR-EXIT-CODE exit drop
     end
 
     int-type  object set-type
-    MODE-REAL object set-mode
+    mode      object set-mode
 
     object
   end
@@ -230,6 +281,9 @@ end end
 
 // ptr: item --
 macro push-item
+  // Before we push a new item, make sure that the last item is a real stack item.
+  convert-last-item-to-real
+
   local-stack local-stack-length queue64.append
 endmacro
 
@@ -238,28 +292,31 @@ macro pop-item
   local-stack local-stack-length queue64.pop-last
 endmacro
 
-// int: int-type --
-macro push-real
-  create-real push-item
+macro convert-last-item-to-real
+  local-stack-length @64 isn-zero if
+    local-stack-length @64 dec local-stack array64.get output-file convert-to-real
+  end
 endmacro
+
+// int: int-type --
+macro push-real let _int-type_ in
+  _int-type_ MODE-REAL create-stack-item push-item
+end endmacro
 
 
 // int: immediate-value
-macro push-int-immediate let immediate in
-  immediate is-zero if
-    "    xor     rax, rax\n" output-file fputs
-  else
-    "    mov     rax, " output-file fputs immediate output-file fputu output-file fputnl
-  end
-  "    push    rax\n" output-file fputs
+macro push-int-immediate let _immediate_ in
+  INT-TYPE-INT MODE-IMM create-stack-item let _item_ in
+    _immediate_ _item_ set-arg1
 
-  INT-TYPE-INT push-real
+    _item_ push-item
+  end
 end endmacro
 
 
 macro invalid-usage-of-intrinsic
   LOG.ERR log-stream fputs "Invalid argument types.\n" log-stream fputs
-  token-address compile-procedure.show-here
+  token-address log-stream fput-here
   ERROR-EXIT-CODE exit drop
 endmacro
 
@@ -499,6 +556,124 @@ in let overwrite local-stack local-stack-length in
 end end
 
 
+proc is-signed-dword
+  int -- bool
+in let value in
+  value 0x100000000 < value 0x100000000 neg > &
+end end
+
+
+proc add-immediate-to-real-integer
+  // int: immediate file-desc: output-file --
+  int file-desc --
+in let immediate output-file in
+  immediate 1 = if
+    "    inc     qword [rsp]\n" output-file fputs
+  else immediate 1 neg = if
+    "    dec     qword [rsp]\n" output-file fputs
+  else immediate is-signed-dword ! if
+    "    mov     rax, " output-file fputs immediate output-file fputi output-file fputnl
+    "    add     qword [rsp], rax\n" output-file fputs
+  else immediate isn-zero if
+    "    add     qword [rsp], qword " output-file fputs immediate output-file fputu output-file fputnl
+  end end end end
+end end
+
+
+proc bor-immediate-to-real-integer
+  // int: immediate ptr: local-stack ptr: local-stack-length file-desc: output-file --
+  int ptr ptr file-desc --
+in let immediate local-stack local-stack-length output-file in
+  immediate is-zero if
+    INT-TYPE-INT push-real
+  else immediate 0xffffffffffffffff = if
+    0 push-int-immediate
+  else immediate is-signed-dword if
+    INT-TYPE-INT push-real
+    "    or      [rsp], " output-file fputs immediate output-file fputi output-file fputnl
+  else
+    INT-TYPE-INT push-real
+    "    mov     rax, " output-file fputs immediate output-file fputi output-file fputnl
+    "    or      [rsp], rax\n" output-file fputs
+  end end end  
+end end
+
+
+proc load-intrinsic
+  // ptr: token-address ptr: register-name int: register-name-length ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
+  ptr ptr int ptr ptr file-desc file-desc --
+in let token-address register-name register-name-length local-stack local-stack-length output-file log-stream in
+  local-stack-length @64 1 < if invalid-usage-of-intrinsic end
+
+  pop-item let item in
+    item get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+
+    item get-mode MODE-REAL = if
+      INT-TYPE-INT push-real
+
+      "    xor     rax, rax\n"      output-file fputs
+      "    pop     rbx\n"           output-file fputs
+      "    mov     " output-file fputs register-name register-name-length output-file fputs ", [rbx]\n" output-file fputs
+      "    push    rax\n"           output-file fputs
+
+    else item get-mode MODE-IMM = if
+      LOG.ERR log-stream fputs "Load intrinsics do not accept immediate address argument.\n" log-stream fputs
+      token-address log-stream fput-here
+      ERROR-EXIT-CODE exit drop
+    else
+      LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
+      log-stream report-bug
+      token-address log-stream fput-here
+      ERROR-EXIT-CODE exit drop
+    end end
+  end
+end end
+
+
+proc store-intrinsic
+  // ptr: token-address ptr: register-name int: register-name-length ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
+  ptr ptr int ptr ptr file-desc file-desc --
+in let token-address register-name register-name-length local-stack local-stack-length output-file log-stream in
+  local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+
+  pop-item pop-item let item2 item1 in
+    item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+    item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+
+    item2 get-mode MODE-REAL = if
+      item1 get-mode MODE-REAL = if
+        "    pop     rax\n" output-file fputs
+        "    pop     rbx\n" output-file fputs
+        "    mov     [rax], " output-file fputs register-name register-name-length output-file fputs output-file fputnl
+      else item1 get-mode MODE-IMM = if
+        item1 get-arg1 is-signed-dword if
+          "    pop     rax\n" output-file fputs
+          "    mov     [rax], " output-file fputs item1 get-arg1 output-file fputi output-file fputnl
+        else
+          "    pop     rax\n" output-file fputs
+          "    mov     " output-file fputs output-file fputnl register-name register-name-length output-file fputs ", " output-file fputs item1 get-arg1 output-file fputi output-file fputnl
+          "    mov     [rax], " output-file fputs register-name register-name-length output-file fputs output-file fputnl
+        end
+      else
+        LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
+        log-stream report-bug
+        token-address log-stream fput-here
+        ERROR-EXIT-CODE exit drop
+      end end
+    else item2 get-mode MODE-IMM = if
+      LOG.ERR log-stream fputs "Store intrinsics do not accept immediate address argument.\n" log-stream fputs
+      token-address log-stream fput-here
+      ERROR-EXIT-CODE exit drop
+    else
+      LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
+      log-stream report-bug
+      token-address log-stream fput-here
+      ERROR-EXIT-CODE exit drop
+    end end
+  end
+end end
+
+
 proc compile-intrinsic
   // ptr: source-name file-desc: source-file file-desc: output-file
   ptr file-desc file-desc
@@ -529,32 +704,72 @@ in
     local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
     pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT = if
-        item2 get-type INT-TYPE-INT = if
+      item1 get-type INT-TYPE-INT != item2 get-type INT-TYPE-INT != | if invalid-usage-of-intrinsic end
+      
+      item1 get-mode MODE-REAL = if
+        INT-TYPE-INT push-real
+        item2 get-mode MODE-REAL = if
           "    pop     rax\n"        output-file fputs
           "    add     [rsp], rax\n" output-file fputs
-
-          item1 push-item
-          item2 mfree drop
-        else invalid-usage-of-intrinsic end
-      else invalid-usage-of-intrinsic end
+        else item2 get-mode MODE-IMM = if
+          item2 get-arg1 output-file add-immediate-to-real-integer
+        else
+          LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
+          log-stream report-bug
+          ERROR-EXIT-CODE exit drop
+        end end
+      else item1 get-mode MODE-IMM = if
+        item2 get-mode MODE-REAL = if
+          INT-TYPE-INT push-real
+          item1 get-arg1 output-file add-immediate-to-real-integer
+        else item2 get-mode MODE-IMM = if
+          item1 get-arg1 item2 get-arg1 + push-int-immediate
+        else
+          LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
+          log-stream report-bug
+          ERROR-EXIT-CODE exit drop
+        end end
+      else
+        LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
+        log-stream report-bug
+        ERROR-EXIT-CODE exit drop
+      end end
     end
 
   else token-arg INTRINSIC-BOR = if
     // -------- Intrinsic '||' --------
-
     local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
     pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT = if
-        item2 get-type INT-TYPE-INT = if
+      item1 get-type INT-TYPE-INT != item2 get-type INT-TYPE-INT != | if invalid-usage-of-intrinsic end
+      
+      item1 get-mode MODE-REAL = if
+        INT-TYPE-INT push-real
+        item2 get-mode MODE-REAL = if
           "    pop     rax\n"        output-file fputs
           "    or      [rsp], rax\n" output-file fputs
-          
-          item1 push-item
-          item2 mfree drop
-        else invalid-usage-of-intrinsic end
-      else invalid-usage-of-intrinsic end
+        else item2 get-mode MODE-IMM = if
+          item2 get-arg1 local-stack local-stack-length output-file bor-immediate-to-real-integer
+        else
+          LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
+          log-stream report-bug
+          ERROR-EXIT-CODE exit drop
+        end end
+      else item1 get-mode MODE-IMM = if
+        item2 get-mode MODE-REAL = if
+          item1 get-arg1 local-stack local-stack-length output-file bor-immediate-to-real-integer
+        else item2 get-mode MODE-IMM = if
+          item1 get-arg1 item2 get-arg1 || push-int-immediate
+        else
+          LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
+          log-stream report-bug
+          ERROR-EXIT-CODE exit drop
+        end end
+      else
+        LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
+        log-stream report-bug
+        ERROR-EXIT-CODE exit drop
+      end end
     end
     
   else token-arg INTRINSIC-BNOT = if
@@ -563,11 +778,20 @@ in
     local-stack-length @64 1 < if invalid-usage-of-intrinsic end
 
     pop-item let item in
-      item get-type INT-TYPE-INT = if
+      item get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      
+      item get-mode MODE-REAL = if
+        INT-TYPE-INT push-real
         "    not     qword [rsp]\n" output-file fputs
 
-        item push-item
-      else invalid-usage-of-intrinsic end
+      else item get-mode MODE-IMM = if
+        item get-arg1 !! push-int-immediate
+
+      else
+        LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
+        log-stream report-bug
+        ERROR-EXIT-CODE exit drop
+      end end
     end
     
   else token-arg INTRINSIC-FULLMUL = if
@@ -578,15 +802,18 @@ in
     pop-item pop-item let item2 item1 in
       item1 get-type INT-TYPE-INT = if
         item2 get-type INT-TYPE-INT = if
-            "    xor     rdx, rdx\n"        output-file fputs
-            "    mov     rbx, [rsp]\n"      output-file fputs
-            "    mov     rax, [rsp+8]\n"    output-file fputs
-            "    imul    rbx\n"             output-file fputs
-            "    mov     [rsp], rax\n"      output-file fputs
-            "    mov     [rsp+8], rdx\n"    output-file fputs
+          item1 output-file convert-int-to-real
+          item2 output-file convert-int-to-real
           
-          item1 push-item
-          item2 push-item
+          INT-TYPE-INT push-real
+          INT-TYPE-INT push-real
+          
+          "    xor     rdx, rdx\n"        output-file fputs
+          "    mov     rbx, [rsp]\n"      output-file fputs
+          "    mov     rax, [rsp+8]\n"    output-file fputs
+          "    imul    rbx\n"             output-file fputs
+          "    mov     [rsp], rax\n"      output-file fputs
+          "    mov     [rsp+8], rdx\n"    output-file fputs
         else invalid-usage-of-intrinsic end
       else invalid-usage-of-intrinsic end
     end
@@ -599,15 +826,18 @@ in
     pop-item pop-item let item2 item1 in
       item1 get-type INT-TYPE-INT = if
         item2 get-type INT-TYPE-INT = if
-            "    xor     rdx, rdx\n"        output-file fputs
-            "    mov     rbx, [rsp]\n"      output-file fputs
-            "    mov     rax, [rsp+8]\n"    output-file fputs
-            "    idiv    rbx\n"             output-file fputs
-            "    mov     [rsp+8], rax\n"    output-file fputs
-            "    mov     [rsp], rdx\n"      output-file fputs
-            
-          item1 push-item
-          item2 push-item
+          item1 output-file convert-int-to-real
+          item2 output-file convert-int-to-real
+          
+          INT-TYPE-INT push-real
+          INT-TYPE-INT push-real
+          
+          "    xor     rdx, rdx\n"        output-file fputs
+          "    mov     rbx, [rsp]\n"      output-file fputs
+          "    mov     rax, [rsp+8]\n"    output-file fputs
+          "    idiv    rbx\n"             output-file fputs
+          "    mov     [rsp+8], rax\n"    output-file fputs
+          "    mov     [rsp], rdx\n"      output-file fputs
         else invalid-usage-of-intrinsic end
       else invalid-usage-of-intrinsic end
     end
@@ -620,15 +850,18 @@ in
     pop-item pop-item let item2 item1 in
       item1 get-type INT-TYPE-INT = if
         item2 get-type INT-TYPE-INT = if
-            "    xor     rdx, rdx\n"        output-file fputs
-            "    mov     rbx, [rsp]\n"      output-file fputs
-            "    mov     rax, [rsp+8]\n"    output-file fputs
-            "    mul     rbx\n"             output-file fputs
-            "    mov     [rsp], rax\n"      output-file fputs
-            "    mov     [rsp+8], rdx\n"    output-file fputs
+          item1 output-file convert-int-to-real
+          item2 output-file convert-int-to-real
           
-          item1 push-item
-          item2 push-item
+          INT-TYPE-INT push-real
+          INT-TYPE-INT push-real
+          
+          "    xor     rdx, rdx\n"        output-file fputs
+          "    mov     rbx, [rsp]\n"      output-file fputs
+          "    mov     rax, [rsp+8]\n"    output-file fputs
+          "    mul     rbx\n"             output-file fputs
+          "    mov     [rsp], rax\n"      output-file fputs
+          "    mov     [rsp+8], rdx\n"    output-file fputs
         else invalid-usage-of-intrinsic end
       else invalid-usage-of-intrinsic end
     end
@@ -641,15 +874,18 @@ in
     pop-item pop-item let item2 item1 in
       item1 get-type INT-TYPE-INT = if
         item2 get-type INT-TYPE-INT = if
-            "    xor     rdx, rdx\n"        output-file fputs
-            "    mov     rbx, [rsp]\n"      output-file fputs
-            "    mov     rax, [rsp+8]\n"    output-file fputs
-            "    div     rbx\n"             output-file fputs
-            "    mov     [rsp+8], rax\n"    output-file fputs
-            "    mov     [rsp], rdx\n"      output-file fputs
-            
-          item1 push-item
-          item2 push-item
+          item1 output-file convert-int-to-real
+          item2 output-file convert-int-to-real
+          
+          INT-TYPE-INT push-real
+          INT-TYPE-INT push-real
+          
+          "    xor     rdx, rdx\n"        output-file fputs
+          "    mov     rbx, [rsp]\n"      output-file fputs
+          "    mov     rax, [rsp+8]\n"    output-file fputs
+          "    div     rbx\n"             output-file fputs
+          "    mov     [rsp+8], rax\n"    output-file fputs
+          "    mov     [rsp], rdx\n"      output-file fputs
         else invalid-usage-of-intrinsic end
       else invalid-usage-of-intrinsic end
     end
@@ -662,10 +898,13 @@ in
     pop-item pop-item let item2 item1 in
       item1 get-type INT-TYPE-INT = if
         item2 get-type INT-TYPE-INT = if
+          item1 output-file convert-int-to-real
+          item2 output-file convert-int-to-real
+          
+          INT-TYPE-BOOL push-real
+          
           "    pop     rax\n"        output-file fputs
           "    sub     [rsp], rax\n" output-file fputs
-
-          INT-TYPE-BOOL push-real
         else invalid-usage-of-intrinsic end
       else invalid-usage-of-intrinsic end
     end
@@ -678,168 +917,44 @@ in
     pop-item pop-item let item2 item1 in
       item1 get-type INT-TYPE-INT = if
         item2 get-type INT-TYPE-INT = if
+          item1 output-file convert-int-to-real
+          item2 output-file convert-int-to-real
+          
+          INT-TYPE-BOOL push-real
+          
           "    pop     rax\n"               output-file fputs
           "    pop     rbx\n"               output-file fputs
           "    sub     rbx, rax\n"          output-file fputs
           "    pushf\n"                     output-file fputs
           "    and     qword [rsp], 0x80\n" output-file fputs
-
-          INT-TYPE-BOOL push-real
         else invalid-usage-of-intrinsic end
       else invalid-usage-of-intrinsic end
     end
 
-  else token-arg INTRINSIC-LOAD8 = if
-    // -------- Intrinsic '@8' --------
-
-    local-stack-length @64 1 < if invalid-usage-of-intrinsic end
-
-    pop-item let item in
-      item get-type INT-TYPE-INT = if      
-        "    xor     rax, rax\n"      output-file fputs
-        "    pop     rbx\n"           output-file fputs
-        "    mov     al, [rbx]\n"     output-file fputs
-        "    push    rax\n"           output-file fputs
-
-        item push-item
-      else invalid-usage-of-intrinsic end
-    end
-    
-  else token-arg INTRINSIC-LOAD16 = if
-    // -------- Intrinsic '@16' --------
-
-    local-stack-length @64 1 < if invalid-usage-of-intrinsic end
-
-    pop-item let item in
-      item get-type INT-TYPE-INT = if      
-        "    xor     rax, rax\n"       output-file fputs
-        "    pop     rbx\n"            output-file fputs
-        "    mov     ax, [rbx]\n"      output-file fputs
-        "    push    rax\n"            output-file fputs
-
-        item push-item
-      else invalid-usage-of-intrinsic end
-    end
-
-  else token-arg INTRINSIC-LOAD32 = if
-    // -------- Intrinsic '@32' --------
-
-    local-stack-length @64 1 < if invalid-usage-of-intrinsic end
-
-    pop-item let item in
-      item get-type INT-TYPE-INT = if      
-        "    xor     rax, rax\n"       output-file fputs
-        "    pop     rbx\n"            output-file fputs
-        "    mov     eax, [rbx]\n"     output-file fputs
-        "    push    rax\n"            output-file fputs
-
-        item push-item
-      else invalid-usage-of-intrinsic end
-    end
-    
-  else token-arg INTRINSIC-LOAD64 = if
-    // -------- Intrinsic '@64' --------
-
-    local-stack-length @64 1 < if invalid-usage-of-intrinsic end
-
-    pop-item let item in
-      item get-type INT-TYPE-INT = if      
-        "    xor     rax, rax\n"       output-file fputs
-        "    pop     rbx\n"            output-file fputs
-        "    mov     rax, [rbx]\n"     output-file fputs
-        "    push    rax\n"            output-file fputs
-
-        item push-item
-      else invalid-usage-of-intrinsic end
-    end
-
-  else token-arg INTRINSIC-STORE8 = if
-    // -------- Intrinsic '!8' --------
-    
-    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
-
-    pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT = if
-        item2 get-type INT-TYPE-INT = if
-          "    pop     rax\n"            output-file fputs
-          "    pop     rbx\n"            output-file fputs
-          "    mov     [rax], bl\n"      output-file fputs
-
-          item1 mfree drop
-          item2 mfree drop
-        else invalid-usage-of-intrinsic end
-      else invalid-usage-of-intrinsic end
-    end
-
-  else token-arg INTRINSIC-STORE16 = if
-    // -------- Intrinsic '!16' --------
-    
-    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
-
-    pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT = if
-        item2 get-type INT-TYPE-INT = if
-          "    pop     rax\n"            output-file fputs
-          "    pop     rbx\n"            output-file fputs
-          "    mov     [rax], bx\n"      output-file fputs
-
-          item1 mfree drop
-          item2 mfree drop
-        else invalid-usage-of-intrinsic end
-      else invalid-usage-of-intrinsic end
-    end
-    
-  else token-arg INTRINSIC-STORE32 = if
-    // -------- Intrinsic '!32' --------
-    
-    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
-
-    pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT = if
-        item2 get-type INT-TYPE-INT = if
-          "    pop     rax\n"            output-file fputs
-          "    pop     rbx\n"            output-file fputs
-          "    mov     [rax], ebx\n"     output-file fputs
-
-          item1 mfree drop
-          item2 mfree drop
-        else invalid-usage-of-intrinsic end
-      else invalid-usage-of-intrinsic end
-    end
-
-  else token-arg INTRINSIC-STORE64 = if
-    // -------- Intrinsic '!64' --------
-    
-    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
-
-    pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT = if
-        item2 get-type INT-TYPE-INT = if
-          "    pop     rax\n"            output-file fputs
-          "    pop     rbx\n"            output-file fputs
-          "    mov     [rax], rbx\n"     output-file fputs
-
-          item1 mfree drop
-          item2 mfree drop
-        else invalid-usage-of-intrinsic end
-      else invalid-usage-of-intrinsic end
-    end
+  else token-arg INTRINSIC-LOAD8   = if token-address "al"  local-stack local-stack-length output-file log-stream load-intrinsic
+  else token-arg INTRINSIC-LOAD16  = if token-address "ax"  local-stack local-stack-length output-file log-stream load-intrinsic
+  else token-arg INTRINSIC-LOAD32  = if token-address "eax" local-stack local-stack-length output-file log-stream load-intrinsic
+  else token-arg INTRINSIC-LOAD64  = if token-address "rax" local-stack local-stack-length output-file log-stream load-intrinsic
+  else token-arg INTRINSIC-STORE8  = if token-address "bl"  local-stack local-stack-length output-file log-stream store-intrinsic
+  else token-arg INTRINSIC-STORE16 = if token-address "bx"  local-stack local-stack-length output-file log-stream store-intrinsic
+  else token-arg INTRINSIC-STORE32 = if token-address "ebx" local-stack local-stack-length output-file log-stream store-intrinsic
+  else token-arg INTRINSIC-STORE64 = if token-address "rbx" local-stack local-stack-length output-file log-stream store-intrinsic
     
   else token-arg INTRINSIC-TRUE = if
     // -------- Intrinsic 'true' --------
 
+    INT-TYPE-BOOL push-real
+    
     "    mov     rax, 0xffffffffffffffff\n" output-file fputs
     "    push    rax\n"                     output-file fputs
 
-    INT-TYPE-BOOL push-real
-
   else token-arg INTRINSIC-FALSE = if
     // -------- Intrinsic 'false' -------
+
+    INT-TYPE-BOOL push-real
     
     "    xor     rax, rax\n" output-file fputs
     "    push    rax\n"      output-file fputs
-
-    INT-TYPE-BOOL push-real
     
   else token-arg INTRINSIC-SYSCALL6 = if
     // -------- Intrinsic 'syscall6' --------
@@ -854,6 +969,16 @@ in
               item5 get-type INT-TYPE-INT = if
                 item6 get-type INT-TYPE-INT = if
                   item7 get-type INT-TYPE-INT = if
+                    item1 output-file convert-int-to-real
+                    item2 output-file convert-int-to-real
+                    item3 output-file convert-int-to-real
+                    item4 output-file convert-int-to-real
+                    item5 output-file convert-int-to-real
+                    item6 output-file convert-int-to-real
+                    item7 output-file convert-int-to-real
+
+                    INT-TYPE-INT push-real
+                    
                     "    pop     rax\n" output-file fputs
                     "    pop     r9\n"  output-file fputs
                     "    pop     r8\n"  output-file fputs
@@ -863,14 +988,6 @@ in
                     "    pop     rdi\n" output-file fputs
                     "    syscall\n"     output-file fputs
                     "    push    rax\n" output-file fputs
-
-                    item1 push-item
-                    item2 mfree drop
-                    item3 mfree drop
-                    item4 mfree drop
-                    item5 mfree drop
-                    item6 mfree drop
-                    item7 mfree drop
                   else invalid-usage-of-intrinsic end
                 else invalid-usage-of-intrinsic end
               else invalid-usage-of-intrinsic end
@@ -949,6 +1066,8 @@ in
       // Branch should not be cut before the main procedure return.
       token-address "finish a procedure" compile-procedure.check-branch-here
 
+      convert-last-item-to-real
+
       // Check if the stack is correct.
       output-array output-length
       token-address
@@ -971,6 +1090,8 @@ in
               // Reset the branch.
               0xff branch-active !8
             end
+            
+            convert-last-item-to-real
 
             // Check for the stack changes.
             start-stack start-address local-stack local-stack-length token-address log-stream check-stack-types
@@ -988,6 +1109,8 @@ in
           token-address "finish an 'if-else'" compile-procedure.check-branch-here
 
           level 16 + @64 level 24 + @64 level 32 + @64 let else-address start-id start-stack in
+            convert-last-item-to-real
+
             // Check for the stack changes.
             start-stack else-address local-stack local-stack-length token-address log-stream check-stack-types
             
@@ -1128,6 +1251,8 @@ in
         ERROR-EXIT-CODE exit drop
       end
 
+      item output-file convert-bool-to-real
+
       item mfree drop
     end
 
@@ -1169,6 +1294,8 @@ in
       token-address compile-procedure.show-here
       ERROR-EXIT-CODE exit drop
     end
+
+    convert-last-item-to-real
 
     levels-list list64.pop-last let level in
       level @64 level 8 + @64 let old-keyword old-address in
@@ -1223,6 +1350,8 @@ in
       copy-stack "creating a level object for 'while'" compile-procedure.check-null-here
 
       compile-procedure.new-level-id let level-id in
+        convert-last-item-to-real
+
         ".level_" output-file fputs level-id output-file fputu ":\n" output-file fputs
 
         32 malloc let new-level in
@@ -1272,6 +1401,8 @@ in
         token-address compile-procedure.show-here
         ERROR-EXIT-CODE exit drop
       end
+
+      item output-file convert-bool-to-real
       
       item mfree drop
     end
@@ -1325,6 +1456,8 @@ in
           level-addr @64 32 + @64 level-addr @64 24 + @64 level-addr @64 56 + @64 let broken-end-id do-address do-stack in
             // Check for the stack contents.
             do-stack do-address local-stack local-stack-length token-address log-stream check-stack-types
+
+            convert-last-item-to-real
           
             "    jmp     .level_" output-file fputs broken-end-id output-file fputu output-file fputnl
           end
@@ -1491,6 +1624,8 @@ in
           token-address compile-procedure.show-here
           ERROR-EXIT-CODE exit drop
         end
+
+        convert-last-item-to-real
 
         // TODO: Save the type of the 'let' variable.
 
@@ -1663,12 +1798,12 @@ in
 
           // Branch should not be cut before string immediate.
           token-address "push a string" compile-procedure.check-branch-here
+          
+          INT-TYPE-INT push-real
 
           // TODO: Change this to GLOBAL ADDRESS DATA
           "    mov     rax, data_" output-file fputs data-definitions-list list64.length output-file fputu output-file fputnl
           "    push    rax\n" output-file fputs
-          
-          INT-TYPE-INT push-real
           
           token-arg mlength dec push-int-immediate
 
@@ -1684,34 +1819,34 @@ in
             // -------- 'let' variables --------
                         
             let address in
+              INT-TYPE-INT push-real
+              
               "    mov     rax, qword [local_ptr]\n" output-file fputs
               
               "    push    qword [rax" output-file fputs address isn-zero if " + " output-file fputs address output-file fputu end "]\n" output-file fputs
-
-              INT-TYPE-INT push-real
             end
             
           else drop token-arg local-names local-addresses locals-length str-map64.get if
             // -------- local 'memory' variables --------
             
             let address in
+              INT-TYPE-INT push-real
+              
               "    push    qword [local_ptr]\n" output-file fputs
               
               address isn-zero if
                 "    add     qword [rsp], " output-file fputs address output-file fputu output-file fputnl
               end
-              
-              INT-TYPE-INT push-real
             end
 
           else drop token-arg global-names-array global-sizes-array globals-length str-map64.get if
             // -------- global 'memory' variables --------
 
             let address in
+              INT-TYPE-INT push-real
+              
               "    mov     rax, global_" output-file fputs token-arg output-file fput-alpha output-file fputnl
               "    push    rax\n" output-file fputs
-              
-              INT-TYPE-INT push-real
             end
 
           else drop token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available if
@@ -1719,11 +1854,19 @@ in
             
             let name-address in name-address proc-names-array - let delta in
               delta proc-inputs-array + delta proc-outputs-array + let input-address output-address in
+                convert-last-item-to-real
+
                 input-address @64 input-address @64 mlength 8 /
                 token-address
                 local-stack local-stack-length
                 log-stream
                 check-sub-stack-types-types
+
+                0 while dup output-address @64 mlength 8 / < do let i in                    
+                  i output-address @64 array64.get let output in
+                    output push-real
+                  end
+                i end inc end drop
 
                 compile-procedure.new-level-id let level-id in
                   "    xchg    rsp, [call_ptr]\n"              output-file fputs         
@@ -1734,12 +1877,6 @@ in
                   "    jmp     proc_"                          output-file fputs token-arg output-file fput-alpha output-file fputnl
                   ".level_"                                    output-file fputs level-id output-file fputu ":\n" output-file fputs
                 end
-
-                0 while dup output-address @64 mlength 8 / < do let i in                    
-                  i output-address @64 array64.get let output in
-                    output push-real
-                  end
-                i end inc end drop
               end
             end end
             
