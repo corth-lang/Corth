@@ -1,0 +1,146 @@
+include Corth/compiler/nasm.corth
+
+
+// ptr: item --
+macro push-item
+  local-stack local-stack-length queue64.append
+endmacro
+
+// -- ptr: item
+macro pop-item
+  local-stack local-stack-length queue64.pop-last
+endmacro
+
+// int: immediate-value
+macro push-int-immediate let _immediate_ in
+  INT-TYPE-INT MODE-IMM stack-item.create let _item_ in
+    _immediate_ _item_ set-arg1
+
+    _item_ push-item
+  end
+end endmacro
+
+
+proc local-stack.convert-last-items-real
+  // ptr: local-stack ptr: local-stack-length file-desc: output-file --
+  ptr ptr file-desc --
+in let local-stack local-stack-length output-file in
+  local-stack-length @64 while dup 0 > do dec dup
+    local-stack array64.get get-mode MODE-REAL = if break end
+  end
+
+  // We have reached the start of all of the non-real stack values.
+  while dup local-stack-length @64 < do dup
+    local-stack array64.get output-file nasm.convert-item-to-real
+  inc end drop
+end end
+
+
+// int: int-type --
+macro push-real let _int-type_ in
+  local-stack local-stack-length output-file local-stack.convert-last-items-real
+
+  _int-type_ MODE-REAL stack-item.create push-item
+end endmacro
+
+
+proc __local-stack.mfree-items
+  // ptrL local-stack int: local-stack-length
+  ptr int --
+in let local-stack local-stack-length in
+  // TODO: Something is wrong here.
+  // Iterate through the items and mfree them.
+  0 while dup local-stack-length < do let i in
+    // i local-stack array64.get stack-item.mfree
+  i end inc end drop
+end end
+
+
+proc _local-stack.mfree
+  // ptr: local-stack
+  ptr --
+  // Can be used on copies of local-stack.
+in let local-stack in
+  local-stack local-stack mlength 8 / __local-stack.mfree-items
+end end
+
+
+proc local-stack.clean
+  // ptr: local-stack ptr: local-stack-length --
+  ptr ptr --
+in let local-stack local-stack-length in
+  local-stack local-stack-length @64 __local-stack.mfree-items
+
+  // Set the local-stack-length to 0.
+  0 local-stack-length !64
+end end
+
+
+proc local-stack.copy
+  // ptr: local-stack ptr: local-stack-length -- ptr: copied
+  ptr ptr -- ptr
+in let local-stack local-stack-length in 
+  local-stack-length @64 8 * malloc let copy-array in
+    copy-array is-null if
+      LOG.ERR STDERR fputs "'malloc' failed while copying the local stack.\n" STDERR fputs
+      ERROR-EXIT-CODE exit drop
+    end
+
+    // Copy the items from the local-stack to the copy-array.
+    0 while dup local-stack-length @64 < do let i in
+      i local-stack array64.get stack-item.copy i copy-array array64.set
+    i end inc end drop
+
+    // Return copy array.
+    copy-array
+  end
+end end
+
+
+proc local-stack.overwrite
+  // ptr: overwrite ptr: local-stack ptr: local-stack-length --
+  ptr ptr ptr --
+in let overwrite local-stack local-stack-length in
+  // Deallocate all of the items in the local-stack.
+  local-stack local-stack-length @64 __local-stack.mfree-items
+
+  // Overwrite the local-stack.
+  overwrite overwrite mlength 8 / local-stack local-stack-length queue64.overwrite
+end end
+
+
+proc local-stack.add-imm-to-real-int
+  // int: immediate ptr: local-stack ptr: local-stack-length file-desc: output-file --
+  int ptr ptr file-desc --
+in let immediate local-stack local-stack-length output-file in
+  INT-TYPE-INT push-real
+  immediate 1 = if
+    "    inc     qword [rsp]\n" output-file fputs
+  else immediate 1 neg = if
+    "    dec     qword [rsp]\n" output-file fputs
+  else immediate is-signed-dword ! if
+    "    mov     rax, " output-file fputs immediate output-file fputi output-file fputnl
+    "    add     qword [rsp], rax\n" output-file fputs
+  else immediate isn-zero if
+    "    add     qword [rsp], " output-file fputs immediate output-file fputu output-file fputnl
+  end end end end
+end end
+
+
+proc local-stack.bor-imm-to-real-int
+  // int: immediate ptr: local-stack ptr: local-stack-length file-desc: output-file --
+  int ptr ptr file-desc --
+in let immediate local-stack local-stack-length output-file in
+  immediate is-zero if
+    INT-TYPE-INT push-real
+  else immediate 0xffffffffffffffff = if
+    0 push-int-immediate
+  else immediate is-signed-dword if
+    INT-TYPE-INT push-real
+    "    or      [rsp], " output-file fputs immediate output-file fputi output-file fputnl
+  else
+    INT-TYPE-INT push-real
+    "    mov     rax, " output-file fputs immediate output-file fputi output-file fputnl
+    "    or      [rsp], rax\n" output-file fputs
+  end end end  
+end end

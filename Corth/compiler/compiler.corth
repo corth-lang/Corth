@@ -21,7 +21,7 @@ include libs/collections/str_set8.corth
 include Corth/compiler/lexer.corth
 include Corth/compiler/debug.corth
 include Corth/compiler/enums.corth
-include Corth/compiler/nasm.corth
+include Corth/compiler/local_stack.corth
 
 
 // NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
@@ -187,117 +187,6 @@ int:
 
 */
 
-macro get-type      @64 endmacro
-macro set-type      !64 endmacro
-macro get-mode 8  + @64 endmacro
-macro set-mode 8  + !64 endmacro
-macro get-arg1 16 + @64 endmacro
-macro set-arg1 16 + !64 endmacro
-
-macro MODE-REAL     0 endmacro
-macro MODE-IMM      1 endmacro
-macro MODE-GLOBAL   2 endmacro
-
-
-proc convert-int-to-real
-  // ptr: item file-desc: output-file
-  ptr file-desc --
-in let item output-file in
-  item get-mode MODE-IMM = if
-    item get-arg1 output-file nasm.push-int-immediate
-    
-  else item get-mode MODE-GLOBAL = if
-    item get-arg1 output-file nasm.push-global-address
-
-  else item get-mode MODE-REAL != if
-    LOG.ERR STDOUT fputs "Unknown integer mode.\n" STDERR fputs
-    ERROR-EXIT-CODE exit drop
-  end end end
-
-  MODE-REAL item set-mode
-end end
-
-
-proc convert-bool-to-real
-  // ptr: item file-desc: output-file
-  ptr file-desc --
-in let item output-file in
-  item get-mode MODE-REAL != if
-    LOG.ERR STDOUT fputs "Unknown bool mode.\n" STDERR fputs
-    ERROR-EXIT-CODE exit drop
-  end
-
-  MODE-REAL item set-mode
-end end
-
-
-proc convert-to-real
-  // ptr: item file-desc: output-file
-  ptr file-desc --
-in let item output-file in
-  item output-file
-  
-       item get-type INT-TYPE-INT  = if convert-int-to-real
-  else item get-type INT-TYPE-BOOL = if convert-bool-to-real
-  else drop drop
-    LOG.ERR STDOUT fputs item get-type STDERR fputu "Unknown intrinsic type to convert to real.\n" STDERR fputs
-    ERROR-EXIT-CODE exit drop
-  end end
-end end
-
-
-proc create-stack-item
-  // int: int-type int: mode -- ptr: item
-  int int -- ptr
-in let int-type mode in
-  24 malloc let object in
-    object is-null if
-      "'malloc' failed while creating a real stack item.\n" STDERR fputs
-      ERROR-EXIT-CODE exit drop
-    end
-
-    int-type  object set-type
-    mode      object set-mode
-
-    object
-  end
-end end
-
-
-// ptr: item --
-macro push-item
-  // Before we push a new item, make sure that the last item is a real stack item.
-  convert-last-item-to-real
-
-  local-stack local-stack-length queue64.append
-endmacro
-
-// -- ptr: item
-macro pop-item
-  local-stack local-stack-length queue64.pop-last
-endmacro
-
-macro convert-last-item-to-real
-  local-stack-length @64 isn-zero if
-    local-stack-length @64 dec local-stack array64.get output-file convert-to-real
-  end
-endmacro
-
-// int: int-type --
-macro push-real let _int-type_ in
-  _int-type_ MODE-REAL create-stack-item push-item
-end endmacro
-
-
-// int: immediate-value
-macro push-int-immediate let _immediate_ in
-  INT-TYPE-INT MODE-IMM create-stack-item let _item_ in
-    _immediate_ _item_ set-arg1
-
-    _item_ push-item
-  end
-end endmacro
-
 
 macro invalid-usage-of-intrinsic
   LOG.ERR log-stream fputs "Invalid argument types.\n" log-stream fputs
@@ -454,130 +343,6 @@ in
 end end
 
 
-proc stack-item.mfree
-  // ptr: item --
-  ptr --
-in let item in
-  // For now, this only mfrees the dynamic object.
-  // This may change in the future.
-
-  item mfree drop
-end end
-
-
-proc stack-item.copy
-  // ptr: item -- ptr: copied
-    ptr -- ptr
-in let item in
-  // For now, this only copies the dynamic object.
-  // This may change in the future.
-
-  item dcopy
-end end
-
-
-proc __local-stack.mfree-items
-  // ptrL local-stack int: local-stack-length
-  ptr int --
-in let local-stack local-stack-length in
-  // TODO: Something is wrong here.
-  // Iterate through the items and mfree them.
-  0 while dup local-stack-length < do let i in
-    // i local-stack array64.get stack-item.mfree
-  i end inc end drop
-end end
-
-
-proc _local-stack.mfree
-  // ptr: local-stack
-  ptr --
-  // Can be used on copies of local-stack.
-in let local-stack in
-  local-stack local-stack mlength 8 / __local-stack.mfree-items
-end end
-
-
-proc local-stack.clean
-  // ptr: local-stack ptr: local-stack-length --
-  ptr ptr --
-in let local-stack local-stack-length in
-  local-stack local-stack-length @64 __local-stack.mfree-items
-
-  // Set the local-stack-length to 0.
-  0 local-stack-length !64
-end end
-
-
-proc local-stack.copy
-  // ptr: local-stack ptr: local-stack-length -- ptr: copied
-  ptr ptr -- ptr
-in let local-stack local-stack-length in 
-  local-stack-length @64 8 * malloc let copy-array in
-    copy-array is-null if
-      LOG.ERR STDERR fputs "'malloc' failed while copying the local stack.\n" STDERR fputs
-      ERROR-EXIT-CODE exit drop
-    end
-
-    // Copy the items from the local-stack to the copy-array.
-    0 while dup local-stack-length @64 < do let i in
-      i local-stack array64.get stack-item.copy i copy-array array64.set
-    i end inc end drop
-
-    // Return copy array.
-    copy-array
-  end
-end end
-
-
-proc local-stack.overwrite
-  // ptr: overwrite ptr: local-stack ptr: local-stack-length --
-  ptr ptr ptr --
-in let overwrite local-stack local-stack-length in
-  // Deallocate all of the items in the local-stack.
-  local-stack local-stack-length @64 __local-stack.mfree-items
-
-  // Overwrite the local-stack.
-  overwrite overwrite mlength 8 / local-stack local-stack-length queue64.overwrite
-end end
-
-
-proc add-immediate-to-real-integer
-  // int: immediate ptr: local-stack ptr: local-stack-length file-desc: output-file --
-  int ptr ptr file-desc --
-in let immediate local-stack local-stack-length output-file in
-  INT-TYPE-INT push-real
-  immediate 1 = if
-    "    inc     qword [rsp]\n" output-file fputs
-  else immediate 1 neg = if
-    "    dec     qword [rsp]\n" output-file fputs
-  else immediate is-signed-dword ! if
-    "    mov     rax, " output-file fputs immediate output-file fputi output-file fputnl
-    "    add     qword [rsp], rax\n" output-file fputs
-  else immediate isn-zero if
-    "    add     qword [rsp], qword " output-file fputs immediate output-file fputu output-file fputnl
-  end end end end
-end end
-
-
-proc bor-immediate-to-real-integer
-  // int: immediate ptr: local-stack ptr: local-stack-length file-desc: output-file --
-  int ptr ptr file-desc --
-in let immediate local-stack local-stack-length output-file in
-  immediate is-zero if
-    INT-TYPE-INT push-real
-  else immediate 0xffffffffffffffff = if
-    0 push-int-immediate
-  else immediate is-signed-dword if
-    INT-TYPE-INT push-real
-    "    or      [rsp], " output-file fputs immediate output-file fputi output-file fputnl
-  else
-    INT-TYPE-INT push-real
-    "    mov     rax, " output-file fputs immediate output-file fputi output-file fputnl
-    "    or      [rsp], rax\n" output-file fputs
-  end end end  
-end end
-
-
 proc load-intrinsic
   // ptr: token-address ptr: register-name int: register-name-length ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
   ptr ptr int ptr ptr file-desc file-desc --
@@ -617,63 +382,29 @@ end end
 proc store-intrinsic
   // ptr: token-address ptr: register-name int: register-name-length ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
   ptr ptr int ptr ptr file-desc file-desc --
+  // NOTE: Register is one of 'bl', 'bx', 'ebx', 'rbx'.
 in let token-address register-name register-name-length local-stack local-stack-length output-file log-stream in
   local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
   pop-item pop-item let item2 item1 in
     item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
     item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
-
+    
     item2 get-mode MODE-REAL = if
-      item1 get-mode MODE-REAL = if
-        "    pop     rax\n" output-file fputs
-        "    pop     rbx\n" output-file fputs
-        "    mov     [rax], " output-file fputs register-name register-name-length output-file fputs output-file fputnl
-      else item1 get-mode MODE-IMM = if
-        item1 get-arg1 is-signed-dword if
-          "    pop     rax\n" output-file fputs
-          "    mov     [rax], " output-file fputs item1 get-arg1 output-file fputi output-file fputnl
-        else
-          "    pop     rax\n" output-file fputs
-          "    mov     " output-file fputs output-file fputnl register-name register-name-length output-file fputs ", " output-file fputs item1 get-arg1 output-file fputi output-file fputnl
-          "    mov     [rax], " output-file fputs register-name register-name-length output-file fputs output-file fputnl
-        end
-      else item1 get-mode MODE-GLOBAL = if
-        "    pop     rax\n" output-file fputs
-        "    mov     [rax], global_" output-file fputs item1 get-arg1 output-file fput-alpha output-file fputnl
-      else
-        LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
-        log-stream report-bug
-        token-address log-stream fput-here
-        ERROR-EXIT-CODE exit drop
-      end end end
+      "    pop     rax\n" output-file fputs
+      item1 "rbx" output-file nasm.mov-reg-item
+      "    mov     [rax], " output-file fputs register-name register-name-length output-file fputs output-file fputnl
+      
     else item2 get-mode MODE-GLOBAL = if
-      item1 get-mode MODE-REAL = if
-        "    pop     rbx\n" output-file fputs
-        "    mov     [global_" output-file fputs item2 get-arg1 output-file fput-alpha
-        "], " output-file fputs register-name register-name-length output-file fputs output-file fputnl
-      else item1 get-mode MODE-IMM = if
-        item1 get-arg1 is-signed-dword if
-          "    mov     [global_" output-file fputs item2 get-arg1 output-file fput-alpha
-          "], " output-file fputs item1 get-arg1 output-file fputi output-file fputnl
-        else
-          "    mov     " output-file fputs output-file fputnl register-name register-name-length output-file fputs ", " output-file fputs item1 get-arg1 output-file fputi output-file fputnl
-          "    mov     [global_" output-file fputs item2 get-arg1 output-file fput-alpha
-          "], " output-file fputs register-name register-name-length output-file fputs output-file fputnl
-        end
-      else item1 get-mode MODE-GLOBAL = if
-        "    mov     [global_" output-file fputs item2 get-arg1 output-file fput-alpha
-        "], global_" output-file fputs item1 get-arg1 output-file fput-alpha output-file fputnl
-      else
-        LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
-        log-stream report-bug
-        token-address log-stream fput-here
-        ERROR-EXIT-CODE exit drop
-      end end end
+      item1 "rbx" output-file nasm.mov-reg-item
+      "    mov     [global_" output-file fputs item2 get-arg1 output-file fput-alpha
+      "], " output-file fputs register-name register-name-length output-file fputs output-file fputnl
+      
     else item2 get-mode MODE-IMM = if
       LOG.ERR log-stream fputs "Store intrinsics do not accept immediate address argument.\n" log-stream fputs
       token-address log-stream fput-here
       ERROR-EXIT-CODE exit drop
+      
     else
       LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
       log-stream report-bug
@@ -722,7 +453,7 @@ in
           "    pop     rax\n"        output-file fputs
           "    add     [rsp], rax\n" output-file fputs
         else item2 get-mode MODE-IMM = if
-          item2 get-arg1 local-stack local-stack-length output-file add-immediate-to-real-integer
+          item2 get-arg1 local-stack local-stack-length output-file local-stack.add-imm-to-real-int
         else item2 get-mode MODE-GLOBAL = if
           INT-TYPE-INT push-real
           "    add     [rsp], global_" output-file fputs item2 get-arg1 output-file fput-alpha output-file fputnl
@@ -733,12 +464,12 @@ in
         end end end
       else item1 get-mode MODE-IMM = if
         item2 get-mode MODE-REAL = if
-          item1 get-arg1 local-stack local-stack-length output-file add-immediate-to-real-integer
+          item1 get-arg1 local-stack local-stack-length output-file local-stack.add-imm-to-real-int
         else item2 get-mode MODE-IMM = if
           item1 get-arg1 item2 get-arg1 + push-int-immediate
         else item2 get-mode MODE-GLOBAL = if
           item2 get-arg1 output-file nasm.push-global-address
-          item1 get-arg1 local-stack local-stack-length output-file add-immediate-to-real-integer
+          item1 get-arg1 local-stack local-stack-length output-file local-stack.add-imm-to-real-int
         else
           LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
           log-stream report-bug
@@ -749,7 +480,7 @@ in
           item1 get-arg1 output-file nasm.add-global-address-last
         else item2 get-mode MODE-IMM = if
           item1 get-arg1 output-file nasm.push-global-address
-          item2 get-arg1 local-stack local-stack-length output-file add-immediate-to-real-integer
+          item2 get-arg1 local-stack local-stack-length output-file local-stack.add-imm-to-real-int
         else item2 get-mode MODE-GLOBAL = if
           item1 get-arg1 output-file nasm.push-global-address
           item1 get-arg1 output-file nasm.add-global-address-last
@@ -778,7 +509,7 @@ in
           "    pop     rax\n"        output-file fputs
           "    or      [rsp], rax\n" output-file fputs
         else item2 get-mode MODE-IMM = if
-          item2 get-arg1 local-stack local-stack-length output-file bor-immediate-to-real-integer
+          item2 get-arg1 local-stack local-stack-length output-file local-stack.bor-imm-to-real-int
         else item1 get-mode MODE-GLOBAL = if
           LOG.ERR log-stream fputs "Bitwise OR intrinsic do not accept global address arguments.\n" log-stream fputs
           token-address log-stream fput-here
@@ -790,7 +521,7 @@ in
         end end end
       else item1 get-mode MODE-IMM = if
         item2 get-mode MODE-REAL = if
-          item1 get-arg1 local-stack local-stack-length output-file bor-immediate-to-real-integer
+          item1 get-arg1 local-stack local-stack-length output-file local-stack.bor-imm-to-real-int
         else item2 get-mode MODE-IMM = if
           item1 get-arg1 item2 get-arg1 || push-int-immediate
         else item1 get-mode MODE-GLOBAL = if
@@ -848,8 +579,8 @@ in
     pop-item pop-item let item2 item1 in
       item1 get-type INT-TYPE-INT = if
         item2 get-type INT-TYPE-INT = if
-          item1 output-file convert-int-to-real
-          item2 output-file convert-int-to-real
+          item1 output-file nasm.convert-int-to-real
+          item2 output-file nasm.convert-int-to-real
           
           INT-TYPE-INT push-real
           INT-TYPE-INT push-real
@@ -872,8 +603,8 @@ in
     pop-item pop-item let item2 item1 in
       item1 get-type INT-TYPE-INT = if
         item2 get-type INT-TYPE-INT = if
-          item1 output-file convert-int-to-real
-          item2 output-file convert-int-to-real
+          item1 output-file nasm.convert-int-to-real
+          item2 output-file nasm.convert-int-to-real
           
           INT-TYPE-INT push-real
           INT-TYPE-INT push-real
@@ -896,8 +627,8 @@ in
     pop-item pop-item let item2 item1 in
       item1 get-type INT-TYPE-INT = if
         item2 get-type INT-TYPE-INT = if
-          item1 output-file convert-int-to-real
-          item2 output-file convert-int-to-real
+          item1 output-file nasm.convert-int-to-real
+          item2 output-file nasm.convert-int-to-real
           
           INT-TYPE-INT push-real
           INT-TYPE-INT push-real
@@ -920,8 +651,8 @@ in
     pop-item pop-item let item2 item1 in
       item1 get-type INT-TYPE-INT = if
         item2 get-type INT-TYPE-INT = if
-          item1 output-file convert-int-to-real
-          item2 output-file convert-int-to-real
+          item1 output-file nasm.convert-int-to-real
+          item2 output-file nasm.convert-int-to-real
           
           INT-TYPE-INT push-real
           INT-TYPE-INT push-real
@@ -944,8 +675,8 @@ in
     pop-item pop-item let item2 item1 in
       item1 get-type INT-TYPE-INT = if
         item2 get-type INT-TYPE-INT = if
-          item1 output-file convert-int-to-real
-          item2 output-file convert-int-to-real
+          item1 output-file nasm.convert-int-to-real
+          item2 output-file nasm.convert-int-to-real
           
           INT-TYPE-BOOL push-real
           
@@ -963,8 +694,8 @@ in
     pop-item pop-item let item2 item1 in
       item1 get-type INT-TYPE-INT = if
         item2 get-type INT-TYPE-INT = if
-          item1 output-file convert-int-to-real
-          item2 output-file convert-int-to-real
+          item1 output-file nasm.convert-int-to-real
+          item2 output-file nasm.convert-int-to-real
           
           INT-TYPE-BOOL push-real
           
@@ -1015,13 +746,13 @@ in
               item5 get-type INT-TYPE-INT = if
                 item6 get-type INT-TYPE-INT = if
                   item7 get-type INT-TYPE-INT = if
-                    item1 output-file convert-int-to-real
-                    item2 output-file convert-int-to-real
-                    item3 output-file convert-int-to-real
-                    item4 output-file convert-int-to-real
-                    item5 output-file convert-int-to-real
-                    item6 output-file convert-int-to-real
-                    item7 output-file convert-int-to-real
+                    item1 output-file nasm.convert-int-to-real
+                    item2 output-file nasm.convert-int-to-real
+                    item3 output-file nasm.convert-int-to-real
+                    item4 output-file nasm.convert-int-to-real
+                    item5 output-file nasm.convert-int-to-real
+                    item6 output-file nasm.convert-int-to-real
+                    item7 output-file nasm.convert-int-to-real
 
                     INT-TYPE-INT push-real
                     
@@ -1112,7 +843,7 @@ in
       // Branch should not be cut before the main procedure return.
       token-address "finish a procedure" compile-procedure.check-branch-here
 
-      convert-last-item-to-real
+      local-stack local-stack-length output-file local-stack.convert-last-items-real
 
       // Check if the stack is correct.
       output-array output-length
@@ -1137,7 +868,7 @@ in
               0xff branch-active !8
             end
             
-            convert-last-item-to-real
+            local-stack local-stack-length output-file local-stack.convert-last-items-real
 
             // Check for the stack changes.
             start-stack start-address local-stack local-stack-length token-address log-stream check-stack-types
@@ -1155,7 +886,7 @@ in
           token-address "finish an 'if-else'" compile-procedure.check-branch-here
 
           level 16 + @64 level 24 + @64 level 32 + @64 let else-address start-id start-stack in
-            convert-last-item-to-real
+            local-stack local-stack-length output-file local-stack.convert-last-items-real
 
             // Check for the stack changes.
             start-stack else-address local-stack local-stack-length token-address log-stream check-stack-types
@@ -1297,7 +1028,7 @@ in
         ERROR-EXIT-CODE exit drop
       end
 
-      item output-file convert-bool-to-real
+      item output-file nasm.convert-bool-to-real
 
       item mfree drop
     end
@@ -1341,7 +1072,7 @@ in
       ERROR-EXIT-CODE exit drop
     end
 
-    convert-last-item-to-real
+    local-stack local-stack-length output-file local-stack.convert-last-items-real
 
     levels-list list64.pop-last let level in
       level @64 level 8 + @64 let old-keyword old-address in
@@ -1396,7 +1127,7 @@ in
       copy-stack "creating a level object for 'while'" compile-procedure.check-null-here
 
       compile-procedure.new-level-id let level-id in
-        convert-last-item-to-real
+        local-stack local-stack-length output-file local-stack.convert-last-items-real
 
         ".level_" output-file fputs level-id output-file fputu ":\n" output-file fputs
 
@@ -1448,7 +1179,7 @@ in
         ERROR-EXIT-CODE exit drop
       end
 
-      item output-file convert-bool-to-real
+      item output-file nasm.convert-bool-to-real
       
       item mfree drop
     end
@@ -1502,8 +1233,8 @@ in
           level-addr @64 32 + @64 level-addr @64 24 + @64 level-addr @64 56 + @64 let broken-end-id do-address do-stack in
             // Check for the stack contents.
             do-stack do-address local-stack local-stack-length token-address log-stream check-stack-types
-
-            convert-last-item-to-real
+            
+            local-stack local-stack-length output-file local-stack.convert-last-items-real
           
             "    jmp     .level_" output-file fputs broken-end-id output-file fputu output-file fputnl
           end
@@ -1688,9 +1419,9 @@ in
               // If the length of the variable name is not 1 or its first letter is not _.
               variable-name mlength 1 = if variable-name @8 '_' != else true end if
                 "    mov     rax, qword [local_ptr]\n" output-file fputs
-                "    mov     qword [rax" output-file fputs
-                local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "], " output-file fputs
-                item get-arg1 output-file fputi output-file fputnl
+                item get-arg1 "rbx" output-file nasm.mov-reg-immediate
+                "    mov     [rax" output-file fputs
+                local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "], rbx\n" output-file fputs
               end
             else item get-mode MODE-GLOBAL = if
               // If the length of the variable name is not 1 or its first letter is not _.
@@ -1932,7 +1663,7 @@ in
             // -------- global 'memory' variables --------
 
             let address in
-              INT-TYPE-INT MODE-GLOBAL create-stack-item let item in
+              INT-TYPE-INT MODE-GLOBAL stack-item.create let item in
                 token-arg item set-arg1
 
                 item push-item
@@ -1944,7 +1675,7 @@ in
             
             let name-address in name-address proc-names-array - let delta in
               delta proc-inputs-array + delta proc-outputs-array + let input-address output-address in
-                convert-last-item-to-real
+                local-stack local-stack-length output-file local-stack.convert-last-items-real
 
                 input-address @64 input-address @64 mlength 8 /
                 token-address

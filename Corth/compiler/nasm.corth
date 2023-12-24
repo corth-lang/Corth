@@ -1,7 +1,10 @@
+include Corth/compiler/stack_item.corth
+
+
 proc is-signed-dword
   int -- bool
 in let value in
-  value 0x100000000 < value 0x100000000 neg > &
+  value 0x7fffffff <= value 0x7fffffff neg >= &
 end end
 
 
@@ -31,9 +34,42 @@ in let name file in
 end end
 
 
+proc nasm.mov-reg-immediate
+  // int: immediate ptr: register-name int: register-name-length file-desc: output-file
+  int ptr int file-desc --
+in let immediate register-name register-name-length output-file in
+  immediate is-zero if
+    "    xor     " output-file fputs register-name register-name-length output-file fputs
+    ", " output-file fputs register-name register-name-length output-file fputs output-file fputnl
+  else
+    "    mov     " output-file fputs register-name register-name-length output-file fputs
+    ", " output-file fputs immediate output-file fputi output-file fputnl
+  end
+end end
+
+
+proc nasm.mov-reg-item
+  // ptr: item ptr: register-name int: register-name-length file-desc: output-file
+  ptr ptr int file-desc --
+in let item register-name register-name-length output-file in      
+  item get-mode MODE-REAL = if
+    "    pop     " output-file fputs register-name register-name-length output-file fputs output-file fputnl
+  else item get-mode MODE-IMM = if
+    item get-arg1 register-name register-name-length output-file nasm.mov-reg-immediate
+  else item get-mode MODE-GLOBAL = if
+    "    mov     " output-file fputs register-name register-name-length output-file fputs
+    ", global_" output-file fputs item get-arg1 output-file fput-alpha output-file fputnl
+  else
+    LOG.ERR STDERR fputs "Unknown integer mode.\n" STDERR fputs
+    STDERR report-bug
+    ERROR-EXIT-CODE exit drop
+  end end end
+end end
+
+
 proc nasm.push-int-immediate
   // int: immediate file-desc: output-file
-  ptr file-desc --
+  int file-desc --
 in let immediate output-file in
   immediate is-zero if
     "    xor     rax, rax\n" output-file fputs
@@ -76,4 +112,50 @@ proc nasm.invert-last
   file-desc --
 in let output-file in
   "    not     qword [rsp]\n" output-file fputs
+end end
+
+
+proc nasm.convert-int-to-real
+  // ptr: item file-desc: output-file
+  ptr file-desc --
+in let item output-file in
+  item get-mode MODE-IMM = if
+    item get-arg1 output-file nasm.push-int-immediate
+    
+  else item get-mode MODE-GLOBAL = if
+    item get-arg1 output-file nasm.push-global-address
+
+  else item get-mode MODE-REAL != if
+    LOG.ERR STDOUT fputs "Unknown integer mode.\n" STDERR fputs
+    ERROR-EXIT-CODE exit drop
+  end end end
+
+  MODE-REAL item set-mode
+end end
+
+
+proc nasm.convert-bool-to-real
+  // ptr: item file-desc: output-file
+  ptr file-desc --
+in let item output-file in
+  item get-mode MODE-REAL != if
+    LOG.ERR STDOUT fputs "Unknown bool mode.\n" STDERR fputs
+    ERROR-EXIT-CODE exit drop
+  end
+
+  MODE-REAL item set-mode
+end end
+
+
+proc nasm.convert-item-to-real
+  // ptr: item file-desc: output-file
+  ptr file-desc --
+in let item output-file in
+  item output-file
+       item get-type INT-TYPE-INT  = if nasm.convert-int-to-real
+  else item get-type INT-TYPE-BOOL = if nasm.convert-bool-to-real
+  else drop drop
+    LOG.ERR STDOUT fputs item get-type STDERR fputu "Unknown intrinsic type to convert to real.\n" STDERR fputs
+    ERROR-EXIT-CODE exit drop
+  end end
 end end

@@ -1,0 +1,50 @@
+macro get-type      @64 endmacro
+macro set-type      !64 endmacro
+macro get-mode 8  + @64 endmacro
+macro set-mode 8  + !64 endmacro
+macro get-arg1 16 + @64 endmacro
+macro set-arg1 16 + !64 endmacro
+
+macro MODE-REAL     0 endmacro
+macro MODE-IMM      1 endmacro
+macro MODE-GLOBAL   2 endmacro
+
+
+proc stack-item.mfree
+  // ptr: item --
+  ptr --
+in let item in
+  // For now, this only mfrees the dynamic object.
+  // This may change in the future.
+
+  item mfree drop
+end end
+
+
+proc stack-item.copy
+  // ptr: item -- ptr: copied
+    ptr -- ptr
+in let item in
+  // For now, this only copies the dynamic object.
+  // This may change in the future.
+
+  item dcopy
+end end
+
+
+proc stack-item.create
+  // int: int-type int: mode -- ptr: item
+  int int -- ptr
+in let int-type mode in
+  24 malloc let object in
+    object is-null if
+      "'malloc' failed while creating a stack item.\n" STDERR fputs
+      ERROR-EXIT-CODE exit drop
+    end
+
+    int-type  object set-type
+    mode      object set-mode
+
+    object
+  end
+end end
