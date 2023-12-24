@@ -21,6 +21,7 @@ include libs/collections/str_set8.corth
 include Corth/compiler/lexer.corth
 include Corth/compiler/debug.corth
 include Corth/compiler/enums.corth
+include Corth/compiler/nasm.corth
 
 
 // NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
@@ -158,32 +159,6 @@ macro compile-procedure.new-level-id
 endmacro
 
 
-proc fput-alpha
-  ptr file-desc --
-in let name file in
-  name mlength malloc let object in
-    object is-null if
-      "'malloc' failed while allocating space for fput-alpha.\n" STDERR fputs
-      ERROR-EXIT-CODE exit drop
-    end
-
-    0 while dup name mlength < do let i in
-      name i + @8 let char in
-        char 'a' 'z' is-range char 'A' 'Z' is-range | char '1' '9' is-range | if
-          char object i + !8
-        else
-          '_' object i + !8
-        end
-      end
-    i end inc end drop
-
-    object object mlength file fputs
-
-    object mfree drop
-  end
-end end
-
-
 /*
 
 items:
@@ -224,46 +199,15 @@ macro MODE-IMM      1 endmacro
 macro MODE-GLOBAL   2 endmacro
 
 
-proc is-signed-dword
-  int -- bool
-in let value in
-  value 0x100000000 < value 0x100000000 neg > &
-end end
-
-
-proc push-int-immediate-to-real-stack
-  // int: immediate file-desc: output-file
-  ptr file-desc --
-in let immediate output-file in
-  immediate is-zero if
-    "    xor     rax, rax\n" output-file fputs
-    "    push    rax\n"      output-file fputs
-  else immediate is-signed-dword if
-    "    push    " output-file fputs immediate output-file fputi output-file fputnl
-  else
-    "    mov     rax, " output-file fputs immediate output-file fputi output-file fputnl
-    "    push    rax\n" output-file fputs
-  end end
-end end
-
-
-proc push-global-data-to-real-stack
-  // ptr: global-name file-desc: output-file
-  ptr file-desc --
-in let global output-file in
-  "    push    global_" output-file fputs global output-file fput-alpha output-file fputnl
-end end
-
-
 proc convert-int-to-real
   // ptr: item file-desc: output-file
   ptr file-desc --
 in let item output-file in
   item get-mode MODE-IMM = if
-    item get-arg1 output-file push-int-immediate-to-real-stack
+    item get-arg1 output-file nasm.push-int-immediate
     
   else item get-mode MODE-GLOBAL = if
-    item get-arg1 output-file push-global-data-to-real-stack
+    item get-arg1 output-file nasm.push-global-address
 
   else item get-mode MODE-REAL != if
     LOG.ERR STDOUT fputs "Unknown integer mode.\n" STDERR fputs
@@ -598,9 +542,10 @@ end end
 
 
 proc add-immediate-to-real-integer
-  // int: immediate file-desc: output-file --
-  int file-desc --
-in let immediate output-file in
+  // int: immediate ptr: local-stack ptr: local-stack-length file-desc: output-file --
+  int ptr ptr file-desc --
+in let immediate local-stack local-stack-length output-file in
+  INT-TYPE-INT push-real
   immediate 1 = if
     "    inc     qword [rsp]\n" output-file fputs
   else immediate 1 neg = if
@@ -657,7 +602,7 @@ in let token-address register-name register-name-length local-stack local-stack-
 
     else item get-mode MODE-GLOBAL = if
       INT-TYPE-INT push-real
-      "    push    qword [global_" output-file fputs item get-arg1 output-file fput-alpha "]\n" output-file fputs
+      item get-arg1 output-file nasm.push-global-value
 
     else
       LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
@@ -695,7 +640,7 @@ in let token-address register-name register-name-length local-stack local-stack-
         end
       else item1 get-mode MODE-GLOBAL = if
         "    pop     rax\n" output-file fputs
-        "    mov     [rax], " output-file fputs item1 get-arg1 output-file fput-alpha output-file fputnl
+        "    mov     [rax], global_" output-file fputs item1 get-arg1 output-file fput-alpha output-file fputnl
       else
         LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
         log-stream report-bug
@@ -772,13 +717,14 @@ in
       item1 get-type INT-TYPE-INT != item2 get-type INT-TYPE-INT != | if invalid-usage-of-intrinsic end
       
       item1 get-mode MODE-REAL = if
-        INT-TYPE-INT push-real
         item2 get-mode MODE-REAL = if
+          INT-TYPE-INT push-real
           "    pop     rax\n"        output-file fputs
           "    add     [rsp], rax\n" output-file fputs
         else item2 get-mode MODE-IMM = if
-          item2 get-arg1 output-file add-immediate-to-real-integer
+          item2 get-arg1 local-stack local-stack-length output-file add-immediate-to-real-integer
         else item2 get-mode MODE-GLOBAL = if
+          INT-TYPE-INT push-real
           "    add     [rsp], global_" output-file fputs item2 get-arg1 output-file fput-alpha output-file fputnl
         else
           LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
@@ -787,13 +733,12 @@ in
         end end end
       else item1 get-mode MODE-IMM = if
         item2 get-mode MODE-REAL = if
-          INT-TYPE-INT push-real
-          item1 get-arg1 output-file add-immediate-to-real-integer
+          item1 get-arg1 local-stack local-stack-length output-file add-immediate-to-real-integer
         else item2 get-mode MODE-IMM = if
           item1 get-arg1 item2 get-arg1 + push-int-immediate
         else item2 get-mode MODE-GLOBAL = if
-          item2 get-arg1 output-file push-global-data-to-real-stack
-          item1 get-arg1 output-file add-immediate-to-real-integer
+          item2 get-arg1 output-file nasm.push-global-address
+          item1 get-arg1 local-stack local-stack-length output-file add-immediate-to-real-integer
         else
           LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
           log-stream report-bug
@@ -801,13 +746,13 @@ in
         end end end
       else item1 get-mode MODE-GLOBAL = if
         item2 get-mode MODE-REAL = if
-          "    add     [rsp], global_" output-file fputs item1 get-arg1 output-file fput-alpha output-file fputnl
+          item1 get-arg1 output-file nasm.add-global-address-last
         else item2 get-mode MODE-IMM = if
-          item1 get-arg1 output-file push-global-data-to-real-stack
-          item2 get-arg1 output-file add-immediate-to-real-integer
+          item1 get-arg1 output-file nasm.push-global-address
+          item2 get-arg1 local-stack local-stack-length output-file add-immediate-to-real-integer
         else item2 get-mode MODE-GLOBAL = if
-          item1 get-arg1 output-file push-global-data-to-real-stack
-          "    add     [rsp], global_" output-file fputs item2 get-arg1 output-file fput-alpha output-file fputnl
+          item1 get-arg1 output-file nasm.push-global-address
+          item1 get-arg1 output-file nasm.add-global-address-last
         else
           LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
           log-stream report-bug
@@ -834,26 +779,38 @@ in
           "    or      [rsp], rax\n" output-file fputs
         else item2 get-mode MODE-IMM = if
           item2 get-arg1 local-stack local-stack-length output-file bor-immediate-to-real-integer
+        else item1 get-mode MODE-GLOBAL = if
+          LOG.ERR log-stream fputs "Bitwise OR intrinsic do not accept global address arguments.\n" log-stream fputs
+          token-address log-stream fput-here
+          ERROR-EXIT-CODE exit drop
         else
           LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
           log-stream report-bug
           ERROR-EXIT-CODE exit drop
-        end end
+        end end end
       else item1 get-mode MODE-IMM = if
         item2 get-mode MODE-REAL = if
           item1 get-arg1 local-stack local-stack-length output-file bor-immediate-to-real-integer
         else item2 get-mode MODE-IMM = if
           item1 get-arg1 item2 get-arg1 || push-int-immediate
+        else item1 get-mode MODE-GLOBAL = if
+          LOG.ERR log-stream fputs "Bitwise OR intrinsic do not accept global address arguments.\n" log-stream fputs
+          token-address log-stream fput-here
+          ERROR-EXIT-CODE exit drop
         else
           LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
           log-stream report-bug
           ERROR-EXIT-CODE exit drop
-        end end
+        end end end
+      else item1 get-mode MODE-GLOBAL = if
+        LOG.ERR log-stream fputs "Bitwise OR intrinsic do not accept global address arguments.\n" log-stream fputs
+        token-address log-stream fput-here
+        ERROR-EXIT-CODE exit drop
       else
         LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
         log-stream report-bug
         ERROR-EXIT-CODE exit drop
-      end end
+      end end end
     end
     
   else token-arg INTRINSIC-BNOT = if
@@ -866,15 +823,15 @@ in
       
       item get-mode MODE-REAL = if
         INT-TYPE-INT push-real
-        "    not     qword [rsp]\n" output-file fputs
+        output-file nasm.invert-last
 
       else item get-mode MODE-IMM = if
         item get-arg1 !! push-int-immediate
 
       else item get-mode MODE-GLOBAL = if
         INT-TYPE-INT push-real
-        item get-arg1 output-file push-global-data-to-real-stack
-        "    not     qword [rsp]\n" output-file fputs
+        item get-arg1 output-file nasm.push-global-address
+        output-file nasm.invert-last
 
       else
         LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs

@@ -1,0 +1,79 @@
+proc is-signed-dword
+  int -- bool
+in let value in
+  value 0x100000000 < value 0x100000000 neg > &
+end end
+
+
+proc fput-alpha
+  ptr file-desc --
+in let name file in
+  name mlength malloc let object in
+    object is-null if
+      "'malloc' failed while allocating space for fput-alpha.\n" STDERR fputs
+      ERROR-EXIT-CODE exit drop
+    end
+
+    0 while dup name mlength < do let i in
+      name i + @8 let char in
+        char 'a' 'z' is-range char 'A' 'Z' is-range | char '1' '9' is-range | if
+          char object i + !8
+        else
+          '_' object i + !8
+        end
+      end
+    i end inc end drop
+
+    object object mlength file fputs
+
+    object mfree drop
+  end
+end end
+
+
+proc nasm.push-int-immediate
+  // int: immediate file-desc: output-file
+  ptr file-desc --
+in let immediate output-file in
+  immediate is-zero if
+    "    xor     rax, rax\n" output-file fputs
+    "    push    rax\n"      output-file fputs
+  else immediate is-signed-dword if
+    "    push    " output-file fputs immediate output-file fputi output-file fputnl
+  else
+    "    mov     rax, " output-file fputs immediate output-file fputi output-file fputnl
+    "    push    rax\n" output-file fputs
+  end end
+end end
+
+
+proc nasm.push-global-address
+  // ptr: global-name file-desc: output-file
+  ptr file-desc --
+in let global output-file in
+  "    push    global_" output-file fputs global output-file fput-alpha output-file fputnl
+end end
+
+
+proc nasm.add-global-address-last
+  // ptr: global-name file-desc: output-file
+  ptr file-desc --
+in let global output-file in
+  "    add     [rsp], global_" output-file fputs global output-file fput-alpha output-file fputnl
+end end
+
+
+proc nasm.push-global-value
+  // ptr: global-name file-desc: output-file
+  ptr file-desc --
+in let global output-file in
+  "    push    qword [global_" output-file fputs global output-file fput-alpha "]\n" output-file fputs
+end end
+
+
+proc nasm.invert-last
+  // file-desc: output-file
+  file-desc --
+in let output-file in
+  "    not     qword [rsp]\n" output-file fputs
+end end
