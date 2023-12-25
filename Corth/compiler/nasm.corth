@@ -104,13 +104,13 @@ proc nasm.push-int-immediate
   int file-desc --
 in let immediate output-file in
   immediate is-zero if
-    "rax" output-file nasm.set-reg-zero
-    "    push    rax\n"      output-file fputs
+    "r15" output-file nasm.set-reg-zero
+    "    push    r15\n"      output-file fputs
   else immediate is-signed-dword if
     "    push    " output-file fputs immediate output-file fputi output-file fputnl
   else
-    "    mov     rax, " output-file fputs immediate output-file fputi output-file fputnl
-    "    push    rax\n" output-file fputs
+    "    mov     r15, " output-file fputs immediate output-file fputi output-file fputnl
+    "    push    r15\n" output-file fputs
   end end
 end end
 
