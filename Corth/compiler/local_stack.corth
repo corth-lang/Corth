@@ -144,3 +144,17 @@ in let immediate local-stack local-stack-length output-file in
     "    or      [rsp], rax\n" output-file fputs
   end end end  
 end end
+
+
+macro local-stack.mov-reg-last-int let _register-name_ _register-name-length_ in
+  pop-item let _item_ in
+    _item_ get-type INT-TYPE-INT != if
+      LOG.ERR STDERR fputs "Expected an integer, got '" STDERR fputs _item_ get-type STDERR fput-int-type "'.\n" STDERR fputs
+      ERROR-EXIT-CODE exit drop
+    end
+
+    _item_ _register-name_ _register-name-length_ output-file nasm.mov-reg-item
+
+    _item_ stack-item.mfree
+  end
+end endmacro

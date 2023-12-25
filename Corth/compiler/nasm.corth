@@ -34,13 +34,21 @@ in let name file in
 end end
 
 
+proc nasm.set-reg-zero
+  // ptr: register-name int: register-name-length file-desc: output-file
+  ptr int file-desc --
+in let register-name register-name-length output-file in
+  "    xor     " output-file fputs register-name register-name-length output-file fputs
+  ", " output-file fputs register-name register-name-length output-file fputs output-file fputnl
+end end
+
+
 proc nasm.mov-reg-immediate
   // int: immediate ptr: register-name int: register-name-length file-desc: output-file
   int ptr int file-desc --
 in let immediate register-name register-name-length output-file in
   immediate is-zero if
-    "    xor     " output-file fputs register-name register-name-length output-file fputs
-    ", " output-file fputs register-name register-name-length output-file fputs output-file fputnl
+    register-name register-name-length output-file nasm.set-reg-zero
   else
     "    mov     " output-file fputs register-name register-name-length output-file fputs
     ", " output-file fputs immediate output-file fputi output-file fputnl
@@ -72,7 +80,7 @@ proc nasm.push-int-immediate
   int file-desc --
 in let immediate output-file in
   immediate is-zero if
-    "    xor     rax, rax\n" output-file fputs
+    "rax" output-file nasm.set-reg-zero
     "    push    rax\n"      output-file fputs
   else immediate is-signed-dword if
     "    push    " output-file fputs immediate output-file fputi output-file fputnl

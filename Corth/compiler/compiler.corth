@@ -576,96 +576,62 @@ in
 
     local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
-    pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT = if
-        item2 get-type INT-TYPE-INT = if
-          item1 output-file nasm.convert-int-to-real
-          item2 output-file nasm.convert-int-to-real
-          
-          INT-TYPE-INT push-real
-          INT-TYPE-INT push-real
-          
-          "    xor     rdx, rdx\n"        output-file fputs
-          "    mov     rbx, [rsp]\n"      output-file fputs
-          "    mov     rax, [rsp+8]\n"    output-file fputs
-          "    imul    rbx\n"             output-file fputs
-          "    mov     [rsp], rax\n"      output-file fputs
-          "    mov     [rsp+8], rdx\n"    output-file fputs
-        else invalid-usage-of-intrinsic end
-      else invalid-usage-of-intrinsic end
-    end
+    "rax" local-stack.mov-reg-last-int
+    "rbx" local-stack.mov-reg-last-int
+
+    INT-TYPE-INT push-real
+    INT-TYPE-INT push-real
+
+    "    xor     rdx, rdx\n" output-file fputs
+    "    imul    rbx\n"      output-file fputs
+    "    push    rdx\n"      output-file fputs
+    "    push    rax\n"      output-file fputs
     
   else token-arg INTRINSIC-DIVMOD = if
     // -------- Intrinsic '/%' --------
 
     local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
-    pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT = if
-        item2 get-type INT-TYPE-INT = if
-          item1 output-file nasm.convert-int-to-real
-          item2 output-file nasm.convert-int-to-real
-          
-          INT-TYPE-INT push-real
-          INT-TYPE-INT push-real
-          
-          "    xor     rdx, rdx\n"        output-file fputs
-          "    mov     rbx, [rsp]\n"      output-file fputs
-          "    mov     rax, [rsp+8]\n"    output-file fputs
-          "    idiv    rbx\n"             output-file fputs
-          "    mov     [rsp+8], rax\n"    output-file fputs
-          "    mov     [rsp], rdx\n"      output-file fputs
-        else invalid-usage-of-intrinsic end
-      else invalid-usage-of-intrinsic end
-    end
+    "rbx" local-stack.mov-reg-last-int
+    "rax" local-stack.mov-reg-last-int
+
+    INT-TYPE-INT push-real
+    INT-TYPE-INT push-real
+
+    "    xor     rdx, rdx\n" output-file fputs
+    "    idiv    rbx\n"      output-file fputs
+    "    push    rax\n"      output-file fputs
+    "    push    rdx\n"      output-file fputs
     
   else token-arg INTRINSIC-UFULLMUL = if
     // -------- Intrinsic 'u**' --------
 
-    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+    "rax" local-stack.mov-reg-last-int
+    "rbx" local-stack.mov-reg-last-int
 
-    pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT = if
-        item2 get-type INT-TYPE-INT = if
-          item1 output-file nasm.convert-int-to-real
-          item2 output-file nasm.convert-int-to-real
-          
-          INT-TYPE-INT push-real
-          INT-TYPE-INT push-real
-          
-          "    xor     rdx, rdx\n"        output-file fputs
-          "    mov     rbx, [rsp]\n"      output-file fputs
-          "    mov     rax, [rsp+8]\n"    output-file fputs
-          "    mul     rbx\n"             output-file fputs
-          "    mov     [rsp], rax\n"      output-file fputs
-          "    mov     [rsp+8], rdx\n"    output-file fputs
-        else invalid-usage-of-intrinsic end
-      else invalid-usage-of-intrinsic end
-    end
-        
+    INT-TYPE-INT push-real
+    INT-TYPE-INT push-real
+
+    "    xor     rdx, rdx\n" output-file fputs
+    "    mul     rbx\n"      output-file fputs
+    "    push    rdx\n"      output-file fputs
+    "    push    rax\n"      output-file fputs
+            
   else token-arg INTRINSIC-UDIVMOD = if
     // -------- Intrinsic 'u/%' --------
 
     local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
-    pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT = if
-        item2 get-type INT-TYPE-INT = if
-          item1 output-file nasm.convert-int-to-real
-          item2 output-file nasm.convert-int-to-real
-          
-          INT-TYPE-INT push-real
-          INT-TYPE-INT push-real
-          
-          "    xor     rdx, rdx\n"        output-file fputs
-          "    mov     rbx, [rsp]\n"      output-file fputs
-          "    mov     rax, [rsp+8]\n"    output-file fputs
-          "    div     rbx\n"             output-file fputs
-          "    mov     [rsp+8], rax\n"    output-file fputs
-          "    mov     [rsp], rdx\n"      output-file fputs
-        else invalid-usage-of-intrinsic end
-      else invalid-usage-of-intrinsic end
-    end
+    "rbx" local-stack.mov-reg-last-int
+    "rax" local-stack.mov-reg-last-int
+
+    INT-TYPE-INT push-real
+    INT-TYPE-INT push-real
+
+    "    xor     rdx, rdx\n" output-file fputs
+    "    div     rbx\n"      output-file fputs
+    "    push    rax\n"      output-file fputs
+    "    push    rdx\n"      output-file fputs
     
   else token-arg INTRINSIC-NOTEQUAL = if
     // -------- Intrinsic '!=' --------
@@ -738,41 +704,18 @@ in
 
     local-stack-length @64 7 < if invalid-usage-of-intrinsic end
 
-    pop-item pop-item pop-item pop-item pop-item pop-item pop-item let item7 item6 item5 item4 item3 item2 item1 in
-      item1 get-type INT-TYPE-INT = if
-        item2 get-type INT-TYPE-INT = if
-          item3 get-type INT-TYPE-INT = if
-            item4 get-type INT-TYPE-INT = if
-              item5 get-type INT-TYPE-INT = if
-                item6 get-type INT-TYPE-INT = if
-                  item7 get-type INT-TYPE-INT = if
-                    item1 output-file nasm.convert-int-to-real
-                    item2 output-file nasm.convert-int-to-real
-                    item3 output-file nasm.convert-int-to-real
-                    item4 output-file nasm.convert-int-to-real
-                    item5 output-file nasm.convert-int-to-real
-                    item6 output-file nasm.convert-int-to-real
-                    item7 output-file nasm.convert-int-to-real
+    "rax" local-stack.mov-reg-last-int
+    "r9"  local-stack.mov-reg-last-int
+    "r8"  local-stack.mov-reg-last-int
+    "r10" local-stack.mov-reg-last-int
+    "rdx" local-stack.mov-reg-last-int
+    "rsi" local-stack.mov-reg-last-int
+    "rdi" local-stack.mov-reg-last-int
+      
+    INT-TYPE-INT push-real
 
-                    INT-TYPE-INT push-real
-                    
-                    "    pop     rax\n" output-file fputs
-                    "    pop     r9\n"  output-file fputs
-                    "    pop     r8\n"  output-file fputs
-                    "    pop     r10\n" output-file fputs
-                    "    pop     rdx\n" output-file fputs
-                    "    pop     rsi\n" output-file fputs
-                    "    pop     rdi\n" output-file fputs
-                    "    syscall\n"     output-file fputs
-                    "    push    rax\n" output-file fputs
-                  else invalid-usage-of-intrinsic end
-                else invalid-usage-of-intrinsic end
-              else invalid-usage-of-intrinsic end
-            else invalid-usage-of-intrinsic end
-          else invalid-usage-of-intrinsic end
-        else invalid-usage-of-intrinsic end
-      else invalid-usage-of-intrinsic end
-    end
+    "    syscall\n"     output-file fputs
+    "    push    rax\n" output-file fputs
 
   else
     LOG.TODO log-stream fputs "Intrinsic '" log-stream fputs token-arg log-stream fput-intrinsic "' is not implemented yet.\n" log-stream fputs
