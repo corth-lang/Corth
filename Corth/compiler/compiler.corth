@@ -1336,97 +1336,99 @@ in
         end
       end
 
-      // This loop is separated from the one above, since this loop must run in the reverse order.
-      new-names-list list64.length while dup isn-zero do dec let i in
-        local-stack-length @64 is-zero if
-          LOG.ERR log-stream fputs "Expected a data before 'let' variable, but the stack was empty.\n" log-stream fputs
-          token-address compile-procedure.show-here
-          ERROR-EXIT-CODE exit drop
-        end
+      local-memory-end @64 let old-local-memory-end in
+        // This loop is separated from the one above, since this loop must run in the reverse order.
+        new-names-list list64.length while dup isn-zero do dec let i in
+          local-stack-length @64 is-zero if
+            LOG.ERR log-stream fputs "Expected a data before 'let' variable, but the stack was empty.\n" log-stream fputs
+            token-address compile-procedure.show-here
+            ERROR-EXIT-CODE exit drop
+          end
 
-        // TODO: Save the type of the 'let' variable.
+          // TODO: Save the type of the 'let' variable.
 
-        pop-item i new-names-list list64.get let item variable-name in
-          item get-type INT-TYPE-INT = if
-            item get-mode MODE-REAL = if            
-              // If the length of the variable name is 1 and its first letter is _.
+          pop-item i new-names-list list64.get let item variable-name in
+            item get-type INT-TYPE-INT = if
+              item get-mode MODE-REAL = if            
+                // If the length of the variable name is 1 and its first letter is _.
+                variable-name mlength 1 = if variable-name @8 '_' = else false end if
+                  "    pop     rax\n" output-file fputs
+                else
+                  "    mov     rax, qword [local_ptr]\n" output-file fputs
+                  "    pop     qword [rax" output-file fputs local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "]\n" output-file fputs
+
+                end
+              else item get-mode MODE-IMM = if
+                // If the length of the variable name is not 1 or its first letter is not _.
+                variable-name mlength 1 = if variable-name @8 '_' != else true end if
+                  "    mov     rax, qword [local_ptr]\n" output-file fputs
+                  item get-arg1 "rbx" output-file nasm.mov-reg-immediate
+                  "    mov     [rax" output-file fputs
+                  local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "], rbx\n" output-file fputs
+                end
+              else item get-mode MODE-GLOBAL = if
+                // If the length of the variable name is not 1 or its first letter is not _.
+                variable-name mlength 1 = if variable-name @8 '_' != else true end if
+                  "    mov     rax, qword [local_ptr]\n" output-file fputs
+                  "    mov     qword [rax" output-file fputs
+                  local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "], global_" output-file fputs
+                  item get-arg1 output-file fput-alpha output-file fputnl
+                end
+              else
+                LOG.ERR log-stream fputs "Unknown integer item mode.\n" log-stream fputs
+                log-stream report-bug
+                token-address log-stream fput-here
+                ERROR-EXIT-CODE exit drop
+              end end end
+            else item get-type INT-TYPE-BOOL = if
+              item get-mode MODE-REAL != if
+                LOG.ERR log-stream fputs "Unknown boolean item mode.\n" log-stream fputs
+                log-stream report-bug
+                token-address log-stream fput-here
+                ERROR-EXIT-CODE exit drop
+              end
+
               variable-name mlength 1 = if variable-name @8 '_' = else false end if
                 "    pop     rax\n" output-file fputs
               else
                 "    mov     rax, qword [local_ptr]\n" output-file fputs
                 "    pop     qword [rax" output-file fputs local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "]\n" output-file fputs
+              end
 
-              end
-            else item get-mode MODE-IMM = if
-              // If the length of the variable name is not 1 or its first letter is not _.
-              variable-name mlength 1 = if variable-name @8 '_' != else true end if
-                "    mov     rax, qword [local_ptr]\n" output-file fputs
-                item get-arg1 "rbx" output-file nasm.mov-reg-immediate
-                "    mov     [rax" output-file fputs
-                local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "], rbx\n" output-file fputs
-              end
-            else item get-mode MODE-GLOBAL = if
-              // If the length of the variable name is not 1 or its first letter is not _.
-              variable-name mlength 1 = if variable-name @8 '_' != else true end if
-                "    mov     rax, qword [local_ptr]\n" output-file fputs
-                "    mov     qword [rax" output-file fputs
-                local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "], global_" output-file fputs
-                item get-arg1 output-file fput-alpha output-file fputnl
-              end
             else
-              LOG.ERR log-stream fputs "Unknown integer item mode.\n" log-stream fputs
+              LOG.ERR log-stream fputs "Unknown stack item type.\n" log-stream fputs
               log-stream report-bug
               token-address log-stream fput-here
               ERROR-EXIT-CODE exit drop
-            end end end
-          else item get-type INT-TYPE-BOOL = if
-            item get-mode MODE-REAL != if
-              LOG.ERR log-stream fputs "Unknown boolean item mode.\n" log-stream fputs
-              log-stream report-bug
-              token-address log-stream fput-here
-              ERROR-EXIT-CODE exit drop
-            end
-            
-            variable-name mlength 1 = if variable-name @8 '_' = else false end if
-              "    pop     rax\n" output-file fputs
-            else
-              "    mov     rax, qword [local_ptr]\n" output-file fputs
-              "    pop     qword [rax" output-file fputs local-memory-end @64 isn-zero if " + " output-file fputs local-memory-end @64 output-file fputu end "]\n" output-file fputs
-            end
-            
-          else
-            LOG.ERR log-stream fputs "Unknown stack item type.\n" log-stream fputs
-            log-stream report-bug
-            token-address log-stream fput-here
-            ERROR-EXIT-CODE exit drop
-          end end
+            end end
 
-          variable-name mlength 1 = if variable-name @8 '_' != else true end if
-            variable-name local-memory-end @64 let-names let-addresses let-vars-length str-map64.set if
-              LOG.ERR log-stream fputs "'let' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+            variable-name mlength 1 = if variable-name @8 '_' != else true end if
+              variable-name local-memory-end @64 let-names let-addresses let-vars-length str-map64.set if
+                LOG.ERR log-stream fputs "'let' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
 
-              // TODO: This does not show the address of the 'let' variable. This should be changed.
-              token-address compile-procedure.show-here
-              ERROR-EXIT-CODE exit drop
+                // TODO: This does not show the address of the 'let' variable. This should be changed.
+                token-address compile-procedure.show-here
+                ERROR-EXIT-CODE exit drop
+              end
             end
           end
+
+          local-memory-end @64 8 + local-memory-end !64
+
+        i end end drop
+
+        local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
+
+        32 malloc let new-level in
+          new-level "creating a level object for 'let'" compile-procedure.check-null-here
+
+          KEYWORD-LET                      new-level      !64
+          token-address dcopy              new-level  8 + !64
+          new-names-list list64.copy-array new-level 16 + !64
+          old-local-memory-end             new-level 24 + !64
+
+          new-level levels-list list64.append
         end
-
-        local-memory-end @64 8 + local-memory-end !64
-
-      i end end drop
-
-      local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
-
-      32 malloc let new-level in
-        new-level "creating a level object for 'let'" compile-procedure.check-null-here
-
-        KEYWORD-LET                      new-level      !64
-        token-address dcopy              new-level  8 + !64
-        new-names-list list64.copy-array new-level 16 + !64
-        local-memory-end @64             new-level 24 + !64
-
-        new-level levels-list list64.append
       end
 
       // Deallocate 'new-names-list' but keep the 'let' variable names.
