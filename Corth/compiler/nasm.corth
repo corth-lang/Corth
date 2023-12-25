@@ -34,6 +34,30 @@ in let name file in
 end end
 
 
+proc nasm.level
+  // int: id file-desc: output-file
+  int file-desc --
+in let output-file in
+  ".level_" output-file fputs output-file fputu ":\n" output-file fputs
+end end
+
+
+proc nasm.jump-level
+  // int: id file-desc: output-file
+  int file-desc --
+in let output-file in
+  "    jmp     .level_" output-file fputs output-file fputu output-file fputnl
+end end
+
+
+proc nasm.jump-zero-level
+  // int: id file-desc: output-file
+  int file-desc --
+in let output-file in
+  "    jz      .level_" output-file fputs output-file fputu output-file fputnl
+end end
+
+
 proc nasm.set-reg-zero
   // ptr: register-name int: register-name-length file-desc: output-file
   ptr int file-desc --

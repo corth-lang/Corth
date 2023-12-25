@@ -816,7 +816,7 @@ in
             // Check for the stack changes.
             start-stack start-address local-stack local-stack-length token-address log-stream check-stack-types
 
-            ".level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
+            start-id output-file nasm.level
 
             // Deallocate 'start-stack'.
             start-stack _local-stack.mfree
@@ -833,8 +833,8 @@ in
 
             // Check for the stack changes.
             start-stack else-address local-stack local-stack-length token-address log-stream check-stack-types
-            
-            ".level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
+
+            start-id output-file nasm.level
 
             // Deallocate 'else-address' and 'start-stack'.
             else-address mfree drop
@@ -867,10 +867,9 @@ in
             // Overwrite the contents of the local-stack.
             do-stack local-stack local-stack-length local-stack.overwrite
 
-            "    jmp     .level_" output-file fputs while-level-id output-file fputu output-file fputnl
-
-            ".level_" output-file fputs unbroken-end-id output-file fputu ":\n" output-file fputs
-            ".level_" output-file fputs broken-end-id   output-file fputu ":\n" output-file fputs
+            while-level-id  output-file nasm.jump-level
+            unbroken-end-id output-file nasm.level
+            broken-end-id   output-file nasm.level
 
             // Deallocate 'do-address', 'while-stack' and 'do-stack'.
             do-address mfree drop
@@ -990,7 +989,7 @@ in
 
           "    pop     rax\n"      output-file fputs
           "    test    rax, rax\n" output-file fputs
-          "    jz      .level_"    output-file fputs level-id output-file fputu output-file fputnl
+          level-id output-file nasm.jump-zero-level
         end
       end
     end
@@ -1027,8 +1026,8 @@ in
             start-stack local-stack local-stack-length local-stack.overwrite
 
             compile-procedure.new-level-id let level-id in
-              "    jmp     .level_" output-file fputs level-id output-file fputu output-file fputnl
-              ".level_" output-file fputs start-id output-file fputu ":\n" output-file fputs
+              level-id output-file nasm.jump-level
+              start-id output-file nasm.level
 
               40 malloc let new-level in
                 new-level "creating a level object for 'else'" compile-procedure.check-null-here
@@ -1072,7 +1071,7 @@ in
       compile-procedure.new-level-id let level-id in
         local-stack local-stack-length output-file local-stack.convert-last-items-real
 
-        ".level_" output-file fputs level-id output-file fputu ":\n" output-file fputs
+        level-id output-file nasm.level
 
         32 malloc let new-level in
           new-level "creating a level object for 'while'" compile-procedure.check-null-here
@@ -1138,7 +1137,7 @@ in
             compile-procedure.new-level-id compile-procedure.new-level-id let unbroken-end-id broken-end-id in
               "    pop     rax\n"      output-file fputs
               "    test    rax, rax\n" output-file fputs
-              "    jz      .level_"    output-file fputs unbroken-end-id output-file fputu output-file fputnl
+              unbroken-end-id output-file nasm.jump-zero-level
 
               local-stack local-stack-length @64 to-dynamic64 let copy-stack in
                 copy-stack "copying the stack for 'do'" compile-procedure.check-null-here
@@ -1178,8 +1177,8 @@ in
             do-stack do-address local-stack local-stack-length token-address log-stream check-stack-types
             
             local-stack local-stack-length output-file local-stack.convert-last-items-real
-          
-            "    jmp     .level_" output-file fputs broken-end-id output-file fputu output-file fputnl
+
+            broken-end-id output-file nasm.jump-level
           end
 
           0 branch-active !8
@@ -1639,7 +1638,7 @@ in
                   "    add     qword [local_ptr], "            output-file fputs local-memory-end @64 output-file fputu output-file fputnl
                   "    xchg    rsp, [call_ptr]\n"              output-file fputs         
                   "    jmp     proc_"                          output-file fputs token-arg output-file fput-alpha output-file fputnl
-                  ".level_"                                    output-file fputs level-id output-file fputu ":\n" output-file fputs
+                  level-id output-file nasm.level
                 end
               end
             end end
