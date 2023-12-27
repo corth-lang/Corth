@@ -346,35 +346,20 @@ end end
 proc load-intrinsic
   // ptr: token-address ptr: register-name int: register-name-length ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
   ptr ptr int ptr ptr file-desc file-desc --
+  // NOTE: Register is one of 'al', 'ax', 'eax', 'rax'.
 in let token-address register-name register-name-length local-stack local-stack-length output-file log-stream in
   local-stack-length @64 1 < if invalid-usage-of-intrinsic end
 
   pop-item let item in
     item get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
 
-    item get-mode MODE-REAL = if
-      INT-TYPE-INT push-real
+    INT-TYPE-INT push-real
 
-      "    xor     rax, rax\n"      output-file fputs
-      "    pop     rbx\n"           output-file fputs
-      "    mov     " output-file fputs register-name register-name-length output-file fputs ", [rbx]\n" output-file fputs
-      "    push    rax\n"           output-file fputs
-
-    else item get-mode MODE-IMM = if
-      LOG.ERR log-stream fputs "Load intrinsics do not accept immediate address argument.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
-
-    else item get-mode MODE-GLOBAL = if
-      INT-TYPE-INT push-real
-      item get-arg1 output-file nasm.push-global-value
-
-    else
-      LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
-      log-stream report-bug
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
-    end end end
+    item "rbx" output-file nasm.mov-reg-item
+         "rax" output-file nasm.mov-reg-zero
+         
+    "    mov     " output-file fputs register-name register-name-length output-file fputs ", [rbx]\n" output-file fputs
+    "    push    rax\n" output-file fputs
   end
 end end
 
@@ -386,31 +371,14 @@ proc store-intrinsic
 in let token-address register-name register-name-length local-stack local-stack-length output-file log-stream in
   local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
-  pop-item pop-item let item2 item1 in
-    item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
-    item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
-    
-    item2 get-mode MODE-REAL = if
-      "    pop     rax\n" output-file fputs
-      item1 "rbx" output-file nasm.mov-reg-item
-      "    mov     [rax], " output-file fputs register-name register-name-length output-file fputs output-file fputnl
-      
-    else item2 get-mode MODE-GLOBAL = if
-      item1 "rbx" output-file nasm.mov-reg-item
-      "    mov     [global_" output-file fputs item2 get-arg1 output-file fput-alpha
-      "], " output-file fputs register-name register-name-length output-file fputs output-file fputnl
-      
-    else item2 get-mode MODE-IMM = if
-      LOG.ERR log-stream fputs "Store intrinsics do not accept immediate address argument.\n" log-stream fputs
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
-      
-    else
-      LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
-      log-stream report-bug
-      token-address log-stream fput-here
-      ERROR-EXIT-CODE exit drop
-    end end end
+  pop-item pop-item let address-item value-item in
+    value-item get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+    address-item get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+
+    address-item "rax" output-file nasm.mov-reg-item
+    value-item   "rbx" output-file nasm.mov-reg-item
+
+    "    mov     [rax], " output-file fputs register-name register-name-length output-file fputs output-file fputnl
   end
 end end
 
@@ -445,55 +413,15 @@ in
     local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
     pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT != item2 get-type INT-TYPE-INT != | if invalid-usage-of-intrinsic end
-      
-      item1 get-mode MODE-REAL = if
-        item2 get-mode MODE-REAL = if
-          INT-TYPE-INT push-real
-          "    pop     rax\n"        output-file fputs
-          "    add     [rsp], rax\n" output-file fputs
-        else item2 get-mode MODE-IMM = if
-          item2 get-arg1 local-stack local-stack-length output-file local-stack.add-imm-to-real-int
-        else item2 get-mode MODE-GLOBAL = if
-          INT-TYPE-INT push-real
-          "    add     [rsp], global_" output-file fputs item2 get-arg1 output-file fput-alpha output-file fputnl
-        else
-          LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
-          log-stream report-bug
-          ERROR-EXIT-CODE exit drop
-        end end end
-      else item1 get-mode MODE-IMM = if
-        item2 get-mode MODE-REAL = if
-          item1 get-arg1 local-stack local-stack-length output-file local-stack.add-imm-to-real-int
-        else item2 get-mode MODE-IMM = if
-          item1 get-arg1 item2 get-arg1 + push-int-immediate
-        else item2 get-mode MODE-GLOBAL = if
-          item2 get-arg1 output-file nasm.push-global-address
-          item1 get-arg1 local-stack local-stack-length output-file local-stack.add-imm-to-real-int
-        else
-          LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
-          log-stream report-bug
-          ERROR-EXIT-CODE exit drop
-        end end end
-      else item1 get-mode MODE-GLOBAL = if
-        item2 get-mode MODE-REAL = if
-          item1 get-arg1 output-file nasm.add-global-address-last
-        else item2 get-mode MODE-IMM = if
-          item1 get-arg1 output-file nasm.push-global-address
-          item2 get-arg1 local-stack local-stack-length output-file local-stack.add-imm-to-real-int
-        else item2 get-mode MODE-GLOBAL = if
-          item1 get-arg1 output-file nasm.push-global-address
-          item1 get-arg1 output-file nasm.add-global-address-last
-        else
-          LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
-          log-stream report-bug
-          ERROR-EXIT-CODE exit drop
-        end end end
-      else
-        LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
-        log-stream report-bug
-        ERROR-EXIT-CODE exit drop
-      end end end
+      item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+
+      INT-TYPE-INT push-real
+
+      item2 "rax" output-file nasm.mov-reg-item
+      item1       output-file nasm.convert-int-to-real
+
+      "    add     [rsp], rax\n" output-file fputs
     end
 
   else token-arg INTRINSIC-BOR = if
@@ -501,47 +429,15 @@ in
     local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
     pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT != item2 get-type INT-TYPE-INT != | if invalid-usage-of-intrinsic end
+      item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
       
-      item1 get-mode MODE-REAL = if
-        INT-TYPE-INT push-real
-        item2 get-mode MODE-REAL = if
-          "    pop     rax\n"        output-file fputs
-          "    or      [rsp], rax\n" output-file fputs
-        else item2 get-mode MODE-IMM = if
-          item2 get-arg1 local-stack local-stack-length output-file local-stack.bor-imm-to-real-int
-        else item1 get-mode MODE-GLOBAL = if
-          LOG.ERR log-stream fputs "Bitwise OR intrinsic do not accept global address arguments.\n" log-stream fputs
-          token-address log-stream fput-here
-          ERROR-EXIT-CODE exit drop
-        else
-          LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
-          log-stream report-bug
-          ERROR-EXIT-CODE exit drop
-        end end end
-      else item1 get-mode MODE-IMM = if
-        item2 get-mode MODE-REAL = if
-          item1 get-arg1 local-stack local-stack-length output-file local-stack.bor-imm-to-real-int
-        else item2 get-mode MODE-IMM = if
-          item1 get-arg1 item2 get-arg1 || push-int-immediate
-        else item1 get-mode MODE-GLOBAL = if
-          LOG.ERR log-stream fputs "Bitwise OR intrinsic do not accept global address arguments.\n" log-stream fputs
-          token-address log-stream fput-here
-          ERROR-EXIT-CODE exit drop
-        else
-          LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
-          log-stream report-bug
-          ERROR-EXIT-CODE exit drop
-        end end end
-      else item1 get-mode MODE-GLOBAL = if
-        LOG.ERR log-stream fputs "Bitwise OR intrinsic do not accept global address arguments.\n" log-stream fputs
-        token-address log-stream fput-here
-        ERROR-EXIT-CODE exit drop
-      else
-        LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
-        log-stream report-bug
-        ERROR-EXIT-CODE exit drop
-      end end end
+      INT-TYPE-INT push-real
+
+      item2 "rax" output-file nasm.mov-reg-item
+      item1       output-file nasm.convert-int-to-real
+
+      "    or      [rsp], rax\n" output-file fputs
     end
     
   else token-arg INTRINSIC-BNOT = if
@@ -551,24 +447,12 @@ in
 
     pop-item let item in
       item get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+
+      INT-TYPE-INT push-real
+
+      item output-file nasm.convert-int-to-real
       
-      item get-mode MODE-REAL = if
-        INT-TYPE-INT push-real
-        output-file nasm.invert-last
-
-      else item get-mode MODE-IMM = if
-        item get-arg1 !! push-int-immediate
-
-      else item get-mode MODE-GLOBAL = if
-        INT-TYPE-INT push-real
-        item get-arg1 output-file nasm.push-global-address
-        output-file nasm.invert-last
-
-      else
-        LOG.ERR log-stream fputs "Unknown integer mode.\n" log-stream fputs
-        log-stream report-bug
-        ERROR-EXIT-CODE exit drop
-      end end end
+      "    not     qword [rsp]\n" output-file fputs
     end
     
   else token-arg INTRINSIC-FULLMUL = if
@@ -576,62 +460,83 @@ in
 
     local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
-    "rax" local-stack.mov-reg-last-int
-    "rbx" local-stack.mov-reg-last-int
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
 
-    INT-TYPE-INT push-real
-    INT-TYPE-INT push-real
+      INT-TYPE-INT push-real
+      INT-TYPE-INT push-real
 
-    "    xor     rdx, rdx\n" output-file fputs
-    "    imul    rbx\n"      output-file fputs
-    "    push    rdx\n"      output-file fputs
-    "    push    rax\n"      output-file fputs
+      item2 "rbx" output-file nasm.mov-reg-item
+      item1 "rax" output-file nasm.mov-reg-item
+            "rdx" output-file nasm.mov-reg-zero
+
+      "    imul    rbx\n" output-file fputs
+      "    push    rdx\n" output-file fputs
+      "    push    rax\n" output-file fputs
+    end
     
   else token-arg INTRINSIC-DIVMOD = if
     // -------- Intrinsic '/%' --------
 
     local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
-    "rbx" local-stack.mov-reg-last-int
-    "rax" local-stack.mov-reg-last-int
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT != item2 get-type INT-TYPE-INT != | if invalid-usage-of-intrinsic end
 
-    INT-TYPE-INT push-real
-    INT-TYPE-INT push-real
+      INT-TYPE-INT push-real
+      INT-TYPE-INT push-real
 
-    "    xor     rdx, rdx\n" output-file fputs
-    "    idiv    rbx\n"      output-file fputs
-    "    push    rax\n"      output-file fputs
-    "    push    rdx\n"      output-file fputs
-    
+      item2 "rbx" output-file nasm.mov-reg-item
+      item1 "rax" output-file nasm.mov-reg-item
+            "rdx" output-file nasm.mov-reg-zero
+
+      "    idiv    rbx\n" output-file fputs
+      "    push    rax\n" output-file fputs
+      "    push    rdx\n" output-file fputs
+    end
+        
   else token-arg INTRINSIC-UFULLMUL = if
     // -------- Intrinsic 'u**' --------
 
-    "rax" local-stack.mov-reg-last-int
-    "rbx" local-stack.mov-reg-last-int
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
-    INT-TYPE-INT push-real
-    INT-TYPE-INT push-real
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
 
-    "    xor     rdx, rdx\n" output-file fputs
-    "    mul     rbx\n"      output-file fputs
-    "    push    rdx\n"      output-file fputs
-    "    push    rax\n"      output-file fputs
-            
+      INT-TYPE-INT push-real
+      INT-TYPE-INT push-real
+
+      item2 "rbx" output-file nasm.mov-reg-item
+      item1 "rax" output-file nasm.mov-reg-item
+            "rdx" output-file nasm.mov-reg-zero
+
+      "    mul     rbx\n" output-file fputs
+      "    push    rdx\n" output-file fputs
+      "    push    rax\n" output-file fputs
+    end
+    
   else token-arg INTRINSIC-UDIVMOD = if
     // -------- Intrinsic 'u/%' --------
 
     local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
-    "rbx" local-stack.mov-reg-last-int
-    "rax" local-stack.mov-reg-last-int
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
 
-    INT-TYPE-INT push-real
-    INT-TYPE-INT push-real
+      INT-TYPE-INT push-real
+      INT-TYPE-INT push-real
 
-    "    xor     rdx, rdx\n" output-file fputs
-    "    div     rbx\n"      output-file fputs
-    "    push    rax\n"      output-file fputs
-    "    push    rdx\n"      output-file fputs
+      item2 "rbx" output-file nasm.mov-reg-item
+      item1 "rax" output-file nasm.mov-reg-item
+            "rdx" output-file nasm.mov-reg-zero
+
+      "    div     rbx\n" output-file fputs
+      "    push    rax\n" output-file fputs
+      "    push    rdx\n" output-file fputs
+    end
     
   else token-arg INTRINSIC-NOTEQUAL = if
     // -------- Intrinsic '!=' --------
@@ -639,17 +544,15 @@ in
     local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
     pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT = if
-        item2 get-type INT-TYPE-INT = if
-          item1 output-file nasm.convert-int-to-real
-          item2 output-file nasm.convert-int-to-real
-          
-          INT-TYPE-BOOL push-real
-          
-          "    pop     rax\n"        output-file fputs
-          "    sub     [rsp], rax\n" output-file fputs
-        else invalid-usage-of-intrinsic end
-      else invalid-usage-of-intrinsic end
+      item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      
+      INT-TYPE-BOOL push-real
+
+      item2 "rax" output-file nasm.mov-reg-item
+      item1       output-file nasm.convert-int-to-real
+
+      "    sub     [rsp], rax\n" output-file fputs
     end
 
   else token-arg INTRINSIC-LESS = if
@@ -658,22 +561,18 @@ in
     local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
     pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT = if
-        item2 get-type INT-TYPE-INT = if
-          item1 output-file nasm.convert-int-to-real
-          item2 output-file nasm.convert-int-to-real
-          
-          INT-TYPE-BOOL push-real
-          
-          "    pop     rax\n"               output-file fputs
-          "    pop     rbx\n"               output-file fputs
-          "    sub     rbx, rax\n"          output-file fputs
-          "    pushf\n"                     output-file fputs
-          "    and     qword [rsp], 0x80\n" output-file fputs
-        else invalid-usage-of-intrinsic end
-      else invalid-usage-of-intrinsic end
-    end
+      item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      
+      INT-TYPE-BOOL push-real
 
+      item2 "rax" output-file nasm.mov-reg-item
+      item1       output-file nasm.convert-int-to-real
+
+      "    sub     [rsp], rax\n"      output-file fputs
+      "    shr     qword [rsp], 63\n" output-file fputs
+    end
+    
   else token-arg INTRINSIC-LOAD8   = if token-address "al"  local-stack local-stack-length output-file log-stream load-intrinsic
   else token-arg INTRINSIC-LOAD16  = if token-address "ax"  local-stack local-stack-length output-file log-stream load-intrinsic
   else token-arg INTRINSIC-LOAD32  = if token-address "eax" local-stack local-stack-length output-file log-stream load-intrinsic
@@ -704,18 +603,28 @@ in
 
     local-stack-length @64 7 < if invalid-usage-of-intrinsic end
 
-    "rax" local-stack.mov-reg-last-int
-    "r9"  local-stack.mov-reg-last-int
-    "r8"  local-stack.mov-reg-last-int
-    "r10" local-stack.mov-reg-last-int
-    "rdx" local-stack.mov-reg-last-int
-    "rsi" local-stack.mov-reg-last-int
-    "rdi" local-stack.mov-reg-last-int
+    pop-item pop-item pop-item pop-item pop-item pop-item pop-item let op-item arg-item6 arg-item5 arg-item4 arg-item3 arg-item2 arg-item1 in
+      arg-item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      arg-item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      arg-item3 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      arg-item4 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      arg-item5 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      arg-item6 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      op-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
       
-    INT-TYPE-INT push-real
+      INT-TYPE-INT push-real
 
-    "    syscall\n"     output-file fputs
-    "    push    rax\n" output-file fputs
+      op-item   "rax" output-file nasm.mov-reg-item
+      arg-item6 "r9"  output-file nasm.mov-reg-item
+      arg-item5 "r8"  output-file nasm.mov-reg-item
+      arg-item4 "r10" output-file nasm.mov-reg-item
+      arg-item3 "rdx" output-file nasm.mov-reg-item
+      arg-item2 "rsi" output-file nasm.mov-reg-item
+      arg-item1 "rdi" output-file nasm.mov-reg-item
+
+      "    syscall\n"     output-file fputs
+      "    push    rax\n" output-file fputs
+    end
 
   else
     LOG.TODO log-stream fputs "Intrinsic '" log-stream fputs token-arg log-stream fput-intrinsic "' is not implemented yet.\n" log-stream fputs

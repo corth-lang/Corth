@@ -58,7 +58,7 @@ in let output-file in
 end end
 
 
-proc nasm.set-reg-zero
+proc nasm.mov-reg-zero
   // ptr: register-name int: register-name-length file-desc: output-file
   ptr int file-desc --
 in let register-name register-name-length output-file in
@@ -72,7 +72,7 @@ proc nasm.mov-reg-immediate
   int ptr int file-desc --
 in let immediate register-name register-name-length output-file in
   immediate is-zero if
-    register-name register-name-length output-file nasm.set-reg-zero
+    register-name register-name-length output-file nasm.mov-reg-zero
   else
     "    mov     " output-file fputs register-name register-name-length output-file fputs
     ", " output-file fputs immediate output-file fputi output-file fputnl
@@ -80,6 +80,13 @@ in let immediate register-name register-name-length output-file in
 end end
 
 
+proc nasm.mov-reg-global-address
+  // ptr: global-name ptr: register-name int: register-name-length file-desc: output-file
+  ptr ptr int file-desc --
+in let global-name register-name register-name-length output-file in
+  "    mov     " output-file fputs register-name register-name-length output-file fputs
+  ", global_" output-file fputs global-name output-file fput-alpha output-file fputnl
+end end
 proc nasm.mov-reg-item
   // ptr: item ptr: register-name int: register-name-length file-desc: output-file
   ptr ptr int file-desc --
@@ -89,10 +96,9 @@ in let item register-name register-name-length output-file in
   else item get-mode MODE-IMM = if
     item get-arg1 register-name register-name-length output-file nasm.mov-reg-immediate
   else item get-mode MODE-GLOBAL = if
-    "    mov     " output-file fputs register-name register-name-length output-file fputs
-    ", global_" output-file fputs item get-arg1 output-file fput-alpha output-file fputnl
+    item get-arg1 register-name register-name-length output-file nasm.mov-reg-global-address
   else
-    LOG.ERR STDERR fputs "Unknown integer mode.\n" STDERR fputs
+    LOG.ERR STDERR fputs "Unknown integer mode while trying to move integer to register.\n" STDERR fputs
     STDERR report-bug
     ERROR-EXIT-CODE exit drop
   end end end
@@ -102,9 +108,10 @@ end end
 proc nasm.push-int-immediate
   // int: immediate file-desc: output-file
   int file-desc --
+  // NOTE: Uses R15.
 in let immediate output-file in
   immediate is-zero if
-    "r15" output-file nasm.set-reg-zero
+    "r15" output-file nasm.mov-reg-zero
     "    push    r15\n"      output-file fputs
   else immediate is-signed-dword if
     "    push    " output-file fputs immediate output-file fputi output-file fputnl
@@ -123,30 +130,6 @@ in let global output-file in
 end end
 
 
-proc nasm.add-global-address-last
-  // ptr: global-name file-desc: output-file
-  ptr file-desc --
-in let global output-file in
-  "    add     [rsp], global_" output-file fputs global output-file fput-alpha output-file fputnl
-end end
-
-
-proc nasm.push-global-value
-  // ptr: global-name file-desc: output-file
-  ptr file-desc --
-in let global output-file in
-  "    push    qword [global_" output-file fputs global output-file fput-alpha "]\n" output-file fputs
-end end
-
-
-proc nasm.invert-last
-  // file-desc: output-file
-  file-desc --
-in let output-file in
-  "    not     qword [rsp]\n" output-file fputs
-end end
-
-
 proc nasm.convert-int-to-real
   // ptr: item file-desc: output-file
   ptr file-desc --
@@ -158,7 +141,8 @@ in let item output-file in
     item get-arg1 output-file nasm.push-global-address
 
   else item get-mode MODE-REAL != if
-    LOG.ERR STDOUT fputs "Unknown integer mode.\n" STDERR fputs
+    LOG.ERR STDERR fputs "Unknown integer mode while trying to convert integer to real mode.\n" STDERR fputs
+    STDERR report-bug
     ERROR-EXIT-CODE exit drop
   end end end
 
@@ -171,7 +155,8 @@ proc nasm.convert-bool-to-real
   ptr file-desc --
 in let item output-file in
   item get-mode MODE-REAL != if
-    LOG.ERR STDOUT fputs "Unknown bool mode.\n" STDERR fputs
+    LOG.ERR STDERR fputs "Unknown bool mode while trying to convert boolean to real mode.\n" STDERR fputs
+    STDERR report-bug
     ERROR-EXIT-CODE exit drop
   end
 
@@ -187,7 +172,8 @@ in let item output-file in
        item get-type INT-TYPE-INT  = if nasm.convert-int-to-real
   else item get-type INT-TYPE-BOOL = if nasm.convert-bool-to-real
   else drop drop
-    LOG.ERR STDOUT fputs item get-type STDERR fputu "Unknown intrinsic type to convert to real.\n" STDERR fputs
+    LOG.ERR STDERR fputs "Unknown intrinsic type to convert to real.\n" STDERR fputs
+    STDERR report-bug
     ERROR-EXIT-CODE exit drop
   end end
 end end
