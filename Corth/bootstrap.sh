@@ -1,9 +1,3 @@
-BUILD_ITERATION=$1
-
-if [[ $BUILD_ITERATION = '' ]]; then
-  BUILD_ITERATION=3
-fi
-
 ERROR='\x1b[1;31m[ERROR]\x1b[0;97m'
 INFO='\x1b[1;97m[INFO]\x1b[0;97m'
 
@@ -14,43 +8,50 @@ echo -e '[build.sh] '$INFO' Copying ./Corth/corth to ./Corth/build/corth'
 cp ./Corth/corth ./Corth/build/
 
 echo -e '[build.sh] '$INFO' Starting to compile ./Corth/compiler/corth.corth'
-echo -e '[build.sh] '$INFO' Iteration depth is '$BUILD_ITERATION.
 
-for i in $(seq 1 $BUILD_ITERATION); do
-  ./Corth/build/corth compile-nasm . ./Corth/compiler/corth.corth ./Corth/build/corth.asm
-  compile_exit=$?
+i=0;
 
-  if [[ $compile_exit != 0 ]]; then
-     echo -e '[build.sh] '$ERROR' ['$i/$BUILD_ITERATION'] Could not compile to NASM.'
-     exit $compile_exit
-  fi
+while
+    cp ./Corth/build/corth ./Corth/build/old
+    
+    i=$(( $i + 1 ))
+    
+    ./Corth/build/old compile-nasm . ./Corth/compiler/corth.corth ./Corth/build/corth.asm
+    compile_exit=$?
 
-  echo -e '[build.sh] '$INFO' ['$i/$BUILD_ITERATION'] Compiled to NASM.'
+    if [[ $compile_exit != 0 ]]; then
+        echo -e '[build.sh] '$ERROR' [ #'$i' ] Could not compile to NASM.'
+        exit $compile_exit
+    fi
 
-  nasm ./Corth/build/corth.asm -f elf64 -o ./Corth/build/corth.o
-  nasm_exit=$?
+    echo -e '[build.sh] '$INFO' [ #'$i' ] Compiled to NASM.'
 
-  if [[ $nasm_exit != 0 ]]; then
-     echo -e '[build.sh] '$ERROR' ['$i/$BUILD_ITERATION'] Could not compile NASM program.'
-     exit $nasm_exit
-  fi
+    nasm ./Corth/build/corth.asm -f elf64 -o ./Corth/build/corth.o
+    nasm_exit=$?
 
-  echo -e '[build.sh] '$INFO' ['$i/$BUILD_ITERATION'] Created the object file.'
+    if [[ $nasm_exit != 0 ]]; then
+        echo -e '[build.sh] '$ERROR' [ #'$i' ] Could not compile NASM program.'
+        exit $nasm_exit
+    fi
 
-  ld ./Corth/build/corth.o -o ./Corth/build/corth
-  linker_exit=$?
+    echo -e '[build.sh] '$INFO' [ #'$i' ] Created the object file.'
 
-  if [[ $linker_exit != 0 ]]; then
-     echo -e '[build.sh] '$ERROR' ['$i/$BUILD_ITERATION'] Could not link program.'
-     exit $linker_exit
-  fi
+    ld ./Corth/build/corth.o -o ./Corth/build/corth
+    linker_exit=$?
 
-  echo -e '[build.sh] '$INFO' ['$i/$BUILD_ITERATION'] Created executable.'
-done
+    if [[ $linker_exit != 0 ]]; then
+        echo -e '[build.sh] '$ERROR' [ #'$i' ] Could not link program.'
+        exit $linker_exit
+    fi
 
-echo -e '[build.sh] '$INFO' Starting tests...'
+    echo -e '[build.sh] '$INFO' [ #'$i' ] Created executable.'
 
-./PythonCompiler/main.py test -ce -p ./Corth/build/corth
+    not diff ./Corth/build/corth ./Corth/build/old
+do :; done
+
+echo -e '[build.sh] '$INFO' Reached stability in '$i' tries, starting tests...'
+
+./PythonCompiler/main.py test -eo -p ./Corth/build/corth
 tests_exit=$?
 
 if [[ $tests_exit != 0 ]]; then
