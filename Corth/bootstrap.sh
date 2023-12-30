@@ -24,7 +24,7 @@ while
         exit $compile_exit
     fi
 
-    echo -e '[build.sh] '$INFO' [ #'$i' ] Compiled to NASM.'
+    echo -e '[build.sh] '$INFO' [ #'$i' ] Compiled to NASM. ('$(wc -l < ./Corth/build/corth.asm)' lines)'
 
     nasm ./Corth/build/corth.asm -f elf64 -o ./Corth/build/corth.o
     nasm_exit=$?
