@@ -41,7 +41,7 @@ macro compile-procedure.get-next-token let expect-address expect-length extend-m
   line-no char-no
   extended-array extended-start extended-end
   macro-names macro-tokens macros-length
-  log-stream extend-macros isn-zero get-next-token ! if
+  log-stream extend-macros get-next-token ! if
     LOG.ERR log-stream fputs "Reached EOF while expecting " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
     procedure-name procedure-address log-stream fput-inside-procedure
     ERROR-EXIT-CODE exit drop
@@ -419,7 +419,7 @@ in
       INT-TYPE-INT push-real
 
       item2 "rax" output-file nasm.mov-reg-item
-      item1       output-file nasm.convert-int-to-real
+      item1       output-file nasm.push-int
 
       "    add     [rsp], rax\n" output-file fputs
     end
@@ -435,7 +435,7 @@ in
       INT-TYPE-INT push-real
 
       item2 "rax" output-file nasm.mov-reg-item
-      item1       output-file nasm.convert-int-to-real
+      item1       output-file nasm.push-int
 
       "    or      [rsp], rax\n" output-file fputs
     end
@@ -450,7 +450,7 @@ in
 
       INT-TYPE-INT push-real
 
-      item output-file nasm.convert-int-to-real
+      item output-file nasm.push-int
       
       "    not     qword [rsp]\n" output-file fputs
     end
@@ -550,7 +550,7 @@ in
       INT-TYPE-BOOL push-real
 
       item2 "rax" output-file nasm.mov-reg-item
-      item1       output-file nasm.convert-int-to-real
+      item1       output-file nasm.push-int
 
       "    sub     [rsp], rax\n" output-file fputs
     end
@@ -567,7 +567,7 @@ in
       INT-TYPE-BOOL push-real
 
       item2 "rax" output-file nasm.mov-reg-item
-      item1       output-file nasm.convert-int-to-real
+      item1       output-file nasm.push-int
 
       "    sub     [rsp], rax\n"      output-file fputs
       "    shr     qword [rsp], 63\n" output-file fputs
@@ -1254,8 +1254,6 @@ in
             ERROR-EXIT-CODE exit drop
           end
 
-          // TODO: Save the type of the 'let' variable.
-
           pop-item i new-names-list list64.get let item variable-name in
             variable-name mlength 1 = if variable-name @8 '_' = else false end if
               item get-mode MODE-REAL = if
@@ -1270,13 +1268,17 @@ in
               else
                 "    mov     [r15 + " output-file fputs local-memory-end @64 output-file fputu "], rax\n" output-file fputs
               end
-              
-              variable-name local-memory-end @64 let-names let-addresses let-vars-length str-map64.set if
-                LOG.ERR log-stream fputs "'let' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
 
-                // TODO: This does not show the address of the 'let' variable. This should be changed.
-                token-address compile-procedure.show-here
-                ERROR-EXIT-CODE exit drop
+              item get-type MODE-@LOCALCONST stack-item.create let replace-item in
+                local-memory-end @64 replace-item set-arg1
+              
+                variable-name replace-item let-names let-addresses let-vars-length str-map64.set if
+                  LOG.ERR log-stream fputs "'let' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+
+                  // TODO: This does not show the address of the 'let' variable. This should be changed.
+                  token-address compile-procedure.show-here
+                  ERROR-EXIT-CODE exit drop
+                end
               end
             end
           end
@@ -1450,12 +1452,10 @@ in
           token-arg let-names let-addresses let-vars-length str-map64.get if
             // -------- 'let' variables --------
                         
-            let address in
-              INT-TYPE-INT push-real
-              
-              "    mov     rax, qword [local_ptr]\n" output-file fputs
-              
-              "    push    qword [rax" output-file fputs address isn-zero if " + " output-file fputs address output-file fputu end "]\n" output-file fputs
+            let replace-item in
+              replace-item get-type push-real
+
+              replace-item stack-item.copy output-file nasm.push-int
             end
             
           else drop token-arg local-names local-addresses locals-length str-map64.get if
@@ -1560,7 +1560,7 @@ in
           token-address compile-procedure.show-here
           ERROR-EXIT-CODE exit drop
         end end end end end
-
+        
         // Deallocate the space allocated for token-address.
         token-address mfree drop
       end
@@ -1583,7 +1583,7 @@ in
   line-no char-no
   extended-array extended-start extended-end
   macro-names macro-tokens macros-length
-  log-stream extend-macros isn-zero get-next-token ! if
+  log-stream extend-macros get-next-token ! if
     LOG.ERR log-stream fputs "Reached EOF while expecting " log-stream fputs expect-address expect-length log-stream fputs log-stream fputnl
     ERROR-EXIT-CODE exit drop
   end
@@ -1674,6 +1674,7 @@ proc compile-file
   // Compiles a Corth source file.
   // Compilation warning and errors are dumped to log-stream.
 
+  // TODO: Add called-from to improve debugging.
   // TODO: Add called-from to improve debugging.
 in let
   source-name output-file

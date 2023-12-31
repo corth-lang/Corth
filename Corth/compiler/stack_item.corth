@@ -5,9 +5,10 @@ macro set-mode 8  + !64 endmacro
 macro get-arg1 16 + @64 endmacro
 macro set-arg1 16 + !64 endmacro
 
-macro MODE-REAL     0 endmacro
-macro MODE-IMM      1 endmacro
-macro MODE-GLOBAL   2 endmacro
+macro MODE-REAL             0 endmacro
+macro MODE-IMM              1 endmacro
+macro MODE-GLOBAL           2 endmacro
+macro MODE-@LOCALCONST      3 endmacro
 
 
 proc stack-item.mfree

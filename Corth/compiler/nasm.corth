@@ -87,6 +87,23 @@ in let global-name register-name register-name-length output-file in
   "    mov     " output-file fputs register-name register-name-length output-file fputs
   ", global_" output-file fputs global-name output-file fput-alpha output-file fputnl
 end end
+
+
+proc nasm.mov-reg-@localconst
+  // int: offset ptr: register-name int: register-name-length file-desc: output-file
+  int ptr int file-desc --
+in let offset register-name register-name-length output-file in
+  "    mov     " output-file fputs register-name register-name-length output-file fputs ", [local_ptr]\n" output-file fputs
+
+  "    mov     " output-file fputs register-name register-name-length output-file fputs
+  ", [" output-file fputs register-name register-name-length output-file fputs
+  offset isn-zero if
+    " + " output-file fputs offset output-file fputu 
+  end
+  "]\n" output-file fputs
+end end
+
+
 proc nasm.mov-reg-item
   // ptr: item ptr: register-name int: register-name-length file-desc: output-file
   ptr ptr int file-desc --
@@ -97,11 +114,13 @@ in let item register-name register-name-length output-file in
     item get-arg1 register-name register-name-length output-file nasm.mov-reg-immediate
   else item get-mode MODE-GLOBAL = if
     item get-arg1 register-name register-name-length output-file nasm.mov-reg-global-address
+  else item get-mode MODE-@LOCALCONST = if
+    item get-arg1 register-name register-name-length output-file nasm.mov-reg-@localconst
   else
     LOG.ERR STDERR fputs "Unknown integer mode while trying to move integer to register.\n" STDERR fputs
     STDERR report-bug
     ERROR-EXIT-CODE exit drop
-  end end end
+  end end end end
 end end
 
 
@@ -130,7 +149,21 @@ in let global output-file in
 end end
 
 
-proc nasm.convert-int-to-real
+proc nasm.push-@localconst
+  // int: offset file-desc: output-file
+  int file-desc --
+in let offset output-file in
+  "    mov     r15, [local_ptr]\n" output-file fputs
+
+  offset is-zero if
+    "    push    qword [r15]\n" output-file fputs
+  else
+    "    push    qword [r15 + " output-file fputs offset output-file fputu "]\n" output-file fputs
+  end
+end end
+
+
+proc nasm.push-int
   // ptr: item file-desc: output-file
   ptr file-desc --
 in let item output-file in
@@ -140,11 +173,52 @@ in let item output-file in
   else item get-mode MODE-GLOBAL = if
     item get-arg1 output-file nasm.push-global-address
 
+  else item get-mode MODE-@LOCALCONST = if
+    item get-arg1 output-file nasm.push-@localconst
+
   else item get-mode MODE-REAL != if
-    LOG.ERR STDERR fputs "Unknown integer mode while trying to convert integer to real mode.\n" STDERR fputs
+    LOG.ERR STDERR fputs "Unknown integer mode while trying to push an integer item.\n" STDERR fputs
     STDERR report-bug
     ERROR-EXIT-CODE exit drop
-  end end end
+  end end end end
+end end
+
+
+proc nasm.push-bool
+  // ptr: item file-desc: output-file
+  ptr file-desc --
+in let item output-file in
+  item get-mode MODE-@LOCALCONST = if
+    item get-arg1 output-file nasm.push-@localconst
+    
+  else item get-mode MODE-REAL != if
+    LOG.ERR STDERR fputs "Unknown bool mode while trying to push a boolean item.\n" STDERR fputs
+    STDERR report-bug
+    ERROR-EXIT-CODE exit drop
+  end end
+end end
+
+
+proc nasm.push
+  // ptr: item file-desc: output-file
+  ptr file-desc --
+in let item output-file in
+  item output-file
+       item get-type INT-TYPE-INT  = if nasm.push-int
+  else item get-type INT-TYPE-BOOL = if nasm.push-bool
+  else drop drop
+    LOG.ERR STDERR fputs "Unknown intrinsic type to push\n" STDERR fputs
+    STDERR report-bug
+    ERROR-EXIT-CODE exit drop
+  end end
+end end
+
+
+proc nasm.convert-int-to-real
+  // ptr: item file-desc: output-file
+  ptr file-desc --
+in let item output-file in
+  item output-file nasm.push-int
 
   MODE-REAL item set-mode
 end end
@@ -154,11 +228,7 @@ proc nasm.convert-bool-to-real
   // ptr: item file-desc: output-file
   ptr file-desc --
 in let item output-file in
-  item get-mode MODE-REAL != if
-    LOG.ERR STDERR fputs "Unknown bool mode while trying to convert boolean to real mode.\n" STDERR fputs
-    STDERR report-bug
-    ERROR-EXIT-CODE exit drop
-  end
+  item output-file nasm.push-bool
 
   MODE-REAL item set-mode
 end end

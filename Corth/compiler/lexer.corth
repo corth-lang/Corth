@@ -491,7 +491,7 @@ in let
               file file-name line-no char-no log-stream skip-line
 
               // Get next token and return it.
-              file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros isn-zero get-next-token ! if false return end
+              file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros get-next-token ! if false return end
 
             else buffer inc @8 '*' = if
               // -------- Block comment --------
@@ -500,7 +500,7 @@ in let
               file file-name line-no char-no log-stream skip-block-comment
 
               // Get next token and return it.
-              file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros isn-zero get-next-token ! if false return end
+              file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros get-next-token ! if false return end
             else
               // -------- Name and keyword types --------
               file 1 neg SEEK-CUR lseek drop
@@ -516,7 +516,7 @@ in let
       end end
     end
 
-    extend-macros is-zero if
+    extend-macros ! if
       true return
     end
 
@@ -542,7 +542,7 @@ in let
               end
             i end end drop
             
-            file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros isn-zero get-next-token
+            file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros get-next-token
 
             // Deallocate 'arg'.
             arg mfree drop

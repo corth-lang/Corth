@@ -46,7 +46,7 @@ macro convd
   // NOTE: If the number is too big, the result will be wrong.
   let _start_ _length_ _number_ in
     _start_ @8 '-' = if
-      _start_ inc _length_ dec _number_ convud dup isn-zero if _number_ @64 neg _number_ !64 end isn-zero
+      _start_ inc _length_ dec _number_ convud dup if _number_ @64 neg _number_ !64 end
     else
       _start_ _length_ _number_ convud
     end
