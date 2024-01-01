@@ -974,7 +974,7 @@ in
     // Branch should not be cut before 'while'.
     token-address "call 'while'" compile-procedure.check-branch-here
 
-    local-stack local-stack-length @64 to-dynamic64 let copy-stack in
+    local-stack local-stack-length local-stack.copy let copy-stack in
       copy-stack "creating a level object for 'while'" compile-procedure.check-null-here
 
       compile-procedure.new-level-id let level-id in
@@ -1048,7 +1048,7 @@ in
               "    test    rax, rax\n" output-file fputs
               unbroken-end-id output-file nasm.jump-zero-level
 
-              local-stack local-stack-length @64 to-dynamic64 let copy-stack in
+              local-stack local-stack-length local-stack.copy let copy-stack in
                 copy-stack "copying the stack for 'do'" compile-procedure.check-null-here
 
                 64 malloc let new-level in
