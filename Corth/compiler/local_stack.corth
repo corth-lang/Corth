@@ -48,10 +48,9 @@ proc __local-stack.mfree-items
   // ptrL local-stack int: local-stack-length
   ptr int --
 in let local-stack local-stack-length in
-  // TODO: Something is wrong here.
   // Iterate through the items and mfree them.
   0 while dup local-stack-length < do let i in
-    // i local-stack array64.get stack-item.mfree
+    i local-stack array64.get stack-item.mfree
   i end inc end drop
 end end
 
@@ -104,7 +103,11 @@ in let overwrite local-stack local-stack-length in
   // Deallocate all of the items in the local-stack.
   local-stack local-stack-length @64 __local-stack.mfree-items
 
-  // Overwrite the local-stack.
-  overwrite overwrite mlength 8 / local-stack local-stack-length queue64.overwrite
+  // Copy the items from the overwrite to the local-stack.
+  0 while dup overwrite mlength 8 / < do let i in
+    i overwrite array64.get stack-item.copy i local-stack array64.set
+  i end inc end drop
+
+  overwrite mlength 8 / local-stack-length !64
 end end
 
