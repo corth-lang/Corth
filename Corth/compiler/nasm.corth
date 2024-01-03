@@ -163,6 +163,18 @@ in let offset output-file in
 end end
 
 
+proc nasm.push-local
+  // int: offset file-desc: output-file
+  int file-desc --
+in let offset output-file in
+  "    push    qword [local_ptr]\n" output-file fputs
+
+  offset isn-zero if
+    "    add     qword [rsp], " output-file fputs offset output-file fputu output-file fputnl
+  end
+end end
+
+
 proc nasm.push-int
   // ptr: item file-desc: output-file
   ptr file-desc --
@@ -176,11 +188,14 @@ in let item output-file in
   else item get-mode MODE-@LOCALCONST = if
     item get-arg1 output-file nasm.push-@localconst
 
+  else item get-mode MODE-LOCAL = if
+    item get-arg1 output-file nasm.push-local
+
   else item get-mode MODE-REAL != if
     LOG.ERR STDERR fputs "Unknown integer mode while trying to push an integer item.\n" STDERR fputs
     STDERR report-bug
     ERROR-EXIT-CODE exit drop
-  end end end end
+  end end end end end
 end end
 
 

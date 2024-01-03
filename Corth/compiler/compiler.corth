@@ -686,8 +686,6 @@ proc compile-keyword
   int ptr int
   // ptr: levels-list ptr: level-id-counter
   ptr ptr
-  // ptr: local-names ptr: local-addresses ptr: locals-length
-  ptr ptr ptr
   // ptr: local-memory-end
   ptr 
   // ptr: let-names ptr: let-addresses ptr: let-vars-length
@@ -712,7 +710,6 @@ in let
   extended-array extended-start extended-end
   token-type token-address token-arg
   levels-list level-id-counter
-  local-names local-addresses locals-length
   local-memory-end
   let-names let-addresses let-vars-length
   branch-active
@@ -844,15 +841,9 @@ in
         else start-keyword KEYWORD-MEMORY = if
           // -------- End of 'memory' --------
 
-          // -- debug --
-          // token-address log-stream fput-here
-          // 0 while dup locals-length @64 < do let j in
-          //  j local-names array64.get dup mlength log-stream fputs log-stream fputnl
-          // j end inc end drop
-
           level 16 + @64 level 24 + @64 let new-names old-local-memory-end in
             0 while dup new-names mlength 8 / < do let i in i 8 * new-names + @64 let name in
-              name local-names local-addresses locals-length str-map64.remove ! if
+              name let-names let-addresses let-vars-length str-map64.remove ! if
                 LOG.ERR  log-stream fputs "Could not find the local variable name '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
 
                 log-stream report-bug
@@ -1193,13 +1184,18 @@ in
             memory-end-arg memory-end-address "after 'memory'" KEYWORD-IN compile-procedure.check-keyword-here
 
             memory-name-arg new-names-list list64.append
-            memory-name-arg local-memory-end @64 local-names local-addresses locals-length str-map64.set if
-              LOG.ERR log-stream fputs "Local variable '" log-stream fputs memory-name-arg memory-name-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-              memory-name-address compile-procedure.show-here
-              ERROR-EXIT-CODE exit drop
-            end
 
-            local-memory-end @64 memory-size-arg + local-memory-end !64
+            INT-TYPE-INT MODE-LOCAL stack-item.create let replace-item in
+              local-memory-end @64 replace-item set-arg1
+              
+              memory-name-arg replace-item let-names let-addresses let-vars-length str-map64.set if
+                LOG.ERR log-stream fputs "Local variable '" log-stream fputs memory-name-arg memory-name-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+                memory-name-address compile-procedure.show-here
+                ERROR-EXIT-CODE exit drop
+              end
+
+              local-memory-end @64 memory-size-arg + local-memory-end !64
+            end
 
             // Deallocate 'memory-end-address'.
             memory-end-address mfree drop
@@ -1415,11 +1411,6 @@ in
   memory let-names        LET-MAX-COUNT    in
   memory let-addresses    LET-MAX-COUNT    in
   memory let-vars-length  sizeof(int)      in
-         
-  // local-names, local-addresses and locals-length create a str_map64.
-  memory local-names      LOCALS-MAX-COUNT in
-  memory local-addresses  LOCALS-MAX-COUNT in
-  memory locals-length    sizeof(int)      in
 
   // local-memory-end keeps track of the first available position on the local memory.
   memory local-memory-end sizeof(int)      in
@@ -1438,7 +1429,6 @@ in
 
     0 level-id-counter !64
     0 let-vars-length  !64
-    0 locals-length    !64
     0 local-memory-end !64
     0 local-memory-max !64
     
@@ -1483,27 +1473,14 @@ in
           token-address "calling a name" compile-procedure.check-branch-here
             
           token-arg let-names let-addresses let-vars-length str-map64.get if
-            // -------- 'let' variables --------
-                        
+            // -------- local variables --------
+            
             let replace-item in
               replace-item get-type push-real
 
               replace-item stack-item.copy output-file nasm.push-int
             end
             
-          else drop token-arg local-names local-addresses locals-length str-map64.get if
-            // -------- local 'memory' variables --------
-            
-            let address in
-              INT-TYPE-INT push-real
-              
-              "    push    qword [local_ptr]\n" output-file fputs
-              
-              address isn-zero if
-                "    add     qword [rsp], " output-file fputs address output-file fputu output-file fputnl
-              end
-            end
-
           else drop token-arg global-names-array global-sizes-array globals-length str-map64.get if
             // -------- global 'memory' variables --------
 
@@ -1552,7 +1529,7 @@ in
             LOG.ERR log-stream fputs "Name '" log-stream fputs token-arg token-arg mlength log-stream fputs "' is not defined as a local variable or a macro.\n" log-stream fputs
             token-address compile-procedure.show-here
             ERROR-EXIT-CODE exit drop
-          end end end end
+          end end end
 
         else token-type TYPE-INTRINSIC = if
           // -------- Intrinsics --------
@@ -1579,7 +1556,6 @@ in
           extended-array extended-start extended-end
           token-type token-address token-arg
           levels-list level-id-counter
-          local-names local-addresses locals-length
           local-memory-end
           let-names let-addresses let-vars-length
           branch-active
@@ -1601,7 +1577,7 @@ in
 
     // Deallocate 'levels-list'.
     levels-list list64.mfree-deep drop
-  end end end end end end end end end end end
+  end end end end end end end end
 end 0 end // dummy return
 
 
@@ -1729,10 +1705,6 @@ in
       LOG.ERR log-stream fputs "Could not open source file '" log-stream fputs source-name source-name mlength dec log-stream fputs "'\n" log-stream fputs
       ERROR-EXIT-CODE exit drop
     end
-    
-    // -- debug --
-    // NOTE: This appears to make the program faster?
-    // source-name dup mlength log-stream fputs log-stream fputnl
 
     memory extended-array  EXTENDED-MAX-LENGTH in
     memory extended-start  sizeof(int)         in
