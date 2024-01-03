@@ -422,6 +422,9 @@ in
       item1       output-file nasm.push-int
 
       "    add     [rsp], rax\n" output-file fputs
+      
+      item1 stack-item.mfree
+      item2 stack-item.mfree
     end
 
   else token-arg INTRINSIC-BOR = if
@@ -438,6 +441,9 @@ in
       item1       output-file nasm.push-int
 
       "    or      [rsp], rax\n" output-file fputs
+      
+      item1 stack-item.mfree
+      item2 stack-item.mfree
     end
     
   else token-arg INTRINSIC-BNOT = if
@@ -453,6 +459,8 @@ in
       item output-file nasm.push-int
       
       "    not     qword [rsp]\n" output-file fputs
+
+      item stack-item.mfree
     end
     
   else token-arg INTRINSIC-FULLMUL = if
@@ -474,6 +482,9 @@ in
       "    imul    rbx\n" output-file fputs
       "    push    rdx\n" output-file fputs
       "    push    rax\n" output-file fputs
+      
+      item1 stack-item.mfree
+      item2 stack-item.mfree
     end
     
   else token-arg INTRINSIC-DIVMOD = if
@@ -494,6 +505,9 @@ in
       "    idiv    rbx\n" output-file fputs
       "    push    rax\n" output-file fputs
       "    push    rdx\n" output-file fputs
+      
+      item1 stack-item.mfree
+      item2 stack-item.mfree
     end
         
   else token-arg INTRINSIC-UFULLMUL = if
@@ -515,6 +529,9 @@ in
       "    mul     rbx\n" output-file fputs
       "    push    rdx\n" output-file fputs
       "    push    rax\n" output-file fputs
+      
+      item1 stack-item.mfree
+      item2 stack-item.mfree
     end
     
   else token-arg INTRINSIC-UDIVMOD = if
@@ -536,6 +553,9 @@ in
       "    div     rbx\n" output-file fputs
       "    push    rax\n" output-file fputs
       "    push    rdx\n" output-file fputs
+      
+      item1 stack-item.mfree
+      item2 stack-item.mfree
     end
     
   else token-arg INTRINSIC-NOTEQUAL = if
@@ -553,6 +573,9 @@ in
       item1       output-file nasm.push-int
 
       "    sub     [rsp], rax\n" output-file fputs
+      
+      item1 stack-item.mfree
+      item2 stack-item.mfree
     end
 
   else token-arg INTRINSIC-LESS = if
@@ -571,6 +594,9 @@ in
 
       "    sub     [rsp], rax\n"      output-file fputs
       "    shr     qword [rsp], 63\n" output-file fputs
+
+      item1 stack-item.mfree
+      item2 stack-item.mfree
     end
     
   else token-arg INTRINSIC-LOAD8   = if token-address "al"  local-stack local-stack-length output-file log-stream load-intrinsic
@@ -624,6 +650,14 @@ in
 
       "    syscall\n"     output-file fputs
       "    push    rax\n" output-file fputs
+
+      arg-item1 stack-item.mfree
+      arg-item2 stack-item.mfree
+      arg-item3 stack-item.mfree
+      arg-item4 stack-item.mfree
+      arg-item5 stack-item.mfree
+      arg-item6 stack-item.mfree
+      op-item   stack-item.mfree
     end
 
   else
@@ -881,7 +915,7 @@ in
 
       item output-file nasm.convert-bool-to-real
 
-      item mfree drop
+      item stack-item.mfree
     end
 
     local-stack local-stack-length local-stack.copy let copy-stack in
@@ -1032,7 +1066,7 @@ in
 
       item output-file nasm.convert-bool-to-real
       
-      item mfree drop
+      item stack-item.mfree
     end
 
     // Get the 'while' level.
