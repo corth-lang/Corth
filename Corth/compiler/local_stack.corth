@@ -21,18 +21,60 @@ macro push-int-immediate let _immediate_ in
 end endmacro
 
 
+proc local-stack.convert-items-real
+  // int: start-index int: end-index ptr: local-stack ptr: local-stack-length file-desc: output-file --
+  int int ptr ptr file-desc --
+in let start-index end-index local-stack local-stack-length output-file in
+  // We have reached the start of all of the non-real stack values.
+  start-index while dup end-index < do dup
+    local-stack array64.get output-file nasm.convert-item-to-real
+  inc end drop
+end end
+
+
+proc local-stack.find-first-non-real
+  // ptr: local-stack ptr: local-stack-length -- int: index
+  ptr ptr -- int
+in let local-stack local-stack-length in
+  0 while dup local-stack-length @64 < do dup
+    local-stack array64.get get-mode MODE-REAL != if break end
+  inc end
+end end
+
+
+proc local-stack.find-last-deleted
+  // int: local-memory-end ptr: local-stack ptr: local-stack-length -- int: index
+  int ptr ptr -- int
+in let local-memory-end local-stack local-stack-length in
+  local-stack-length @64 while dup 0 > do dec dup
+    local-stack array64.get let item in
+      item get-mode MODE-@LOCALCONST = if
+        item get-arg1 local-memory-end >= if
+          inc break
+        end
+      end
+    end
+  end
+end end
+
+
 proc local-stack.convert-last-items-real
   // ptr: local-stack ptr: local-stack-length file-desc: output-file --
   ptr ptr file-desc --
 in let local-stack local-stack-length output-file in
-  local-stack-length @64 while dup 0 > do dec dup
-    local-stack array64.get get-mode MODE-REAL = if break end
-  end
+  local-stack local-stack-length local-stack.find-first-non-real // Start index
+  local-stack-length @64                                         // End index
+  local-stack local-stack-length output-file local-stack.convert-items-real
+end end
 
-  // We have reached the start of all of the non-real stack values.
-  while dup local-stack-length @64 < do dup
-    local-stack array64.get output-file nasm.convert-item-to-real
-  inc end drop
+
+proc local-stack.convert-deleted-real
+  // int: local-memory-end ptr: local-stack ptr: local-stack-length file-desc: output-file --
+  int ptr ptr file-desc --
+in let local-memory-end local-stack local-stack-length output-file in
+  local-stack local-stack-length local-stack.find-first-non-real                // Start index
+  local-memory-end local-stack local-stack-length local-stack.find-last-deleted // End index  
+  local-stack local-stack-length output-file local-stack.convert-items-real
 end end
 
 

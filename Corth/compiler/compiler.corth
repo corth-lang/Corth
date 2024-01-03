@@ -832,6 +832,8 @@ in
               end
             end i end inc end drop
 
+            old-local-memory-end local-stack local-stack-length output-file local-stack.convert-deleted-real
+
             old-local-memory-end local-memory-end !64
 
             // Deallocate 'new-names'.
@@ -1047,6 +1049,8 @@ in
       ERROR-EXIT-CODE exit drop
     end
 
+    local-stack local-stack-length output-file local-stack.convert-last-items-real
+    
     // Remove the bool value from the local-stack.
     pop-item let item in
       item get-type INT-TYPE-BOOL != if        
@@ -1054,8 +1058,6 @@ in
         token-address compile-procedure.show-here
         ERROR-EXIT-CODE exit drop
       end
-
-      item output-file nasm.convert-bool-to-real
       
       item stack-item.mfree
     end
@@ -1290,18 +1292,38 @@ in
                 "    pop     r15\n" output-file fputs
               end
             else
-              item "rax" output-file nasm.mov-reg-item
+              item get-mode MODE-REAL = if
+                "    mov     r15, [local_ptr]\n" output-file fputs
+                local-memory-end @64 is-zero if
+                  "    pop     qword [r15]\n" output-file fputs
+                else
+                  "    pop     qword [r15 + " output-file fputs local-memory-end @64 output-file fputu "]\n" output-file fputs
+                end
+                
+                item get-type MODE-@LOCALCONST stack-item.create let replace-item in
+                  local-memory-end @64 replace-item set-arg1
 
-              "    mov     r15, [local_ptr]\n" output-file fputs
-              local-memory-end @64 is-zero if
-                "    mov     [r15], rax\n" output-file fputs
-              else
-                "    mov     [r15 + " output-file fputs local-memory-end @64 output-file fputu "], rax\n" output-file fputs
-              end
+                  replace-item
+                end
 
-              item get-type MODE-@LOCALCONST stack-item.create let replace-item in
-                local-memory-end @64 replace-item set-arg1
+                local-memory-end @64 8 + local-memory-end !64
               
+              else item get-mode MODE-IMM         =
+                   item get-mode MODE-GLOBAL      = |
+                   item get-mode MODE-@LOCALCONST = |
+                   item get-mode MODE-LOCAL       = | if
+                   
+                item stack-item.copy
+                
+              else
+                LOG.ERR log-stream fputs "Unknown integer type to save to 'let' variable.\n" log-stream fputs
+                local-stack report-bug
+                token-address compile-procedure.show-here
+                ERROR-EXIT-CODE exit drop
+                NULLPTR // dummy
+              end end
+              
+              let replace-item in
                 variable-name replace-item let-names let-addresses let-vars-length str-map64.set if
                   LOG.ERR log-stream fputs "'let' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
 
@@ -1441,6 +1463,7 @@ in
         // -- debug --
         // LOG.INFO log-stream fputs token-type token-arg log-stream fput-token log-stream fputnl
         // token-address log-stream fput-here
+        // ";; " output-file fputs token-type token-arg output-file fput-token output-file fputnl
 
         token-type TYPE-INTEGER = if
           // -------- Constant integer --------
@@ -1476,9 +1499,17 @@ in
             // -------- local variables --------
             
             let replace-item in
-              replace-item get-type push-real
+              replace-item get-mode MODE-@LOCALCONST = if
+                // TODO: For some reason, not adding this part of the condition causes weird problems.
+                // Normally, replace-item should only be copied and pushed to the virtual stack. However, this does not appear to be working.
+                
+                replace-item get-type push-real
+                replace-item stack-item.copy output-file nasm.push-int
+                
+              else
+                replace-item stack-item.copy push-item
+              end
 
-              replace-item stack-item.copy output-file nasm.push-int
             end
             
           else drop token-arg global-names-array global-sizes-array globals-length str-map64.get if
