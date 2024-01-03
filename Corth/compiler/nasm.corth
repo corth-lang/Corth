@@ -273,3 +273,28 @@ in let item output-file in
     ERROR-EXIT-CODE exit drop
   end end
 end end
+
+
+proc nasm.add-int-immediate
+  // int: immediate file-desc: output-file
+  int file-desc --
+in let immediate output-file in
+  immediate is-zero if return end
+
+  immediate is-neg if
+    immediate is-signed-dword if
+      "    sub     qword [rsp], " output-file fputs immediate neg output-file fputu output-file fputnl
+    else
+      "    mov     r15, " output-file fputs immediate neg output-file fputu output-file fputnl
+      "    sub     qword [rsp], rax\n" output-file fputs
+    end
+    
+  else
+    immediate is-signed-dword if
+      "    add     qword [rsp], " output-file fputs immediate output-file fputu output-file fputnl
+    else
+      "    mov     r15, " output-file fputs immediate output-file fputu output-file fputnl
+      "    add     qword [rsp], rax\n" output-file fputs
+    end
+  end
+end end

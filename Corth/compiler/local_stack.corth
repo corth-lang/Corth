@@ -20,6 +20,15 @@ macro push-int-immediate let _immediate_ in
   end
 end endmacro
 
+// int: offset
+macro push-int-local let _offset_ in
+  INT-TYPE-INT MODE-LOCAL stack-item.create let _item_ in
+    _offset_ _item_ set-arg1
+
+    _item_ push-item
+  end
+end endmacro
+
 
 proc local-stack.convert-items-real
   // int: start-index int: end-index ptr: local-stack ptr: local-stack-length file-desc: output-file --
