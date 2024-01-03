@@ -1314,11 +1314,10 @@ in
                   ERROR-EXIT-CODE exit drop
                 end
               end
+
+              local-memory-end @64 8 + local-memory-end !64
             end
           end
-
-          local-memory-end @64 8 + local-memory-end !64
-
         i end end drop
 
         local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
