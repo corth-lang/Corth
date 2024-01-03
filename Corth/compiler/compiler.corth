@@ -612,18 +612,14 @@ in
     // -------- Intrinsic 'true' --------
 
     INT-TYPE-BOOL push-real
-    
-    "    mov     rax, 0xffffffffffffffff\n" output-file fputs
-    "    push    rax\n"                     output-file fputs
+    1 output-file nasm.push-int-immediate
 
   else token-arg INTRINSIC-FALSE = if
     // -------- Intrinsic 'false' -------
 
     INT-TYPE-BOOL push-real
-    
-    "    xor     rax, rax\n" output-file fputs
-    "    push    rax\n"      output-file fputs
-    
+    0 output-file nasm.push-int-immediate
+        
   else token-arg INTRINSIC-SYSCALL6 = if
     // -------- Intrinsic 'syscall6' --------
 
