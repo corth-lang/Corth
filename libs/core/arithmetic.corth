@@ -12,10 +12,14 @@ include libs/core/integer.corth
 // fixed64: x fixed64: y -- bool: cmp(x, y)
 
 // Compares two signed numbers.
-macro >  swp < endmacro
-macro <= > !   endmacro
-macro >= < !   endmacro
-macro =  != !  endmacro
+macro != -                         cast bool endmacro
+macro =  != !                                endmacro
+
+macro <  - 0x8000000000000000 /    cast bool endmacro
+macro >= - 0x8000000000000000 / !! cast bool endmacro
+
+macro >  swp <                               endmacro
+macro <= >   !                               endmacro
 
 // uint: x uint: y -- bool: cmp(x, y)
 // ufixed64: x ufixed64: y -- bool: cmp(x, y)

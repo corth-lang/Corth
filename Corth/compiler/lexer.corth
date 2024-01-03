@@ -312,6 +312,7 @@ in let
     else buffer buffer-size KEYWORD-WHILE-STR      memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-WHILE      
     else buffer buffer-size KEYWORD-DO-STR         memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-DO         
     else buffer buffer-size KEYWORD-BREAK-STR      memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-BREAK      
+    else buffer buffer-size KEYWORD-CAST-STR       memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-CAST
     
     // I still hate my life.
     else buffer buffer-size INTRINSIC-ADD-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-ADD      
@@ -321,10 +322,6 @@ in let
     else buffer buffer-size INTRINSIC-UDIVMOD-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UDIVMOD  
     else buffer buffer-size INTRINSIC-BOR-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-BOR      
     else buffer buffer-size INTRINSIC-BNOT-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-BNOT     
-    else buffer buffer-size INTRINSIC-NOTEQUAL-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-NOTEQUAL 
-    else buffer buffer-size INTRINSIC-LESS-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LESS     
-    else buffer buffer-size INTRINSIC-TRUE-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-TRUE     
-    else buffer buffer-size INTRINSIC-FALSE-STR    memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-FALSE    
     else buffer buffer-size INTRINSIC-LOAD8-STR    memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD8    
     else buffer buffer-size INTRINSIC-STORE8-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE8   
     else buffer buffer-size INTRINSIC-LOAD16-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD16  
@@ -343,8 +340,8 @@ in let
       TYPE-NAME buffer buffer-size to-dynamic8
 
     // This is nightmare fuel.
-    end end end end end end end end end end end end end end end end end end end 
-    end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end
 
     let token-type token-arg in
       // Generate the address and return.

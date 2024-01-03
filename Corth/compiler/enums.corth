@@ -57,6 +57,7 @@ macro KEYWORD-WHILE    13 endmacro
 macro KEYWORD-DO       14 endmacro
 macro KEYWORD-BREAK    15 endmacro
 macro KEYWORD-INCLUDE  16 endmacro
+macro KEYWORD-CAST     17 endmacro
 
 // Keyword strings
 macro KEYWORD-UNKNOWN-STR  "<unknown>" endmacro
@@ -76,6 +77,7 @@ macro KEYWORD-WHILE-STR    "while"     endmacro
 macro KEYWORD-DO-STR       "do"        endmacro
 macro KEYWORD-BREAK-STR    "break"     endmacro
 macro KEYWORD-INCLUDE-STR  "include"   endmacro
+macro KEYWORD-CAST-STR     "cast"      endmacro
 
 // Intrinsic IDs
 macro INTRINSIC-UNKNOWN  0  endmacro
@@ -86,10 +88,6 @@ macro INTRINSIC-UFULLMUL 4  endmacro
 macro INTRINSIC-UDIVMOD  5  endmacro
 macro INTRINSIC-BOR      6  endmacro
 macro INTRINSIC-BNOT     7  endmacro
-macro INTRINSIC-NOTEQUAL 8  endmacro
-macro INTRINSIC-LESS     9  endmacro
-macro INTRINSIC-TRUE     10 endmacro
-macro INTRINSIC-FALSE    11 endmacro
 macro INTRINSIC-LOAD8    12 endmacro
 macro INTRINSIC-STORE8   13 endmacro
 macro INTRINSIC-LOAD16   14 endmacro
@@ -109,10 +107,6 @@ macro INTRINSIC-UFULLMUL-STR "u**"       endmacro
 macro INTRINSIC-UDIVMOD-STR  "u/%"       endmacro
 macro INTRINSIC-BOR-STR      "||"        endmacro
 macro INTRINSIC-BNOT-STR     "!!"        endmacro
-macro INTRINSIC-NOTEQUAL-STR "!="        endmacro
-macro INTRINSIC-LESS-STR     "<"         endmacro
-macro INTRINSIC-TRUE-STR     "true"      endmacro
-macro INTRINSIC-FALSE-STR    "false"     endmacro
 macro INTRINSIC-LOAD8-STR    "@8"        endmacro
 macro INTRINSIC-STORE8-STR   "!8"        endmacro
 macro INTRINSIC-LOAD16-STR   "@16"       endmacro
@@ -182,10 +176,6 @@ in let intrinsic in
   else intrinsic INTRINSIC-UDIVMOD  = if INTRINSIC-UDIVMOD-STR  
   else intrinsic INTRINSIC-BOR      = if INTRINSIC-BOR-STR      
   else intrinsic INTRINSIC-BNOT     = if INTRINSIC-BNOT-STR     
-  else intrinsic INTRINSIC-NOTEQUAL = if INTRINSIC-NOTEQUAL-STR 
-  else intrinsic INTRINSIC-LESS     = if INTRINSIC-LESS-STR     
-  else intrinsic INTRINSIC-TRUE     = if INTRINSIC-TRUE-STR     
-  else intrinsic INTRINSIC-FALSE    = if INTRINSIC-FALSE-STR    
   else intrinsic INTRINSIC-LOAD8    = if INTRINSIC-LOAD8-STR    
   else intrinsic INTRINSIC-STORE8   = if INTRINSIC-STORE8-STR   
   else intrinsic INTRINSIC-LOAD16   = if INTRINSIC-LOAD16-STR    
@@ -196,7 +186,7 @@ in let intrinsic in
   else intrinsic INTRINSIC-STORE64  = if INTRINSIC-STORE64-STR  
   else intrinsic INTRINSIC-SYSCALL6 = if INTRINSIC-SYSCALL6-STR 
   else                                   INTRINSIC-UNKNOWN-STR  
-  end end end end end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end
 end end
 
 proc get-int-type-name

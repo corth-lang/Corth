@@ -1,5 +1,6 @@
 macro uint int endmacro
 
+macro sizeof(char) 1 endmacro
 macro sizeof(int)  8 endmacro
 macro sizeof(uint) 8 endmacro
 

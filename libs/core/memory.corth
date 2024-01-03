@@ -4,10 +4,6 @@ include libs/collections/array8.corth
 include libs/collections/array64.corth
 
 
-macro sizeof(bool) 8 endmacro
-macro sizeof(char) 1 endmacro
-
-
 // TODO: This should be changed to ptr type, when 'ptr' type is implemented for real.
 macro NULLPTR 0 endmacro
 

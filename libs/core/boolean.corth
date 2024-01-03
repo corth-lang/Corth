@@ -1,3 +1,8 @@
+macro sizeof(bool) 1 endmacro
+
+macro true  1 cast bool endmacro
+macro false 0 cast bool endmacro
+
 // bool: a bool: b -- bool: f(a, b)
 macro ! if false else true end endmacro
 macro | if drop true else end endmacro

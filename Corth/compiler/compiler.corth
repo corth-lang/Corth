@@ -557,48 +557,7 @@ in
       item1 stack-item.mfree
       item2 stack-item.mfree
     end
-    
-  else token-arg INTRINSIC-NOTEQUAL = if
-    // -------- Intrinsic '!=' --------
 
-    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
-
-    pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
-      item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
-      
-      INT-TYPE-BOOL push-real
-
-      item2 "rax" output-file nasm.mov-reg-item
-      item1       output-file nasm.push-int
-
-      "    sub     [rsp], rax\n" output-file fputs
-      
-      item1 stack-item.mfree
-      item2 stack-item.mfree
-    end
-
-  else token-arg INTRINSIC-LESS = if
-    // -------- Intrinsic '<' --------
-    
-    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
-
-    pop-item pop-item let item2 item1 in
-      item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
-      item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
-      
-      INT-TYPE-BOOL push-real
-
-      item2 "rax" output-file nasm.mov-reg-item
-      item1       output-file nasm.push-int
-
-      "    sub     [rsp], rax\n"      output-file fputs
-      "    shr     qword [rsp], 63\n" output-file fputs
-
-      item1 stack-item.mfree
-      item2 stack-item.mfree
-    end
-    
   else token-arg INTRINSIC-LOAD8   = if token-address "al"  local-stack local-stack-length output-file log-stream load-intrinsic
   else token-arg INTRINSIC-LOAD16  = if token-address "ax"  local-stack local-stack-length output-file log-stream load-intrinsic
   else token-arg INTRINSIC-LOAD32  = if token-address "eax" local-stack local-stack-length output-file log-stream load-intrinsic
@@ -607,18 +566,6 @@ in
   else token-arg INTRINSIC-STORE16 = if token-address "bx"  local-stack local-stack-length output-file log-stream store-intrinsic
   else token-arg INTRINSIC-STORE32 = if token-address "ebx" local-stack local-stack-length output-file log-stream store-intrinsic
   else token-arg INTRINSIC-STORE64 = if token-address "rbx" local-stack local-stack-length output-file log-stream store-intrinsic
-    
-  else token-arg INTRINSIC-TRUE = if
-    // -------- Intrinsic 'true' --------
-
-    INT-TYPE-BOOL push-real
-    1 output-file nasm.push-int-immediate
-
-  else token-arg INTRINSIC-FALSE = if
-    // -------- Intrinsic 'false' -------
-
-    INT-TYPE-BOOL push-real
-    0 output-file nasm.push-int-immediate
         
   else token-arg INTRINSIC-SYSCALL6 = if
     // -------- Intrinsic 'syscall6' --------
@@ -661,7 +608,7 @@ in
     token-address log-stream fput-here
     procedure-name procedure-address log-stream fput-inside-procedure
     ERROR-EXIT-CODE exit drop
-  end end end end end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end
 end end
 
 
@@ -1368,11 +1315,34 @@ in
 
     0 branch-active !8
 
+  else token-arg KEYWORD-CAST = if
+    // -------- Keyword 'cast' --------
+
+    // Branch should not be cut before 'cast'.
+    token-address "cast" compile-procedure.check-branch-here
+
+    // Get the variable name.
+    "a local variable name after 'memory'" false compile-procedure.get-next-token
+
+    let type-type type-address type-arg in
+      // The token after 'cast' should be an 'intrinsic type'.
+      type-type type-address "after 'cast'" TYPE-INT-TYPE compile-procedure.check-type-here
+
+      // Change the type of the last item.
+      local-stack-length @64 dec local-stack array64.get let item in
+        item output-file nasm.convert-item-to-real
+        type-arg item set-type
+      end
+
+      // Deallocate 'type-address'.
+      type-address mfree drop
+    end   
+
   else
     LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
     token-address compile-procedure.show-here
     ERROR-EXIT-CODE exit drop
-  end end end end end end end end end
+  end end end end end end end end end end
 end false end
 
 

@@ -1,0 +1,33 @@
+include libs/linux_x86/stdio.corth
+
+macro is-true
+  cast bool if
+    "Yes!\n" puts
+  else
+    "No!\n" puts
+  end
+endmacro
+
+proc main
+  int int -- int
+in let argc argv in
+  0 is-true
+  1 is-true
+  2 is-true
+  1 1 + is-true
+  
+  memory x sizeof(int) in
+    0 x !64
+    x @64 is-true
+    1 x !64
+    x @64 is-true
+  end
+
+  0 let x in
+    x is-true
+  end
+
+  1 let x in
+    x is-true
+  end
+end 0 end
