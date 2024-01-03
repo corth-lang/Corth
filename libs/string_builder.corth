@@ -106,45 +106,45 @@ end endmacro
 
 // int: number ptr: builder.array ptr: builder.ptr --
 macro string-builder.append-uint let _number_ _builder.array_ _builder.ptr_ in
-  memory _buffer_ 20 in
-    _buffer_ _number_ intconvud let _buffer-start_ in
-      _buffer-start_ _buffer_ 20 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
+  memory __buffer_ 20 in
+    __buffer_ _number_ intconvud let _buffer-start_ in
+      _buffer-start_ __buffer_ 20 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
     end
   end
 end endmacro
 
 // int: number ptr: builder.array ptr: builder.ptr --
 macro string-builder.append-int let _number_ _builder.array_ _builder.ptr_ in
-  memory _buffer_ 20 in
-    _buffer_ _number_ intconvd let _buffer-start_ in
-      _buffer-start_ _buffer_ 20 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
+  memory __buffer_ 20 in
+    __buffer_ _number_ intconvd let _buffer-start_ in
+      _buffer-start_ __buffer_ 20 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
     end
   end
 end endmacro
 
 // int: number ptr: builder.array ptr: builder.ptr --
 macro string-builder.append-hex let _number_ _builder.array_ _builder.ptr_ in
-  memory _buffer_ 16 in
-    _buffer_ _number_ intconvx let _buffer-start_ in
-      _buffer-start_ _buffer_ 16 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
+  memory __buffer_ 16 in
+    __buffer_ _number_ intconvx let _buffer-start_ in
+      _buffer-start_ __buffer_ 16 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
     end
   end
 end endmacro
 
 // int: number ptr: builder.array ptr: builder.ptr --
 macro string-builder.append-oct let _number_ _builder.array_ _builder.ptr_ in
-  memory _buffer_ 22 in
-    _buffer_ _number_ intconvo let _buffer-start_ in
-      _buffer-start_ _buffer_ 22 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
+  memory __buffer_ 22 in
+    __buffer_ _number_ intconvo let _buffer-start_ in
+      _buffer-start_ __buffer_ 22 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
     end
   end
 end endmacro
 
 // int: number ptr: builder.array ptr: builder.ptr --
 macro string-builder.append-bin let _number_ _builder.array_ _builder.ptr_ in
-  memory _buffer_ 64 in
-    _buffer_ _number_ intconvb let _buffer-start_ in
-      _buffer-start_ _buffer_ 64 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
+  memory __buffer_ 64 in
+    __buffer_ _number_ intconvb let _buffer-start_ in
+      _buffer-start_ __buffer_ 64 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
     end
   end
 end endmacro
