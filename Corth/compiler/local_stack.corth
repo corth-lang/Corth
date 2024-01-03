@@ -29,6 +29,15 @@ macro push-int-local let _offset_ in
   end
 end endmacro
 
+// int: index
+macro push-data let _index_ in
+  INT-TYPE-INT MODE-DATA stack-item.create let _item_ in
+    _index_ _item_ set-arg1
+
+    _item_ push-item
+  end
+end endmacro
+
 
 proc local-stack.convert-items-real
   // int: start-index int: end-index ptr: local-stack ptr: local-stack-length file-desc: output-file --

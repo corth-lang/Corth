@@ -361,76 +361,24 @@ in let token-address local-stack local-stack-length output-file log-stream in
       else item2 get-mode MODE-LOCAL = if
         item1 get-arg1 item2 get-arg1 + push-int-local
 
-      else item2 get-mode MODE-REAL        =
-           item2 get-mode MODE-GLOBAL      = |
-           item2 get-mode MODE-@LOCALCONST = | if
-
+      else
         INT-TYPE-INT push-real
 
         item2          output-file nasm.push-int
         item1 get-arg1 output-file nasm.add-int-immediate
-
-      else
-        LOG.ERR STDERR fputs "Unknown integer mode as an argument to '+'.\n" STDERR fputs
-        STDERR report-bug
-        ERROR-EXIT-CODE exit drop
-      end end end
-
-    else item1 get-mode MODE-LOCAL = if
-      item2 get-mode MODE-IMM = if
-        item1 get-arg1 item2 get-arg1 + push-int-local
-
-      else item2 get-mode MODE-LOCAL       = 
-           item2 get-mode MODE-REAL        = |
-           item2 get-mode MODE-GLOBAL      = |
-           item2 get-mode MODE-@LOCALCONST = | if
-
-        INT-TYPE-INT push-real
-
-        item2 "rax" output-file nasm.mov-reg-item
-        item1 output-file nasm.push-int
-
-        "    add     [rsp], rax\n" output-file fputs
-
-      else
-        LOG.ERR STDERR fputs "Unknown integer mode as an argument to '+'.\n" STDERR fputs
-        STDERR report-bug
-        ERROR-EXIT-CODE exit drop
       end end
 
-    else item1 get-mode MODE-REAL        =
-         item1 get-mode MODE-GLOBAL      = |
-         item1 get-mode MODE-@LOCALCONST = | if
-
-      item2 get-mode MODE-IMM = if
-        INT-TYPE-INT push-real
-
-        item1          output-file nasm.push-int
-        item2 get-arg1 output-file nasm.add-int-immediate
-
-      else item2 get-mode MODE-LOCAL       = 
-           item2 get-mode MODE-REAL        = |
-           item2 get-mode MODE-GLOBAL      = |
-           item2 get-mode MODE-@LOCALCONST = | if
-
-        INT-TYPE-INT push-real
-
-        item2 "rax" output-file nasm.mov-reg-item
-        item1 output-file nasm.push-int
-
-        "    add     [rsp], rax\n" output-file fputs
-
-      else
-        LOG.ERR STDERR fputs "Unknown integer mode as an argument to '+'.\n" STDERR fputs
-        STDERR report-bug
-        ERROR-EXIT-CODE exit drop
-      end end
+    else item1 get-mode MODE-LOCAL = item2 get-mode MODE-IMM = & if
+      item1 get-arg1 item2 get-arg1 + push-int-local
 
     else
-      LOG.ERR STDERR fputs "Unknown integer mode as an argument to '+'.\n" STDERR fputs
-      STDERR report-bug
-      ERROR-EXIT-CODE exit drop
-    end end end
+      INT-TYPE-INT push-real
+
+      item2 "rax" output-file nasm.mov-reg-item
+      item1       output-file nasm.push-int
+
+      "    add     [rsp], rax\n" output-file fputs
+    end end
 
     item1 stack-item.mfree
     item2 stack-item.mfree
@@ -561,21 +509,12 @@ in
       item get-mode MODE-IMM = if
         item get-arg1 !! push-int-immediate
 
-      else item get-mode MODE-REAL        = 
-           item get-mode MODE-GLOBAL      = |
-           item get-mode MODE-@LOCALCONST = |
-           item get-mode MODE-LOCAL       = | if
-      
+      else
         INT-TYPE-INT push-real
         
         item output-file nasm.push-int
         "    not     qword [rsp]\n" output-file fputs
-        
-      else
-        LOG.ERR STDERR fputs "Unknown integer mode as an argument to '!!'.\n" STDERR fputs
-        STDERR report-bug
-        ERROR-EXIT-CODE exit drop
-      end end
+      end
 
       item stack-item.mfree
     end
@@ -1281,7 +1220,8 @@ in
               else item get-mode MODE-IMM         =
                    item get-mode MODE-GLOBAL      = |
                    item get-mode MODE-@LOCALCONST = |
-                   item get-mode MODE-LOCAL       = | if
+                   item get-mode MODE-LOCAL       = |
+                   item get-mode MODE-DATA        = | if
                    
                 item stack-item.copy
                 
@@ -1471,14 +1411,9 @@ in
 
           // Branch should not be cut before string immediate.
           token-address "push a string" compile-procedure.check-branch-here
-          
-          INT-TYPE-INT push-real
 
-          // TODO: Change this to GLOBAL ADDRESS DATA
-          "    mov     rax, data_" output-file fputs data-definitions-list list64.length output-file fputu output-file fputnl
-          "    push    rax\n" output-file fputs
-          
-          token-arg mlength dec push-int-immediate
+          data-definitions-list list64.length push-data
+          token-arg mlength dec               push-int-immediate
 
           token-arg data-definitions-list list64.append
 

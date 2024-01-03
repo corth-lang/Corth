@@ -10,6 +10,7 @@ macro MODE-IMM              1 endmacro
 macro MODE-GLOBAL           2 endmacro
 macro MODE-@LOCALCONST      3 endmacro
 macro MODE-LOCAL            4 endmacro
+macro MODE-DATA             5 endmacro
 
 
 proc stack-item.mfree

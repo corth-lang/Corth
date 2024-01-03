@@ -116,6 +116,15 @@ in let offset register-name register-name-length output-file in
 end end
 
 
+proc nasm.mov-reg-data
+  // int: index ptr: register-name int: register-name-length file-desc: output-file
+  int ptr int file-desc --
+in let index register-name register-name-length output-file in
+  "    mov     " output-file fputs register-name register-name-length output-file fputs
+  ", data_" output-file fputs index output-file fputu output-file fputnl
+end end
+
+
 proc nasm.mov-reg-item
   // ptr: item ptr: register-name int: register-name-length file-desc: output-file
   ptr ptr int file-desc --
@@ -130,11 +139,13 @@ in let item register-name register-name-length output-file in
     item get-arg1 register-name register-name-length output-file nasm.mov-reg-@localconst
   else item get-mode MODE-LOCAL = if
     item get-arg1 register-name register-name-length output-file nasm.mov-reg-local
+  else item get-mode MODE-DATA = if
+    item get-arg1 register-name register-name-length output-file nasm.mov-reg-data
   else
     LOG.ERR STDERR fputs "Unknown integer mode while trying to move integer to register.\n" STDERR fputs
     STDERR report-bug
     ERROR-EXIT-CODE exit drop
-  end end end end end
+  end end end end end end
 end end
 
 
@@ -186,6 +197,14 @@ in let offset output-file in
 end end
 
 
+proc nasm.push-data
+  // int: index file-desc: output-file
+  int file-desc --
+in let index output-file in
+  "    push    qword data_" output-file fputs index output-file fputu output-file fputnl
+end end
+
+
 proc nasm.push-int
   // ptr: item file-desc: output-file
   ptr file-desc --
@@ -202,11 +221,14 @@ in let item output-file in
   else item get-mode MODE-LOCAL = if
     item get-arg1 output-file nasm.push-local
 
+  else item get-mode MODE-DATA = if
+    item get-arg1 output-file nasm.push-data
+
   else item get-mode MODE-REAL != if
     LOG.ERR STDERR fputs "Unknown integer mode while trying to push an integer item.\n" STDERR fputs
     STDERR report-bug
     ERROR-EXIT-CODE exit drop
-  end end end end end
+  end end end end end end
 end end
 
 
