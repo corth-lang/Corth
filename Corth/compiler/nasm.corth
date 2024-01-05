@@ -303,7 +303,11 @@ proc nasm.add-int-immediate
 in let immediate output-file in
   immediate is-zero if return end
 
-  immediate is-neg if
+  immediate 1 = if
+    "    inc     qword [rsp]\n" output-file fputs
+  else immediate 1 neg = if
+    "    dec     qword [rsp]\n" output-file fputs
+  else immediate is-neg if
     immediate is-signed-dword if
       "    sub     qword [rsp], " output-file fputs immediate neg output-file fputu output-file fputnl
     else
@@ -318,5 +322,5 @@ in let immediate output-file in
       "    mov     r15, " output-file fputs immediate output-file fputu output-file fputnl
       "    add     qword [rsp], rax\n" output-file fputs
     end
-  end
+  end end end
 end end

@@ -353,7 +353,6 @@ in let token-address local-stack local-stack-length output-file log-stream in
     item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
     item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
 
-
     item1 get-mode MODE-IMM = if
       item2 get-mode MODE-IMM = if
         item1 get-arg1 item2 get-arg1 + push-int-immediate
@@ -368,8 +367,16 @@ in let token-address local-stack local-stack-length output-file log-stream in
         item1 get-arg1 output-file nasm.add-int-immediate
       end end
 
-    else item1 get-mode MODE-LOCAL = item2 get-mode MODE-IMM = & if
-      item1 get-arg1 item2 get-arg1 + push-int-local
+    else item2 get-mode MODE-IMM = if
+      item1 get-mode MODE-LOCAL = if
+        item1 get-arg1 item2 get-arg1 + push-int-local
+        
+      else
+        INT-TYPE-INT push-real
+
+        item1          output-file nasm.push-int
+        item2 get-arg1 output-file nasm.add-int-immediate
+      end
 
     else
       INT-TYPE-INT push-real
