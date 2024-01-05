@@ -31,7 +31,11 @@ macro SYSPOLL         7 endmacro
 macro SYSLSEEK        8 endmacro
 macro SYSACCESS      21 endmacro
 macro SYSNANOSLEEP   35 endmacro
+macro SYSFORK        57 endmacro
+macro SYSVFORK       58 endmacro
+macro SYSEXECVE      59 endmacro
 macro SYSEXIT        60 endmacro
+macro SYSWAIT4       61 endmacro
 macro SYSGETDENTS    78 endmacro
 macro SYSRMDIR       84 endmacro
 macro SYSCREAT       85 endmacro
@@ -41,6 +45,7 @@ macro SYSGETTOD      96 endmacro
 macro SYSSETTOD     164 endmacro
 macro SYSTIME       201 endmacro
 macro SYSGETDENTS64 217 endmacro
+macro SYSWAITID     247 endmacro
 
 // File modes
 macro RD-ONLY        0 endmacro
@@ -73,6 +78,10 @@ macro lstat      SYSLSTAT        syscall2 endmacro  // ptr: path ptr: buffer -- 
 macro lseek      SYSLSEEK        syscall3 endmacro  // file-desc: file-desc int: offset int: whence -- int: success
 macro access     SYSACCESS       syscall2 endmacro  // ptr: file-name int: mode -- int: success
 macro nanosleep  SYSNANOSLEEP    syscall2 endmacro  // ptr: nanosleep-time -- int: success
+macro fork       SYSFORK         syscall0 endmacro  // -- int: child
+macro vfork      SYSVFORK        syscall0 endmacro  // -- int: child
+macro execve     SYSEXECVE       syscall3 endmacro  // ptr: file-name ptr: args ptr: env-vars -- int: success
+macro wait4      SYSWAIT4        syscall4 endmacro  // int: pid ptr: stat-addr int: options ptr: ru -- int: success
 macro exit       SYSEXIT         syscall1 endmacro  // int: exit-code -- int: success
 macro getdents   SYSGETDENTS     syscall3 endmacro  // file-desc: file-desc ptr: buffer int: length -- int: count
 macro time       SYSTIME         syscall1 endmacro  // int: address -- int: time
@@ -80,6 +89,7 @@ macro rmdir      SYSRMDIR        syscall1 endmacro  // ptr: path -- int: success
 macro creat      SYSCREAT        syscall2 endmacro  // ptr: path int: mode -- int: success
 macro unlink     SYSUNLINK       syscall1 endmacro  // ptr: path -- int: success
 macro getdents64 SYSGETDENTS64   syscall3 endmacro  // file-desc: file-desc ptr: buffer int: length -- int: count
+macro waitid     SYSWAITID       syscall5 endmacro  // int: id-type int: pid ptr: infop int: options ptr: ru -- int: success
 
 macro ftell   0 SEEK-CUR        lseek    endmacro  // file-desc: file-desc -- int: file-pointer
 
@@ -103,3 +113,11 @@ macro S_IFBLK  0o060000 endmacro
 macro S_IFDIR  0o040000 endmacro 
 macro S_IFCHR  0o020000 endmacro
 macro S_IFIFO  0o010000 endmacro
+
+// ID types
+macro P_ALL    0 endmacro
+macro P_PID    1 endmacro
+macro P_PGID   2 endmacro
+macro P_PIDFD  3 endmacro
+
+macro WEXITED  4 endmacro

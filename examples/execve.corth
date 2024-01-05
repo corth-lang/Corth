@@ -1,0 +1,32 @@
+include libs/linux_x86/sys.corth
+include libs/linux_x86/stdio.corth
+
+proc main
+  int int -- int
+in let argc argv in
+  fork let pid in
+    pid 1 neg = if
+      "Could not fork child.\n" puts
+      1 exit drop
+      
+    else pid 0 = if
+      // Give the arguments of the program to the sub process.
+      argv 8 + let new-argv in
+        memory new-envp 8 in
+          // new-envp[0] = NULL;
+          NULLPTR new-envp !64
+
+          // Run the sub process.
+          new-argv @64 new-argv new-envp execve let return-value in
+            "Error\n" puts
+            "Process returned " puts return-value puti putnl
+          end
+        end
+      end
+      
+    else
+      P_PID pid NULLPTR WEXITED NULLPTR waitid drop
+      "Parent ended\n" puts
+    end end
+  end
+end 0 end
