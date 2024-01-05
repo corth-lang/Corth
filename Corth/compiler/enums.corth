@@ -96,7 +96,13 @@ macro INTRINSIC-LOAD32   16 endmacro
 macro INTRINSIC-STORE32  17 endmacro
 macro INTRINSIC-LOAD64   18 endmacro
 macro INTRINSIC-STORE64  19 endmacro
-macro INTRINSIC-SYSCALL6 20 endmacro
+macro INTRINSIC-SYSCALL0 20 endmacro
+macro INTRINSIC-SYSCALL1 21 endmacro
+macro INTRINSIC-SYSCALL2 22 endmacro
+macro INTRINSIC-SYSCALL3 23 endmacro
+macro INTRINSIC-SYSCALL4 24 endmacro
+macro INTRINSIC-SYSCALL5 25 endmacro
+macro INTRINSIC-SYSCALL6 26 endmacro
 
 // Intrinsic strings
 macro INTRINSIC-UNKNOWN-STR  "<unknown>" endmacro
@@ -115,6 +121,12 @@ macro INTRINSIC-LOAD32-STR   "@32"       endmacro
 macro INTRINSIC-STORE32-STR  "!32"       endmacro
 macro INTRINSIC-LOAD64-STR   "@64"       endmacro
 macro INTRINSIC-STORE64-STR  "!64"       endmacro
+macro INTRINSIC-SYSCALL0-STR "syscall0"  endmacro
+macro INTRINSIC-SYSCALL1-STR "syscall1"  endmacro
+macro INTRINSIC-SYSCALL2-STR "syscall2"  endmacro
+macro INTRINSIC-SYSCALL3-STR "syscall3"  endmacro
+macro INTRINSIC-SYSCALL4-STR "syscall4"  endmacro
+macro INTRINSIC-SYSCALL5-STR "syscall5"  endmacro
 macro INTRINSIC-SYSCALL6-STR "syscall6"  endmacro
 
 // Intrinsic type IDs
@@ -184,9 +196,15 @@ in let intrinsic in
   else intrinsic INTRINSIC-STORE32  = if INTRINSIC-STORE32-STR   
   else intrinsic INTRINSIC-LOAD64   = if INTRINSIC-LOAD64-STR   
   else intrinsic INTRINSIC-STORE64  = if INTRINSIC-STORE64-STR  
+  else intrinsic INTRINSIC-SYSCALL0 = if INTRINSIC-SYSCALL0-STR 
+  else intrinsic INTRINSIC-SYSCALL1 = if INTRINSIC-SYSCALL1-STR 
+  else intrinsic INTRINSIC-SYSCALL2 = if INTRINSIC-SYSCALL2-STR 
+  else intrinsic INTRINSIC-SYSCALL3 = if INTRINSIC-SYSCALL3-STR 
+  else intrinsic INTRINSIC-SYSCALL4 = if INTRINSIC-SYSCALL4-STR 
+  else intrinsic INTRINSIC-SYSCALL5 = if INTRINSIC-SYSCALL5-STR 
   else intrinsic INTRINSIC-SYSCALL6 = if INTRINSIC-SYSCALL6-STR 
   else                                   INTRINSIC-UNKNOWN-STR  
-  end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end end end end end end end
 end end
 
 proc get-int-type-name

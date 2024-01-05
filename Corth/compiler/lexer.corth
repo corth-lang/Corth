@@ -330,7 +330,13 @@ in let
     else buffer buffer-size INTRINSIC-STORE32-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE32
     else buffer buffer-size INTRINSIC-LOAD64-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD64   
     else buffer buffer-size INTRINSIC-STORE64-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE64  
-    else buffer buffer-size INTRINSIC-SYSCALL6-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL6 
+    else buffer buffer-size INTRINSIC-SYSCALL0-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL0
+    else buffer buffer-size INTRINSIC-SYSCALL1-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL1
+    else buffer buffer-size INTRINSIC-SYSCALL2-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL2
+    else buffer buffer-size INTRINSIC-SYSCALL3-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL3
+    else buffer buffer-size INTRINSIC-SYSCALL4-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL4
+    else buffer buffer-size INTRINSIC-SYSCALL5-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL5
+    else buffer buffer-size INTRINSIC-SYSCALL6-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL6
     
     else buffer buffer-size INT-TYPE-INT-STR       memcmp8-wl is-zero if TYPE-INT-TYPE INT-TYPE-INT           
     else buffer buffer-size INT-TYPE-BOOL-STR      memcmp8-wl is-zero if TYPE-INT-TYPE INT-TYPE-BOOL          
@@ -340,8 +346,8 @@ in let
       TYPE-NAME buffer buffer-size to-dynamic8
 
     // This is nightmare fuel.
-    end end end end end end end end end end end end end end end end end end
-    end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end
 
     let token-type token-arg in
       // Generate the address and return.

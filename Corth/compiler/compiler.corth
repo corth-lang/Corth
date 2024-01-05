@@ -533,6 +533,159 @@ in
   else token-arg INTRINSIC-STORE32 = if token-address "ebx" local-stack local-stack-length output-file log-stream store-intrinsic
   else token-arg INTRINSIC-STORE64 = if token-address "rbx" local-stack local-stack-length output-file log-stream store-intrinsic
         
+  else token-arg INTRINSIC-SYSCALL0 = if
+    // -------- Intrinsic 'syscall0' --------
+
+    local-stack-length @64 1 < if invalid-usage-of-intrinsic end
+
+    pop-item let op-item in
+      op-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      
+      INT-TYPE-INT push-real
+
+      op-item   "rax" output-file nasm.mov-reg-item
+
+      "    syscall\n"     output-file fputs
+      "    push    rax\n" output-file fputs
+
+      op-item   stack-item.mfree
+    end
+        
+  else token-arg INTRINSIC-SYSCALL1 = if
+    // -------- Intrinsic 'syscall1' --------
+
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+
+    pop-item pop-item let op-item arg-item1 in
+      arg-item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      op-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      
+      INT-TYPE-INT push-real
+
+      op-item   "rax" output-file nasm.mov-reg-item
+      arg-item1 "rdi" output-file nasm.mov-reg-item
+
+      "    syscall\n"     output-file fputs
+      "    push    rax\n" output-file fputs
+
+      arg-item1 stack-item.mfree
+      op-item   stack-item.mfree
+    end
+        
+  else token-arg INTRINSIC-SYSCALL2 = if
+    // -------- Intrinsic 'syscall2' --------
+
+    local-stack-length @64 3 < if invalid-usage-of-intrinsic end
+
+    pop-item pop-item pop-item let op-item arg-item2 arg-item1 in
+      arg-item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      arg-item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      op-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      
+      INT-TYPE-INT push-real
+
+      op-item   "rax" output-file nasm.mov-reg-item
+      arg-item2 "rsi" output-file nasm.mov-reg-item
+      arg-item1 "rdi" output-file nasm.mov-reg-item
+
+      "    syscall\n"     output-file fputs
+      "    push    rax\n" output-file fputs
+
+      arg-item1 stack-item.mfree
+      arg-item2 stack-item.mfree
+      op-item   stack-item.mfree
+    end
+        
+  else token-arg INTRINSIC-SYSCALL3 = if
+    // -------- Intrinsic 'syscall3' --------
+
+    local-stack-length @64 4 < if invalid-usage-of-intrinsic end
+
+    pop-item pop-item pop-item pop-item  let op-item arg-item3 arg-item2 arg-item1 in
+      arg-item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      arg-item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      arg-item3 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      op-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      
+      INT-TYPE-INT push-real
+
+      op-item   "rax" output-file nasm.mov-reg-item
+      arg-item3 "rdx" output-file nasm.mov-reg-item
+      arg-item2 "rsi" output-file nasm.mov-reg-item
+      arg-item1 "rdi" output-file nasm.mov-reg-item
+
+      "    syscall\n"     output-file fputs
+      "    push    rax\n" output-file fputs
+
+      arg-item1 stack-item.mfree
+      arg-item2 stack-item.mfree
+      arg-item3 stack-item.mfree
+      op-item   stack-item.mfree
+    end
+
+  else token-arg INTRINSIC-SYSCALL4 = if
+    // -------- Intrinsic 'syscall4' --------
+
+    local-stack-length @64 5 < if invalid-usage-of-intrinsic end
+
+    pop-item pop-item pop-item pop-item pop-item let op-item arg-item4 arg-item3 arg-item2 arg-item1 in
+      arg-item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      arg-item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      arg-item3 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      arg-item4 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      op-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      
+      INT-TYPE-INT push-real
+
+      op-item   "rax" output-file nasm.mov-reg-item
+      arg-item4 "r10" output-file nasm.mov-reg-item
+      arg-item3 "rdx" output-file nasm.mov-reg-item
+      arg-item2 "rsi" output-file nasm.mov-reg-item
+      arg-item1 "rdi" output-file nasm.mov-reg-item
+
+      "    syscall\n"     output-file fputs
+      "    push    rax\n" output-file fputs
+
+      arg-item1 stack-item.mfree
+      arg-item2 stack-item.mfree
+      arg-item3 stack-item.mfree
+      arg-item4 stack-item.mfree
+      op-item   stack-item.mfree
+    end
+
+  else token-arg INTRINSIC-SYSCALL5 = if
+    // -------- Intrinsic 'syscall5' --------
+
+    local-stack-length @64 6 < if invalid-usage-of-intrinsic end
+
+    pop-item pop-item pop-item pop-item pop-item pop-item let op-item arg-item5 arg-item4 arg-item3 arg-item2 arg-item1 in
+      arg-item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      arg-item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      arg-item3 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      arg-item4 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      arg-item5 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      op-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      
+      INT-TYPE-INT push-real
+
+      op-item   "rax" output-file nasm.mov-reg-item
+      arg-item5 "r8"  output-file nasm.mov-reg-item
+      arg-item4 "r10" output-file nasm.mov-reg-item
+      arg-item3 "rdx" output-file nasm.mov-reg-item
+      arg-item2 "rsi" output-file nasm.mov-reg-item
+      arg-item1 "rdi" output-file nasm.mov-reg-item
+
+      "    syscall\n"     output-file fputs
+      "    push    rax\n" output-file fputs
+
+      arg-item1 stack-item.mfree
+      arg-item2 stack-item.mfree
+      arg-item3 stack-item.mfree
+      arg-item4 stack-item.mfree
+      arg-item5 stack-item.mfree
+      op-item   stack-item.mfree
+    end
+
   else token-arg INTRINSIC-SYSCALL6 = if
     // -------- Intrinsic 'syscall6' --------
 
@@ -574,7 +727,7 @@ in
     token-address log-stream fput-here
     procedure-name procedure-address log-stream fput-inside-procedure
     ERROR-EXIT-CODE exit drop
-  end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end end end end end end end
 end end
 
 

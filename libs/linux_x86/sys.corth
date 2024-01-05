@@ -9,13 +9,6 @@
 include libs/core/arithmetic.corth
 include libs/core/stack.corth
 
-macro syscall0 let _type_ in 0 0 0 0 0 0 _type_ syscall6 end endmacro
-macro syscall1 let _type_ in 0 0 0 0 0 _type_ syscall6 end endmacro
-macro syscall2 let _type_ in 0 0 0 0 _type_ syscall6 end endmacro
-macro syscall3 let _type_ in 0 0 0 _type_ syscall6 end endmacro
-macro syscall4 let _type_ in 0 0 _type_ syscall6 end endmacro
-macro syscall5 let _type_ in 0 _type_ syscall6 end endmacro
-
 macro file-desc            int endmacro
 
 macro sizeof(file-desc)      8 endmacro
