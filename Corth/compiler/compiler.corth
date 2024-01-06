@@ -1455,9 +1455,10 @@ in
       // The token after 'cast' should be an 'intrinsic type'.
       type-type type-address "after 'cast'" TYPE-INT-TYPE compile-procedure.check-type-here
 
+      local-stack local-stack-length output-file local-stack.convert-last-items-real
+
       // Change the type of the last item.
       local-stack-length @64 dec local-stack array64.get let item in
-        item output-file nasm.convert-item-to-real
         type-arg item set-type
       end
 
