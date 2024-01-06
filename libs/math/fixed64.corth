@@ -140,7 +140,7 @@ macro umul-ff
   // Performs unsigned multiplication.
   // z = cW = xy = abW^2
   // c = ab * W
-  u** fixed64-to-int swp int-to-fixed64 +
+  u** int-to-fixed64 swp fixed64-to-int +
 endmacro
 
 macro mul-ff
@@ -148,7 +148,7 @@ macro mul-ff
   // Performs signed multiplication.
   // z = cW = xy = abW^2
   // c = ab * W
-  ** fixed64-to-int swp int-to-fixed64 +
+  ** int-to-fixed64 swp fixed64-to-int +
 endmacro
 
 macro udiv-ff
