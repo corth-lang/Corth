@@ -11,6 +11,25 @@ Length shows the length of both arrays.
 */
 
 
+// ptr: key-array ptr: value-array ptr: length --
+macro str-map64.reset-length let _ _ length in
+  0 length !64
+end endmacro
+
+
+proc str-map64.clear
+  // ptr: key-array ptr: value-array ptr: length --
+  ptr ptr ptr --
+  // mfree's all allocated strings.
+in let key-array value-array length in
+  0 while dup length @64 < do let i in
+    i key-array array64.get mfree drop
+  i end inc end drop
+
+  0 length !64
+end end
+
+
 proc str-map64.set-dstr
   // ptr: key int: value ptr: key-array ptr: value-array ptr: length -- bool: found
   int int ptr ptr ptr -- bool

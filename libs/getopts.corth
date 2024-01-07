@@ -1,0 +1,276 @@
+/*
+These are some of my future plans. This library does not have these features yet :(
+
+option template format:
+name1.name2:type
+
+newline, space and tab can be used as a separator between option templates
+if any name is 1 character long, it is considered a short option
+short options with arguments must be in the form of either '-xarg', '-x=arg' or '-x arg'
+long options with arguments must be in the form of either '--opt=arg' or '--opt arg'
+short options without arguments can share the same '-', e.c. '-ab' is the same as '-a -b'
+adding `!` to the start of any type will make it stop parsing when it matches
+in place and short-long options must be separated by a line of '='
+
+in place option types
+  str            : Sets to string argument, must be present
+  int            : Sets to integer argument, must be present
+  switch=a\b\c   : Sets to an argument from a list of options, must be present
+
+short and long option types
+  set            : Sets to true if present, false otherwise, can be used max once
+  reset          : Sets to false if present, true otherwise, can be used max once
+  
+  str?xyz        : Sets to string argument if present, defaults to 'xyz' otherwise, can be used max once
+  int?123        : Sets to integer argument if present, defaults to '123' otherwise, can be used max once
+  switch=a\b\c?a : Sets to an argument from a list of options separated by a backslash if present, defaults otherwise, can be used max once
+  
+  lstr           : Appends string argument to list, can be used indefinitely
+  lint           : Appends integer argument to list, can be used indefinitely
+
+
+examples:
+
+main template:
+
+subcommand=compile\bootstrap
+=
+h.help:!set
+asm:switch=gas\nasm\fasm?nasm
+std:str?
+i.inc:lstr
+
+
+'compile' subcommand template:
+
+in place:
+:str
+
+short and long:
+h.help:!set
+:switch=asm
+r.run:set
+o.output:str
+
+
+'bootstrap' subcommand template:
+
+in place:
+
+short and long:
+h.help:!set
+min:int?-1
+t.no-tests:reset
+s.source:str
+t.target:str
+
+
+these templates can be used to parse these:
+
+corth --help
+corth -i./src compile -r ./src/example.corth --output=./bin/output
+corth --asm=gas bootstrap --min=3 -t -s=$corth/Corth/compiler/corth.corth -t=$corth/Corth/corth
+*/
+
+include libs/dynamic/utils.corth
+include libs/collections/str_map64.corth
+include libs/cstr.corth
+
+memory getopts.keys   2048        end
+memory getopts.values 2048        end
+memory getopts.length sizeof(int) end
+
+macro O-SWITCH              1 endmacro
+macro O-ARGUMENT            2 endmacro
+macro O-INPLACE             3 endmacro
+macro O-END                 4 endmacro
+macro O-ERROR           1 neg endmacro
+
+macro E-SYNTAX-ERROR        1 endmacro
+macro E-UNKNOWN-OPTION      2 endmacro
+macro E-EXPECTED-ARGUMENT   3 endmacro
+macro E-UNKNOWN-ERROR   1 neg endmacro
+
+
+proc getopts.generate
+  // ptr: options-string -- bool: successful
+  ptr -- bool
+in let options in
+  memory buffer 64 in
+  memory pointer sizeof(ptr) in
+    buffer pointer !64
+
+    options while dup @8 isn-zero do let i in i @8 let char in
+      char '#' = if
+        buffer pointer @64 buffer - to-dynamic8 O-SWITCH getopts.keys getopts.values getopts.length str-map64.set-dstr if false return end
+        buffer pointer !64
+        
+      else char '$' = if
+        buffer pointer @64 buffer - to-dynamic8 O-ARGUMENT getopts.keys getopts.values getopts.length str-map64.set-dstr if false return end
+        buffer pointer !64
+        
+      else
+        pointer @64 buffer - 64 > if
+          false return
+        end
+
+        char pointer @64 !8
+        pointer @inc64
+      end end
+    end i end inc end drop
+
+    // Check if the buffer is empty.
+    buffer pointer @64 =
+  end end
+end end
+
+
+macro getopts.reset-length
+  getopts.keys getopts.values getopts.length str-map64.reset-length
+endmacro
+
+
+macro getopts.clear 
+  getopts.keys getopts.values getopts.length str-map64.clear
+endmacro
+
+
+memory getopts.option sizeof(ptr) end
+memory getopts.char   sizeof(ptr) end
+
+
+proc getopts.set-arguments
+  // ptr: arguments --
+  ptr --
+in let arguments in
+  arguments getopts.option !64
+  arguments @64 getopts.char   !64
+end end
+
+
+macro getopts.next-option
+  getopts.option @64 8 + getopts.option !64
+  getopts.option @64 @64 getopts.char !64  
+endmacro
+
+
+proc getopts.parse-argument
+  // ptr: address int: length -- int: type ptr: arg1 int: arg1-length ptr: arg2 int: arg2-length
+  ptr int -- int ptr int ptr int
+in let address length in
+  address length getopts.keys getopts.values getopts.length str-map64.get-str ! if
+    drop
+    O-ERROR NULLPTR E-UNKNOWN-OPTION address length return
+  end
+  
+  let type in
+    type O-SWITCH = if
+      O-SWITCH address length NULLPTR 0
+      
+    else type O-ARGUMENT = if
+      getopts.option @64 @64 is-null if
+        // error
+        O-ERROR NULLPTR E-EXPECTED-ARGUMENT address length return
+      end
+
+      O-ARGUMENT address length getopts.char @64 dup cstr.len
+
+      getopts.next-option
+      
+    else
+      // error
+      O-ERROR NULLPTR E-UNKNOWN-ERROR NULLPTR 0
+    end end
+  end
+end end
+
+
+proc getopts._parse
+  // -- int: type ptr: arg1 int: arg1-length ptr: arg2 int: arg2-length
+  -- int ptr int ptr int
+in
+  getopts.option @64 @64 getopts.char @64 = if
+    getopts.char @64 is-null if
+      O-END NULLPTR 0 NULLPTR 0 return
+    end
+    
+    getopts.char @64 @8 '-' = if
+      getopts.char @inc64
+
+      getopts.char @64 @8 '\0' = if
+        // -
+        O-INPLACE getopts.char @64 dec 1 NULLPTR 0
+        
+      else getopts.char @64 @8 '-' = if
+        // Long arguments
+        getopts.char @inc64
+        
+        getopts.char @64 @8 '\0' = if
+          // --
+          O-INPLACE getopts.char @64 2 - 2 NULLPTR 0
+        else
+          // --arg
+          getopts.char @64 dup cstr.len getopts.next-option getopts.parse-argument
+        end
+        
+      else
+        // -(a)bc
+        getopts.char @64 let old in
+          getopts.char @inc64
+
+          getopts.char @64 @8 '\0' = if
+            getopts.next-option
+          end
+          
+          old 1 getopts.parse-argument
+        end
+      end end
+      
+    else
+      // arg
+      O-INPLACE getopts.option @64 @64 dup cstr.len NULLPTR 0
+      getopts.next-option
+    end
+    
+  else
+    getopts.char @64 @8 '\0' = if
+      getopts.next-option
+      getopts._parse
+    else
+      // -a(b)c
+      getopts.char @64 let old in
+        getopts.char @inc64
+
+        getopts.char @64 @8 '\0' = if
+          getopts.next-option
+        end
+
+        old 1 getopts.parse-argument
+      end
+    end
+  end
+end
+
+
+proc getopts.parse
+  // -- int: type ptr: arg1 int: arg1-length ptr: arg2 int: arg2-length bool: error
+  -- int ptr int ptr int bool
+  // Parses options and checks for errors.
+  // Output type can be expected to be non-error.
+in
+  getopts._parse let type arg1 arg1-length arg2 arg2-length in
+    type arg1 arg1-length arg2 arg2-length
+    
+    type O-ERROR = dup if
+      arg1-length E-SYNTAX-ERROR = if
+        "error: invalid syntax\n" eputs
+      else arg1-length E-UNKNOWN-OPTION = if
+        "error: unknown option '" eputs arg2 arg2-length eputs "'\n" eputs
+      else arg1-length E-EXPECTED-ARGUMENT = if
+        "error: '" eputs arg2 arg2-length eputs "' expects an argument\n" eputs
+      else
+        "error: unknown error\n" eputs
+      end end end
+    end
+  end
+end

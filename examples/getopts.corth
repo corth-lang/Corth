@@ -1,0 +1,44 @@
+macro malloc.ARRAY-SIZE 0x1000 endmacro
+macro malloc.AVAIL-QUEUE-SIZE 0x100 endmacro
+
+include libs/dynamic/malloc.corth
+include libs/linux_x86/stdio.corth
+include libs/getopts.corth
+
+proc main
+  int int -- int
+in let argc argv in
+  malloc.init
+
+  getopts.reset-length
+
+  "r#x#o$out$asm$run#" drop getopts.generate ! if
+    "getopts.parse-options failed!\n" puts
+    1 exit drop
+  end
+  
+  argv getopts.set-arguments
+
+  while true do
+    getopts.parse let type arg1 arg1-len arg2 arg2-len error in
+      error if
+        1 exit drop
+      end
+
+      type O-END = if
+        0 exit drop
+      end
+
+      type O-INPLACE = if
+        "in-place '" puts arg1 arg1-len puts "'\n" puts
+      else type O-SWITCH = if
+        "switch '" puts arg1 arg1-len puts "'\n" puts
+      else type O-ARGUMENT = if
+        "argument '" puts arg1 arg1-len puts "' = '" puts arg2 arg2-len puts "'\n" puts
+      else
+        type putu putnl "unknown argument type.\n" puts
+        1 exit drop
+      end end end
+    end
+  end
+end 0 end
