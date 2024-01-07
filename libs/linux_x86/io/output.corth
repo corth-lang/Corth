@@ -7,6 +7,16 @@ include libs/core/memory.corth
 macro fputs  arot fwrite drop endmacro // ptr: str-ptr int: str-len file-desc: file-desc
 macro fputnl "\n" fwrite drop endmacro // file-desc: file-desc
 
+proc fputc
+  // int: char file-desc: file-desc
+  int file-desc --
+in let file in
+  memory buffer 1 in
+    buffer !8
+    buffer 1 file fputs
+  end
+end end
+
 proc fputu
   // int: int file-desc: file-desc 
   int file-desc --
