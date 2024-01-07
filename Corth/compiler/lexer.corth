@@ -430,14 +430,28 @@ in let
             // -------- Characters --------
             // TODO: Add multpile character pushing.
 
+            char-no @inc64
+
             buffer inc 1 file fgets is-zero if
               // Reached EOF while expecting a character.
               LOG.ERR log-stream fputs "Reached EOF before finding a character after single quote.\n" log-stream fputs 
               ERROR-EXIT-CODE exit drop
             end
 
+            char-no @inc64
+              
             // Get the character
             buffer inc @8 let character in
+              character '\n' = if
+                LOG.ERR log-stream fputs "Reached EOL before finding a character after single quote.\n" log-stream fputs
+                ERROR-EXIT-CODE exit drop
+              end
+
+              character '\'' = if
+                LOG.ERR log-stream fputs "Single quote character must be escaped.\n" log-stream fputs
+                ERROR-EXIT-CODE exit drop
+              end
+              
               character '\\' = if
                 // Return the escape sequence character.
                 file file-name line-no char-no log-stream parse-escape-sequence
@@ -454,6 +468,8 @@ in let
                 ERROR-EXIT-CODE exit drop
               end
 
+              char-no @inc64
+              
               buffer @8 '\'' != if
                 // Was expecting a single quote, but found another character.
                 LOG.ERR log-stream fputs "Expected a single quote, found '" log-stream fputs buffer 1 log-stream fputs "'.\n" log-stream fputs
