@@ -7,10 +7,17 @@ include libs/dynamic/malloc.corth
 Requires dmemeq8 and dmemlt8.
 */
 
+macro str-sorted8.available-dstr let address start end_ in
+  address address mlength start end_ str-sorted8.available-str
+end endmacro
 
-proc str-sorted8.available
-  // int: value ptr: start ptr: end -- ptr: lower-bound bool: found
-  int ptr ptr -- ptr bool
+macro str-sorted8.available-cstr let address start end_ in
+  address address cstr.len start end_ str-sorted8.available-str
+end endmacro
+
+proc str-sorted8.available-str
+  // ptr: address int: length ptr: start ptr: end -- ptr: lower-bound bool: found
+  ptr int ptr ptr -- ptr bool
   // Finds where the value could be placed using binary search, so that the array could stay sorted.
   // Returns if the value was found in the array.
 in
@@ -20,7 +27,7 @@ in
     upper !64
     lower !64
 
-    lower @64 8 % let value offset in
+    lower @64 8 % let address length offset in
       while true do
         // Check if failed to find the value, if so, return false.
         lower @64 upper @64 = if
@@ -29,7 +36,7 @@ in
 
         lower @64 upper @64 avg2 offset - 8 lower-base offset + let middle in
           // Compare the two strings.
-          middle @64 value dmemcmp8 let cmp in
+          middle @64 dup mlength address length memcmp8-wl let cmp in
             // Check if found the exact value, if so, return true.
             cmp is-zero if
               middle true return

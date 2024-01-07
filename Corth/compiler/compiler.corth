@@ -36,7 +36,7 @@ endmacro
 // NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
 macro compile-procedure.get-next-token let expect-address expect-length extend-macros in
   // str: expect-message bool: extend-macros -- int: token-type ptr: address [int|ptr]: arg
-  // Calls get-next-token and checks if a token is available. If there are no tokens, prints an error message.
+  // Calls get-next-token and checks if a token is available-dstr. If there are no tokens, prints an error message.
   source-name source-file
   line-no char-no
   extended-array extended-start extended-end
@@ -1528,7 +1528,7 @@ in
   memory let-addresses    LET-MAX-COUNT    in
   memory let-vars-length  sizeof(int)      in
 
-  // local-memory-end keeps track of the first available position on the local memory.
+  // local-memory-end keeps track of the first available-dstr position on the local memory.
   memory local-memory-end sizeof(int)      in
 
   // local-memory-max keeps track of the maximum length of the local memory, to later allocate enough space.
@@ -1612,7 +1612,7 @@ in
               end
             end
 
-          else drop token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available if
+          else drop token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available-dstr if
             // -------- 'proc' calls --------
             
             let name-address in name-address proc-names-array - let delta in
@@ -1841,7 +1841,7 @@ in
       1 line-no !64
       0 char-no !64
 
-      // Get next token and check if there is one available.
+      // Get next token and check if there is one available-dstr.
       while source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream true get-next-token do
         let token-type token-address token-arg in
           token-type token-address "" TYPE-KEYWORD compile-file.check-type-here
@@ -2081,7 +2081,7 @@ in
 
                 // Store the procedure name, input and outputs.
                 // Check if the procedure was defined already.
-                proc-name-token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available if
+                proc-name-token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available-dstr if
                   drop
                   LOG.ERR log-stream fputs "Procedure '" log-stream fputs proc-name-token-arg proc-name-token-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
                   proc-name-token-address log-stream fput-here
