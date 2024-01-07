@@ -1590,17 +1590,7 @@ in
             // -------- local variables --------
             
             let replace-item in
-              replace-item get-mode MODE-@LOCALCONST = if
-                // TODO: For some reason, not adding this part of the condition causes weird problems.
-                // Normally, replace-item should only be copied and pushed to the virtual stack. However, this does not appear to be working.
-                
-                replace-item get-type push-real
-                replace-item stack-item.copy output-file nasm.push-int
-                
-              else
-                replace-item stack-item.copy push-item
-              end
-
+              replace-item stack-item.copy push-item
             end
             
           else drop token-arg global-names-array global-sizes-array globals-length str-map64.get-dstr if
