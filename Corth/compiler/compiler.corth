@@ -1432,6 +1432,8 @@ in
     // Branch should not be cut before 'return'.
     token-address "call 'return'" compile-procedure.check-branch-here
 
+    local-stack local-stack-length output-file local-stack.convert-last-items-real
+
     output-array output-length
     token-address
     local-stack local-stack-length
