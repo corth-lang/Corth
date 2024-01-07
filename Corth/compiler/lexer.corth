@@ -526,7 +526,7 @@ in let
     // Check if the token is a macro call.
     let type address arg in
       type TYPE-NAME = if
-        arg macro-names macro-tokens macros-length str-map64.get if
+        arg macro-names macro-tokens macros-length str-map64.get-dstr if
           let tokens in
             tokens tokens mlength + while dup tokens > do 24 - let i in
               i @64 i 8 + @64 i 16 + @64 let token-type token-address token-argument in

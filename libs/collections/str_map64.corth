@@ -11,7 +11,7 @@ Length shows the length of both arrays.
 */
 
 
-proc str-map64.set
+proc str-map64.set-dstr
   // ptr: key int: value ptr: key-array ptr: value-array ptr: length -- bool: found
   int int ptr ptr ptr -- bool
   // Sets the matching value of the key to a specified value in a map64.
@@ -38,13 +38,23 @@ in let key value key-array value-array length in
 end end
 
 
-proc str-map64.get
-  // int: key ptr: key-array ptr: value-array ptr: length -- int: value bool: found
-  int ptr ptr ptr -- int bool
+macro str-map64.get-dstr let key key-array value-array length in
+  key key mlength key-array value-array length str-map64.get-str
+end endmacro
+
+
+macro str-map64.get-cstr let key key-array value-array length in
+  key key cstr.len key-array value-array length str-map64.get-str
+end endmacro
+
+
+proc str-map64.get-str
+  // ptr: key int: key-length ptr: key-array ptr: value-array ptr: length -- int: value bool: found
+  ptr int ptr ptr ptr -- int bool
   // Finds a key-value pair from a key in a map64 and returns the value.
   // Returns if the key was found.
-in let key key-array value-array length in
-  key key-array key-array length @64 8 * + str-sorted8.available-dstr if
+in let key key-length key-array value-array length in
+  key key-length key-array key-array length @64 8 * + str-sorted8.available-str if
     key-array - value-array + @64 true
   else
     drop 0 false
@@ -52,13 +62,23 @@ in let key key-array value-array length in
 end end
 
 
-proc str-map64.remove
-  // int: key ptr: key-array ptr: value-array ptr: length -- bool: found
-  int ptr ptr ptr -- bool
+macro str-map64.remove-dstr let key key-array value-array length in
+  key key mlength key-array value-array length str-map64.remove-str
+end endmacro
+
+
+macro str-map64.remove-cstr let key key-array value-array length in
+  key key cstr.len key-array value-array length str-map64.remove-str
+end endmacro
+
+
+proc str-map64.remove-str
+  // ptr: key int: key-length ptr: key-array ptr: value-array ptr: length -- bool: found
+  ptr int ptr ptr ptr -- bool
   // Removes a key-value pair from a map64, if it is found.
   // Returns if the key was found.
-in let key key-array value-array length in
-  key key-array key-array length @64 8 * + str-sorted8.available-dstr if
+in let key key-length key-array value-array length in
+  key key-length key-array key-array length @64 8 * + str-sorted8.available-str if
     let key-address in key-address key-array - value-array + let value-address in
       key-address   8 + key-address   length @64 key-address key-array - 8 / - dec memcpy64
       value-address 8 + value-address length @64 key-address key-array - 8 / - dec memcpy64
