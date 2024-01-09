@@ -1,2 +1,11 @@
 macro ptr int endmacro
 macro sizeof(ptr)  8 endmacro
+
+
+// TODO: This should be changed to ptr type, when 'ptr' type is implemented for real.
+macro NULLPTR 0 endmacro
+
+
+// ptr: x -- bool: f(x)
+macro is-null  NULLPTR =  endmacro
+macro isn-null NULLPTR != endmacro

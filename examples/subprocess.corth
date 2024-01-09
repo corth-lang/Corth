@@ -1,0 +1,24 @@
+macro malloc.ARRAY-SIZE       0x1000 endmacro
+macro malloc.AVAIL-QUEUE-SIZE 0x100  endmacro
+include libs/dynamic/malloc.corth
+include libs/dynamic/utils.corth
+
+include libs/linux_x86/stdio.corth
+include libs/linux_x86/subprocess.corth
+
+macro comma-separated true endmacro
+
+proc main
+  int int -- int
+in let argc argv in
+  malloc.init
+
+  subprocess.init
+    "/bin/ls" drop subprocess.file-name
+    "."       drop subprocess.add-option
+    "/home/"  drop subprocess.add-option
+    
+    comma-separated
+    "-m"      drop subprocess.add-switch
+  subprocess.end
+end 0 end
