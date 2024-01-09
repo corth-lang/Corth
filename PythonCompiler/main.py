@@ -54,7 +54,7 @@ def compile_command():
 def test_file(corth_directory='./Corth/corth', standard_library='.', test_file='./Corth/compiler/corth.corth', output_directory='/dev/null'):
     import subprocess
     
-    process = subprocess.run([corth_directory, 'compile-nasm', standard_library, test_file, output_directory], capture_output=True)
+    process = subprocess.run([corth_directory, 'compile', '-i', standard_library, test_file, '--output-path', output_directory], capture_output=True)
 
     output = process.stdout.decode()
     error = process.stderr.decode()

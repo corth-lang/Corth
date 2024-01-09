@@ -16,35 +16,15 @@ while
     
     i=$(( $i + 1 ))
     
-    ./Corth/build/old compile-nasm . ./Corth/compiler/corth.corth ./Corth/build/corth.asm
+    ./Corth/build/old compile ./Corth/compiler/corth.corth -i . --output-path ./Corth/build/corth
     compile_exit=$?
 
     if [[ $compile_exit != 0 ]]; then
-        echo -e '[build.sh] '$ERROR' [ #'$i' ] Could not compile to NASM.'
+        echo -e '[build.sh] '$ERROR' [ #'$i' ] Could not compile.'
         exit $compile_exit
     fi
 
-    echo -e '[build.sh] '$INFO' [ #'$i' ] Compiled to NASM. ('$(wc -l < ./Corth/build/corth.asm)' lines)'
-
-    nasm ./Corth/build/corth.asm -f elf64 -o ./Corth/build/corth.o
-    nasm_exit=$?
-
-    if [[ $nasm_exit != 0 ]]; then
-        echo -e '[build.sh] '$ERROR' [ #'$i' ] Could not compile NASM program.'
-        exit $nasm_exit
-    fi
-
-    echo -e '[build.sh] '$INFO' [ #'$i' ] Created the object file.'
-
-    ld ./Corth/build/corth.o -o ./Corth/build/corth
-    linker_exit=$?
-
-    if [[ $linker_exit != 0 ]]; then
-        echo -e '[build.sh] '$ERROR' [ #'$i' ] Could not link program.'
-        exit $linker_exit
-    fi
-
-    echo -e '[build.sh] '$INFO' [ #'$i' ] Created executable.'
+    echo -e '[build.sh] '$INFO' [ #'$i' ] Compiled ('$(wc -l < ./output.asm)' lines).'
 
     not diff ./Corth/build/corth ./Corth/build/old
 do :; done

@@ -1,52 +1,141 @@
-include libs/linux_x86/stdio.corth
-include libs/cstr.corth
-
 macro malloc.ARRAY-SIZE       0x800000 endmacro
 macro malloc.AVAIL-QUEUE-SIZE 0x100000 endmacro
+include libs/dynamic/malloc.corth
+include libs/dynamic/utils.corth
+
+include libs/linux_x86/subprocess.corth
+include libs/linux_x86/stdio.corth
+include libs/cstr.corth
+include libs/getopts.corth
 
 include Corth/compiler/compiler.corth
 
 
-macro EXIT-SUCCESS         0 endmacro
-macro EXIT-INVALID-USAGE   1 endmacro
-macro EXIT-NOT-IMPLEMENTED 2 endmacro
-macro EXIT-UNKNOWN-ERROR   3 endmacro
+macro EXIT-SUCCESS 0 endmacro
+macro EXIT-ERROR   1 endmacro
 
-// Usage information messages
-macro use-info-basic
-  "usage: corth <compile-nasm|compile|run> [args]\n" eputs
-  EXIT-INVALID-USAGE exit drop
+
+memory executable-file-name sizeof(ptr) end
+
+
+macro command.compile-nasm-show-usage
+   "usage: " puts executable-file-name @64 dup cstr.len puts " [OPTIONS]... compile-nasm <source-file> [OPTIONS]...\n" puts
 endmacro
 
-macro use-info-compile-nasm
-  "usage: corth compile-nasm <standard-library> <file> [<output>]\n" eputs
-  EXIT-INVALID-USAGE exit drop
-endmacro
 
-macro use-info-compile
-  "usage: corth compile <file> [<output>]\n" eputs
-  EXIT-INVALID-USAGE exit drop
-endmacro
+proc command.compile -- in
+  getopts.clear
 
-macro use-info-compile-corth
-  "usage: corth compile-corth\n" eputs
-  EXIT-INVALID-USAGE exit drop
-endmacro
+  "h#help#i$include-path$o$output-path$asm#" drop getopts.generate ! if
+    "error: 'getopts.generate' failed\n" eputs
+    EXIT-ERROR exit drop
+  end
 
-macro use-info-run
-  "usage: corth run <file> [<output>]\n" eputs
-  EXIT-INVALID-USAGE exit drop
-endmacro
+  memory source-file       sizeof(ptr) in
+  memory output-file       sizeof(ptr) in
+  memory include-paths-set sizeof(ptr) in
+  memory asm-only          sizeof(int) in
+  
+    NULLPTR           source-file !64
+    "output" drop output-file !64
+    
+    16 list64.init include-paths-set !64
 
-macro use-info-quick-test
-  "usage: corth quick-test\n" eputs
-  EXIT-INVALID-USAGE exit drop
-endmacro
+    include-paths-set @64 is-null if
+      "'list64.init' failed\n" puts
+      EXIT-ERROR exit drop
+    end
 
-macro not-implemented
-  "not implemented yet\n" eputs
-  EXIT-NOT-IMPLEMENTED exit drop
-endmacro 
+    0 asm-only !64
+
+    while true do
+      getopts.parse let type arg1 arg1-length arg2 arg2-length error in
+        error        if EXIT-ERROR   exit drop end
+        type O-END = if break                  end
+
+        type O-INPLACE = if
+          source-file @64 is-null if
+            arg1 arg1-length inc to-dynamic8 source-file !64
+          else
+            command.compile-nasm-show-usage
+            EXIT-ERROR exit drop
+          end
+          
+        else type O-SWITCH = if
+          arg1 arg1-length "h"    memcmp8-wl is-zero
+          arg1 arg1-length "help" memcmp8-wl is-zero | if
+            command.compile-nasm-show-usage
+            EXIT-SUCCESS exit drop
+
+
+          else arg1 arg1-length "asm" memcmp8-wl is-zero if
+            asm-only @64 isn-zero if
+              "error: '--asm' can not be used more than once\n" puts
+              EXIT-ERROR exit drop
+            end
+            
+            1 asm-only !64
+            
+          else EXIT-ERROR exit drop end end // impossible
+          
+        else type O-ARGUMENT = if
+          arg1 arg1-length "i"            memcmp8-wl is-zero
+          arg1 arg1-length "include-path" memcmp8-wl is-zero | if
+            arg2 arg2-length inc to-dynamic8 include-paths-set str-set8.add drop
+
+          else arg1 arg1-length "o"           memcmp8-wl is-zero
+               arg1 arg1-length "output-path" memcmp8-wl is-zero | if
+            arg2 output-file !64
+            
+          else EXIT-ERROR exit drop end end // impossible
+          
+        else EXIT-ERROR exit drop end end end // impossible
+      end
+    end
+
+    source-file @64 is-null if
+      command.compile-nasm-show-usage
+      EXIT-ERROR exit drop
+    end
+
+    // Compile Corth file to NASM file.
+    source-file @64
+    "output.asm" drop
+    include-paths-set
+    STDERR
+    compile-nasm
+
+    // Deallocate 'include-paths-set'.
+    include-paths-set list64.mfree drop
+
+    // Keep going unless we are in asm-only mode
+    asm-only @64 isn-zero if EXIT-SUCCESS exit drop end
+
+    // Execute NASM.
+    subprocess.init
+      "/bin/nasm"  drop subprocess.file-name
+      "output.asm" drop subprocess.add-option
+      "-felf64"    drop subprocess.add-option
+      "-o"         drop subprocess.add-option
+      "output.o"   drop subprocess.add-option
+    subprocess.end
+
+    // Execute linker.
+    subprocess.init
+      "/bin/ld"    drop subprocess.file-name
+      "output.o"   drop subprocess.add-option
+      "-o"         drop subprocess.add-option
+      output-file  @64  subprocess.add-option
+    subprocess.end
+  end end end end
+  
+  EXIT-SUCCESS exit drop
+end
+
+
+macro main.show-usage
+  "usage: " puts executable-file-name @64 dup cstr.len puts " [OPTIONS]... command [OPTIONS]...\n" puts
+endmacro
 
 
 proc main
@@ -58,53 +147,42 @@ in let argc argv in
   // Initialize debug.
   debug-init
 
-  argc 2 < if
-    use-info-basic
+  getopts.reset-length
+
+  "h#help#std$" drop getopts.generate ! if
+    "error: 'getopts.generate' failed\n" eputs
+    EXIT-ERROR exit drop
   end
 
-  1 argv array64.get "compile-nasm" drop cstr.cmp is-zero if
-    memory include-paths-set sizeof(ptr) in
-      16 list64.init let dynamic in
-        dynamic is-null if
-          "malloc failed while creating include paths set.\n" eputs
-          EXIT-UNKNOWN-ERROR return
+  argv @64 executable-file-name !64
+  argv 8 + getopts.set-arguments
+  
+  while true do
+    getopts.parse let type arg1 arg1-length arg2 arg2-length error in
+      error        if EXIT-ERROR   exit drop end
+      type O-END = if                  break end
+      
+      type O-INPLACE = if
+        arg1 arg1-length "compile" memcmp8-wl is-zero if
+          command.compile
+        else
+          "error: unknown command\n" puts
+          EXIT-ERROR exit drop
         end
+
+      else type O-SWITCH = if
+        arg1 arg1-length "h"    memcmp8-wl is-zero
+        arg1 arg1-length "help" memcmp8-wl is-zero | if
+          main.show-usage
+          EXIT-SUCCESS exit drop
+          
+        else EXIT-ERROR exit drop end // impossible
         
-        dynamic include-paths-set !64
-      end
-
-      // Add the standard library.
-      2 argv array64.get include-paths-set str-set8.add drop
-
-      argc 4 = if
-        3 argv array64.get cstr.to-dynamic-termed
-        "output.asm" inc to-dynamic8
-        include-paths-set
-        STDERR compile-nasm
-
-      else argc 5 = if  
-        3 argv array64.get cstr.to-dynamic-termed
-        4 argv array64.get cstr.to-dynamic-termed
-        include-paths-set
-        STDERR compile-nasm
-
-      else
-        use-info-compile-nasm
-      end end
-
-      // Deallocate 'include-paths-set'.
-      include-paths-set list64.mfree drop
+      else type O-ARGUMENT = if
+        
+      else EXIT-ERROR exit drop end end end // impossible
     end
-    
-  else 1 argv array64.get "compile" drop cstr.cmp is-zero if
-    not-implemented
-  else 1 argv array64.get "compile-corth" drop cstr.cmp is-zero if
-    not-implemented
-  else 1 argv array64.get "run" drop cstr.cmp is-zero if
-    not-implemented
-  else 1 argv array64.get "quick-test" drop cstr.cmp is-zero if
-    not-implemented
-  else
-    use-info-basic
-  end end end end end
-end EXIT-SUCCESS end
+  end
+
+  main.show-usage
+end EXIT-ERROR end

@@ -2160,14 +2160,14 @@ in let source-name output-name include-paths-set log-stream in
 
   // Create the output file.
   output-name 0o777 creat dup isn-pos if
-    LOG.ERR log-stream fputs "Could not create output file '" log-stream fputs output-name output-name mlength log-stream fputs "'.\n" log-stream fputs
+    LOG.ERR log-stream fputs "Could not create output file '" log-stream fputs output-name output-name cstr.len log-stream fputs "'.\n" log-stream fputs
     ERROR-EXIT-CODE exit drop
   end
 
   let output-file in
     // Check if the file is opened successfully.
     output-file isn-pos if
-      LOG.ERR log-stream fputs "Could not open output file '" log-stream fputs output-name output-name mlength log-stream fputs "'.\n" log-stream fputs
+      LOG.ERR log-stream fputs "Could not open output file '" log-stream fputs output-name output-name cstr.len log-stream fputs "'.\n" log-stream fputs
       ERROR-EXIT-CODE exit drop
     end
 
