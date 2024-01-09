@@ -91,40 +91,31 @@ in let start length in
       start new length memcpy64
     end
   new end
+end end  
+
+
+proc to-dynamic8-join
+  // ptr: a-start int: a-length ptr: b-start int: b-length -- ptr: join(a, b)
+  ptr int ptr int -- ptr
+  // Joins two dynamicly-placed collections.
+  // NOTE: If malloc fails, returns null.
+in let a-start a-length b-start b-length in
+  a-length b-length + malloc let result in
+    result isn-null if
+      a-start result            a-length memcpy8
+      b-start result a-length + b-length memcpy8
+    end
+  result end
 end end
 
 
-proc djoin8
+proc djoin
   // ptr: a ptr: b -- ptr: join(a, b)
   ptr ptr -- ptr
   // Joins two dynamicly-placed collections.
   // NOTE: If malloc fails, returns null.
 in let a-start b-start in
-  a-start mlength b-start mlength let a-length b-length in
-    a-length b-length + malloc let result in
-      result isn-null if
-        a-start result            a-length memcpy8
-        b-start result a-length + b-length memcpy8
-      end
-    result end
-  end
-end end
-
-
-proc djoin64
-  // ptr: a ptr: b -- ptr: join(a, b)
-  ptr ptr -- ptr
-  // Joins two dynamicly-placed collections.
-  // NOTE: If malloc fails, returns null.
-in let a-start b-start in
-  a-start mlength b-start mlength let a-length b-length in
-    a-length b-length + malloc let result in
-      result isn-null if
-        a-start result            a-length 8 / memcpy64
-        b-start result a-length + b-length 8 / memcpy64
-      end
-    result end
-  end
+  a-start a-start mlength b-start b-start mlength to-dynamic8-join
 end end
 
 
@@ -178,4 +169,3 @@ endmacro
 // ptr: a ptr: b -- int: cmp(a, b)
 macro dmemcmp8  let _a_ _b_ in _a_ _a_ mlength     _b_ _b_ mlength     memcmp8-wl  end endmacro
 macro dmemcmp64 let _a_ _b_ in _a_ _a_ mlength 8 / _b_ _b_ mlength 8 / memcmp64-wl end endmacro
-

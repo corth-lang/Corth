@@ -8,9 +8,36 @@ in let value in
 end end
 
 
-proc fput-alpha
-  ptr file-desc --
-in let name file in
+proc global-label
+  ptr -- ptr
+in let name in
+  name mlength 7 + malloc let object in
+    object is-null if
+      "'malloc' failed while allocating space for fput-alpha.\n" STDERR fputs
+      ERROR-EXIT-CODE exit drop
+    end
+
+    "global_" drop object 7 memcpy8
+
+    0 while dup name mlength < do let i in
+      name i + @8 let char in
+        char 'a' 'z' is-range
+        char 'A' 'Z' is-range |
+        char '1' '9' is-range | if
+          char object 7 + i + !8
+        else
+          '_' object 7 + i + !8
+        end
+      end
+    i end inc end drop
+    object
+  end    
+end end
+
+
+proc convert-alpha
+  ptr -- ptr
+in let name in
   name mlength malloc let object in
     object is-null if
       "'malloc' failed while allocating space for fput-alpha.\n" STDERR fputs
@@ -19,14 +46,24 @@ in let name file in
 
     0 while dup name mlength < do let i in
       name i + @8 let char in
-        char 'a' 'z' is-range char 'A' 'Z' is-range | char '1' '9' is-range | if
+        char 'a' 'z' is-range
+        char 'A' 'Z' is-range |
+        char '1' '9' is-range | if
           char object i + !8
         else
           '_' object i + !8
         end
       end
     i end inc end drop
+    object
+  end  
+end end
 
+
+proc fput-alpha
+  ptr file-desc --
+in let file in
+  convert-alpha let object in
     object object mlength file fputs
 
     object mfree drop
@@ -89,21 +126,6 @@ in let global-name register-name register-name-length output-file in
 end end
 
 
-proc nasm.mov-reg-@localconst
-  // int: offset ptr: register-name int: register-name-length file-desc: output-file
-  int ptr int file-desc --
-in let offset register-name register-name-length output-file in
-  "    mov     " output-file fputs register-name register-name-length output-file fputs ", [local_ptr]\n" output-file fputs
-
-  "    mov     " output-file fputs register-name register-name-length output-file fputs
-  ", [" output-file fputs register-name register-name-length output-file fputs
-  offset isn-zero if
-    " + " output-file fputs offset output-file fputu 
-  end
-  "]\n" output-file fputs
-end end
-
-
 proc nasm.mov-reg-local
   // int: offset ptr: register-name int: register-name-length file-desc: output-file
   int ptr int file-desc --
@@ -113,6 +135,31 @@ in let offset register-name register-name-length output-file in
   offset isn-zero if
     "    add     " output-file fputs register-name register-name-length output-file fputs ", " output-file fputs offset output-file fputu output-file fputnl
   end
+end end
+
+
+proc nasm.mov-reg-@64local
+  // int: offset ptr: register-name int: register-name-length file-desc: output-file
+  int ptr int file-desc --
+in let offset register-name register-name-length output-file in
+  "    mov     " output-file fputs register-name register-name-length output-file fputs ", [local_ptr]\n" output-file fputs
+  "    mov     " output-file fputs register-name register-name-length output-file fputs
+  ", [" output-file fputs register-name register-name-length output-file fputs
+  
+  offset isn-zero if
+    " + " output-file fputs offset output-file fputu
+  end
+  
+  "]\n" output-file fputs
+end end
+
+
+proc nasm.mov-reg-@64global
+  // ptr: global ptr: register-name int: register-name-length file-desc: output-file
+  ptr ptr int file-desc --
+in let global register-name register-name-length output-file in
+  "    mov     " output-file fputs register-name register-name-length output-file fputs
+  ", [global_" output-file fputs global output-file fput-alpha "]\n" output-file fputs 
 end end
 
 
@@ -131,21 +178,19 @@ proc nasm.mov-reg-item
 in let item register-name register-name-length output-file in      
   item get-mode MODE-REAL = if
     "    pop     " output-file fputs register-name register-name-length output-file fputs output-file fputnl
-  else item get-mode MODE-IMM = if
-    item get-arg1 register-name register-name-length output-file nasm.mov-reg-immediate
-  else item get-mode MODE-GLOBAL = if
-    item get-arg1 register-name register-name-length output-file nasm.mov-reg-global-address
-  else item get-mode MODE-@LOCALCONST = if
-    item get-arg1 register-name register-name-length output-file nasm.mov-reg-@localconst
-  else item get-mode MODE-LOCAL = if
-    item get-arg1 register-name register-name-length output-file nasm.mov-reg-local
-  else item get-mode MODE-DATA = if
-    item get-arg1 register-name register-name-length output-file nasm.mov-reg-data
+    
+  else item get-mode MODE-IMM         = if item get-arg1 register-name register-name-length output-file nasm.mov-reg-immediate
+  else item get-mode MODE-GLOBAL      = if item get-arg1 register-name register-name-length output-file nasm.mov-reg-global-address
+  else item get-mode MODE-@LOCALCONST = if item get-arg1 register-name register-name-length output-file nasm.mov-reg-@64local
+  else item get-mode MODE-LOCAL       = if item get-arg1 register-name register-name-length output-file nasm.mov-reg-local
+  else item get-mode MODE-@64LOCAL    = if item get-arg1 register-name register-name-length output-file nasm.mov-reg-@64local
+  else item get-mode MODE-@64GLOBAL   = if item get-arg1 register-name register-name-length output-file nasm.mov-reg-@64global
+  else item get-mode MODE-DATA        = if item get-arg1 register-name register-name-length output-file nasm.mov-reg-data
   else
     LOG.ERR STDERR fputs "Unknown integer mode while trying to move integer to register.\n" STDERR fputs
     STDERR report-bug
     ERROR-EXIT-CODE exit drop
-  end end end end end end
+  end end end end end end end end
 end end
 
 
@@ -171,17 +216,53 @@ in let global output-file in
 end end
 
 
-proc nasm.push-@localconst
+proc nasm.push-@64local
   // int: offset file-desc: output-file
   int file-desc --
 in let offset output-file in
   "    mov     r15, [local_ptr]\n" output-file fputs
-
-  offset is-zero if
-    "    push    qword [r15]\n" output-file fputs
-  else
-    "    push    qword [r15 + " output-file fputs offset output-file fputu "]\n" output-file fputs
+  "    push    qword [r15" output-file fputs
+  
+  offset isn-zero if
+    " + " output-file fputs offset output-file fputu
   end
+  
+  "]\n" output-file fputs
+end end
+
+
+proc nasm.push-@8local
+  // int: offset file-desc: output-file
+  int file-desc --
+in let offset output-file in
+  "rax" output-file nasm.mov-reg-zero
+  "    mov     r15, [local_ptr]\n" output-file fputs
+  "    mov     al, [r15" output-file fputs
+  
+  offset isn-zero if
+    " + " output-file fputs offset output-file fputu
+  end
+  
+  "]\n" output-file fputs
+  "    push     rax\n" output-file fputs
+end end
+
+
+proc nasm.push-@64global
+  // ptr: global-name file-desc: output-file
+  ptr file-desc --
+in let global output-file in
+  "    push    qword [global_" output-file fputs global output-file fput-alpha "]\n" output-file fputs
+end end
+
+
+proc nasm.push-@8global
+  // ptr: global-name file-desc: output-file
+  ptr file-desc --
+in let global output-file in
+  "rax" output-file nasm.mov-reg-zero
+  "    mov    al, byte [global_" output-file fputs global output-file fput-alpha "]\n" output-file fputs
+  "    push   rax\n" output-file fputs
 end end
 
 
@@ -209,26 +290,19 @@ proc nasm.push-int
   // ptr: item file-desc: output-file
   ptr file-desc --
 in let item output-file in
-  item get-mode MODE-IMM = if
-    item get-arg1 output-file nasm.push-int-immediate
-    
-  else item get-mode MODE-GLOBAL = if
-    item get-arg1 output-file nasm.push-global-address
-
-  else item get-mode MODE-@LOCALCONST = if
-    item get-arg1 output-file nasm.push-@localconst
-
-  else item get-mode MODE-LOCAL = if
-    item get-arg1 output-file nasm.push-local
-
-  else item get-mode MODE-DATA = if
-    item get-arg1 output-file nasm.push-data
-
-  else item get-mode MODE-REAL != if
+  item get-mode MODE-IMM              = if item get-arg1 output-file nasm.push-int-immediate
+  else item get-mode MODE-GLOBAL      = if item get-arg1 output-file nasm.push-global-address
+  else item get-mode MODE-@64GLOBAL   = if item get-arg1 output-file nasm.push-@64global
+  else item get-mode MODE-@LOCALCONST = if item get-arg1 output-file nasm.push-@64local
+  else item get-mode MODE-LOCAL       = if item get-arg1 output-file nasm.push-local
+  else item get-mode MODE-@64LOCAL    = if item get-arg1 output-file nasm.push-@64local
+  else item get-mode MODE-@8LOCAL     = if item get-arg1 output-file nasm.push-@8local
+  else item get-mode MODE-DATA        = if item get-arg1 output-file nasm.push-data
+  else item get-mode MODE-REAL       != if
     LOG.ERR STDERR fputs "Unknown integer mode while trying to push an integer item.\n" STDERR fputs
     STDERR report-bug
     ERROR-EXIT-CODE exit drop
-  end end end end end end
+  end end end end end end end end end
 end end
 
 
@@ -237,7 +311,7 @@ proc nasm.push-bool
   ptr file-desc --
 in let item output-file in
   item get-mode MODE-@LOCALCONST = if
-    item get-arg1 output-file nasm.push-@localconst
+    item get-arg1 output-file nasm.push-@64local
     
   else item get-mode MODE-REAL != if
     LOG.ERR STDERR fputs "Unknown bool mode while trying to push a boolean item.\n" STDERR fputs

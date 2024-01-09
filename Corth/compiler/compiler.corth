@@ -393,42 +393,163 @@ in let token-address local-stack local-stack-length output-file log-stream in
 end end
 
 
+proc get-register-name
+  // int: intrinsic -- ptr: register-name int: register-name-length
+  int -- ptr int
+in let intrinsic in
+       intrinsic INTRINSIC-STORE8  = if "al"
+  else intrinsic INTRINSIC-STORE16 = if "ax"
+  else intrinsic INTRINSIC-STORE32 = if "eax"
+  else intrinsic INTRINSIC-STORE64 = if "rax"
+  else intrinsic INTRINSIC-LOAD8   = if "al"
+  else intrinsic INTRINSIC-LOAD16  = if "ax"
+  else intrinsic INTRINSIC-LOAD32  = if "eax"
+  else intrinsic INTRINSIC-LOAD64  = if "rax"
+  else
+    LOG.ERR STDERR fputs "Not a 'load' or 'store' intrinsic.\n" STDERR fputs
+    1 exit drop
+    NULLPTR 0 // dummy
+  end end end end end end end end
+end end
+
+
 proc load-intrinsic
-  // ptr: token-address ptr: register-name int: register-name-length ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
-  ptr ptr int ptr ptr file-desc file-desc --
+  // ptr: token-address int: intrinsic ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
+  ptr int ptr ptr file-desc file-desc --
   // NOTE: Register is one of 'al', 'ax', 'eax', 'rax'.
-in let token-address register-name register-name-length local-stack local-stack-length output-file log-stream in
+in let token-address intrinsic local-stack local-stack-length output-file log-stream in
   local-stack-length @64 1 < if invalid-usage-of-intrinsic end
 
   pop-item let item in
     item get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
 
+    item get-mode MODE-LOCAL = if
+      intrinsic INTRINSIC-LOAD64 = if item get-arg1 push-@64local return end
+      intrinsic INTRINSIC-LOAD8  = if item get-arg1 push-@8local  return end
+    end
+
+    item get-mode MODE-GLOBAL = if
+      intrinsic INTRINSIC-LOAD64 = if item get-arg1 push-@64global return end
+      intrinsic INTRINSIC-LOAD8  = if item get-arg1 push-@8global  return end
+    end
+    
     INT-TYPE-INT push-real
 
-    item "rbx" output-file nasm.mov-reg-item
-         "rax" output-file nasm.mov-reg-zero
-         
-    "    mov     " output-file fputs register-name register-name-length output-file fputs ", [rbx]\n" output-file fputs
-    "    push    rax\n" output-file fputs
+    intrinsic INTRINSIC-LOAD64 = if    
+      item "rbx" output-file nasm.mov-reg-item
+
+      "    push    qword [rbx]\n" output-file fputs
+      
+    else     
+      item "rbx" output-file nasm.mov-reg-item
+           "rax" output-file nasm.mov-reg-zero
+
+      "    mov     " output-file fputs intrinsic get-register-name output-file fputs ", [rbx]\n" output-file fputs
+      "    push    rax\n" output-file fputs
+    end
   end
 end end
 
 
+proc store-intrinsic-sub
+  // ptr: value-item ptr: address-item int: address-item-length ptr: token-address int: intrinsic file-desc: output-file file-desc: log-stream --
+  ptr ptr int ptr int file-desc file-desc --
+in let value-item address-item address-item-length token-address intrinsic output-file log-stream in
+  value-item get-mode MODE-REAL = if
+    intrinsic INTRINSIC-STORE64 = if
+      "    pop     qword [" output-file fputs address-item address-item-length output-file fputs "]\n" output-file fputs
+      return
+    end
+  end
+
+  value-item get-mode MODE-IMM = if
+    intrinsic INTRINSIC-STORE64 = if
+      value-item get-arg1 is-signed-dword if
+        "    mov     qword [" output-file fputs address-item address-item-length output-file fputs
+        "], " output-file fputs value-item get-arg1 output-file fputi output-file fputnl
+        return
+      end
+    else intrinsic INTRINSIC-STORE8 = if
+      "    mov     byte [" output-file fputs address-item address-item-length output-file fputs
+      "], " output-file fputs value-item get-arg1 output-file fputi output-file fputnl
+      return
+    end end
+  end
+
+  value-item get-mode MODE-GLOBAL = if
+    intrinsic INTRINSIC-STORE64 != if
+      LOG.ERR log-stream fputs "Global variable addresses can not be stored in less than 64 bits.\n" log-stream fputs
+      token-address log-stream fput-here
+      1 exit drop
+    end
+
+    "    mov     qword [" output-file fputs address-item address-item-length output-file fputs
+    "], global_" output-file fputs value-item get-arg1 output-file fput-alpha output-file fputnl
+    return
+  end
+
+  value-item get-mode MODE-DATA = if
+    intrinsic INTRINSIC-STORE64 != if
+      LOG.ERR log-stream fputs "Data addresses can not be stored in less than 64 bits.\n" log-stream fputs
+      token-address log-stream fput-here
+      1 exit drop
+    end
+
+    "    mov     qword [" output-file fputs address-item address-item-length output-file fputs
+      "], data_" output-file fputs value-item get-arg1 output-file fputu output-file fputnl
+    return
+  end
+
+  value-item   "rax" output-file nasm.mov-reg-item
+  "    mov     [" output-file fputs address-item address-item-length output-file fputs
+  "], " output-file fputs intrinsic get-register-name output-file fputs output-file fputnl
+end end
+  
+
+
 proc store-intrinsic
-  // ptr: token-address ptr: register-name int: register-name-length ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
-  ptr ptr int ptr ptr file-desc file-desc --
+  // ptr: token-address int: intrinsic ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
+  ptr int ptr ptr file-desc file-desc --
   // NOTE: Register is one of 'bl', 'bx', 'ebx', 'rbx'.
-in let token-address register-name register-name-length local-stack local-stack-length output-file log-stream in
+in let token-address intrinsic local-stack local-stack-length output-file log-stream in
   local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
   pop-item pop-item let address-item value-item in
-    value-item get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+    value-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
     address-item get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
 
-    address-item "rax" output-file nasm.mov-reg-item
-    value-item   "rbx" output-file nasm.mov-reg-item
+    local-stack local-stack-length output-file local-stack.convert-@local-real
 
-    "    mov     [rax], " output-file fputs register-name register-name-length output-file fputs output-file fputnl
+    address-item get-mode MODE-IMM = if
+      LOG.ERR log-stream fputs "Store intrinsics do not take immediate value as address argument.\n" log-stream fputs
+      token-address log-stream fput-here
+      1 exit drop
+      
+    else address-item get-mode MODE-LOCAL = if
+      // TODO: Fix this disgusting hack.
+      "    mov     rbx, [local_ptr]\n" output-file fputs
+
+      memory buffer 20 in
+        buffer address-item get-arg1 intconvud let buffer-start in
+          "rbx + " buffer-start buffer 20 + buffer-start - to-dynamic8-join
+        end
+      end
+      
+      let object in
+        value-item object object mlength token-address intrinsic output-file log-stream store-intrinsic-sub
+        object mfree drop
+      end
+
+    else address-item get-mode MODE-GLOBAL = if
+      address-item get-arg1 global-label let label in
+        value-item label label mlength token-address intrinsic output-file log-stream store-intrinsic-sub
+        label mfree drop
+      end
+
+    else
+      address-item "rbx" output-file nasm.mov-reg-item
+      value-item "rbx" token-address intrinsic output-file log-stream store-intrinsic-sub
+    end end end
   end
 end end
 
@@ -531,14 +652,15 @@ in
   else token-arg INTRINSIC-DIVMOD   = if token-address "idiv" local-stack local-stack-length output-file log-stream geometric-binary-intrinsic
   else token-arg INTRINSIC-UDIVMOD  = if token-address  "div" local-stack local-stack-length output-file log-stream geometric-binary-intrinsic
 
-  else token-arg INTRINSIC-LOAD8   = if token-address "al"  local-stack local-stack-length output-file log-stream load-intrinsic
-  else token-arg INTRINSIC-LOAD16  = if token-address "ax"  local-stack local-stack-length output-file log-stream load-intrinsic
-  else token-arg INTRINSIC-LOAD32  = if token-address "eax" local-stack local-stack-length output-file log-stream load-intrinsic
-  else token-arg INTRINSIC-LOAD64  = if token-address "rax" local-stack local-stack-length output-file log-stream load-intrinsic
-  else token-arg INTRINSIC-STORE8  = if token-address "bl"  local-stack local-stack-length output-file log-stream store-intrinsic
-  else token-arg INTRINSIC-STORE16 = if token-address "bx"  local-stack local-stack-length output-file log-stream store-intrinsic
-  else token-arg INTRINSIC-STORE32 = if token-address "ebx" local-stack local-stack-length output-file log-stream store-intrinsic
-  else token-arg INTRINSIC-STORE64 = if token-address "rbx" local-stack local-stack-length output-file log-stream store-intrinsic
+  else token-arg INTRINSIC-LOAD8   = if token-address token-arg local-stack local-stack-length output-file log-stream load-intrinsic
+  else token-arg INTRINSIC-LOAD16  = if token-address token-arg local-stack local-stack-length output-file log-stream load-intrinsic
+  else token-arg INTRINSIC-LOAD32  = if token-address token-arg local-stack local-stack-length output-file log-stream load-intrinsic
+  else token-arg INTRINSIC-LOAD64  = if token-address token-arg local-stack local-stack-length output-file log-stream load-intrinsic
+  
+  else token-arg INTRINSIC-STORE8  = if token-address token-arg local-stack local-stack-length output-file log-stream store-intrinsic
+  else token-arg INTRINSIC-STORE16 = if token-address token-arg local-stack local-stack-length output-file log-stream store-intrinsic
+  else token-arg INTRINSIC-STORE32 = if token-address token-arg local-stack local-stack-length output-file log-stream store-intrinsic
+  else token-arg INTRINSIC-STORE64 = if token-address token-arg local-stack local-stack-length output-file log-stream store-intrinsic
         
   else token-arg INTRINSIC-SYSCALL0 = if
     // -------- Intrinsic 'syscall0' --------
@@ -923,6 +1045,8 @@ in
                 ERROR-EXIT-CODE exit drop
               end
             end i end inc end drop
+
+            old-local-memory-end local-stack local-stack-length output-file local-stack.convert-deleted-real
 
             old-local-memory-end local-memory-end !64
 
@@ -1360,8 +1484,20 @@ in
               item get-mode MODE-REAL = if
                 "    pop     r15\n" output-file fputs
               end
+              
             else
-              item get-mode MODE-REAL = if
+              item get-mode MODE-IMM         =
+              item get-mode MODE-GLOBAL      = |
+              item get-mode MODE-@LOCALCONST = |
+              item get-mode MODE-LOCAL       = |
+              item get-mode MODE-DATA        = | if
+                   
+                item stack-item.copy
+                
+              else
+                local-stack local-stack-length output-file local-stack.convert-last-items-real
+                item output-file nasm.convert-item-to-real
+
                 "    mov     r15, [local_ptr]\n" output-file fputs
                 local-memory-end @64 is-zero if
                   "    pop     qword [r15]\n" output-file fputs
@@ -1376,22 +1512,7 @@ in
                 end
 
                 local-memory-end @64 8 + local-memory-end !64
-              
-              else item get-mode MODE-IMM         =
-                   item get-mode MODE-GLOBAL      = |
-                   item get-mode MODE-@LOCALCONST = |
-                   item get-mode MODE-LOCAL       = |
-                   item get-mode MODE-DATA        = | if
-                   
-                item stack-item.copy
-                
-              else
-                LOG.ERR log-stream fputs "Unknown integer type to save to 'let' variable.\n" log-stream fputs
-                local-stack report-bug
-                token-address compile-procedure.show-here
-                ERROR-EXIT-CODE exit drop
-                NULLPTR // dummy
-              end end
+              end
               
               let replace-item in
                 variable-name replace-item let-names let-addresses let-vars-length str-map64.set-dstr if

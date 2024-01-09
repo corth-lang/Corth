@@ -7,10 +7,17 @@ macro set-arg1 16 + !64 endmacro
 
 macro MODE-REAL             0 endmacro
 macro MODE-IMM              1 endmacro
+
 macro MODE-GLOBAL           2 endmacro
-macro MODE-@LOCALCONST      3 endmacro
-macro MODE-LOCAL            4 endmacro
-macro MODE-DATA             5 endmacro
+macro MODE-@64GLOBAL        3 endmacro
+macro MODE-@8GLOBAL         4 endmacro
+
+macro MODE-LOCAL            5 endmacro
+macro MODE-@8LOCAL          6 endmacro
+macro MODE-@64LOCAL         7 endmacro
+macro MODE-@LOCALCONST      8 endmacro
+
+macro MODE-DATA             9 endmacro
 
 
 proc stack-item.mfree

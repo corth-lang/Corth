@@ -29,6 +29,42 @@ macro push-int-local let _offset_ in
   end
 end endmacro
 
+// int: offset
+macro push-@64local let _offset_ in
+  INT-TYPE-INT MODE-@64LOCAL stack-item.create let _item_ in
+    _offset_ _item_ set-arg1
+
+    _item_ push-item
+  end
+end endmacro
+
+// int: offset
+macro push-@8local let _offset_ in
+  INT-TYPE-INT MODE-@8LOCAL stack-item.create let _item_ in
+    _offset_ _item_ set-arg1
+
+    _item_ push-item
+  end
+end endmacro
+
+// int: offset
+macro push-@64global let _offset_ in
+  INT-TYPE-INT MODE-@64GLOBAL stack-item.create let _item_ in
+    _offset_ _item_ set-arg1
+
+    _item_ push-item
+  end
+end endmacro
+
+// int: offset
+macro push-@8global let _offset_ in
+  INT-TYPE-INT MODE-@8GLOBAL stack-item.create let _item_ in
+    _offset_ _item_ set-arg1
+
+    _item_ push-item
+  end
+end endmacro
+
 // int: index
 macro push-data let _index_ in
   INT-TYPE-INT MODE-DATA stack-item.create let _item_ in
@@ -76,6 +112,21 @@ in let local-memory-end local-stack local-stack-length in
 end end
 
 
+proc local-stack.find-last-@local
+  // ptr: local-stack ptr: local-stack-length -- int: index
+  ptr ptr -- int
+in let local-stack local-stack-length in
+  local-stack-length @64 while dup 0 > do dec dup
+    local-stack array64.get let item in
+      item get-mode MODE-@8LOCAL  =
+      item get-mode MODE-@64LOCAL = | if
+        inc break
+      end
+    end
+  end  
+end end
+
+
 proc local-stack.convert-last-items-real
   // ptr: local-stack ptr: local-stack-length file-desc: output-file --
   ptr ptr file-desc --
@@ -91,7 +142,17 @@ proc local-stack.convert-deleted-real
   int ptr ptr file-desc --
 in let local-memory-end local-stack local-stack-length output-file in
   local-stack local-stack-length local-stack.find-first-non-real                // Start index
-  local-memory-end local-stack local-stack-length local-stack.find-last-deleted // End index  
+  local-memory-end local-stack local-stack-length local-stack.find-last-deleted // End index
+  local-stack local-stack-length output-file local-stack.convert-items-real
+end end
+
+
+proc local-stack.convert-@local-real
+  // ptr: local-stack ptr: local-stack-length file-desc: output-file --
+  ptr ptr file-desc --
+in let local-stack local-stack-length output-file in
+  local-stack local-stack-length local-stack.find-first-non-real // Start index
+  local-stack local-stack-length local-stack.find-last-@local    // End index
   local-stack local-stack-length output-file local-stack.convert-items-real
 end end
 
