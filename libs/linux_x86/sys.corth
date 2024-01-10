@@ -13,6 +13,7 @@ macro file-desc            int endmacro
 
 macro sizeof(file-desc)      8 endmacro
 macro sizeof(stat)         144 endmacro
+macro sizeof(siginfo_t)    128 endmacro
 
 // Main streams
 macro STDIN          0 endmacro
@@ -121,3 +122,5 @@ macro P_PGID   2 endmacro
 macro P_PIDFD  3 endmacro
 
 macro WEXITED  4 endmacro
+
+macro CLD_EXITED 1 endmacro

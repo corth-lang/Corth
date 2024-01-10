@@ -111,22 +111,25 @@ proc command.compile -- in
     // Keep going unless we are in asm-only mode
     asm-only @64 isn-zero if EXIT-SUCCESS exit drop end
 
-    // Execute NASM.
-    subprocess.init
-      "/bin/nasm"  drop subprocess.file-name
-      "output.asm" drop subprocess.add-option
-      "-felf64"    drop subprocess.add-option
-      "-o"         drop subprocess.add-option
-      "output.o"   drop subprocess.add-option
-    subprocess.end
+    memory nasm-infop sizeof(siginfo_t) in
+    memory ld-infop sizeof(siginfo_t) in
+      // Execute NASM.
+      subprocess.init
+        "/bin/nasm"  drop subprocess.file-name
+        "output.asm" drop subprocess.add-option
+        "-felf64"    drop subprocess.add-option
+        "-o"         drop subprocess.add-option
+        "output.o"   drop subprocess.add-option
+      nasm-infop subprocess.end
 
-    // Execute linker.
-    subprocess.init
-      "/bin/ld"    drop subprocess.file-name
-      "output.o"   drop subprocess.add-option
-      "-o"         drop subprocess.add-option
-      output-file  @64  subprocess.add-option
-    subprocess.end
+      // Execute linker.
+      subprocess.init
+        "/bin/ld"    drop subprocess.file-name
+        "output.o"   drop subprocess.add-option
+        "-o"         drop subprocess.add-option
+        output-file  @64  subprocess.add-option
+      ld-infop subprocess.end
+    end end
   end end end end
   
   EXIT-SUCCESS exit drop

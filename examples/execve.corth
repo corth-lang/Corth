@@ -6,7 +6,7 @@ proc main
 in let argc argv in
   fork let pid in
     pid 1 neg = if
-      "Could not fork child.\n" puts
+      "error: could not fork child\n" puts
       1 exit drop
       
     else pid 0 = if
@@ -17,16 +17,28 @@ in let argc argv in
           NULLPTR new-envp !64
 
           // Run the sub process.
-          new-argv @64 new-argv new-envp execve let return-value in
-            "Error\n" puts
-            "Process returned " puts return-value puti putnl
-          end
+          new-argv @64 new-argv new-envp execve drop
+          "error: could not execute subprocess\n" puts
+          1 exit drop
         end
       end
       
     else
-      P_PID pid NULLPTR WEXITED NULLPTR waitid drop
-      "Parent ended\n" puts
+      memory infop sizeof(siginfo_t) in
+        P_PID pid infop WEXITED NULLPTR waitid drop
+        "info: parent ended\n" puts
+
+        infop 8 + @32 CLD_EXITED = if
+          infop 24 + @32 let exit-code in
+            "info: child exited with code " puts exit-code puti putnl
+            exit-code exit drop
+          end
+          
+        else
+          "info: unknown exit code\n" puts
+          1 exit drop
+        end
+      end
     end end
   end
 end 0 end

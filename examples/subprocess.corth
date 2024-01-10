@@ -13,12 +13,26 @@ proc main
 in let argc argv in
   malloc.init
 
-  subprocess.init
-    "/bin/ls" drop subprocess.file-name
-    "."       drop subprocess.add-option
-    "/home/"  drop subprocess.add-option
-    
-    comma-separated
-    "-m"      drop subprocess.add-switch
-  subprocess.end
+  memory infop sizeof(siginfo_t) in
+    123 infop 24 + !32
+
+    subprocess.init
+      "/bin/ls" drop subprocess.file-name
+      "/home/"  drop subprocess.add-option
+
+      comma-separated
+      "-m"      drop subprocess.add-switch
+    infop subprocess.end
+
+    infop 8  + @32 CLD_EXITED = if
+      infop 24 + @32 let exit-code in
+        "exited with code " puts exit-code puti putnl
+        exit-code exit drop
+      end
+      
+    else
+      "error: unknown exit code\n" eputs
+      1 exit drop
+    end
+  end
 end 0 end

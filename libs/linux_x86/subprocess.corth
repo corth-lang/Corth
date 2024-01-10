@@ -37,9 +37,9 @@ macro subprocess.add-env
 endmacro
 
 proc subprocess._exec
-  // ptr: file-name ptr: argv ptr: envp --
-  ptr ptr ptr --
-in let file-name argv envp in
+  // ptr: file-name ptr: argv ptr: envp ptr: infop --
+  ptr ptr ptr ptr --
+in let file-name argv envp infop in
   fork let pid in
     pid 1 neg = if
       STDERR "subprocess._exec: Could not fork child\n" fwrite drop
@@ -52,18 +52,18 @@ in let file-name argv envp in
       
     else
       // Wait for the child process.
-      P_PID pid NULLPTR WEXITED NULLPTR waitid drop
+      P_PID pid infop WEXITED NULLPTR waitid drop
     end end
   end
 end end
 
-macro subprocess.end
+macro subprocess.end let _infop_ in
     NULLPTR _subprocess.argv_ list64.append
     NULLPTR _subprocess.envp_ list64.append
 
-    _subprocess.file-name_ @64 _subprocess.argv_ list64.array-addr _subprocess.envp_ list64.array-addr subprocess._exec
+    _subprocess.file-name_ @64 _subprocess.argv_ list64.array-addr _subprocess.envp_ list64.array-addr _infop_ subprocess._exec
     
     _subprocess.argv_ list64.mfree drop
     _subprocess.envp_ list64.mfree drop
   end end end
-endmacro
+end endmacro
