@@ -82,12 +82,13 @@ macro KEYWORD-CAST-STR     "cast"      endmacro
 // Intrinsic IDs
 macro INTRINSIC-UNKNOWN  0  endmacro
 macro INTRINSIC-ADD      1  endmacro
-macro INTRINSIC-FULLMUL  2  endmacro
-macro INTRINSIC-DIVMOD   3  endmacro
-macro INTRINSIC-UFULLMUL 4  endmacro
-macro INTRINSIC-UDIVMOD  5  endmacro
-macro INTRINSIC-BOR      6  endmacro
-macro INTRINSIC-BNOT     7  endmacro
+macro INTRINSIC-SUB      2  endmacro
+macro INTRINSIC-FULLMUL  3  endmacro
+macro INTRINSIC-DIVMOD   4  endmacro
+macro INTRINSIC-UFULLMUL 5  endmacro
+macro INTRINSIC-UDIVMOD  6  endmacro
+macro INTRINSIC-BOR      7  endmacro
+macro INTRINSIC-BNOT     8  endmacro
 macro INTRINSIC-LOAD8    12 endmacro
 macro INTRINSIC-STORE8   13 endmacro
 macro INTRINSIC-LOAD16   14 endmacro
@@ -107,6 +108,7 @@ macro INTRINSIC-SYSCALL6 26 endmacro
 // Intrinsic strings
 macro INTRINSIC-UNKNOWN-STR  "<unknown>" endmacro
 macro INTRINSIC-ADD-STR      "+"         endmacro
+macro INTRINSIC-SUB-STR      "-"         endmacro
 macro INTRINSIC-FULLMUL-STR  "**"        endmacro
 macro INTRINSIC-DIVMOD-STR   "/%"        endmacro
 macro INTRINSIC-UFULLMUL-STR "u**"       endmacro
@@ -182,6 +184,7 @@ proc get-intrinsic-name
   int -- ptr int
 in let intrinsic in
        intrinsic INTRINSIC-ADD      = if INTRINSIC-ADD-STR      
+  else intrinsic INTRINSIC-SUB      = if INTRINSIC-SUB-STR      
   else intrinsic INTRINSIC-FULLMUL  = if INTRINSIC-FULLMUL-STR  
   else intrinsic INTRINSIC-DIVMOD   = if INTRINSIC-DIVMOD-STR   
   else intrinsic INTRINSIC-UFULLMUL = if INTRINSIC-UFULLMUL-STR 
@@ -204,7 +207,7 @@ in let intrinsic in
   else intrinsic INTRINSIC-SYSCALL5 = if INTRINSIC-SYSCALL5-STR 
   else intrinsic INTRINSIC-SYSCALL6 = if INTRINSIC-SYSCALL6-STR 
   else                                   INTRINSIC-UNKNOWN-STR  
-  end end end end end end end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end end end end end end end end
 end end
 
 proc get-int-type-name

@@ -316,6 +316,7 @@ in let
     
     // I still hate my life.
     else buffer buffer-size INTRINSIC-ADD-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-ADD      
+    else buffer buffer-size INTRINSIC-SUB-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SUB      
     else buffer buffer-size INTRINSIC-FULLMUL-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-FULLMUL  
     else buffer buffer-size INTRINSIC-DIVMOD-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-DIVMOD   
     else buffer buffer-size INTRINSIC-UFULLMUL-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UFULLMUL 
@@ -347,7 +348,7 @@ in let
 
     // This is nightmare fuel.
     end end end end end end end end end end end end end end end end end end end end end
-    end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end
 
     let token-type token-arg in
       // Generate the address and return.

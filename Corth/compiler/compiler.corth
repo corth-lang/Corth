@@ -607,6 +607,33 @@ in let
   log-stream
 in
        token-arg INTRINSIC-ADD = if token-address local-stack local-stack-length output-file log-stream add-intrinsic
+  else token-arg INTRINSIC-SUB = if
+    // -------- Intrinsic '-' --------
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+
+    pop-item pop-item let item2 item1 in
+      item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+
+      item2 get-mode MODE-IMM = if
+        INT-TYPE-INT push-real
+
+        item1              output-file nasm.push-int
+        item2 get-arg1 neg output-file nasm.add-int-immediate
+
+      else
+        INT-TYPE-INT push-real
+
+        item2 "rax" output-file nasm.mov-reg-item
+        item1       output-file nasm.push-int
+
+        "    sub     [rsp], rax\n" output-file fputs
+      end
+
+      item1 stack-item.mfree
+      item2 stack-item.mfree
+    end
+    
   else token-arg INTRINSIC-BOR = if
     // -------- Intrinsic '||' --------
     local-stack-length @64 2 < if invalid-usage-of-intrinsic end
@@ -856,7 +883,7 @@ in
     token-address log-stream fput-here
     procedure-name procedure-address log-stream fput-inside-procedure
     ERROR-EXIT-CODE exit drop
-  end end end end end end end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end end end end end end end end
 end end
 
 
