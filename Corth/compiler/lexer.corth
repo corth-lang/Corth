@@ -317,6 +317,14 @@ in let
     // I still hate my life.
     else buffer buffer-size INTRINSIC-ADD-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-ADD      
     else buffer buffer-size INTRINSIC-SUB-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SUB      
+    else buffer buffer-size INTRINSIC-MUL-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-MUL  
+    else buffer buffer-size INTRINSIC-MUL2-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-MUL2
+    else buffer buffer-size INTRINSIC-DIV-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-DIV
+    else buffer buffer-size INTRINSIC-MOD-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-MOD 
+    else buffer buffer-size INTRINSIC-UMUL-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UMUL  
+    else buffer buffer-size INTRINSIC-UMUL2-STR    memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UMUL2
+    else buffer buffer-size INTRINSIC-UDIV-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UDIV
+    else buffer buffer-size INTRINSIC-UMOD-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UMOD   
     else buffer buffer-size INTRINSIC-FULLMUL-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-FULLMUL  
     else buffer buffer-size INTRINSIC-DIVMOD-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-DIVMOD   
     else buffer buffer-size INTRINSIC-UFULLMUL-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UFULLMUL 
@@ -347,8 +355,8 @@ in let
       TYPE-NAME buffer buffer-size to-dynamic8
 
     // This is nightmare fuel.
-    end end end end end end end end end end end end end end end end end end end end end
-    end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end end end end end
 
     let token-type token-arg in
       // Generate the address and return.
