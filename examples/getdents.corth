@@ -28,7 +28,7 @@ in let argc argv in
                 length is-zero if break end
 
                 buffer while dup buffer length + < do let p in
-                  p 18 + cstr.str puts putnl
+                  p 19 + cstr.str puts putnl
                 p 16 + @16 p + end end drop
               end
             end
