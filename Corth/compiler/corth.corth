@@ -17,10 +17,400 @@ macro EXIT-ERROR   1 endmacro
 
 memory executable-file-name sizeof(ptr) end
 
-
-macro command.compile-nasm-show-usage
-   "usage: " puts executable-file-name @64 dup cstr.len puts " [OPTIONS]... compile-nasm <source-file> [OPTIONS]...\n" puts
+macro put-exe
+  executable-file-name @64 dup cstr.len puts
 endmacro
+
+macro main.unknown-command
+  "error: unknown command '" puts arg1 arg1-length puts "'\n" puts
+  EXIT-ERROR exit drop
+endmacro
+
+macro main.show-usage
+  "usage: " puts put-exe " [OPTIONS]... <command> [OPTIONS]...\n" puts
+endmacro
+
+macro command.quick-test-show-usage
+  "usage: " puts put-exe " [OPTIONS]... quick-test [OPTIONS]... [TEST-FILES]...\n" puts
+endmacro
+
+macro command.compile-show-usage
+   "usage: " puts put-exe " [OPTIONS]... compile <source-file> [OPTIONS]...\n" puts
+endmacro
+
+macro command.bootstrap-show-usage
+   "usage: " puts put-exe " [OPTIONS]... bootstrap [OPTIONS]...\n" puts
+endmacro
+
+
+proc move-file
+  // ptr: from ptr: to
+  ptr ptr --
+in let from to in
+  memory copy-infop sizeof(siginfo_t) in
+    subprocess.init
+      "/bin/mv"  drop subprocess.file-name
+      from            subprocess.add-option
+      to              subprocess.add-option
+    copy-infop subprocess.end
+
+    copy-infop 8 + @32 CLD_EXITED != copy-infop 24 + @32 isn-zero | if
+      "error: could not move " eputs from cstr.str eputs eputnl
+      EXIT-ERROR exit drop
+    end
+
+    "info: moved " puts from cstr.str puts " to " puts to cstr.str puts putnl
+  end
+end end
+
+
+proc copy-file
+  // ptr: from ptr: to
+  ptr ptr --
+in let from to in
+  memory copy-infop sizeof(siginfo_t) in
+    subprocess.init
+      "/bin/cp"  drop subprocess.file-name
+      from            subprocess.add-option
+      to              subprocess.add-option
+    copy-infop subprocess.end
+
+    copy-infop 8 + @32 CLD_EXITED != copy-infop 24 + @32 isn-zero | if
+      "error: could not copy " eputs from cstr.str eputs eputnl
+      EXIT-ERROR exit drop
+    end
+    
+    "info: copied " puts from cstr.str puts " to " puts to cstr.str puts putnl
+  end
+end end
+  
+
+
+proc compile
+  // ptr: source-name ptr: output-name ptr: include-paths-set bool: full-compilation -- bool: successful
+  ptr ptr ptr bool -- bool
+  // NOTE: source-name must be a file.
+in let source-name output-name include-paths-set full-compilation in
+  // Compile Corth file to NASM file.
+  source-name
+  "output.asm" drop
+  include-paths-set
+  STDERR
+  compile-nasm
+
+  // Keep going if we are in full-compilation mode.
+  full-compilation ! if true return end
+  
+  memory nasm-infop sizeof(siginfo_t) in
+  memory ld-infop sizeof(siginfo_t) in
+    
+    // Execute NASM.
+    subprocess.init
+      "/bin/nasm"  drop subprocess.file-name
+      "output.asm" drop subprocess.add-option
+      "-felf64"    drop subprocess.add-option
+      "-o"         drop subprocess.add-option
+      "output.o"   drop subprocess.add-option
+    nasm-infop subprocess.end
+
+    nasm-infop 8 + @32 CLD_EXITED != nasm-infop 24 + @32 isn-zero | if
+      "error: NASM failed\n" eputs
+      false return
+    end
+
+    // Execute linker.
+    subprocess.init
+      "/bin/ld"   drop subprocess.file-name
+      "output.o"  drop subprocess.add-option
+      "-o"        drop subprocess.add-option
+      output-name      subprocess.add-option
+    ld-infop subprocess.end
+    
+    ld-infop 8 + @32 CLD_EXITED != ld-infop 24 + @32 isn-zero | if
+      "error: linker failed\n" eputs
+      false return
+    end
+  end end
+end true end
+
+
+proc compile-recursive
+  // ptr: source-name ptr: output-name ptr: include-paths-set bool: full-compilation -- bool: successful
+  ptr ptr ptr bool -- bool
+  // If source-name is a directory, compiles all subpaths of it.
+in let source-name output-name include-paths-set full-compilation in
+  memory stats sizeof(stat) in
+    source-name stats stat drop
+
+    // Check if user has access to the path.
+    source-name R_OK access isn-zero if
+      "error: can not access file '" eputs source-name source-name mlength eputs "'\n" eputs
+      EXIT-ERROR exit drop
+    end
+    
+    stats 24 + @64 S_IFMT && let masked in
+      masked S_IFREG = if
+        source-name output-name include-paths-set full-compilation compile
+
+      else masked S_IFDIR = if
+        source-name diropen-r let directory in
+          directory is-neg if
+            "error: could not open directory '" eputs source-name cstr.str eputs "'\n" eputs
+            false return
+          end
+
+          memory buffer 1024 in
+            while true do
+              directory buffer 1024 getdents64 let length in
+                length is-neg if
+                  "error: 'getdents64' failed\n" eputs
+                  EXIT-ERROR exit drop
+                end
+
+                length is-zero if true return end
+
+                buffer while dup buffer length + < do let _subpath in
+                  _subpath 19 + "."  drop cstr.cmp isn-zero
+                  _subpath 19 + ".." drop cstr.cmp isn-zero & if
+                    source-name source-name mlength dec _subpath 19 + cstr.str path.merge2-cstr let subpath in
+                      subpath output-name include-paths-set full-compilation compile-recursive ! if false return end
+                    end
+                  end
+                _subpath _subpath 16 + @16 + end end drop
+              end
+            end
+          end
+        end
+        false // dummy
+
+      else
+        "error: file '" eputs "' is neither a file or a directory\n" eputs
+        EXIT-ERROR exit drop
+        false // dummy
+      end end
+    end
+  end
+end end
+
+
+proc command.quick-test -- in
+  getopts.clear
+
+  getopts.reset-length
+
+  "h#help#full#i$inc$" drop getopts.generate ! if
+    "error: 'getopts.generate' failed\n" eputs
+    EXIT-ERROR exit drop
+  end
+
+  memory test-paths        sizeof(ptr) in
+  memory include-paths-set sizeof(ptr) in
+  memory full-compilation  sizeof(int) in
+    16 list64.init test-paths !64
+    16 list64.init include-paths-set !64
+
+    test-paths @64 is-null if
+      "error: 'list64.init' failed\n" eputs
+      EXIT-ERROR exit drop
+    end    
+
+    include-paths-set @64 is-null if
+      "error: 'list64.init' failed\n" eputs
+      EXIT-ERROR exit drop
+    end
+
+    0 full-compilation !64
+
+    while true do
+      getopts.parse let type arg1 arg1-length arg2 arg2-length error in
+        error        if EXIT-ERROR   exit drop end
+        type O-END = if                  break end
+
+        type O-INPLACE = if
+          arg1 arg1-length inc to-dynamic8 test-paths list64.append
+
+        else type O-SWITCH = if
+            arg1 arg1-length "h"    memcmp8-wl is-zero
+            arg1 arg1-length "help" memcmp8-wl is-zero | if
+              command.quick-test-show-usage
+              EXIT-SUCCESS exit drop
+
+            else arg1 arg1-length "full" memcmp8-wl is-zero if
+              full-compilation @64 isn-zero if
+                "error: '--full' can not be used more than once\n" puts
+                EXIT-ERROR exit drop
+              end
+
+              1 full-compilation !64
+
+            else EXIT-ERROR exit drop end end
+
+        else type O-ARGUMENT = if
+          arg1 arg1-length "i"            memcmp8-wl is-zero
+          arg1 arg1-length "include-path" memcmp8-wl is-zero | if
+            arg2 arg2-length inc to-dynamic8 include-paths-set str-set8.add drop
+
+          else EXIT-ERROR exit drop end
+
+        else EXIT-ERROR exit drop end end end // impossible
+      end
+    end
+    
+    0 while dup test-paths list64.length < do dup test-paths list64.get let test-file in
+      test-file
+      "/dev/null" drop
+      include-paths-set
+      full-compilation @64 isn-zero
+      compile-recursive ! if EXIT-ERROR exit drop end
+    end inc end drop
+      
+    // Deallocate 'include-paths-set'.
+    include-paths-set list64.mfree drop
+  end end end
+
+  EXIT-SUCCESS exit drop
+end
+
+
+proc command.bootstrap -- in
+  getopts.clear
+
+  "h#help#once#e$executable$std$" drop getopts.generate ! if
+    "error: 'getopts.generate' failed\n" eputs
+    EXIT-ERROR exit drop
+  end
+
+  memory source     sizeof(ptr)  in
+  memory executable sizeof(ptr)  in
+  memory std        sizeof(ptr)  in
+  memory once       sizeof(bool) in
+  
+    NULLPTR source !64
+    NULLPTR std    !64
+    
+    executable-file-name @64 executable !64
+
+    0 once !64
+
+    while true do
+      getopts.parse let type arg1 arg1-length arg2 arg2-length error in
+        error        if EXIT-ERROR   exit drop end
+        type O-END = if break                  end
+
+        type O-INPLACE = if
+          source @64 is-null if
+            arg1 arg1-length inc to-dynamic8 source !64
+          else
+            command.bootstrap-show-usage
+            EXIT-ERROR exit drop
+          end
+          
+        else type O-SWITCH = if
+          arg1 arg1-length "h"    memcmp8-wl is-zero
+          arg1 arg1-length "help" memcmp8-wl is-zero | if
+            command.bootstrap-show-usage
+            EXIT-SUCCESS exit drop
+
+          else arg1 arg1-length "once" memcmp8-wl is-zero if
+            once @8 isn-zero if
+              "error: '--once' can not be used more than once\n" puts
+              EXIT-ERROR exit drop
+            end
+
+            0xff once !8
+
+          else EXIT-ERROR exit drop end end // impossible
+          
+        else type O-ARGUMENT = if            
+          arg1 arg1-length "e"          memcmp8-wl is-zero
+          arg1 arg1-length "executable" memcmp8-wl is-zero | if
+            arg2 arg2-length inc to-dynamic8 executable !64
+            
+          else arg1 arg1-length "std" memcmp8-wl is-zero if
+             arg2 arg2-length inc to-dynamic8 std !64
+            
+          else EXIT-ERROR exit drop end end // impossible
+          
+        else EXIT-ERROR exit drop end end end // impossible
+      end
+    end
+
+    source @64 is-null if
+      command.bootstrap-show-usage
+      EXIT-ERROR exit drop
+    end
+
+    std @64 is-null if
+      "error: bootstrap requires --std\n" eputs
+      EXIT-ERROR exit drop
+    end
+
+    executable @64 "./old" drop copy-file
+
+    memory compiler-infop sizeof(siginfo_t) in
+    memory diff-infop     sizeof(siginfo_t) in
+      1 while
+        "info: starting iteration " puts dup putu putnl
+        
+        subprocess.init
+          "./old"    drop subprocess.file-name
+          "compile"  drop subprocess.add-option
+          source @64      subprocess.add-option
+          "-o"       drop subprocess.add-option
+          "./new"    drop subprocess.add-option
+          "-i"       drop subprocess.add-option
+          std @64         subprocess.add-option
+        compiler-infop subprocess.end
+
+        compiler-infop 8 + @32 CLD_EXITED != compiler-infop 24 + @32 isn-zero | if
+          "error: compilation failed\n" eputs
+          EXIT-ERROR exit drop
+        end
+        
+        "info: successfully compiled\n" puts
+
+        subprocess.init
+          "/bin/diff" drop subprocess.file-name
+          "./old"     drop subprocess.add-option
+          "./new"     drop subprocess.add-option
+        diff-infop subprocess.end
+
+        diff-infop 8 + @32 CLD_EXITED != if
+          "error: diff did not exit\n" eputs
+          EXIT-ERROR exit drop
+        end
+        
+      diff-infop 24 + @32 isn-zero once @8 is-zero & do
+        "info: ./old and ./new differ, reiterating...\n" puts
+      
+        "./new" drop "./old" drop move-file
+      inc end
+       
+      "info: reached stability in " puts putu " tries, starting tests...\n" puts
+
+      memory quick-test-infop sizeof(siginfo_t) in
+        subprocess.init
+          "./new"      drop subprocess.file-name
+          "quick-test" drop subprocess.add-option
+          "./examples" drop subprocess.add-option
+          "-i"         drop subprocess.add-option
+          std @64           subprocess.add-option
+        quick-test-infop subprocess.end
+        
+        quick-test-infop 8 + @32 CLD_EXITED != quick-test-infop 24 + @32 isn-zero | if
+          "error: quick tests failed\n" eputs
+          EXIT-ERROR exit drop
+        end
+      end
+
+      "info: tests succeeded\n" puts
+
+      "./new" drop executable @64 move-file
+    end end
+  end end end end
+
+  EXIT-SUCCESS exit drop
+end
 
 
 proc command.compile -- in
@@ -36,7 +426,7 @@ proc command.compile -- in
   memory include-paths-set sizeof(ptr) in
   memory asm-only          sizeof(int) in
   
-    NULLPTR           source-file !64
+    NULLPTR       source-file !64
     "output" drop output-file !64
     
     16 list64.init include-paths-set !64
@@ -57,16 +447,15 @@ proc command.compile -- in
           source-file @64 is-null if
             arg1 arg1-length inc to-dynamic8 source-file !64
           else
-            command.compile-nasm-show-usage
+            command.compile-show-usage
             EXIT-ERROR exit drop
           end
           
         else type O-SWITCH = if
           arg1 arg1-length "h"    memcmp8-wl is-zero
           arg1 arg1-length "help" memcmp8-wl is-zero | if
-            command.compile-nasm-show-usage
+            command.compile-show-usage
             EXIT-SUCCESS exit drop
-
 
           else arg1 arg1-length "asm" memcmp8-wl is-zero if
             asm-only @64 isn-zero if
@@ -94,51 +483,22 @@ proc command.compile -- in
     end
 
     source-file @64 is-null if
-      command.compile-nasm-show-usage
+      command.compile-show-usage
       EXIT-ERROR exit drop
     end
 
-    // Compile Corth file to NASM file.
     source-file @64
-    "output.asm" drop
+    output-file @64
     include-paths-set
-    STDERR
-    compile-nasm
-
+    asm-only @64 is-zero
+    compile ! if EXIT-ERROR exit drop end
+    
     // Deallocate 'include-paths-set'.
     include-paths-set list64.mfree drop
-
-    // Keep going unless we are in asm-only mode
-    asm-only @64 isn-zero if EXIT-SUCCESS exit drop end
-
-    memory nasm-infop sizeof(siginfo_t) in
-    memory ld-infop sizeof(siginfo_t) in
-      // Execute NASM.
-      subprocess.init
-        "/bin/nasm"  drop subprocess.file-name
-        "output.asm" drop subprocess.add-option
-        "-felf64"    drop subprocess.add-option
-        "-o"         drop subprocess.add-option
-        "output.o"   drop subprocess.add-option
-      nasm-infop subprocess.end
-
-      // Execute linker.
-      subprocess.init
-        "/bin/ld"    drop subprocess.file-name
-        "output.o"   drop subprocess.add-option
-        "-o"         drop subprocess.add-option
-        output-file  @64  subprocess.add-option
-      ld-infop subprocess.end
-    end end
   end end end end
   
   EXIT-SUCCESS exit drop
 end
-
-
-macro main.show-usage
-  "usage: " puts executable-file-name @64 dup cstr.len puts " [OPTIONS]... command [OPTIONS]...\n" puts
-endmacro
 
 
 proc main
@@ -152,26 +512,27 @@ in let argc argv in
 
   getopts.reset-length
 
-  "h#help#std$" drop getopts.generate ! if
+  argv @64 executable-file-name !64
+  argv 8 + getopts.set-arguments  
+
+  "h#help#" drop getopts.generate ! if
     "error: 'getopts.generate' failed\n" eputs
     EXIT-ERROR exit drop
   end
 
-  argv @64 executable-file-name !64
-  argv 8 + getopts.set-arguments
-  
   while true do
     getopts.parse let type arg1 arg1-length arg2 arg2-length error in
       error        if EXIT-ERROR   exit drop end
       type O-END = if                  break end
       
       type O-INPLACE = if
-        arg1 arg1-length "compile" memcmp8-wl is-zero if
-          command.compile
+             arg1 arg1-length "compile"    memcmp8-wl is-zero if command.compile
+        else arg1 arg1-length "quick-test" memcmp8-wl is-zero if command.quick-test
+        else arg1 arg1-length "bootstrap"  memcmp8-wl is-zero if command.bootstrap
         else
-          "error: unknown command\n" puts
+          "error: unknown command '" puts arg1 arg1-length puts putnl
           EXIT-ERROR exit drop
-        end
+        end end end
 
       else type O-SWITCH = if
         arg1 arg1-length "h"    memcmp8-wl is-zero

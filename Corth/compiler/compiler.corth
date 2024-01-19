@@ -2337,9 +2337,6 @@ proc compile-nasm
   // ptr: source-name ptr: output-name ptr: include-paths-set file-desc: log-stream --
   ptr ptr ptr file-desc --
 in let source-name output-name include-paths-set log-stream in
-  // Remove the output file.
-  output-name unlink drop
-
   // Create the output file.
   output-name 0o777 creat dup isn-pos if
     LOG.ERR log-stream fputs "Could not create output file '" log-stream fputs output-name output-name cstr.len log-stream fputs "'.\n" log-stream fputs
