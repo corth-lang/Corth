@@ -2082,7 +2082,7 @@ in
                 i end inc end drop
 
                 // Check if any library is found.
-                found @64 is-zero if
+                found @8 is-zero if
                   LOG.ERR log-stream fputs "Could not find library '" log-stream fputs path-token-arg dup mlength log-stream fputs "'.\n" log-stream fputs
                   path-token-address log-stream fput-here
                   ERROR-EXIT-CODE exit drop
