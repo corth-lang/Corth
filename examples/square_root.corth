@@ -1,5 +1,5 @@
-include libs/linux_x86/stdio.corth
-include libs/math/fixed64.corth
+include linux_x86/stdio.corth
+include math/fixed64.corth
 
 proc main
   int int -- int

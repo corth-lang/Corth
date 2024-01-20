@@ -1,4 +1,4 @@
-include compiler/nasm.corth
+include nasm.corth
 
 
 // ptr: item --

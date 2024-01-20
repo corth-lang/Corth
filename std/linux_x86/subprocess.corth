@@ -1,0 +1,69 @@
+include collections/list64.corth
+include linux_x86/sys.corth
+include core/ptr.corth
+include cstr.corth
+
+
+macro subprocess.init
+  memory _subprocess.file-name_ sizeof(ptr) in
+  memory _subprocess.argv_      sizeof(ptr) in
+  memory _subprocess.envp_      sizeof(ptr) in
+  
+    8 list64.init _subprocess.argv_ !64
+    8 list64.init _subprocess.envp_ !64
+endmacro
+
+macro subprocess.success
+  _subprocess.argv_ @64 _subprocess.envp_ @64 isn-null
+endmacro
+
+macro subprocess.file-name let _file-name_ in
+  _file-name_ _subprocess.file-name_ !64
+  _file-name_ _subprocess.argv_ list64.append
+end endmacro
+
+macro subprocess.add-option
+  _subprocess.argv_ list64.append
+endmacro
+
+macro subprocess.add-switch
+  swp if
+    _subprocess.argv_ list64.append
+  else drop end
+endmacro
+
+macro subprocess.add-env
+  _subprocess.envp_ list64.append
+endmacro
+
+proc subprocess._exec
+  // ptr: file-name ptr: argv ptr: envp ptr: infop --
+  ptr ptr ptr ptr --
+in let file-name argv envp infop in
+  fork let pid in
+    pid 1 neg = if
+      STDERR "subprocess._exec: Could not fork child\n" fwrite drop
+      1 exit drop
+      
+    else pid 0 = if
+      // Execute file-name in child process.
+      file-name argv envp execve drop
+      0 exit drop
+      
+    else
+      // Wait for the child process.
+      P_PID pid infop WEXITED NULLPTR waitid drop
+    end end
+  end
+end end
+
+macro subprocess.end let _infop_ in
+    NULLPTR _subprocess.argv_ list64.append
+    NULLPTR _subprocess.envp_ list64.append
+
+    _subprocess.file-name_ @64 _subprocess.argv_ list64.array-addr _subprocess.envp_ list64.array-addr _infop_ subprocess._exec
+    
+    _subprocess.argv_ list64.mfree drop
+    _subprocess.envp_ list64.mfree drop
+  end end end
+end endmacro

@@ -1,0 +1,150 @@
+include core/memory.corth
+include dynamic/utils.corth
+include collections/array64.corth
+include cstr.corth
+
+// string-builder is not designed to have a long life, unlike a list.
+// This library requires malloc.
+
+// NOTE: This library requires malloc.
+// NOTE: string-builder.RESIZING must be defined as an integer constant.
+
+macro string-builder.init let _builder.array_ _builder.ptr_ in
+  // int: start-size ptr: builder.array ptr: builder.ptr --
+  // Start size is the capacity the dynamic object has when the object is created.
+  // Save the dynamic object to a variable and use that variable address as the list object.
+  malloc dup _builder.array_ !64 _builder.ptr_ !64
+end endmacro
+
+macro string-builder.to-string
+  // ptr: builder.array ptr: builder.ptr -- ptr: string
+  string-builder.to-array to-dynamic8
+endmacro
+
+macro string-builder.to-array let _builder.array_ _builder.ptr_ in
+  // ptr: builder.array ptr: builder.ptr -- ptr: array int: length
+  _builder.array_ @64 _builder.ptr_ @64 _builder.array_ @64 -
+end endmacro
+
+macro string-builder.length let _builder.array_ _builder.ptr_ in
+  // ptr: builder.array ptr: builder.ptr -- int: length
+  _builder.ptr_ @64 _builder.array_ @64 -
+end endmacro
+
+macro string-builder.avail let _builder.array_ _builder.ptr_ in
+  // ptr: builder.array ptr: builder.ptr -- int: avail
+  // Returns the number of indexes available on the builder without any resizing.
+  _builder.array_ @64 mlength _builder.ptr_ @64 _builder.array_ - -
+end endmacro
+
+proc string-builder.inc-capacity
+  // int: extend ptr: builder.array ptr: builder.ptr --
+ int ptr ptr --
+  // NOTE: If a problem with mfree occurs, it is ignored. This behavior should be changed in the future.
+in let extend builder.array builder.ptr in
+  builder.array @64 let old-dynamic in
+    // resize and save the dynamic object.
+    old-dynamic old-dynamic mlength extend + dresize-up builder.array !64
+
+    // Update builder.ptr.
+    builder.ptr @64 old-dynamic - builder.array @64 + builder.ptr !64
+
+    // Free the old dynamic resources.
+    old-dynamic mfree drop
+  end
+end end
+
+proc string-builder.check-capacity
+  // int: length ptr: builder.array ptr: builder.ptr -
+  int ptr ptr --
+  // Length is the expected available length.
+in let length builder.array builder.ptr in
+  length builder.array @64 mlength builder.array builder.ptr string-builder.length - - let avail in
+    avail is-pos if
+      avail string-builder.RESIZING upper-base builder.array builder.ptr string-builder.inc-capacity
+    end
+  end
+end end
+
+proc string-builder.append-char
+  // int: value ptr: builder.array ptr: builder.ptr --
+  int ptr ptr --
+in let value builder.array builder.ptr in
+  // Check if the list has enough capacity.
+  1 builder.array builder.ptr string-builder.check-capacity
+
+  // Set value.
+  value builder.ptr @64 !8
+
+  // Shift the pointer
+  builder.ptr @inc64
+end end
+
+proc string-builder.append-str
+  // ptr: array int: length ptr: builder.array ptr: builder.ptr --
+  ptr int ptr ptr --
+in let array length builder.array builder.ptr in
+  // Check if the list has enough capacity.
+  length builder.array builder.ptr string-builder.check-capacity
+
+  // Set value.
+  array builder.ptr @64 length memcpy8
+
+  // Shift the pointer
+  builder.ptr @64 length + builder.ptr !64
+end end
+
+// cstr: string ptr: builder.array ptr: builder.ptr --
+macro string-builder.append-cstr let _string_ _builder.array_ _builder.ptr_ in
+  _string_ _string_ cstr.len _builder.array_ _builder.ptr_ string-builder.append-str
+end endmacro
+
+// dstr: string ptr: builder.array ptr: builder.ptr --
+macro string-builder.append-dstr let string _builder.array_ _builder.ptr_ in
+  _string_ _string_ mlength _builder.array_ _builder.ptr_ string-builder.append-str
+end endmacro
+
+// int: number ptr: builder.array ptr: builder.ptr --
+macro string-builder.append-uint let _number_ _builder.array_ _builder.ptr_ in
+  memory __buffer_ 20 in
+    __buffer_ _number_ intconvud let _buffer-start_ in
+      _buffer-start_ __buffer_ 20 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
+    end
+  end
+end endmacro
+
+// int: number ptr: builder.array ptr: builder.ptr --
+macro string-builder.append-int let _number_ _builder.array_ _builder.ptr_ in
+  memory __buffer_ 20 in
+    __buffer_ _number_ intconvd let _buffer-start_ in
+      _buffer-start_ __buffer_ 20 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
+    end
+  end
+end endmacro
+
+// int: number ptr: builder.array ptr: builder.ptr --
+macro string-builder.append-hex let _number_ _builder.array_ _builder.ptr_ in
+  memory __buffer_ 16 in
+    __buffer_ _number_ intconvx let _buffer-start_ in
+      _buffer-start_ __buffer_ 16 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
+    end
+  end
+end endmacro
+
+// int: number ptr: builder.array ptr: builder.ptr --
+macro string-builder.append-oct let _number_ _builder.array_ _builder.ptr_ in
+  memory __buffer_ 22 in
+    __buffer_ _number_ intconvo let _buffer-start_ in
+      _buffer-start_ __buffer_ 22 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
+    end
+  end
+end endmacro
+
+// int: number ptr: builder.array ptr: builder.ptr --
+macro string-builder.append-bin let _number_ _builder.array_ _builder.ptr_ in
+  memory __buffer_ 64 in
+    __buffer_ _number_ intconvb let _buffer-start_ in
+      _buffer-start_ __buffer_ 64 + _buffer-start_ - _builder.array_ _builder.ptr_ string-builder.append-str
+    end
+  end
+end endmacro

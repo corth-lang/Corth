@@ -1,14 +1,14 @@
 macro malloc.ARRAY-SIZE       0x800000 endmacro
 macro malloc.AVAIL-QUEUE-SIZE 0x100000 endmacro
-include libs/dynamic/malloc.corth
-include libs/dynamic/utils.corth
+include dynamic/malloc.corth
+include dynamic/utils.corth
 
-include libs/linux_x86/subprocess.corth
-include libs/linux_x86/stdio.corth
-include libs/cstr.corth
-include libs/getopts.corth
+include linux_x86/subprocess.corth
+include linux_x86/stdio.corth
+include cstr.corth
+include getopts.corth
 
-include compiler/compiler.corth
+include compiler.corth
 
 
 macro EXIT-SUCCESS 0 endmacro
@@ -83,7 +83,48 @@ in let from to in
     "info: copied " puts from cstr.str puts " to " puts to cstr.str puts putnl
   end
 end end
-  
+
+
+proc make-directory
+  // ptr: path
+  ptr --
+in let path in
+  memory mkdir-infop sizeof(siginfo_t) in
+    subprocess.init
+      "/bin/mkdir"  drop subprocess.file-name
+      path               subprocess.add-option
+    mkdir-infop subprocess.end
+
+    mkdir-infop 8 + @32 CLD_EXITED != mkdir-infop 24 + @32 isn-zero | if
+      "error: could not create directory " eputs path cstr.str eputs eputnl
+      EXIT-ERROR exit drop
+    end
+
+    "info: created directory " puts path cstr.str puts putnl
+  end
+end end
+
+
+proc recursive-force-remove
+  // ptr: path
+  ptr --
+in let path in
+  memory rm-infop sizeof(siginfo_t) in
+    subprocess.init
+      "/bin/rm"  drop subprocess.file-name
+      "-rf"      drop subprocess.file-name
+      path            subprocess.add-option
+    rm-infop subprocess.end
+
+    rm-infop 8 + @32 CLD_EXITED != rm-infop 24 + @32 isn-zero | if
+      "error: could not remove " eputs path cstr.str eputs eputnl
+      EXIT-ERROR exit drop
+    end
+
+    "info: created directory " puts path cstr.str puts putnl
+  end
+end end
+
 
 
 proc compile
@@ -91,6 +132,8 @@ proc compile
   ptr ptr ptr bool -- bool
   // NOTE: source-name must be a file.
 in let source-name output-name include-paths-set full-compilation in
+  
+
   // Compile Corth file to NASM file.
   source-name
   "output.asm" drop
@@ -350,66 +393,73 @@ proc command.bootstrap -- in
 
     executable @64 "./old" drop copy-file
 
-    memory compiler-infop sizeof(siginfo_t) in
-    memory diff-infop     sizeof(siginfo_t) in
-      1 while
-        "info: starting iteration " puts dup putu putnl
-        
-        subprocess.init
-          "./old"    drop subprocess.file-name
-          "compile"  drop subprocess.add-option
-          source @64      subprocess.add-option
-          "-o"       drop subprocess.add-option
-          "./new"    drop subprocess.add-option
-          "-i"       drop subprocess.add-option
-          std @64         subprocess.add-option
-        compiler-infop subprocess.end
+    source @64 cstr.str "corth.corth" path.merge2-cstr let source-file-path in
+      memory compiler-infop sizeof(siginfo_t) in
+      memory diff-infop     sizeof(siginfo_t) in
+        1 while
+          "info: starting iteration " puts dup putu putnl
 
-        compiler-infop 8 + @32 CLD_EXITED != compiler-infop 24 + @32 isn-zero | if
-          "error: compilation failed\n" eputs
-          EXIT-ERROR exit drop
+          subprocess.init
+            "./old"     drop subprocess.file-name
+            "compile"   drop subprocess.add-option
+            source-file-path subprocess.add-option
+            "-o"        drop subprocess.add-option
+            "./new"     drop subprocess.add-option
+            "-i"        drop subprocess.add-option
+            std @64          subprocess.add-option
+            "-i"        drop subprocess.add-option
+            source @64       subprocess.add-option
+          compiler-infop subprocess.end
+
+          compiler-infop 8 + @32 CLD_EXITED != compiler-infop 24 + @32 isn-zero | if
+            "error: compilation failed\n" eputs
+            EXIT-ERROR exit drop
+          end
+
+          "info: successfully compiled\n" puts
+
+          subprocess.init
+            "/bin/diff" drop subprocess.file-name
+            "./old"     drop subprocess.add-option
+            "./new"     drop subprocess.add-option
+          diff-infop subprocess.end
+
+          diff-infop 8 + @32 CLD_EXITED != if
+            "error: diff did not exit\n" eputs
+            EXIT-ERROR exit drop
+          end
+
+        diff-infop 24 + @32 isn-zero once @8 is-zero & do
+          "info: ./old and ./new differ, reiterating...\n" puts
+
+          "./new" drop "./old" drop move-file
+        inc end
+
+        "info: reached stability in " puts putu " tries, starting tests...\n" puts
+
+        memory quick-test-infop sizeof(siginfo_t) in
+          subprocess.init
+            "./new"      drop subprocess.file-name
+            "quick-test" drop subprocess.add-option
+            "./examples" drop subprocess.add-option
+            "-i"         drop subprocess.add-option
+            std @64           subprocess.add-option
+          quick-test-infop subprocess.end
+
+          quick-test-infop 8 + @32 CLD_EXITED != quick-test-infop 24 + @32 isn-zero | if
+            "error: quick tests failed\n" eputs
+            EXIT-ERROR exit drop
+          end
         end
-        
-        "info: successfully compiled\n" puts
 
-        subprocess.init
-          "/bin/diff" drop subprocess.file-name
-          "./old"     drop subprocess.add-option
-          "./new"     drop subprocess.add-option
-        diff-infop subprocess.end
+        "info: tests succeeded\n" puts
 
-        diff-infop 8 + @32 CLD_EXITED != if
-          "error: diff did not exit\n" eputs
-          EXIT-ERROR exit drop
-        end
-        
-      diff-infop 24 + @32 isn-zero once @8 is-zero & do
-        "info: ./old and ./new differ, reiterating...\n" puts
-      
-        "./new" drop "./old" drop move-file
-      inc end
-       
-      "info: reached stability in " puts putu " tries, starting tests...\n" puts
+        "./new" drop executable @64 move-file
+      end end
 
-      memory quick-test-infop sizeof(siginfo_t) in
-        subprocess.init
-          "./new"      drop subprocess.file-name
-          "quick-test" drop subprocess.add-option
-          "./examples" drop subprocess.add-option
-          "-i"         drop subprocess.add-option
-          std @64           subprocess.add-option
-        quick-test-infop subprocess.end
-        
-        quick-test-infop 8 + @32 CLD_EXITED != quick-test-infop 24 + @32 isn-zero | if
-          "error: quick tests failed\n" eputs
-          EXIT-ERROR exit drop
-        end
-      end
-
-      "info: tests succeeded\n" puts
-
-      "./new" drop executable @64 move-file
-    end end
+      // Deallocate 'source-file-path'.
+      source-file-path mfree drop
+    end
   end end end end
 
   EXIT-SUCCESS exit drop

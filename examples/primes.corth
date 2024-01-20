@@ -1,4 +1,4 @@
-include libs/linux_x86/stdio.corth
+include linux_x86/stdio.corth
 
 // END is the end of the numbers to check
 // BUFFER-SIZE is the size of buffer that the prime numbers are being stored in. It should be half of END

@@ -1,4 +1,4 @@
-include libs/linux_x86/stdio.corth
+include linux_x86/stdio.corth
 
 // This example calculates the factors of the number the user entered
 

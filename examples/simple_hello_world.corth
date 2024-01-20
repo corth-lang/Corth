@@ -1,4 +1,4 @@
-include libs/linux_x86/sys.corth
+include linux_x86/sys.corth
 
 proc main
   int int -- int

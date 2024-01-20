@@ -1,0 +1,117 @@
+include linux_x86/sys.corth
+include converter/iconvert.corth
+include core/stack.corth
+include core/memory.corth
+
+
+macro fputs  arot fwrite drop endmacro // ptr: str-ptr int: str-len file-desc: file-desc
+macro fputnl "\n" fwrite drop endmacro // file-desc: file-desc
+
+proc fputc
+  // int: char file-desc: file-desc
+  int file-desc --
+in let file in
+  memory buffer 1 in
+    buffer !8
+    buffer 1 file fputs
+  end
+end end
+
+proc fputu
+  // int: int file-desc: file-desc 
+  int file-desc --
+  // Prints an unsigned integer to a file stream.
+in let value file in
+  // intconvud expects a buffer with a size of exactly 20 bytes.
+  memory buffer 20 in
+    buffer value intconvud let buffer-start in
+      buffer-start buffer 20 + buffer-start - file fputs
+    end
+  end
+end end
+
+proc fputi
+  // int: int file-desc: file-desc 
+  int file-desc --
+  // Prints an integer to a file stream.
+in let value file in
+  // intconvd expects a buffer with a size of exactly 20 bytes.
+  memory buffer 20 in
+    buffer value intconvd let buffer-start in
+      buffer-start buffer 20 + buffer-start - file fputs
+    end
+  end
+end end
+
+proc fputb
+  // int: int file-desc: file-desc 
+  int file-desc --
+  // Prints a binary number to a file stream.
+in let value file in
+  // intconvx expects a buffer with a size of exactly 64 bytes.
+  memory buffer 64 in
+    buffer value intconvb let buffer-start in
+      buffer-start buffer 64 + buffer-start - file fputs
+    end
+  end
+end end
+
+proc fputo
+  // int: int file-desc: file-desc 
+  int file-desc --
+  // Prints an octal number to a file stream.
+in let value file in
+  // intconvx expects a buffer with a size of exactly 23 bytes.
+  memory buffer 22 in
+    buffer value intconvo let buffer-start in
+      buffer-start buffer 22 + buffer-start - file fputs
+    end
+  end
+end end
+
+proc fputx
+  // int: int file-desc: file-desc 
+  int file-desc --
+  // Prints a hexadecimal number to a file stream.
+in let value file in
+  // intconvx expects a buffer with a size of exactly 16 bytes.
+  memory buffer 16 in
+    buffer value intconvx let buffer-start in
+      buffer-start buffer 16 + buffer-start - file fputs
+    end
+  end
+end end
+
+// TODO: This procedure requires a rewrite.
+proc fputup
+  // int: int file-desc: file-desc 
+  int int --
+  // The starting characters are always visible and the ending zeros are removed.
+  // Also, does not print the first character if it is not 0.
+  // Used in fixed64.put-fixed.
+in let file in
+  dup is-zero if
+    drop "0" file fputs return
+  end
+  
+  memory value         sizeof(int) in
+  memory end-of-buffer sizeof(int) in
+  memory buffer        20          in
+
+    value !64
+
+    buffer 20 + while dec value @64 10 % is-zero do
+      value @64 10 / value !64
+    end
+
+    dup end-of-buffer !64
+
+    while dup buffer >= do let i in
+      value @64 10 /%
+      int-to-ddigit i !8
+      value !64
+    i end dec end drop
+
+    buffer inc end-of-buffer @64 buffer - file fputs
+  end end end
+end end

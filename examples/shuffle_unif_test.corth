@@ -1,6 +1,6 @@
-include libs/linux_x86/stdio.corth
-include libs/linux_x86/sys.corth
-include libs/random.corth
+include linux_x86/stdio.corth
+include linux_x86/sys.corth
+include random.corth
 
 
 proc print-array

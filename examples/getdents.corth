@@ -1,8 +1,8 @@
-include libs/linux_x86/stdio.corth
-include libs/linux_x86/sys.corth
-include libs/collections/array64.corth
+include linux_x86/stdio.corth
+include linux_x86/sys.corth
+include collections/array64.corth
 
-include libs/cstr.corth
+include cstr.corth
 
 macro BUFFER-SIZE 0x100 endmacro
 

@@ -1,6 +1,6 @@
-include libs/linux_x86/stdio.corth
-include libs/collections/array64.corth
-include libs/cstr.corth
+include linux_x86/stdio.corth
+include collections/array64.corth
+include cstr.corth
 
 proc main
   int int -- int

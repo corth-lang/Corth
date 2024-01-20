@@ -1,0 +1,44 @@
+include collections/queue64.corth
+include collections/sorted64.corth
+include core/stack.corth
+
+
+/*
+  To create an empty sorted queue, an array with the preferred size and a pointer should be created.
+  After that, the queue should be initialized using queue64.init.
+
+  Also, a regular queue can be sorted using queue64.sort which will convert that queue to a sorted queue.
+
+  Values at smaller indexes are less than the values at bigger indexes.
+*/
+
+
+proc queue64.sort
+  // ptr: queue-start ptr: queue-length
+  ptr ptr --
+  // Sorts an array using bubble sort ( :( )
+in
+  @64 let queue-start queue-length in
+    queue-length dec while dup isn-zero do let i in
+      0 while dup i < do let j in
+        queue-start j 8 * + @64 queue-start j inc 8 * + @64 let x y in
+          x y > if
+            y queue-start j     8 * + !64
+            x queue-start j inc 8 * + !64
+          end
+        end
+      j end inc end drop
+    i end dec end drop
+  end
+end
+
+
+proc squeue64.append
+  // int: value ptr: queue-start ptr: queue-length
+  int ptr ptr --
+  // Appends an item to a sorted array.
+in let value queue-start queue-length in
+  value value queue-start queue-start queue-length @64 8 * + sorted64.available drop queue-start - 8 / queue-start queue-length queue64.insert
+end end
+
+

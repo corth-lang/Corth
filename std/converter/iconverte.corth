@@ -1,0 +1,40 @@
+include converter/iconvert.corth
+
+
+// intconvde is not added, since there is no way to specify the base of a base-10 number.
+
+macro intconvxe
+  // ptr: buffer int: value -- ptr: result-start
+  ptr int -- ptr
+  // Converts an integer to a hexadecimal string with '0x' as a prefix.
+  // NOTE: Buffer size must be 18 bytes.
+  intconvx let buffer-start in
+    '0' buffer-start 2 - !8
+    'x' buffer-start dec !8
+    buffer-start 2 -
+  end
+endmacro
+
+macro intconvoe
+  // ptr: buffer int: value -- ptr: result-start
+  ptr int -- ptr
+  // Converts an integer to a hexadecimal string with '0x' as a prefix.
+  // NOTE: Buffer size must be 24 bytes.
+  intconvo let buffer-start in
+    '0' buffer-start 2 - !8
+    'b' buffer-start dec !8
+    buffer-start 2 -
+  end
+endmacro
+
+macro intconvbe
+  // ptr: buffer int: value -- ptr: result-start
+  ptr int -- ptr
+  // Converts an integer to a hexadecimal string with '0x' as a prefix.
+  // NOTE: Buffer size must be 66 bytes.
+  intconvb let buffer-start in
+    '0' buffer-start 2 - !8
+    'b' buffer-start dec !8
+    buffer-start 2 -
+  end
+endmacro

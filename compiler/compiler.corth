@@ -1,27 +1,27 @@
-include libs/linux_x86/sys.corth
-include libs/linux_x86/io/output.corth
-include libs/linux_x86/io/input.corth
-include libs/core/stack.corth
-include libs/core/arithmetic.corth
-include libs/core/memory.corth
+include linux_x86/sys.corth
+include linux_x86/io/output.corth
+include linux_x86/io/input.corth
+include core/stack.corth
+include core/arithmetic.corth
+include core/memory.corth
 
-include libs/dynamic/malloc.corth
-include libs/dynamic/utils.corth
+include dynamic/malloc.corth
+include dynamic/utils.corth
 
 macro string-builder.RESIZING 64 endmacro
 
-include libs/linux_x86/path.corth
+include linux_x86/path.corth
 
-include libs/collections/list64.corth
-include libs/collections/deque64.corth
-include libs/collections/queue64.corth
-include libs/collections/str_map64.corth
-include libs/collections/str_set8.corth
+include collections/list64.corth
+include collections/deque64.corth
+include collections/queue64.corth
+include collections/str_map64.corth
+include collections/str_set8.corth
 
-include compiler/lexer.corth
-include compiler/debug.corth
-include compiler/enums.corth
-include compiler/local_stack.corth
+include lexer.corth
+include debug.corth
+include enums.corth
+include local_stack.corth
 
 
 // NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.

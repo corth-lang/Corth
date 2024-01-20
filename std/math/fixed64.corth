@@ -1,0 +1,373 @@
+include core/stack.corth
+include math/constants.corth
+
+/*
+
+Say x is the real value and a is the byte representation of it. Then,
+
+  x = a * W       where W = 2^-32
+
+makes a good enough representation for fixed numbers. Most operations for integers can be easily recreated for fixed numbers with small tweaks.
+Some operations for integers can directly be used for 
+
+This library is not super precise, but the values are useful and quick enough for simple arithmetic operations.
+
+*/
+
+macro fixed64          int endmacro
+macro ufixed64         int endmacro
+
+macro sizeof(fixed64)  8 endmacro
+macro sizeof(ufixed64) 8 endmacro
+
+macro SQRT.TOLERANCE   0x00000000000000ff endmacro
+macro SQRT.DEPTH       256                endmacro
+
+macro FONE-HALF        0x0000000080000000 endmacro
+macro FONE             0x0000000100000000 endmacro
+
+
+// CONVERTIONS
+macro int-to-fixed64
+  // int: x -- fixed64: x
+  FONE *
+endmacro
+
+macro fixed64-to-int
+  // fixed64: x -- int: x
+  // Removes the decimal part.
+  FONE /
+endmacro
+
+macro frac
+  // fixed64: x -- fixed64: frac(x)
+  // frac(x) = x - floor(x)
+  // Returns the difference between x and the greatest number that is less than or equal to x.
+  // This macro gives exact result with no precision lost.
+  // ex. frac(3.47) = 0.47, frac(-3.47) = 0.53
+  FONE %
+endmacro
+
+macro inv-frac
+  // fixed64: x -- fixed64: invfrac(x)
+  // invfrac(x) = ceil(x) - x
+  // invfrac(x) = frac(-x)
+  // Returns the difference between x and the least number that is greater than x.
+  // This macro gives exact result with no precision lost.
+  // ex. invfrac(3.47) = 0.53, invfrac(-3.47) = 0.47
+  neg frac
+endmacro
+
+macro floor
+  // fixed64: x -- fixed64: floor(x)
+  // Result is the greatest whole number that is less than x.
+  // This macro gives exact result with no precision lost.
+  // floor(x) = x - frac(x)
+  dup frac -
+endmacro
+
+macro floor-base
+  // fixed64: x fixed64: b -- fixed64: floor(x, b)
+  // floor(x, b) = x - (x mod b)
+  // Result is the greatest number that is less than or equal to x and is divisible by b.
+  // This macro gives exact result with no precision lost.
+  let _a_ _b_ in
+    _a_ _a_ _b_ % -
+  end
+endmacro
+
+macro ceil
+  // fixed64: x -- fixed64: ceil(x)
+  // Result is the least whole number that is greater than x.
+  // This macro gives exact result with no precision lost.
+  dup inv-frac +
+endmacro
+
+macro ceil-base
+  // fixed64: x fixed64: b -- fixed64: ceil(x, b)
+  // ceil(x, b) = x + ((-x) mod b)
+  // ceil(x, b) = floor(x, b) + b
+  // Result is the least number that is greater tha nx and is divisible by b.
+  // This macro gives exact result with no precision lost.
+  let _a_ _b_ in
+    _a_ _a_ neg _b_ % +
+  end
+endmacro
+
+macro usqr-f
+  // fixed64: x -- fixed64: x^2
+  // If x is greater than or equal to 2^16, the result will have an error of at least 2^32.
+  // For anything less than 2^16, the precision lost is less than 2^-32.
+  dup umul-ff
+endmacro
+
+macro sqr-f
+  // fixed64: x -- fixed64: x^2
+  // If x is greater than or equal to 2^16 or less than -2^16, the result will have an error of at least 2^32.
+  // For anything else, the precision lost is less than 2^-32.
+  dup mul-ff
+endmacro
+
+
+// FIXED -- FIXED macro and procedures
+// a, b and c denotes the bit representations; x, y and z are the real values.
+macro uinv-f
+  // fixed64: x -- fixed64: 1/x
+  // Performs unsigned invert.
+  // z = cW = 1/x = 1/a / W
+  // c = W^2/a
+  // W^2 is 2^64, which can not be represented with 64 bits. But 2^64 - 1 can be, and the result is very good.
+  // W^2 ~ 2^64-1
+  // c = (2^64-1)/a
+  0xffffffffffffffff swp u/
+endmacro
+
+macro inv-f
+  // fixed64: x -- fixed64: 1/x
+  // Performs signed invert.
+  // z = cW = 1/x = 1/a / W
+  // c = W^2/a
+  // W^2 is 2^64, which can not be represented with 64 bits. But 2^64 - 1 can be, and using that makes a very good approximation.
+  // W^2 ~ 2^64-1
+  // c = (2^64-1)/a
+  0xffffffffffffffff swp /
+endmacro
+
+
+// FIXED FIXED -- FIXED macro and procedures
+macro umul-ff
+  // fixed64: a fixed64: b -- fixed64: a*b
+  // Performs unsigned multiplication.
+  // z = cW = xy = abW^2
+  // c = ab * W
+  u** int-to-fixed64 swp fixed64-to-int +
+endmacro
+
+macro mul-ff
+  // fixed64: a fixed64: b -- fixed64: a*b
+  // Performs signed multiplication.
+  // z = cW = xy = abW^2
+  // c = ab * W
+  ** int-to-fixed64 swp fixed64-to-int +
+endmacro
+
+macro udiv-ff
+  // fixed64: a fixed64: b -- fixed64: a/b
+  // Performs unsigned division.
+  // z = cW = x/y = xy^-1
+  uinv-f umul-ff  
+endmacro
+
+macro div-ff
+  // fixed64: a fixed64: b -- fixed64: a/b
+  // Performs signed division.
+  // z = cW = x/y = xy^-1
+  inv-f mul-ff  
+endmacro
+
+macro arit-avg
+  // fixed64: a fixed64: b
+  // aavg(x, y) = (x + y) / 2
+  add-ff 2 /
+endmacro
+
+
+// FIXED INTEGER -- FIXED macro and procedures
+macro add-fi
+  // fixed64: a int: b -- fixed64: a+b
+  // z = cW = x + b = aW + b
+  // c = a + b / W
+  int-to-fixed64 +
+endmacro
+
+macro sub-fi
+  // fixed64: a int: b -- fixed64: a-b
+  // x = cW = x - b = aW - b
+  // c = a - b / W
+  int-to-fixed64 -
+endmacro
+
+
+// FIXED FIXED FIXED -- FIXED macro and procedures
+macro lin-int
+  // fixed64: a fixed64: b fixed64: t -- fixed64: linint(a, b, t)
+  // linint(a, b, t) = a + (b - a) * t
+  let _a_ _b_ _c_ in
+    _b_ _a_ sub-ff _c_ mul-ff _a_ add-ff
+  end
+endmacro
+
+
+// -- Newton method solutions --
+
+proc sqrt-f
+  // ufixed64: x -- ufixed64: sqrt(x)
+  fixed64 -- fixed64
+  // Performs Newton's method to calculate square root of x.
+  // (sqrt(x))^2 = x
+  // x' = 1/2 (x + E/x)
+in let epsilon in
+  epsilon FONE-HALF umul-ff let h-epsilon in
+    memory x sizeof(fixed64) in
+    memory i sizeof(int)     in
+
+      0 i !64
+      FONE x !64
+      
+      while x @64 sqr-f epsilon - abs SQRT.TOLERANCE > do
+        x @64 FONE-HALF umul-ff h-epsilon x @64 udiv-ff + x !64
+        i @inc64
+        i @64 SQRT.DEPTH >= if break end
+      end
+      x @64
+    end end
+  end
+end end
+
+
+// -- Trigonometry --
+
+macro TRIGONOMETRY.ITER 27 endmacro
+
+proc sin
+  // fixed64: theta -- fixed64: sin(theta)
+  fixed64 -- fixed64
+  // Calculates the sine of an angle in radians.
+in
+  PI 2 * %
+  
+  let x in
+    memory sum sizeof(fixed64) in
+    memory a   sizeof(fixed64) in
+    memory i   sizeof(int)     in
+
+      a   x !64
+      sum x !64
+
+      3 while dup TRIGONOMETRY.ITER < do
+        i swp !64
+
+        // a *= -x^2 / (i * (i - 1))
+        x sqr-f neg i @64 / i @64 dec / a @64 mul-ff a !64
+
+        // sum += a
+        sum dup @64 a @64 + !64
+
+        i @64 inc inc
+      end drop
+
+      sum @64
+    end end end
+  end
+end
+
+proc cos
+  // fixed64: theta -- fixed64: sin(theta)
+  fixed64 -- fixed64
+  // Calculates the cosine of an angle in radians.
+in
+  PI 2 * %
+  
+  let x in
+    memory sum sizeof(fixed64) in
+    memory a   sizeof(fixed64) in
+    memory i   sizeof(int)     in
+
+      0x0000000100000000 a   !64
+      0x0000000100000000 sum !64
+
+      2 while dup TRIGONOMETRY.ITER < do
+        i swp !64
+
+        // a *= -x^2 / (i * (i - 1))
+        x sqr-f neg i @64 / i @64 dec / a @64 mul-ff a !64
+
+        // sum += a
+        sum dup @64 a @64 + !64
+
+        i @64 inc inc
+      end drop
+
+      sum @64
+    end end end
+  end
+end
+
+macro tan
+  // fixed64: x -- fixed64: tan(x)
+  // tan(x) = sin(x) / cos(x)
+  // Calculates the tangent of an angle in radians.
+  let _a_ in
+    _a_ sin _a_ cos div-ff
+  end
+endmacro
+
+macro cot
+  // fixed64: theta -- fixed64: cot(theta)
+  // cot(x) = cos(x) / sin(x)
+  // Calculates the cotangent of an angle in radians.
+  let _a_ in
+    _a_ cos _a_ sin div-ff
+  end
+endmacro
+
+macro sec
+  // fixed64: x -- fixed64: sec(x)
+  // sec(x) = 1 / cos(x)
+  // Calculates the secant of an angle in radians.
+  cos inv-f
+endmacro
+
+macro csc
+  // fixed64: x -- fixed64: csc(x)
+  // csc(x) = 1 / sin(x)
+  // Calculates the cosecant of an angle in radians.
+  sin inv-f
+endmacro
+
+macro deg-to-rad
+  // fixed64: x -- fixed64: y
+  rad-per-deg mul-ff
+endmacro
+
+macro rad-to-deg
+  // fixed64: x -- fixed64: y
+  deg-per-rad mul-ff
+endmacro
+
+
+// -- I/O --
+
+// These macros use the file-desc, fputs, fputu and fputup. An I/O library should be included first.
+// TODO: Add precision variables.
+proc fput-ufixed64
+  // fixed64: value file-desc: file-desc
+  fixed64 file-desc --
+in
+  let x file in
+    x fixed64-to-int                                                      file fputu
+    "."                                                                   file fputs
+    x int-to-fixed64 fixed64-to-int 10000000000000000000 fixed64-to-int * file fputup
+  end
+end
+
+proc fput-fixed64
+  // fixed64: value file-desc: file-desc
+  fixed64 file-desc --
+in
+  let x file in
+    x x is-neg if
+      neg "-" file fputs
+    end
+
+    dup
+    fixed64-to-int                                                      file fputu
+    "."                                                                 file fputs
+    int-to-fixed64 fixed64-to-int 10000000000000000000 fixed64-to-int * file fputup
+  end
+end
+
+macro  put-ufixed64 STDOUT fput-ufixed64 endmacro // fixed64: x
+macro eput-ufixed64 STDERR fput-ufixed64 endmacro // fixed64: x
+macro  put-fixed64  STDOUT fput-fixed64  endmacro // fixed64: x
+macro eput-fixed64  STDERR fput-fixed64  endmacro // fixed64: x

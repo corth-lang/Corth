@@ -1,6 +1,6 @@
-include libs/linux_x86/stdio.corth
-include libs/core/stack.corth
-include libs/math/arithmetic.corth
+include linux_x86/stdio.corth
+include core/stack.corth
+include math/arithmetic.corth
 
 proc main
   int int -- int

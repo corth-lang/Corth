@@ -1,4 +1,4 @@
-include libs/linux_x86/stdio.corth
+include linux_x86/stdio.corth
 
 // Max length of string. If a longer string is used, -may- crash.
 // Max length should not be more than 256.
