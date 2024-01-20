@@ -1,4 +1,4 @@
-include Corth/compiler/stack_item.corth
+include compiler/stack_item.corth
 
 
 proc is-signed-dword

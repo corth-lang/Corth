@@ -18,10 +18,10 @@ include libs/collections/queue64.corth
 include libs/collections/str_map64.corth
 include libs/collections/str_set8.corth
 
-include Corth/compiler/lexer.corth
-include Corth/compiler/debug.corth
-include Corth/compiler/enums.corth
-include Corth/compiler/local_stack.corth
+include compiler/lexer.corth
+include compiler/debug.corth
+include compiler/enums.corth
+include compiler/local_stack.corth
 
 
 // NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.

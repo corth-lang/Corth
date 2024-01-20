@@ -8,7 +8,7 @@ include libs/linux_x86/stdio.corth
 include libs/cstr.corth
 include libs/getopts.corth
 
-include Corth/compiler/compiler.corth
+include compiler/compiler.corth
 
 
 macro EXIT-SUCCESS 0 endmacro
@@ -280,6 +280,9 @@ proc command.bootstrap -- in
     EXIT-ERROR exit drop
   end
 
+  // source is the directory that the compiler.corth is in.
+  // This directory should contain every file that the compiler needs except the standard library.
+  
   memory source     sizeof(ptr)  in
   memory executable sizeof(ptr)  in
   memory std        sizeof(ptr)  in
