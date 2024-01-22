@@ -117,7 +117,7 @@ This will compile the compiler source code and place it at *./corth*.
     rot   // Stack = { 3, 3, 1 }
     arot  // Stack = { 1, 3, 3 }
 
-- *./std/core/stack.corth* contains several macros for stack manuplation.
+- *./std/core/stack.corth* contains several macros for stack manipulation.
 - `drop` removes the last item from the stack.
 - `dup` duplicates the last item in the stack.
 - `swp` swaps the places of the last two items.
@@ -177,7 +177,7 @@ This will compile the compiler source code and place it at *./corth*.
 
 - `macro` keyword is used to define macros and `endmacro` is used to end the definition.
 - Macros expand at compile time, allowing simplifying and compressing code without losing functionality.
-- Macros are only compiled after expanding, so any comppile time error that would be caused by a macro is not detected before expansion.
+- Macros are only compiled after expanding, so any compile time error that would be caused by a macro is not detected before expansion.
 - Using `let` inside a macro is usually a bad idea, although some library macros are designed that way (like `dup`, `swp` or `rot`). If the code requires `let`; either change that macro to a procedure, or name the let variable with names that starts and ends with underscores (_).
 
 ### Name scopes:
@@ -238,7 +238,7 @@ This will compile the compiler source code and place it at *./corth*.
 - If `if` is used with an `else`, the stack change between `if` and `else` must be the same for the code between `else` and `end`.
 - Stack must not change between `while` and `end`.
 - Even though parser does not care for indentation, it is still a good idea to indent since in Corth these operations can get very hard to understand very quickly.
-- Sadly, Corth does not have `else if/elif` satements at the moment.
+- Sadly, Corth does not have `else if/elif` statements at the moment.
 
 ### Let:
 
