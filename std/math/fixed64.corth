@@ -135,21 +135,21 @@ endmacro
 
 
 // FIXED FIXED -- FIXED macro and procedures
-macro umul-ff
+macro umul-ff let _x_ _y_ in
   // fixed64: a fixed64: b -- fixed64: a*b
   // Performs unsigned multiplication.
   // z = cW = xy = abW^2
   // c = ab * W
-  u** int-to-fixed64 swp fixed64-to-int +
-endmacro
+  _x_ _y_ u*2 int-to-fixed64 _x_ _y_ u* fixed64-to-int +
+end endmacro
 
-macro mul-ff
+macro mul-ff let _x_ _y_ in
   // fixed64: a fixed64: b -- fixed64: a*b
   // Performs signed multiplication.
   // z = cW = xy = abW^2
   // c = ab * W
-  ** int-to-fixed64 swp fixed64-to-int +
-endmacro
+  _x_ _y_ *2 int-to-fixed64 _x_ _y_ * fixed64-to-int +
+end endmacro
 
 macro udiv-ff
   // fixed64: a fixed64: b -- fixed64: a/b

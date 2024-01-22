@@ -91,10 +91,6 @@ macro INTRINSIC-UMUL     7  endmacro
 macro INTRINSIC-UMUL2    8  endmacro
 macro INTRINSIC-UDIV     9  endmacro
 macro INTRINSIC-UMOD     10 endmacro
-macro INTRINSIC-FULLMUL  12 endmacro
-macro INTRINSIC-DIVMOD   13 endmacro
-macro INTRINSIC-UFULLMUL 14 endmacro
-macro INTRINSIC-UDIVMOD  15 endmacro
 macro INTRINSIC-BOR      16 endmacro
 macro INTRINSIC-BNOT     17 endmacro
 macro INTRINSIC-LOAD8    18 endmacro
@@ -125,10 +121,6 @@ macro INTRINSIC-UMUL-STR     "u*"        endmacro
 macro INTRINSIC-UMUL2-STR    "u*2"       endmacro
 macro INTRINSIC-UDIV-STR     "u/"        endmacro
 macro INTRINSIC-UMOD-STR     "u%"        endmacro
-macro INTRINSIC-FULLMUL-STR  "**"        endmacro
-macro INTRINSIC-UFULLMUL-STR "u**"       endmacro
-macro INTRINSIC-DIVMOD-STR   "/%"        endmacro
-macro INTRINSIC-UDIVMOD-STR  "u/%"       endmacro
 macro INTRINSIC-BOR-STR      "||"        endmacro
 macro INTRINSIC-BNOT-STR     "!!"        endmacro
 macro INTRINSIC-LOAD8-STR    "@8"        endmacro
@@ -201,13 +193,9 @@ proc get-intrinsic-name
 in let intrinsic in
        intrinsic INTRINSIC-ADD      = if INTRINSIC-ADD-STR      
   else intrinsic INTRINSIC-SUB      = if INTRINSIC-SUB-STR      
-  else intrinsic INTRINSIC-FULLMUL  = if INTRINSIC-FULLMUL-STR  
-  else intrinsic INTRINSIC-DIVMOD   = if INTRINSIC-DIVMOD-STR   
   else intrinsic INTRINSIC-MUL      = if INTRINSIC-MUL-STR
   else intrinsic INTRINSIC-DIV      = if INTRINSIC-DIV-STR
   else intrinsic INTRINSIC-MOD      = if INTRINSIC-MOD-STR
-  else intrinsic INTRINSIC-UFULLMUL = if INTRINSIC-UFULLMUL-STR 
-  else intrinsic INTRINSIC-UDIVMOD  = if INTRINSIC-UDIVMOD-STR  
   else intrinsic INTRINSIC-BOR      = if INTRINSIC-BOR-STR      
   else intrinsic INTRINSIC-BNOT     = if INTRINSIC-BNOT-STR     
   else intrinsic INTRINSIC-LOAD8    = if INTRINSIC-LOAD8-STR    
@@ -226,7 +214,7 @@ in let intrinsic in
   else intrinsic INTRINSIC-SYSCALL5 = if INTRINSIC-SYSCALL5-STR 
   else intrinsic INTRINSIC-SYSCALL6 = if INTRINSIC-SYSCALL6-STR 
   else                                   INTRINSIC-UNKNOWN-STR  
-  end end end end end end end end end end end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end end end end end end end
 end end
 
 proc get-int-type-name

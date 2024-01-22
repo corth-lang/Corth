@@ -325,10 +325,6 @@ in let
     else buffer buffer-size INTRINSIC-UMUL2-STR    memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UMUL2
     else buffer buffer-size INTRINSIC-UDIV-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UDIV
     else buffer buffer-size INTRINSIC-UMOD-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UMOD   
-    else buffer buffer-size INTRINSIC-FULLMUL-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-FULLMUL  
-    else buffer buffer-size INTRINSIC-DIVMOD-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-DIVMOD   
-    else buffer buffer-size INTRINSIC-UFULLMUL-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UFULLMUL 
-    else buffer buffer-size INTRINSIC-UDIVMOD-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UDIVMOD  
     else buffer buffer-size INTRINSIC-BOR-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-BOR      
     else buffer buffer-size INTRINSIC-BNOT-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-BNOT     
     else buffer buffer-size INTRINSIC-LOAD8-STR    memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD8    
@@ -355,8 +351,8 @@ in let
       TYPE-NAME buffer buffer-size to-dynamic8
 
     // This is nightmare fuel.
-    end end end end end end end end end end end end end end end end end end end end end end end end end
-    end end end end end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end end end
 
     let token-type token-arg in
       // Generate the address and return.

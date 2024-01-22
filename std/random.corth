@@ -10,8 +10,9 @@ macro rand64
   
   // -- fixed64: next
   // The result fixed64 is in the range [0, 2^32) with the step size of 2^-32.
-  rng-seed @64
-  0xFFFFFFFFFFFFFFC5 u** + 23 +
+  rng-seed @64 0xFFFFFFFFFFFFFFC5 u*
+  rng-seed @64 0xFFFFFFFFFFFFFFC5 u*2 +
+  23 +
   let _x_ in
     _x_ 0x400000000000 u/ _x_ 0x20000 u/ u* _x_ 2 / ^^ dup rng-seed !64
   end 

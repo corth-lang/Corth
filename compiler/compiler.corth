@@ -707,11 +707,6 @@ in
   else token-arg INTRINSIC-UMUL2    = if token-address  "mul" "rdx" local-stack local-stack-length output-file log-stream geometric-binary-intrinsic
   else token-arg INTRINSIC-UDIV     = if token-address  "div" "rax" local-stack local-stack-length output-file log-stream geometric-binary-intrinsic
   else token-arg INTRINSIC-UMOD     = if token-address  "div" "rdx" local-stack local-stack-length output-file log-stream geometric-binary-intrinsic
-  
-  else token-arg INTRINSIC-FULLMUL  = if token-address "imul" local-stack local-stack-length output-file log-stream geometric-full-binary-intrinsic
-  else token-arg INTRINSIC-UFULLMUL = if token-address  "mul" local-stack local-stack-length output-file log-stream geometric-full-binary-intrinsic
-  else token-arg INTRINSIC-DIVMOD   = if token-address "idiv" local-stack local-stack-length output-file log-stream geometric-full-binary-intrinsic
-  else token-arg INTRINSIC-UDIVMOD  = if token-address  "div" local-stack local-stack-length output-file log-stream geometric-full-binary-intrinsic
 
   else token-arg INTRINSIC-LOAD8   = if token-address token-arg local-stack local-stack-length output-file log-stream load-intrinsic
   else token-arg INTRINSIC-LOAD16  = if token-address token-arg local-stack local-stack-length output-file log-stream load-intrinsic
@@ -917,7 +912,7 @@ in
     token-address log-stream fput-here
     procedure-name procedure-address log-stream fput-inside-procedure
     ERROR-EXIT-CODE exit drop
-  end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end end end end end end end end end end end end
 end end
 
 

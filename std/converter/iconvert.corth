@@ -14,9 +14,8 @@ in let base max-digits in
     max-digits + handle !64
 
     while
-      value @64 base /%
-      int-to-xdigit handle @64 !8
-      dup value !64
+      value @64 base % int-to-xdigit handle @64 !8
+      value @64 base / dup value !64
       isn-zero
     do handle @dec64 end
 
