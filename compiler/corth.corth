@@ -39,7 +39,7 @@ macro command.compile-show-usage
 endmacro
 
 macro command.bootstrap-show-usage
-   "usage: " puts put-exe " [OPTIONS]... bootstrap [OPTIONS]...\n" puts
+   "usage: " puts put-exe " [OPTIONS]... bootstrap <source-directory> [OPTIONS]...\n" puts
 endmacro
 
 
