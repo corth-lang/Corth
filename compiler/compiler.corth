@@ -568,13 +568,6 @@ in let signed upper immediate item local-stack local-stack-length output-file in
 end end
 
 
-proc divide-any-immediate
-  // bool: signed bool: modulo ptr: item int: immediate ptr: local-stack ptr: local-stack-length file-desc: output-file --
-  bool bool ptr int ptr ptr file-desc --
-in let signed modulo item immediate local-stack local-stack-length output-file in
-end end
-
-
 proc multiply-intrinsic
   // ptr: token-address bool: signed bool: upper ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
   ptr bool bool ptr ptr file-desc file-desc --
@@ -617,6 +610,16 @@ in let token-address signed upper local-stack local-stack-length output-file log
 end end
 
 
+proc bitwise-and-any-immediate
+  // ptr: item int: immediate ptr: local-stack ptr: local-stack-length file-desc: output-file --
+  ptr int ptr ptr file-desc --
+in let item immediate local-stack local-stack-length output-file in
+  item output-file nasm.push-int
+
+  "    and     qword [rsp], " output-file fputs immediate output-file fputu output-file fputnl
+end end
+
+
 proc divide-intrinsic
   // ptr: token-address bool: signed bool: modulo ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
   ptr bool bool ptr ptr file-desc file-desc --
@@ -642,9 +645,7 @@ in let token-address signed modulo local-stack local-stack-length output-file lo
 
         else
           modulo if
-            item1 output-file nasm.push-int
-
-            "    and     qword [rsp], " output-file fputs item2 get-arg1 dec output-file fputu output-file fputnl
+            item1 item2 get-arg1 dec local-stack local-stack-length output-file bitwise-and-any-immediate
 
           else
             item1 output-file nasm.push-int
