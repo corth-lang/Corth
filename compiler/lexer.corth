@@ -313,6 +313,7 @@ in let
     else buffer buffer-size KEYWORD-DO-STR         memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-DO         
     else buffer buffer-size KEYWORD-BREAK-STR      memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-BREAK      
     else buffer buffer-size KEYWORD-CAST-STR       memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-CAST
+    else buffer buffer-size KEYWORD-SIZEOF-STR     memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-SIZEOF
     
     // I still hate my life.
     else buffer buffer-size INTRINSIC-ADD-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-ADD      
@@ -351,7 +352,7 @@ in let
       TYPE-NAME buffer buffer-size to-dynamic8
 
     // This is nightmare fuel.
-    end end end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end end end end
     end end end end end end end end end end end end end end end end end end end end end end end
 
     let token-type token-arg in

@@ -1,0 +1,10 @@
+include linux_x86/stdio.corth
+
+proc main
+  int int -- int
+in let argc argv in
+  "sizeof(int)  = " puts sizeof  int puti putnl
+  "sizeof(uint) = " puts sizeof uint puti putnl
+  "sizeof(bool) = " puts sizeof bool puti putnl
+  "sizeof(ptr)  = " puts sizeof  ptr puti putnl
+end 0 end

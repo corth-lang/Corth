@@ -58,6 +58,7 @@ macro KEYWORD-DO       14 endmacro
 macro KEYWORD-BREAK    15 endmacro
 macro KEYWORD-INCLUDE  16 endmacro
 macro KEYWORD-CAST     17 endmacro
+macro KEYWORD-SIZEOF   18 endmacro
 
 // Keyword strings
 macro KEYWORD-UNKNOWN-STR  "<unknown>" endmacro
@@ -78,6 +79,7 @@ macro KEYWORD-DO-STR       "do"        endmacro
 macro KEYWORD-BREAK-STR    "break"     endmacro
 macro KEYWORD-INCLUDE-STR  "include"   endmacro
 macro KEYWORD-CAST-STR     "cast"      endmacro
+macro KEYWORD-SIZEOF-STR   "sizeof"    endmacro
 
 // Intrinsic IDs
 macro INTRINSIC-UNKNOWN  0  endmacro
@@ -149,6 +151,11 @@ macro INT-TYPE-UNKNOWN-STR "<unknown>" endmacro
 macro INT-TYPE-INT-STR     "int"       endmacro
 macro INT-TYPE-BOOL-STR    "bool"      endmacro
 
+// Intrinsic type sizes
+macro INT-TYPE-UNKNOWN-SIZEOF 1 neg endmacro
+macro INT-TYPE-INT-SIZEOF         8 endmacro
+macro INT-TYPE-BOOL-SIZEOF        8 endmacro
+
 proc get-type-name
   // int: type -- ptr: type-name-ptr int: type-name-length
   int -- ptr int
@@ -183,8 +190,9 @@ in let keyword in
   else keyword KEYWORD-WHILE    = if KEYWORD-WHILE-STR    
   else keyword KEYWORD-DO       = if KEYWORD-DO-STR       
   else keyword KEYWORD-BREAK    = if KEYWORD-BREAK-STR    
+  else keyword KEYWORD-SIZEOF   = if KEYWORD-SIZEOF-STR
   else                               KEYWORD-UNKNOWN-STR  
-  end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end end
 end end
 
 proc get-intrinsic-name
@@ -224,6 +232,16 @@ in let int-type in
        int-type INT-TYPE-INT  = if INT-TYPE-INT-STR
   else int-type INT-TYPE-BOOL = if INT-TYPE-BOOL-STR
   else                             INT-TYPE-UNKNOWN-STR
+  end end
+end end
+
+proc get-int-type-sizeof
+  // int: int-type -- int: int-type-sizeof
+  int -- int
+in let int-type in
+       int-type INT-TYPE-INT  = if INT-TYPE-INT-SIZEOF
+  else int-type INT-TYPE-BOOL = if INT-TYPE-BOOL-SIZEOF
+  else                             INT-TYPE-UNKNOWN-SIZEOF
   end end
 end end
 

@@ -1709,13 +1709,35 @@ in
 
       // Deallocate 'type-address'.
       type-address mfree drop
-    end   
+    end
+
+  else token-arg KEYWORD-SIZEOF = if
+    // -------- Keyword 'sizeof' --------
+    // sizeof <type>
+    
+    // TODO: These are not implemented yet.
+    // sizeof <global-variable-name>
+    // sizeof <string-immediate>
+    // sizeof <local-name>
+
+    // Branch should not be cut before 'sizeof'.
+    token-address "sizeof" compile-procedure.check-branch-here
+
+    "a type after 'cast'" true compile-procedure.get-next-token
+
+    let type-type type-address type-arg in      
+      // The token afrer 'sizeof' should be an 'intrinsic type'.
+      type-type type-address "after 'sizeof'" TYPE-INT-TYPE compile-procedure.check-type-here
+
+      // Push the size of the intrinsic type.
+      type-arg get-int-type-sizeof push-int-immediate
+    end
 
   else
     LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
     token-address compile-procedure.show-here
     ERROR-EXIT-CODE exit drop
-  end end end end end end end end end end
+  end end end end end end end end end end end
 end false end
 
 
