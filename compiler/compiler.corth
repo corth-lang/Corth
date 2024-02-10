@@ -1694,7 +1694,7 @@ in
     token-address "cast" compile-procedure.check-branch-here
 
     // Get the variable name.
-    "a local variable name after 'memory'" false compile-procedure.get-next-token
+    "a type after 'cast'" false compile-procedure.get-next-token
 
     let type-type type-address type-arg in
       // The token after 'cast' should be an 'intrinsic type'.
