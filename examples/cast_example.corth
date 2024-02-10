@@ -15,7 +15,7 @@ in let argc argv in
   1 is-true
   2 is-true
   1 1 + is-true
-  
+
   memory x sizeof(int) in
     0 x !64
     x @64 is-true

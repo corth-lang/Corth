@@ -10,15 +10,15 @@ Usage:
     "string1"  sb.add-str    // Add 'string 1'.
     "string3"c sb.add-strc   // Add 'string 3'.
     object1    sb.add-dstr   // Add the dynamic string 'object1'.
-    
+
     123        sb.add-uint   // Add an unsigned decimal.
     234        sb.add-int    // Add a signed decimal.
     0xabc      sb.add-hex    // Add a hexadecimal number.
     0o555      sb.add-oct    // Add an octal number.
     0b1010     sb.add-bin    // Add a binary number.
-    
+
     'n'        sb.add-char   // Add 'n' character.
-    
+
                sb.nl         // Add a newline character.
                sb.spc        // Add a space character.
                sb.tab        // Add a tab character.

@@ -29,7 +29,7 @@ in let argc argv in
         "exited with code " puts exit-code puti putnl
         exit-code exit drop
       end
-      
+
     else
       "error: unknown exit code\n" eputs
       1 exit drop

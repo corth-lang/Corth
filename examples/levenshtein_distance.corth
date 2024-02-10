@@ -39,13 +39,13 @@ in
     len2 is-zero if
       len1 IGNORE-COST * return
     end
-    
+
     len2 dec MAX-SIZE * len1 dec + remember +
     // 'address' is the 'remember'ed value's address, if there is one.
     let address in
       address @8 dup
       // 'value' is the 'remember'ed value, if there is one
-      
+
       UNKNOWN != if
         // There is a known value at this address
         number-of-rembs @64 inc number-of-rembs !64
@@ -53,7 +53,7 @@ in
         return
       end drop
 
-      // There is not a known value at this address  
+      // There is not a known value at this address
       number-of-calls @64 inc number-of-calls !64
 
       ptr1 @64 len1 + dec @8
@@ -88,7 +88,7 @@ in let argc argv in
 
   "pickle"
   "pikla"
-  
+
   let _ptr1 len1 _ptr2 len2 in
     _ptr1 ptr1 !64
     _ptr2 ptr2 !64
@@ -112,4 +112,4 @@ Worst case scenario where both strings never have any common sub-strings:
   = O((|a| + 1) * (|b| + 1))
 
 */
- 
+

@@ -7,7 +7,7 @@ in let argv argc in
   memory buffer 256 in
     while true do
       "> " puts
-      
+
       buffer 255 gets let length in
         length is-zero if
           break
@@ -23,24 +23,24 @@ in let argv argc in
           buffer R_OK access is-zero if
             "File can be read.\n" puts
           else
-            "File can not be read.\n" puts 
+            "File can not be read.\n" puts
           end
 
           buffer W_OK access is-zero if
             "File can be written.\n" puts
           else
-            "File can not be written.\n" puts 
+            "File can not be written.\n" puts
           end
 
           buffer X_OK access is-zero if
             "File can be executed.\n" puts
           else
-            "File can not be executed.\n" puts 
+            "File can not be executed.\n" puts
           end
-          
+
         else
           // File does not exist.
-          "File does not exist.\n" puts 
+          "File does not exist.\n" puts
         end
       end
     end

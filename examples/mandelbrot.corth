@@ -38,7 +38,7 @@ in
     0 while
       // Break if reached the max iteration
       dup MAX-ITERATION dec <
-    do      
+    do
       // Calculate next Z
       z load-complex sqr-c c load-complex add-cc z store-complex
 
@@ -54,8 +54,8 @@ proc main
 in let argc argv in
   memory camera-pos  sizeof(comp)    in
   memory camera-zoom sizeof(fixed64) in
-         
-    0x0000000010080100 neg 0x00000000fffe9080 camera-pos store-complex  // Set camera pos to -0.062622129902656 + 0.9999780950616818176i 
+
+    0x0000000010080100 neg 0x00000000fffe9080 camera-pos store-complex  // Set camera pos to -0.062622129902656 + 0.9999780950616818176i
     0x0000000100000000 camera-zoom !64                                  // Set camera zoom to 1
 
     // Enable alternative display and clear the screen.
@@ -76,13 +76,13 @@ in let argc argv in
         // Loop over the lines.
         0 while dup HEIGHT < do let console-y in
           console-y HALF-HEIGHT - int-to-fixed64 let imag in
-          
+
             // Loop over the columns in the line.
             0 while dup WIDTH < do let console-x in
               console-x HALF-WIDTH - int-to-fixed64
 
               // Get the character that should be appended to the buffer.
-              imag camera-zoom @64 mul-cf camera-pos load-complex add-cc get-iteration CHARS + @8 let char in          
+              imag camera-zoom @64 mul-cf camera-pos load-complex add-cc get-iteration CHARS + @8 let char in
                 // Save character to buffer
                 char i @64 !8 i @inc64
                 char i @64 !8 i @inc64
@@ -100,9 +100,9 @@ in let argc argv in
         // Dump the buffer on the screen.
         buffer BUFFER-SIZE puts
       end end end
-      
+
       // Set camera zoom to 0.9921874997704392704 times itself
-      camera-zoom @64 0x00000000fe000000 mul-ff camera-zoom !64         
+      camera-zoom @64 0x00000000fe000000 mul-ff camera-zoom !64
 
       // Keep repeating until the camera-zoom is equal to zero.
       camera-zoom @64 isn-zero do

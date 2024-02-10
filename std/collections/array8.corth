@@ -1,7 +1,7 @@
 macro array8.get-addr
   // int: index ptr: array -- ptr: addr
   // ptr: array int: index -- ptr: addr
-  
+
   +
 endmacro
 

@@ -89,7 +89,7 @@ macro list64.get
   // int: index ptr: list64 -- int: value
   // NOTE: This macro assumes that the index is valid.
   list64.get-addr @64
-endmacro 
+endmacro
 
 macro list64.set
   // int: value int: index ptr: list64 --
@@ -139,7 +139,7 @@ proc list64.insert
 in let value index list in
   // Check if the list has enough capacity.
   1 list list64.check-capacity
-  
+
   // Move content to right.
   index list list64.get-addr dup 8 + list list64.length index - memcpy64i
 

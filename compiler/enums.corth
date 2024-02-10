@@ -160,13 +160,13 @@ proc get-type-name
   // int: type -- ptr: type-name-ptr int: type-name-length
   int -- ptr int
 in let type in
-       type TYPE-NAME      = if TYPE-NAME-STR      
-  else type TYPE-INTEGER   = if TYPE-INTEGER-STR   
-  else type TYPE-KEYWORD   = if TYPE-KEYWORD-STR   
-  else type TYPE-INTRINSIC = if TYPE-INTRINSIC-STR 
-  else type TYPE-STRING    = if TYPE-STRING-STR    
-  else type TYPE-INT-TYPE  = if TYPE-INT-TYPE-STR      
-  else                          TYPE-UNKNOWN-STR   
+       type TYPE-NAME      = if TYPE-NAME-STR
+  else type TYPE-INTEGER   = if TYPE-INTEGER-STR
+  else type TYPE-KEYWORD   = if TYPE-KEYWORD-STR
+  else type TYPE-INTRINSIC = if TYPE-INTRINSIC-STR
+  else type TYPE-STRING    = if TYPE-STRING-STR
+  else type TYPE-INT-TYPE  = if TYPE-INT-TYPE-STR
+  else                          TYPE-UNKNOWN-STR
   end end end end end end
 end end
 
@@ -174,24 +174,24 @@ proc get-keyword-name
   // int: keyword -- ptr: keyword-name-ptr int: keyword-name-length
   int -- ptr int
 in let keyword in
-       keyword KEYWORD-INCLUDE  = if KEYWORD-INCLUDE-STR  
-  else keyword KEYWORD-MACRO    = if KEYWORD-MACRO-STR    
-  else keyword KEYWORD-ENDMACRO = if KEYWORD-ENDMACRO-STR 
-  else keyword KEYWORD-PROC     = if KEYWORD-PROC-STR     
-  else keyword KEYWORD-END      = if KEYWORD-END-STR      
-  else keyword KEYWORD-RETURN   = if KEYWORD-RETURN-STR   
-  else keyword KEYWORD-RETURNS  = if KEYWORD-RETURNS-STR  
-  else keyword KEYWORD-MEMORY   = if KEYWORD-MEMORY-STR   
-  else keyword KEYWORD-AND      = if KEYWORD-AND-STR      
-  else keyword KEYWORD-IN       = if KEYWORD-IN-STR       
-  else keyword KEYWORD-LET      = if KEYWORD-LET-STR      
-  else keyword KEYWORD-IF       = if KEYWORD-IF-STR       
-  else keyword KEYWORD-ELSE     = if KEYWORD-ELSE-STR     
-  else keyword KEYWORD-WHILE    = if KEYWORD-WHILE-STR    
-  else keyword KEYWORD-DO       = if KEYWORD-DO-STR       
-  else keyword KEYWORD-BREAK    = if KEYWORD-BREAK-STR    
+       keyword KEYWORD-INCLUDE  = if KEYWORD-INCLUDE-STR
+  else keyword KEYWORD-MACRO    = if KEYWORD-MACRO-STR
+  else keyword KEYWORD-ENDMACRO = if KEYWORD-ENDMACRO-STR
+  else keyword KEYWORD-PROC     = if KEYWORD-PROC-STR
+  else keyword KEYWORD-END      = if KEYWORD-END-STR
+  else keyword KEYWORD-RETURN   = if KEYWORD-RETURN-STR
+  else keyword KEYWORD-RETURNS  = if KEYWORD-RETURNS-STR
+  else keyword KEYWORD-MEMORY   = if KEYWORD-MEMORY-STR
+  else keyword KEYWORD-AND      = if KEYWORD-AND-STR
+  else keyword KEYWORD-IN       = if KEYWORD-IN-STR
+  else keyword KEYWORD-LET      = if KEYWORD-LET-STR
+  else keyword KEYWORD-IF       = if KEYWORD-IF-STR
+  else keyword KEYWORD-ELSE     = if KEYWORD-ELSE-STR
+  else keyword KEYWORD-WHILE    = if KEYWORD-WHILE-STR
+  else keyword KEYWORD-DO       = if KEYWORD-DO-STR
+  else keyword KEYWORD-BREAK    = if KEYWORD-BREAK-STR
   else keyword KEYWORD-SIZEOF   = if KEYWORD-SIZEOF-STR
-  else                               KEYWORD-UNKNOWN-STR  
+  else                               KEYWORD-UNKNOWN-STR
   end end end end end end end end end end end end end end end end end
 end end
 
@@ -199,29 +199,29 @@ proc get-intrinsic-name
   // int: intrinsic -- ptr: intrinsic-name-ptr int: intrinsic-name-length
   int -- ptr int
 in let intrinsic in
-       intrinsic INTRINSIC-ADD      = if INTRINSIC-ADD-STR      
-  else intrinsic INTRINSIC-SUB      = if INTRINSIC-SUB-STR      
+       intrinsic INTRINSIC-ADD      = if INTRINSIC-ADD-STR
+  else intrinsic INTRINSIC-SUB      = if INTRINSIC-SUB-STR
   else intrinsic INTRINSIC-MUL      = if INTRINSIC-MUL-STR
   else intrinsic INTRINSIC-DIV      = if INTRINSIC-DIV-STR
   else intrinsic INTRINSIC-MOD      = if INTRINSIC-MOD-STR
-  else intrinsic INTRINSIC-BOR      = if INTRINSIC-BOR-STR      
-  else intrinsic INTRINSIC-BNOT     = if INTRINSIC-BNOT-STR     
-  else intrinsic INTRINSIC-LOAD8    = if INTRINSIC-LOAD8-STR    
-  else intrinsic INTRINSIC-STORE8   = if INTRINSIC-STORE8-STR   
-  else intrinsic INTRINSIC-LOAD16   = if INTRINSIC-LOAD16-STR    
-  else intrinsic INTRINSIC-STORE16  = if INTRINSIC-STORE16-STR   
-  else intrinsic INTRINSIC-LOAD32   = if INTRINSIC-LOAD32-STR    
-  else intrinsic INTRINSIC-STORE32  = if INTRINSIC-STORE32-STR   
-  else intrinsic INTRINSIC-LOAD64   = if INTRINSIC-LOAD64-STR   
-  else intrinsic INTRINSIC-STORE64  = if INTRINSIC-STORE64-STR  
-  else intrinsic INTRINSIC-SYSCALL0 = if INTRINSIC-SYSCALL0-STR 
-  else intrinsic INTRINSIC-SYSCALL1 = if INTRINSIC-SYSCALL1-STR 
-  else intrinsic INTRINSIC-SYSCALL2 = if INTRINSIC-SYSCALL2-STR 
-  else intrinsic INTRINSIC-SYSCALL3 = if INTRINSIC-SYSCALL3-STR 
-  else intrinsic INTRINSIC-SYSCALL4 = if INTRINSIC-SYSCALL4-STR 
-  else intrinsic INTRINSIC-SYSCALL5 = if INTRINSIC-SYSCALL5-STR 
-  else intrinsic INTRINSIC-SYSCALL6 = if INTRINSIC-SYSCALL6-STR 
-  else                                   INTRINSIC-UNKNOWN-STR  
+  else intrinsic INTRINSIC-BOR      = if INTRINSIC-BOR-STR
+  else intrinsic INTRINSIC-BNOT     = if INTRINSIC-BNOT-STR
+  else intrinsic INTRINSIC-LOAD8    = if INTRINSIC-LOAD8-STR
+  else intrinsic INTRINSIC-STORE8   = if INTRINSIC-STORE8-STR
+  else intrinsic INTRINSIC-LOAD16   = if INTRINSIC-LOAD16-STR
+  else intrinsic INTRINSIC-STORE16  = if INTRINSIC-STORE16-STR
+  else intrinsic INTRINSIC-LOAD32   = if INTRINSIC-LOAD32-STR
+  else intrinsic INTRINSIC-STORE32  = if INTRINSIC-STORE32-STR
+  else intrinsic INTRINSIC-LOAD64   = if INTRINSIC-LOAD64-STR
+  else intrinsic INTRINSIC-STORE64  = if INTRINSIC-STORE64-STR
+  else intrinsic INTRINSIC-SYSCALL0 = if INTRINSIC-SYSCALL0-STR
+  else intrinsic INTRINSIC-SYSCALL1 = if INTRINSIC-SYSCALL1-STR
+  else intrinsic INTRINSIC-SYSCALL2 = if INTRINSIC-SYSCALL2-STR
+  else intrinsic INTRINSIC-SYSCALL3 = if INTRINSIC-SYSCALL3-STR
+  else intrinsic INTRINSIC-SYSCALL4 = if INTRINSIC-SYSCALL4-STR
+  else intrinsic INTRINSIC-SYSCALL5 = if INTRINSIC-SYSCALL5-STR
+  else intrinsic INTRINSIC-SYSCALL6 = if INTRINSIC-SYSCALL6-STR
+  else                                   INTRINSIC-UNKNOWN-STR
   end end end end end end end end end end end end end end end end end end end end end end
 end end
 
@@ -248,14 +248,14 @@ end end
 macro fput-type let type file in
   // int: type file-desc: file-desc
   // Prints a type.
-  
+
   type get-type-name file fputs
 end endmacro
 
 macro fput-keyword let keyword file in
   // int: keyword file-desc: file-desc
   // Prints a keyword.
-  
+
   keyword get-keyword-name file fputs
 end endmacro
 
@@ -269,7 +269,7 @@ end endmacro
 macro fput-int-type let int-type file in
   // int: int-type file-desc: file-desc
   // Prints an intrinsic type.
-  
+
   int-type get-int-type-name file fputs
 end endmacro
 

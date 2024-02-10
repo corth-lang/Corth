@@ -79,7 +79,7 @@ in let from to in
       "error: could not copy " eputs from cstr.str eputs eputnl
       EXIT-ERROR exit drop
     end
-    
+
     "info: copied " puts from cstr.str puts " to " puts to cstr.str puts putnl
   end
 end end
@@ -132,7 +132,7 @@ proc compile
   ptr ptr ptr bool -- bool
   // NOTE: source-name must be a file.
 in let source-name output-name include-paths-set full-compilation in
-  
+
 
   // Compile Corth file to NASM file.
   source-name
@@ -143,10 +143,10 @@ in let source-name output-name include-paths-set full-compilation in
 
   // Keep going if we are in full-compilation mode.
   full-compilation ! if true return end
-  
+
   memory nasm-infop sizeof(siginfo_t) in
   memory ld-infop sizeof(siginfo_t) in
-    
+
     // Execute NASM.
     subprocess.init
       "/bin/nasm"  drop subprocess.file-name
@@ -168,7 +168,7 @@ in let source-name output-name include-paths-set full-compilation in
       "-o"        drop subprocess.add-option
       output-name      subprocess.add-option
     ld-infop subprocess.end
-    
+
     ld-infop 8 + @32 CLD_EXITED != ld-infop 24 + @32 isn-zero | if
       "error: linker failed\n" eputs
       false return
@@ -190,7 +190,7 @@ in let source-name output-name include-paths-set full-compilation in
       "error: can not access file '" eputs source-name source-name mlength eputs "'\n" eputs
       EXIT-ERROR exit drop
     end
-    
+
     stats 24 + @64 S_IFMT && let masked in
       masked S_IFREG = if
         source-name output-name include-paths-set full-compilation compile
@@ -255,7 +255,7 @@ proc command.quick-test -- in
     test-paths @64 is-null if
       "error: 'list64.init' failed\n" eputs
       EXIT-ERROR exit drop
-    end    
+    end
 
     include-paths-set @64 is-null if
       "error: 'list64.init' failed\n" eputs
@@ -298,7 +298,7 @@ proc command.quick-test -- in
         else EXIT-ERROR exit drop end end end // impossible
       end
     end
-    
+
     0 while dup test-paths list64.length < do dup test-paths list64.get let test-file in
       test-file
       "/dev/null" drop
@@ -306,7 +306,7 @@ proc command.quick-test -- in
       full-compilation @64 isn-zero
       compile-recursive ! if EXIT-ERROR exit drop end
     end inc end drop
-      
+
     // Deallocate 'include-paths-set'.
     include-paths-set list64.mfree drop
   end end end
@@ -325,15 +325,15 @@ proc command.bootstrap -- in
 
   // source is the directory that the compiler.corth is in.
   // This directory should contain every file that the compiler needs except the standard library.
-  
+
   memory source     sizeof(ptr)  in
   memory executable sizeof(ptr)  in
   memory std        sizeof(ptr)  in
   memory once       sizeof(bool) in
-  
+
     NULLPTR source !64
     NULLPTR std    !64
-    
+
     executable-file-name @64 executable !64
 
     0 once !64
@@ -350,7 +350,7 @@ proc command.bootstrap -- in
             command.bootstrap-show-usage
             EXIT-ERROR exit drop
           end
-          
+
         else type O-SWITCH = if
           arg1 arg1-length "h"    memcmp8-wl is-zero
           arg1 arg1-length "help" memcmp8-wl is-zero | if
@@ -366,17 +366,17 @@ proc command.bootstrap -- in
             0xff once !8
 
           else EXIT-ERROR exit drop end end // impossible
-          
-        else type O-ARGUMENT = if            
+
+        else type O-ARGUMENT = if
           arg1 arg1-length "e"          memcmp8-wl is-zero
           arg1 arg1-length "executable" memcmp8-wl is-zero | if
             arg2 arg2-length inc to-dynamic8 executable !64
-            
+
           else arg1 arg1-length "std" memcmp8-wl is-zero if
              arg2 arg2-length inc to-dynamic8 std !64
-            
+
           else EXIT-ERROR exit drop end end // impossible
-          
+
         else EXIT-ERROR exit drop end end end // impossible
       end
     end
@@ -478,10 +478,10 @@ proc command.compile -- in
   memory output-file       sizeof(ptr) in
   memory include-paths-set sizeof(ptr) in
   memory asm-only          sizeof(int) in
-  
+
     NULLPTR       source-file !64
     "output" drop output-file !64
-    
+
     16 list64.init include-paths-set !64
 
     include-paths-set @64 is-null if
@@ -503,7 +503,7 @@ proc command.compile -- in
             command.compile-show-usage
             EXIT-ERROR exit drop
           end
-          
+
         else type O-SWITCH = if
           arg1 arg1-length "h"    memcmp8-wl is-zero
           arg1 arg1-length "help" memcmp8-wl is-zero | if
@@ -515,11 +515,11 @@ proc command.compile -- in
               "error: '--asm' can not be used more than once\n" puts
               EXIT-ERROR exit drop
             end
-            
+
             1 asm-only !64
-            
+
           else EXIT-ERROR exit drop end end // impossible
-          
+
         else type O-ARGUMENT = if
           arg1 arg1-length "i"            memcmp8-wl is-zero
           arg1 arg1-length "include-path" memcmp8-wl is-zero | if
@@ -528,9 +528,9 @@ proc command.compile -- in
           else arg1 arg1-length "o"           memcmp8-wl is-zero
                arg1 arg1-length "output-path" memcmp8-wl is-zero | if
             arg2 output-file !64
-            
+
           else EXIT-ERROR exit drop end end // impossible
-          
+
         else EXIT-ERROR exit drop end end end // impossible
       end
     end
@@ -545,11 +545,11 @@ proc command.compile -- in
     include-paths-set
     asm-only @64 is-zero
     compile ! if EXIT-ERROR exit drop end
-    
+
     // Deallocate 'include-paths-set'.
     include-paths-set list64.mfree drop
   end end end end
-  
+
   EXIT-SUCCESS exit drop
 end
 
@@ -566,7 +566,7 @@ in let argc argv in
   getopts.reset-length
 
   argv @64 executable-file-name !64
-  argv 8 + getopts.set-arguments  
+  argv 8 + getopts.set-arguments
 
   "h#help#" drop getopts.generate ! if
     "error: 'getopts.generate' failed\n" eputs
@@ -577,7 +577,7 @@ in let argc argv in
     getopts.parse let type arg1 arg1-length arg2 arg2-length error in
       error        if EXIT-ERROR   exit drop end
       type O-END = if                  break end
-      
+
       type O-INPLACE = if
              arg1 arg1-length "compile"    memcmp8-wl is-zero if command.compile
         else arg1 arg1-length "quick-test" memcmp8-wl is-zero if command.quick-test
@@ -592,11 +592,11 @@ in let argc argv in
         arg1 arg1-length "help" memcmp8-wl is-zero | if
           main.show-usage
           EXIT-SUCCESS exit drop
-          
+
         else EXIT-ERROR exit drop end // impossible
-        
+
       else type O-ARGUMENT = if
-        
+
       else EXIT-ERROR exit drop end end end // impossible
     end
   end

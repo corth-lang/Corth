@@ -96,7 +96,7 @@ in let size in
             // If group-size is equal to size + 8, then we have found the best possible block, no need to keep iterating.
             group group-size id return
           end
-          
+
           group-size size 16 + >= if
             // If the group has enough space, that is, if the group has at least expected size plus sixteen bytes of free space.
             group-size available-size @64 < if
@@ -128,27 +128,27 @@ in let size in
 
   // Find the block with the smallest size that has enough space.
   size malloc.find-min-available let available-block available-size available-id in
-  
-    // Could not find a block with enough size.
-    available-block malloc.next-block is-null if NULLPTR return end  
 
-    size 8 + available-size = if      
+    // Could not find a block with enough size.
+    available-block malloc.next-block is-null if NULLPTR return end
+
+    size 8 + available-size = if
       // Size was equal to available space, therefore the block should be kept intact.
-      
+
       available-id malloc.avail-queue queue64.pop drop
-    else    
+    else
       // Size was less than available, therefore the block should be split in two.
 
       //    ____________________________
-      //   /                            \      
+      //   /                            \
       // |-------|---------------------|-------|------|
-      // | &next |######container######| &next |@cont@|  
+      // | &next |######container######| &next |@cont@|
       // |-------|---------------------|-------|------|
-      
+
       // Will be split as:
 
-      //    _____________  _____________  
-      //   /             \/             \ 
+      //    _____________  _____________
+      //   /             \/             \
       // |-------|------|-------|------|-------|------|
       // | &next |@cont@| &next |#cont#| &next |@cont@|
       // |-------|------|-------|------|-------|------|
@@ -157,7 +157,7 @@ in let size in
 
       // This means that even if the containers are empty, we need 16 bytes of free space for the pointers.
       // To split a block into two sub-blocks with one of the sub-blocks having L bytes of space, the block must have at least L + 16 bytes of free space.
-      
+
       available-block malloc.container size + let new-next in
 
         // Set the new block's next-block to the selected-block's next-block.
@@ -168,7 +168,7 @@ in let size in
 
         // Update the available blocks table.
         new-next available-id malloc.avail-queue queue64.set
-      end 
+      end
     end
 
     // Return the container position.

@@ -21,13 +21,13 @@ in let  log-stream in
       "Block at 0x" log-stream fputs block log-stream fputx " points to itself or backwards, stopping iteration.\n" log-stream fputs
       block break
     end
-    
+
     block malloc.avail-queue-array malloc.avail-queue-array malloc.avail-queue-length @64 8 * + sorted64.available if
       "#"
     else
       "@"
     end log-stream fputs drop
-    
+
     " 0x" log-stream fputs
     block log-stream fputx
     " -> 0x" log-stream fputs
@@ -51,7 +51,7 @@ in
   malloc.array while dup malloc.array malloc.ARRAY-SIZE + < do let block in
     block malloc.next-block block <= if false return end
   block malloc.next-block end end drop
-true end 
+true end
 
 
 // Can bu used to see how much space is available and to check memory leaks.
@@ -60,11 +60,11 @@ proc get-available-dynamic-memory
 in
   memory sum sizeof(int) in
     0 sum !64
-    
+
     0 while dup malloc.avail-queue-length @64 < do let i in
       i malloc.avail-queue queue64.get malloc.block-size sum @64 + sum !64
     i end inc end drop
 
-    sum @64 
+    sum @64
   end
 end

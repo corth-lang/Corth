@@ -8,7 +8,7 @@ Say x is the real value and a is the byte representation of it. Then,
   x = a * W       where W = 2^-32
 
 makes a good enough representation for fixed numbers. Most operations for integers can be easily recreated for fixed numbers with small tweaks.
-Some operations for integers can directly be used for 
+Some operations for integers can directly be used for
 
 This library is not super precise, but the values are useful and quick enough for simple arithmetic operations.
 
@@ -155,14 +155,14 @@ macro udiv-ff
   // fixed64: a fixed64: b -- fixed64: a/b
   // Performs unsigned division.
   // z = cW = x/y = xy^-1
-  uinv-f umul-ff  
+  uinv-f umul-ff
 endmacro
 
 macro div-ff
   // fixed64: a fixed64: b -- fixed64: a/b
   // Performs signed division.
   // z = cW = x/y = xy^-1
-  inv-f mul-ff  
+  inv-f mul-ff
 endmacro
 
 macro arit-avg
@@ -213,7 +213,7 @@ in let epsilon in
 
       0 i !64
       FONE x !64
-      
+
       while x @64 sqr-f epsilon - abs SQRT.TOLERANCE > do
         x @64 FONE-HALF umul-ff h-epsilon x @64 udiv-ff + x !64
         i @inc64
@@ -235,7 +235,7 @@ proc sin
   // Calculates the sine of an angle in radians.
 in
   PI 2 * %
-  
+
   let x in
     memory sum sizeof(fixed64) in
     memory a   sizeof(fixed64) in
@@ -267,7 +267,7 @@ proc cos
   // Calculates the cosine of an angle in radians.
 in
   PI 2 * %
-  
+
   let x in
     memory sum sizeof(fixed64) in
     memory a   sizeof(fixed64) in

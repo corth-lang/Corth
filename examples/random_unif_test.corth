@@ -26,7 +26,7 @@ in let argc argv in
         address @64 inc address !64
       end
     dec end drop
-    
+
     "Done, results: \n" puts
 
     0 while dup numbers < do

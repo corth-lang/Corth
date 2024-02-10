@@ -8,7 +8,7 @@ in let argc argv in
 
   memory a sizeof(int) in
   memory b sizeof(int) in
-  
+
     while "Enter A: " puts a geti ! do "Please enter a valid number.\n" puts end
     while "Enter A: " puts b geti ! do "Please enter a valid number.\n" puts end
 

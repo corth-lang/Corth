@@ -53,7 +53,7 @@ in let path1 len1 path2 len2 in
 
       // Copy second path.
       path2 object len1 + len2 memcpy8
-      
+
       // Append a null terminator character.
       '\0' object len1 + len2 + !8
     object end
@@ -108,7 +108,7 @@ macro path.merge.end-str // -- ptr: merged-string
 
     // Get the generated string.
     _path.merge.builder.array_ _path.merge.builder.ptr_ string-builder.to-string
-    
+
     // Free the allocated resources.
     _path.merge.builder.array_ @64 mfree drop
   end end

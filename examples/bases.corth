@@ -12,4 +12,4 @@ in let argc argv in
     "Octal           : " puts number @64 puto putnl
     "Binary          : " puts number @64 putb putnl
   end
-end 0 end 
+end 0 end

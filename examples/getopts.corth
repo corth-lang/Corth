@@ -16,7 +16,7 @@ in let argc argv in
     "getopts.parse-options failed!\n" puts
     1 exit drop
   end
-  
+
   argv getopts.set-arguments
 
   while true do

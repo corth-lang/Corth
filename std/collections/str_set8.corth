@@ -139,7 +139,7 @@ in let set1 set2 in
       while true do
         // If any hand has reached the end, break the loop.
         hand1 @64 end1 = if inter return end
-        
+
         // To get the smallest string, compare the strings.
         hand1 @64 hand2 @64 dmemcmp8 let compare in
           compare is-zero if
@@ -149,7 +149,7 @@ in let set1 set2 in
             // Move both the hands once to the right.
             hand1 @64 8 + hand1 !64
             hand2 @64 8 + hand2 !64
-            
+
           else
             // Return the minimum of the hands.
             compare is-neg if hand1 else hand2 end
@@ -159,7 +159,7 @@ in let set1 set2 in
               hand-addr @64 8 + hand-addr !64
             end
           end
-        end  
+        end
       end
     end end end
   end

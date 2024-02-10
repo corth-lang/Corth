@@ -107,11 +107,11 @@ macro O_DIRECTORY 0x1000 endmacro
 
 // Stat types
 macro S_IFMT   0o170000 endmacro
-macro S_IFSOCK 0o140000 endmacro 
-macro S_IFLNK  0o120000 endmacro  
-macro S_IFREG  0o100000 endmacro  
-macro S_IFBLK  0o060000 endmacro  
-macro S_IFDIR  0o040000 endmacro 
+macro S_IFSOCK 0o140000 endmacro
+macro S_IFLNK  0o120000 endmacro
+macro S_IFREG  0o100000 endmacro
+macro S_IFBLK  0o060000 endmacro
+macro S_IFDIR  0o040000 endmacro
 macro S_IFCHR  0o020000 endmacro
 macro S_IFIFO  0o010000 endmacro
 

@@ -1,5 +1,5 @@
 /*
-    
+
     Array library for Corth
 
   Contains utility macro and procedures for 64 bit arrays.
@@ -13,7 +13,7 @@ include core/ptr.corth
 
 macro array64.get-addr
   // int: index ptr: array -- ptr: addr
-  
+
   swp 8 * +
 endmacro
 
@@ -55,7 +55,7 @@ proc array64.umin
   // ptr: array int: length -- uint: min-item
   ptr int -- int
   // Returns the least value (unsigned) in the array.
-  
+
   // NOTE: If the array has a length of 0, returns MAX-UINT (2^64-1).
 in let array length in
   memory min sizeof(int) in
@@ -99,7 +99,7 @@ proc array64.umax
   // ptr: array int: length -- uint: min-item
   ptr int -- int
   // Returns the least value (unsigned) in the array.
-  
+
   // NOTE: If the array has a length of 0, returns MIN-UINT (20).
 in let array length in
   memory max sizeof(int) in

@@ -24,7 +24,7 @@ in
       i end
     8 + end drop
   end
-  
+
   // This is a fake return, it will never be returned but the compiler expects a return value here
   // To satisfy that, it is used
   true

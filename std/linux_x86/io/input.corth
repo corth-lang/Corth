@@ -2,7 +2,7 @@ include linux_x86/sys.corth
 include converter/convert.corth
 
 
-macro fgets arot fread endmacro // ptr: str-ptr int: str-len file-desc: file-desc -- int: read-bytes 
+macro fgets arot fread endmacro // ptr: str-ptr int: str-len file-desc: file-desc -- int: read-bytes
 
 proc fgetu
   // ptr: address files-desc: file-desc -- bool: success

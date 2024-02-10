@@ -54,7 +54,7 @@ macro compile-procedure.check-type let _token_type_ expect-address expect-length
   // ptr: token-arg ptr: expect-addr int: expect-length int: expected-token-arg
   expected-token-type _token_type_ != if
     LOG.ERR log-stream fputs "Expected a '" log-stream fputs expected-token-type log-stream fput-type  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_type_ log-stream fput-type "'.\n" log-stream fputs
-    
+
     procedure-name procedure-address log-stream fput-inside-procedure
     ERROR-EXIT-CODE exit drop
   end
@@ -113,7 +113,7 @@ end endmacro
 macro compile-procedure.check-null let expect-address expect-length in
   is-null if
     LOG.ERR log-stream fputs "'malloc' failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
-    
+
     procedure-name procedure-address log-stream fput-inside-procedure
     ERROR-EXIT-CODE exit drop
   end
@@ -146,7 +146,7 @@ end endmacro
 macro compile-procedure.check-branch-here let _token_addr_ expect-address expect-length in
   branch-active @8 is-zero if
     LOG.SOFT log-stream fputs "Tried to " log-stream fputs expect-address expect-length log-stream fputs " but the branch was finished.\n" log-stream fputs
-    
+
     _token_addr_ compile-procedure.show-here
     ERROR-EXIT-CODE exit drop
   end
@@ -341,7 +341,7 @@ in let token-address local-stack local-stack-length output-file log-stream in
     else item2 get-mode MODE-IMM = if
       item1 get-mode MODE-LOCAL = if
         item1 get-arg1 item2 get-arg1 + push-int-local
-        
+
       else
         INT-TYPE-INT push-real
 
@@ -403,15 +403,15 @@ in let token-address intrinsic local-stack local-stack-length output-file log-st
       intrinsic INTRINSIC-LOAD64 = if item get-arg1 push-@64global return end
       intrinsic INTRINSIC-LOAD8  = if item get-arg1 push-@8global  return end
     end
-    
+
     INT-TYPE-INT push-real
 
-    intrinsic INTRINSIC-LOAD64 = if    
+    intrinsic INTRINSIC-LOAD64 = if
       item "rbx" output-file nasm.mov-reg-item
 
       "    push    qword [rbx]\n" output-file fputs
-      
-    else     
+
+    else
       item "rbx" output-file nasm.mov-reg-item
            "rax" output-file nasm.mov-reg-zero
 
@@ -475,7 +475,7 @@ in let value-item address-item address-item-length token-address intrinsic outpu
   "    mov     [" output-file fputs address-item address-item-length output-file fputs
   "], " output-file fputs intrinsic get-register-name output-file fputs output-file fputnl
 end end
-  
+
 
 
 proc store-intrinsic
@@ -495,7 +495,7 @@ in let token-address intrinsic local-stack local-stack-length output-file log-st
       LOG.ERR log-stream fputs "Store intrinsics do not take immediate value as address argument.\n" log-stream fputs
       token-address log-stream fput-here
       1 exit drop
-      
+
     else address-item get-mode MODE-LOCAL = if
       // TODO: Fix this disgusting hack.
       "    mov     rbx, [local_ptr]\n" output-file fputs
@@ -505,7 +505,7 @@ in let token-address intrinsic local-stack local-stack-length output-file log-st
           "rbx + " buffer-start buffer 20 + buffer-start - to-dynamic8-join
         end
       end
-      
+
       let object in
         value-item object object mlength token-address intrinsic output-file log-stream store-intrinsic-sub
         object mfree drop
@@ -557,7 +557,7 @@ in let signed upper immediate item local-stack local-stack-length output-file in
         item output-file nasm.push-int
 
         signed if "    sar     qword [rsp], " else "    shr     qword [rsp], " end output-file fputs 64 log2 - output-file fputu output-file fputnl
-        
+
       else
         item output-file nasm.push-int
 
@@ -581,7 +581,7 @@ in let token-address signed upper local-stack local-stack-length output-file log
     item1 get-mode MODE-IMM = if
       item2 get-mode MODE-IMM = if
         item1 get-arg1 item2 get-arg1
-        
+
         upper if signed if *2 else u*2 end
             else signed if *  else u*  end end
 
@@ -589,8 +589,8 @@ in let token-address signed upper local-stack local-stack-length output-file log
       else
         signed upper item1 get-arg1 item2 local-stack local-stack-length output-file multiply-immediate-any
       end
-      
-    else      
+
+    else
       item2 get-mode MODE-IMM = if
         signed upper item2 get-arg1 item1 local-stack local-stack-length output-file multiply-immediate-any
       else
@@ -603,7 +603,7 @@ in let token-address signed upper local-stack local-stack-length output-file log
         upper  if "    push    rdx\n" else "    push    rax\n" end output-file fputs
       end
     end
-    
+
     item1 stack-item.mfree
     item2 stack-item.mfree
   end
@@ -654,7 +654,7 @@ in let token-address signed modulo local-stack local-stack-length output-file lo
           end
         end
       end
-      
+
     else
       INT-TYPE-INT push-real
 
@@ -665,7 +665,7 @@ in let token-address signed modulo local-stack local-stack-length output-file lo
       signed if "    idiv    rbx\n" else "    div     rbx\n" end output-file fputs
       modulo if "    push    rdx\n" else "    push    rax\n" end output-file fputs
     end
-      
+
     item1 stack-item.mfree
     item2 stack-item.mfree
   end
@@ -688,7 +688,7 @@ proc compile-intrinsic
 
   // Compiles an intrinsic in a Corth procedure.
   // Compilation warning and errors are dumped to log-stream.
-in let 
+in let
   source-name source-file output-file
   line-no char-no
   procedure-name procedure-address
@@ -723,7 +723,7 @@ in
       item1 stack-item.mfree
       item2 stack-item.mfree
     end
-    
+
   else token-arg INTRINSIC-BOR = if
     // -------- Intrinsic '||' --------
     local-stack-length @64 2 < if invalid-usage-of-intrinsic end
@@ -731,18 +731,18 @@ in
     pop-item pop-item let item2 item1 in
       item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
       item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
-      
+
       INT-TYPE-INT push-real
 
       item2 "rax" output-file nasm.mov-reg-item
       item1       output-file nasm.push-int
 
       "    or      [rsp], rax\n" output-file fputs
-      
+
       item1 stack-item.mfree
       item2 stack-item.mfree
     end
-    
+
   else token-arg INTRINSIC-BNOT = if
     // -------- Intrinsic '!!' --------
 
@@ -756,19 +756,19 @@ in
 
       else
         INT-TYPE-INT push-real
-        
+
         item output-file nasm.push-int
         "    not     qword [rsp]\n" output-file fputs
       end
 
       item stack-item.mfree
     end
-    
+
   else token-arg INTRINSIC-MUL     = if token-address true false local-stack local-stack-length output-file log-stream multiply-intrinsic
   else token-arg INTRINSIC-MUL2    = if token-address true true  local-stack local-stack-length output-file log-stream multiply-intrinsic
   else token-arg INTRINSIC-DIV     = if token-address true false local-stack local-stack-length output-file log-stream divide-intrinsic
   else token-arg INTRINSIC-MOD     = if token-address true true  local-stack local-stack-length output-file log-stream divide-intrinsic
-    
+
   else token-arg INTRINSIC-UMUL    = if token-address false false local-stack local-stack-length output-file log-stream multiply-intrinsic
   else token-arg INTRINSIC-UMUL2   = if token-address false true  local-stack local-stack-length output-file log-stream multiply-intrinsic
   else token-arg INTRINSIC-UDIV    = if token-address false false local-stack local-stack-length output-file log-stream divide-intrinsic
@@ -778,12 +778,12 @@ in
   else token-arg INTRINSIC-LOAD16  = if token-address token-arg local-stack local-stack-length output-file log-stream load-intrinsic
   else token-arg INTRINSIC-LOAD32  = if token-address token-arg local-stack local-stack-length output-file log-stream load-intrinsic
   else token-arg INTRINSIC-LOAD64  = if token-address token-arg local-stack local-stack-length output-file log-stream load-intrinsic
-  
+
   else token-arg INTRINSIC-STORE8  = if token-address token-arg local-stack local-stack-length output-file log-stream store-intrinsic
   else token-arg INTRINSIC-STORE16 = if token-address token-arg local-stack local-stack-length output-file log-stream store-intrinsic
   else token-arg INTRINSIC-STORE32 = if token-address token-arg local-stack local-stack-length output-file log-stream store-intrinsic
   else token-arg INTRINSIC-STORE64 = if token-address token-arg local-stack local-stack-length output-file log-stream store-intrinsic
-        
+
   else token-arg INTRINSIC-SYSCALL0 = if
     // -------- Intrinsic 'syscall0' --------
 
@@ -791,7 +791,7 @@ in
 
     pop-item let op-item in
       op-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
-      
+
       INT-TYPE-INT push-real
 
       op-item   "rax" output-file nasm.mov-reg-item
@@ -801,7 +801,7 @@ in
 
       op-item   stack-item.mfree
     end
-        
+
   else token-arg INTRINSIC-SYSCALL1 = if
     // -------- Intrinsic 'syscall1' --------
 
@@ -810,7 +810,7 @@ in
     pop-item pop-item let op-item arg-item1 in
       arg-item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
       op-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
-      
+
       INT-TYPE-INT push-real
 
       op-item   "rax" output-file nasm.mov-reg-item
@@ -822,7 +822,7 @@ in
       arg-item1 stack-item.mfree
       op-item   stack-item.mfree
     end
-        
+
   else token-arg INTRINSIC-SYSCALL2 = if
     // -------- Intrinsic 'syscall2' --------
 
@@ -832,7 +832,7 @@ in
       arg-item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
       arg-item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
       op-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
-      
+
       INT-TYPE-INT push-real
 
       op-item   "rax" output-file nasm.mov-reg-item
@@ -846,7 +846,7 @@ in
       arg-item2 stack-item.mfree
       op-item   stack-item.mfree
     end
-        
+
   else token-arg INTRINSIC-SYSCALL3 = if
     // -------- Intrinsic 'syscall3' --------
 
@@ -857,7 +857,7 @@ in
       arg-item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
       arg-item3 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
       op-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
-      
+
       INT-TYPE-INT push-real
 
       op-item   "rax" output-file nasm.mov-reg-item
@@ -885,7 +885,7 @@ in
       arg-item3 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
       arg-item4 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
       op-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
-      
+
       INT-TYPE-INT push-real
 
       op-item   "rax" output-file nasm.mov-reg-item
@@ -916,7 +916,7 @@ in
       arg-item4 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
       arg-item5 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
       op-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
-      
+
       INT-TYPE-INT push-real
 
       op-item   "rax" output-file nasm.mov-reg-item
@@ -950,7 +950,7 @@ in
       arg-item5 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
       arg-item6 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
       op-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
-      
+
       INT-TYPE-INT push-real
 
       op-item   "rax" output-file nasm.mov-reg-item
@@ -1000,7 +1000,7 @@ proc compile-keyword
   // ptr: levels-list ptr: level-id-counter
   ptr ptr
   // ptr: local-memory-end
-  ptr 
+  ptr
   // ptr: let-names ptr: let-addresses ptr: let-vars-length
   ptr ptr ptr
   // ptr: branch-active
@@ -1047,12 +1047,12 @@ in
       local-stack local-stack-length
       log-stream
       check-stack-types-types
-      
+
       true return
     end
 
     levels-list list64.pop-last let level in
-      level @64 level 8 + @64 let start-keyword start-address in                
+      level @64 level 8 + @64 let start-keyword start-address in
         start-keyword KEYWORD-IF = if
           // -------- End of 'if' --------
           level 16 + @64 level 24 + @64 let start-id start-stack in
@@ -1063,7 +1063,7 @@ in
               // Reset the branch.
               0xff branch-active !8
             end
-            
+
             local-stack local-stack-length output-file local-stack.convert-last-items-real
 
             // Check for the stack changes.
@@ -1099,10 +1099,10 @@ in
 
           LOG.ERR  log-stream fputs "You probably forgot a 'do' after 'while'.\n" log-stream fputs
           LOG.INFO log-stream fputs "A 'while-do' loop can be created as: 'while <condition> do <code> end'\n" log-stream fputs
-          
+
           token-address log-stream fput-here
           start-address compile-procedure.show-here
-          
+
           ERROR-EXIT-CODE exit drop
 
         else start-keyword KEYWORD-DO = if
@@ -1309,7 +1309,7 @@ in
 
     // Level structure:
     //  0- 7 -> KEYWORD-WHILE
-    //  8-15 -> Starter address 
+    //  8-15 -> Starter address
     // 16-23 -> Level ID
     // 24-31 -> Old stack
 
@@ -1365,15 +1365,15 @@ in
     end
 
     local-stack local-stack-length output-file local-stack.convert-last-items-real
-    
+
     // Remove the bool value from the local-stack.
     pop-item let item in
-      item get-type INT-TYPE-BOOL != if        
+      item get-type INT-TYPE-BOOL != if
         LOG.ERR log-stream fputs "'do' requires a bool.\n" log-stream fputs
         token-address compile-procedure.show-here
         ERROR-EXIT-CODE exit drop
       end
-      
+
       item stack-item.mfree
     end
 
@@ -1411,9 +1411,9 @@ in
           end
         end
       end
-    end        
+    end
 
-  else token-arg KEYWORD-BREAK = if 
+  else token-arg KEYWORD-BREAK = if
     // -------- Keyword 'break' -------
     // break
 
@@ -1426,7 +1426,7 @@ in
           level-addr @64 32 + @64 level-addr @64 24 + @64 level-addr @64 56 + @64 let broken-end-id do-address do-stack in
             // Check for the stack contents.
             do-stack do-address local-stack local-stack-length token-address log-stream check-stack-types
-            
+
             local-stack local-stack-length output-file local-stack.convert-last-items-real
 
             broken-end-id output-file nasm.jump-level
@@ -1504,7 +1504,7 @@ in
 
             INT-TYPE-INT MODE-LOCAL stack-item.create let replace-item in
               local-memory-end @64 replace-item set-arg1
-              
+
               memory-name-arg replace-item let-names let-addresses let-vars-length str-map64.set-dstr if
                 LOG.ERR log-stream fputs "Local variable '" log-stream fputs memory-name-arg memory-name-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
                 memory-name-address compile-procedure.show-here
@@ -1606,16 +1606,16 @@ in
               item get-mode MODE-REAL = if
                 "    pop     r15\n" output-file fputs
               end
-              
+
             else
               item get-mode MODE-IMM         =
               item get-mode MODE-GLOBAL      = |
               item get-mode MODE-@LOCALCONST = |
               item get-mode MODE-LOCAL       = |
               item get-mode MODE-DATA        = | if
-                   
+
                 item stack-item.copy
-                
+
               else
                 local-stack local-stack-length output-file local-stack.convert-last-items-real
                 item output-file nasm.convert-item-to-real
@@ -1626,7 +1626,7 @@ in
                 else
                   "    pop     qword [r15 + " output-file fputs local-memory-end @64 output-file fputu "]\n" output-file fputs
                 end
-                
+
                 item get-type MODE-@LOCALCONST stack-item.create let replace-item in
                   local-memory-end @64 replace-item set-arg1
 
@@ -1635,7 +1635,7 @@ in
 
                 local-memory-end @64 8 + local-memory-end !64
               end
-              
+
               let replace-item in
                 variable-name replace-item let-names let-addresses let-vars-length str-map64.set-dstr if
                   LOG.ERR log-stream fputs "'let' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
@@ -1714,7 +1714,7 @@ in
   else token-arg KEYWORD-SIZEOF = if
     // -------- Keyword 'sizeof' --------
     // sizeof <type>
-    
+
     // TODO: These are not implemented yet.
     // sizeof <global-variable-name>
     // sizeof <string-immediate>
@@ -1725,7 +1725,7 @@ in
 
     "a type after 'cast'" true compile-procedure.get-next-token
 
-    let type-type type-address type-arg in      
+    let type-type type-address type-arg in
       // The token afrer 'sizeof' should be an 'intrinsic type'.
       type-type type-address "after 'sizeof'" TYPE-INT-TYPE compile-procedure.check-type-here
 
@@ -1748,7 +1748,7 @@ proc compile-procedure
   ptr ptr
   // ptr: data-definitions-list
   ptr
-  // ptr: global-names-array ptr: global-sizes-array ptr: globals-length 
+  // ptr: global-names-array ptr: global-sizes-array ptr: globals-length
   ptr ptr ptr
   // ptr: proc-names-array ptr: proc-inputs-array ptr: proc-outputs-array ptr: procs-length
   ptr ptr ptr ptr
@@ -1762,14 +1762,14 @@ proc compile-procedure
   ptr ptr ptr
   // ptr: output-array int: output-length
   ptr int
-  // file-desc: log-stream -- 
+  // file-desc: log-stream --
   file-desc --
   // local-memory-max: int
   int
-  
+
   // Compiles a Corth procedure.
   // Compilation warning and errors are dumped to log-stream.
-in let 
+in let
   source-name source-file output-file
   line-no char-no
   data-definitions-list
@@ -1782,7 +1782,7 @@ in let
   output-types-array output-types-length
   log-stream
 in
-    
+
   "proc_" output-file fputs procedure-name output-file fput-alpha ":\n" output-file fputs
 
   memory levels-list      sizeof(ptr)      in
@@ -1814,7 +1814,7 @@ in
     0 let-vars-length  !64
     0 local-memory-end !64
     0 local-memory-max !64
-    
+
     0xff branch-active !8
 
     while true do
@@ -1850,14 +1850,14 @@ in
 
           // Branch should not be cut before name.
           token-address "calling a name" compile-procedure.check-branch-here
-            
+
           token-arg let-names let-addresses let-vars-length str-map64.get-dstr if
             // -------- local variables --------
-            
+
             let replace-item in
               replace-item stack-item.copy push-item
             end
-            
+
           else drop token-arg global-names-array global-sizes-array globals-length str-map64.get-dstr if
             // -------- global 'memory' variables --------
 
@@ -1871,7 +1871,7 @@ in
 
           else drop token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available-dstr if
             // -------- 'proc' calls --------
-            
+
             let name-address in name-address proc-names-array - let delta in
               delta proc-inputs-array + delta proc-outputs-array + let input-address output-address in
                 local-stack local-stack-length output-file local-stack.convert-last-items-real
@@ -1882,27 +1882,27 @@ in
                 log-stream
                 check-sub-stack-types-types
 
-                0 while dup output-address @64 mlength 8 / < do let i in                    
+                0 while dup output-address @64 mlength 8 / < do let i in
                   i output-address @64 array64.get let output in
                     output push-real
                   end
                 i end inc end drop
 
                 compile-procedure.new-level-id let level-id in
-                  "    xchg    rsp, [call_ptr]\n"              output-file fputs         
+                  "    xchg    rsp, [call_ptr]\n"              output-file fputs
                   "    push    .level_"                        output-file fputs level-id output-file fputu output-file fputnl
-                  "    push    qword [local_ptr]\n"            output-file fputs         
+                  "    push    qword [local_ptr]\n"            output-file fputs
                   "    add     qword [local_ptr], "            output-file fputs local-memory-end @64 output-file fputu output-file fputnl
-                  "    xchg    rsp, [call_ptr]\n"              output-file fputs         
+                  "    xchg    rsp, [call_ptr]\n"              output-file fputs
                   "    jmp     proc_"                          output-file fputs token-arg output-file fput-alpha output-file fputnl
                   level-id output-file nasm.level
                 end
               end
             end end
-            
+
           else drop
             // TODO: Add Levenshtein distance algoritm to show the nearest matchs; which can be definitions, macros, procedures, keywords and intrinsics.
-            
+
             LOG.ERR log-stream fputs "Name '" log-stream fputs token-arg token-arg mlength log-stream fputs "' is not defined as a local variable or a macro.\n" log-stream fputs
             token-address compile-procedure.show-here
             ERROR-EXIT-CODE exit drop
@@ -1913,7 +1913,7 @@ in
 
           // Branch should not be cut before calling an intrinsic.
           token-address "calling an intrinsic" compile-procedure.check-branch-here
-          
+
           source-name source-file output-file
           line-no char-no
           procedure-name procedure-address
@@ -1922,7 +1922,7 @@ in
           log-stream
           compile-intrinsic
 
-        else token-type TYPE-KEYWORD = if          
+        else token-type TYPE-KEYWORD = if
           // -------- Keywords --------
 
           source-name source-file output-file
@@ -1946,7 +1946,7 @@ in
           token-address compile-procedure.show-here
           ERROR-EXIT-CODE exit drop
         end end end end end
-        
+
         // Deallocate the space allocated for token-address.
         token-address mfree drop
       end
@@ -1974,13 +1974,13 @@ in
     ERROR-EXIT-CODE exit drop
   end
 end endmacro
- 
+
 
 // NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
 macro compile-file.check-type let _token_type_ expect-address expect-length expected-token-type in
   expected-token-type _token_type_ != if
     LOG.ERR log-stream fputs "Expected a '" log-stream fputs expected-token-type log-stream fput-type  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_type_ log-stream fput-type "'.\n" log-stream fputs
-    
+
     ERROR-EXIT-CODE exit drop
   end
 end endmacro
@@ -2001,7 +2001,7 @@ end endmacro
 macro compile-file.check-keyword let _token_arg_ expect-address expect-length expected-token-arg in
   expected-token-arg _token_arg_ != if
     LOG.ERR log-stream fputs "Expected a '" log-stream fputs expected-token-arg log-stream fput-keyword  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_arg_ log-stream fput-keyword "'.\n" log-stream fputs
-    
+
     ERROR-EXIT-CODE exit drop
   end
 end endmacro
@@ -2022,7 +2022,7 @@ end endmacro
 macro compile-file.check-null let expect-address expect-length in
   is-null if
     LOG.ERR log-stream fputs "malloc failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
-    
+
     ERROR-EXIT-CODE exit drop
   end
 end endmacro
@@ -2044,7 +2044,7 @@ proc compile-file
   ptr file-desc
   // ptr: data-definitions-list
   ptr
-  // ptr: global-names-array ptr: global-sizes-array ptr: globals-length 
+  // ptr: global-names-array ptr: global-sizes-array ptr: globals-length
   ptr ptr ptr
   // ptr: proc-names-array ptr: proc-inputs-array ptr: proc-outputs-array ptr: procs-length
   ptr ptr ptr ptr
@@ -2053,10 +2053,10 @@ proc compile-file
   // include-paths-set
   ptr
   // libraries-set
-  ptr 
+  ptr
   // file-desc: log-stream
   file-desc --
-  
+
   // Compiles a Corth source file.
   // Compilation warning and errors are dumped to log-stream.
 
@@ -2074,7 +2074,7 @@ in let
 in
   // Check if the library was included already.
   source-name libraries-set str-set8.add ! if return end
-  
+
   // Open the source file.
   source-name fopen-r let source-file in
     // Check if the source is opened.
@@ -2086,7 +2086,7 @@ in
     memory extended-array  EXTENDED-MAX-LENGTH in
     memory extended-start  sizeof(int)         in
     memory extended-end    sizeof(int)         in
-           
+
     memory line-no         sizeof(int)         in
     memory char-no         sizeof(int)         in
 
@@ -2102,10 +2102,10 @@ in
       while source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream true get-next-token do
         let token-type token-address token-arg in
           token-type token-address "" TYPE-KEYWORD compile-file.check-type-here
-                
+
           // -------- Global keywords --------
           token-arg KEYWORD-INCLUDE = if
-            // -------- Keyword 'include' -------- 
+            // -------- Keyword 'include' --------
             // TODO: Create a function to include.
             // TODO: Allow including packages.
 
@@ -2116,10 +2116,10 @@ in
               path-token-type path-token-address "as path after 'include'" TYPE-NAME compile-file.check-type-here
               memory found 1 in
                 0 found !8
-                
+
                 0 while dup include-paths-set list64.length < do let i in
                   i include-paths-set list64.get let directory in
-                    directory cstr.str path-token-arg path-token-arg mlength path.merge2-cstr let include-path in    
+                    directory cstr.str path-token-arg path-token-arg mlength path.merge2-cstr let include-path in
                       // Check if the user has the required permissions.
                       memory stats sizeof(stat) in
                         include-path stats stat drop
@@ -2153,7 +2153,7 @@ in
                               ERROR-EXIT-CODE exit drop
                             end end
                           end
-                          
+
                           i break
                         end
                       end
@@ -2195,13 +2195,13 @@ in
                 // Add 'and' keyword.
                 let end-token-type end-token-address end-token-arg in
                   end-token-type end-token-address "after 'memory' while defining a global variable" TYPE-KEYWORD compile-file.check-type-here
-                  
+
                   end-token-arg KEYWORD-AND = if
                     LOG.TODO log-stream fputs "'and' after 'memory' for global variable allocation is not implemented yet.\n" log-stream fputs
                     end-token-address log-stream fput-here
                     ERROR-EXIT-CODE exit drop
                   end
-                  
+
                   end-token-arg end-token-address "after 'memory' while defining a global variable" KEYWORD-END compile-file.check-keyword-here
 
                   // Deallocate 'end-token-address'.
@@ -2271,7 +2271,7 @@ in
 
             // Get the next token, which should be the name of the procedure.
             "a 'name' after 'proc'" false compile-file.get-next-token
-            
+
             let proc-name-token-type proc-name-token-address proc-name-token-arg in
               proc-name-token-type proc-name-token-address "as procedure name after 'procedure'" TYPE-NAME compile-file.check-type-here
 
@@ -2356,7 +2356,7 @@ in
 
                       // Save the name, inputs and outputs of the procedure.
                       proc-name-token-arg             dcopy name-address   !64
-                      input-list          list64.copy-array input-address  !64 
+                      input-list          list64.copy-array input-address  !64
                       output-list         list64.copy-array output-address !64
 
                       procs-length @inc64
@@ -2400,7 +2400,7 @@ in
                 // Deallocate input-list and output-list.
                 input-list  list64.mfree drop
                 output-list list64.mfree drop
-              end end 
+              end end
             end
           else
             LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
@@ -2410,7 +2410,7 @@ in
         end
       end drop drop drop
     end end end end end
-    
+
     source-file fclose drop
   end
 end end
@@ -2485,13 +2485,13 @@ in let source-name output-name include-paths-set log-stream in
 
       16 list64.init let dynamic in
         dynamic "creating a list dynamic object for data-definitions-list" compile-file.check-null
-        
+
         dynamic data-definitions-list !64
       end
 
       16 list64.init let dynamic in
         dynamic "creating a list dynamic object for libraries-set.\n" compile-file.check-null
-        
+
         dynamic libraries-set !64
       end
 
@@ -2550,7 +2550,7 @@ in let source-name output-name include-paths-set log-stream in
 
       // Deallocate the space allocated for data-definitions-list
       data-definitions-list list64.mfree-deep drop
-      
+
       "segment .bss\n"                                    output-file fputs
       "    local_memory:   resb 67108864\n"               output-file fputs
       "    local_ptr:      resq 1\n"                      output-file fputs

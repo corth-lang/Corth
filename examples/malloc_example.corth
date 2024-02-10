@@ -31,7 +31,7 @@ in let container in
   end
 
   STDOUT debug-dynamic-memory
-end end 
+end end
 
 proc main
   int int -- int
@@ -42,7 +42,7 @@ in let argc argv in
 
   56 allocate-space let a in
     56 allocate-space let b in
-      56 allocate-space let c in 
+      56 allocate-space let c in
         56 allocate-space let d in
           56 allocate-space let e in
             56 allocate-space let f in

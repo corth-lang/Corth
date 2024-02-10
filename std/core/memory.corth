@@ -132,14 +132,14 @@ endmacro
 
 
 proc memcpy8
-  // ptr: src ptr: dst int: len 
+  // ptr: src ptr: dst int: len
   // Copies a part of memory to another location.
   // Bytes are read one-by-one.
   ptr ptr int --
 in
   let src dst len in
     0 while dup len < do let i in
-      src i + @8 
+      src i + @8
       dst i + !8
     i end inc end drop
   end

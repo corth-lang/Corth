@@ -112,7 +112,7 @@ macro ddigit-to-int let _digit_ in _digit_ '0' - _digit_ '0' '9' is-range end en
 
 // Returns the number match of the hexadecimal ASCII character.
 // Also returns if the digit is a valid hexadecimal character.
-macro xdigit-to-int let _digit_ in 
+macro xdigit-to-int let _digit_ in
   _digit_ is-ddigit if
     _digit_ '0' - true
   else _digit_ is-xeldigit if

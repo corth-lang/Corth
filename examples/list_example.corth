@@ -12,7 +12,7 @@ include collections/list64.corth
 
 
 proc putl
-  // ptr: list -- 
+  // ptr: list --
   ptr --
 in let list in
   "list(" puts
@@ -33,7 +33,7 @@ in let argc argv in
   memory list sizeof(ptr) in
     malloc.init
     NULLPTR time rng-seed !64
-    
+
     0 list64.init dup is-null if drop
       "malloc failed!\n" puts
       1 return

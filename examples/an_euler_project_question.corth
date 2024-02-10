@@ -47,7 +47,7 @@ macro END   10000000 endmacro
 
 macro function
   // int: x -- int: f(x)
-  dup is-even if 
+  dup is-even if
     2 /
   else
     3 * inc
@@ -59,7 +59,7 @@ proc main
 in let argc argv in
   memory steps sizeof(int) in
   memory best  sizeof(int) in
-         
+
     START while dup END <= do
       dup
       0 steps !64

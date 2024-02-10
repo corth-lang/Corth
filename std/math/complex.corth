@@ -170,7 +170,7 @@ macro fput-complex
     else
       " + "
     end
-    
+
     file fputs
     file fput-fixed64
     "i" file fputs

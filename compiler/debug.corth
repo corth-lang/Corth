@@ -37,7 +37,7 @@ memory tilde-buffer      TILDE-BUFFER-SIZE end
 proc debug-init -- in
   // Set up the space-buffer.
   space-buffer SPACE-BUFFER-SIZE ' ' memset8
-  
+
   // Set up the tilde-buffer.
   tilde-buffer TILDE-BUFFER-SIZE '~' memset8
 end
@@ -57,11 +57,11 @@ in
       // Remove the unused arguments.
       drop drop drop
     end
-    
+
     // Return the position.
     position
   end
-end 
+end
 
 
 proc generate-address
@@ -130,7 +130,7 @@ in let source file in
 
       // If a newline character is reached, return immediately.
       char @8 '\n' = if return end
-      
+
       // Print the byte to the file stream.
       char 1 file fputs
     inc end
@@ -263,7 +263,7 @@ macro fput-inside-procedure let _procedure_name_ _procedure_address_ _log_stream
   // ptr: _address_ ptr: _procedure_name_ ptr: _procedure_address_ file-desc: _log_stream_ --
   LOG.INFO _log_stream_ fputs "Inside procedure '" _log_stream_ fputs _procedure_name_ _procedure_name_ mlength _log_stream_ fputs "'.\n" _log_stream_ fputs
   LOG.HERE _log_stream_ fputs _procedure_address_ _log_stream_ fput-address ":\n" _log_stream_ fputs
-  
+
   _procedure_address_ _log_stream_ fput-lines
 end endmacro
 

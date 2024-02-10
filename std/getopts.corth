@@ -20,11 +20,11 @@ in place option types
 short and long option types
   set            : Sets to true if present, false otherwise, can be used max once
   reset          : Sets to false if present, true otherwise, can be used max once
-  
+
   str?xyz        : Sets to string argument if present, defaults to 'xyz' otherwise, can be used max once
   int?123        : Sets to integer argument if present, defaults to '123' otherwise, can be used max once
   switch=a\b\c?a : Sets to an argument from a list of options separated by a backslash if present, defaults otherwise, can be used max once
-  
+
   lstr           : Appends string argument to list, can be used indefinitely
   lint           : Appends integer argument to list, can be used indefinitely
 
@@ -104,11 +104,11 @@ in let options in
       char '#' = if
         buffer pointer @64 buffer - to-dynamic8 O-SWITCH getopts.keys getopts.values getopts.length str-map64.set-dstr if false return end
         buffer pointer !64
-        
+
       else char '$' = if
         buffer pointer @64 buffer - to-dynamic8 O-ARGUMENT getopts.keys getopts.values getopts.length str-map64.set-dstr if false return end
         buffer pointer !64
-        
+
       else
         pointer @64 buffer - 64 > if
           false return
@@ -130,7 +130,7 @@ macro getopts.reset-length
 endmacro
 
 
-macro getopts.clear 
+macro getopts.clear
   getopts.keys getopts.values getopts.length str-map64.clear
 endmacro
 
@@ -150,7 +150,7 @@ end end
 
 macro getopts.next-option
   getopts.option @64 8 + getopts.option !64
-  getopts.option @64 @64 getopts.char !64  
+  getopts.option @64 @64 getopts.char !64
 endmacro
 
 
@@ -162,11 +162,11 @@ in let address length in
     drop
     O-ERROR NULLPTR E-UNKNOWN-OPTION address length return
   end
-  
+
   let type in
     type O-SWITCH = if
       O-SWITCH address length NULLPTR 0
-      
+
     else type O-ARGUMENT = if
       getopts.option @64 @64 is-null if
         // error
@@ -176,7 +176,7 @@ in let address length in
       O-ARGUMENT address length getopts.char @64 dup cstr.len
 
       getopts.next-option
-      
+
     else
       // error
       O-ERROR NULLPTR E-UNKNOWN-ERROR NULLPTR 0
@@ -193,18 +193,18 @@ in
     getopts.char @64 is-null if
       O-END NULLPTR 0 NULLPTR 0 return
     end
-    
+
     getopts.char @64 @8 '-' = if
       getopts.char @inc64
 
       getopts.char @64 @8 '\0' = if
         // -
         O-INPLACE getopts.char @64 dec 1 NULLPTR 0
-        
+
       else getopts.char @64 @8 '-' = if
         // Long arguments
         getopts.char @inc64
-        
+
         getopts.char @64 @8 '\0' = if
           // --
           O-INPLACE getopts.char @64 2 - 2 NULLPTR 0
@@ -212,7 +212,7 @@ in
           // --arg
           getopts.char @64 dup cstr.len getopts.next-option getopts.parse-argument
         end
-        
+
       else
         // -(a)bc
         getopts.char @64 let old in
@@ -221,17 +221,17 @@ in
           getopts.char @64 @8 '\0' = if
             getopts.next-option
           end
-          
+
           old 1 getopts.parse-argument
         end
       end end
-      
+
     else
       // arg
       O-INPLACE getopts.option @64 @64 dup cstr.len NULLPTR 0
       getopts.next-option
     end
-    
+
   else
     getopts.char @64 @8 '\0' = if
       getopts.next-option
@@ -260,7 +260,7 @@ proc getopts.parse
 in
   getopts._parse let type arg1 arg1-length arg2 arg2-length in
     type arg1 arg1-length arg2 arg2-length
-    
+
     type O-ERROR = dup if
       arg1-length E-SYNTAX-ERROR = if
         "error: invalid syntax\n" eputs

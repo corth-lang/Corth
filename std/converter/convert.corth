@@ -19,10 +19,10 @@ in let start length number in
       i @8 isn-xeudigit if
         false return
       end
-      
+
       i @8 '7'
     end end
-    
+
     - number @64 16 * + number !64
   i end inc end drop
 end true end
@@ -36,7 +36,7 @@ in let start length number in
   0 number !64
 
   start while dup start length + < do let i in
-    i @8 ddigit-to-int ! if drop false return end number @64 10 * + number !64 
+    i @8 ddigit-to-int ! if drop false return end number @64 10 * + number !64
   i end inc end drop
 end true end
 
@@ -85,10 +85,10 @@ in let start length number in
       i @8 '1' != if
         false return
       end
-      
+
       number @64 2 * inc
     end
-    
+
     number !64
   i end inc end drop
 end true end
@@ -102,7 +102,7 @@ proc convuint
 in let start length number in
   length 3 < start @8 '0' != | if
     start length number convud
-  else 
+  else
     start inc @8 let base in
       base 'x' = if
         start 2 + length 2 - number convx
@@ -126,7 +126,7 @@ proc convint
 in let start length number in
   length 3 < start @8 '0' != | if
     start length number convd
-  else 
+  else
     start inc @8 let base in
       base 'x' = if
         start 2 + length 2 - number convx

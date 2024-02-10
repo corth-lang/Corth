@@ -5,7 +5,7 @@ include core/memory.corth
 
 /*
   Queue library for Corth.
-  
+
   Queues are static-placed collections that allow appending and popping items from them
 
   Appending and popping an item to the end is O(1) while any other index is O(n).
@@ -78,7 +78,7 @@ macro queue64.append
   // int: value ptr: queue-start ptr: queue-length
   // Appends an item to a queue.
   // queue.append(value)
-  
+
   let _value_ _queue_ _length_ in
     _value_ _queue_ _length_ @64 8 * + !64
     _length_ @inc64
@@ -89,7 +89,7 @@ macro queue64.pop-last
   // int: value ptr: queue-start ptr: queue-length
   // Removes the last item of the queue.
   // return queue.pop(queue.length - 1)
-  
+
   let _queue_ _length_ in
     _length_ @dec64
     _queue_ _length_ @64 8 * + @64

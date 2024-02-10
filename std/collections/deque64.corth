@@ -3,7 +3,7 @@ include core/stack.corth
 
 /*
   Deque library for Corth.
-  
+
   Deques (Double-ended queue) are staticly-placed data collections that allow appending and popping items from them.
 
   Appending and popping an item to any end is O(1) while any other index is O(n).
@@ -57,7 +57,7 @@ macro deque64.append-first
   // Appends an item to a deque to its beginning.
   // deque.insert(value, 0)
   // NOTE: This macro assumes that the queue has enough space to insert item.
-  
+
   let _value_ _deque_ _capacity_ _start_ _end_ in
     _start_ @dec64
     _value_ _start_ @64 _capacity_ % 8 * _deque_ + !64
@@ -68,7 +68,7 @@ macro deque64.pop-first
   // int: value ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
   // Removes an item from a deque to its beginning.
   // return deque.pop(0)
-  
+
   let _deque_ _capacity_ _start_ _end_ in
     _start_ @64 _capacity_ % 8 * _deque_ + @64
     _start_ @inc64
@@ -80,7 +80,7 @@ macro deque64.append-last
   // Appends an item to a deque to its end.
   // deque.insert(value, deque.length)
   // NOTE: This macro assumes that the queue has enough space to insert item.
-  
+
   let _value_ _deque_ _capacity_ _start_ _end_ in
     _value_ _end_ @64 _capacity_ % 8 * _deque_ + !64
     _end_ @inc64
@@ -91,7 +91,7 @@ macro deque64.pop-last
   // int: value ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
   // Removes an item from a deque to its beginning.
   // return deque.pop(deque.length - 1)
-  
+
   let _deque_ _capacity_ _start_ _end_ in
     _end_ @dec64
     _end_ @64 _capacity_ % 8 * _deque_ + @64
