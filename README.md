@@ -45,7 +45,7 @@ This will compile the compiler source code and place it at *./corth*.
     include linux_86x/stdio.corth
     
     proc main
-      int int -- int
+      int int -> int
     in let argc argv in
       "Hello, World!\n" puts
     end 0 end 
@@ -138,7 +138,7 @@ This will compile the compiler source code and place it at *./corth*.
     proc arithmetic-average  // The name of the procedure is 'arithmetic-average'.
       // Procedure takes two integers as arguments, and returns a single integer.
       // The leftmost type is the oldest item in the stack.
-      int int -- int
+      int int -> int
     in
       // This is where the code is located.
       + 2 /
@@ -146,8 +146,8 @@ This will compile the compiler source code and place it at *./corth*.
 
     // This procedure will be run.
     proc main
-      // Right now, only 'int int -- int' argument layout is allowed for the main procedure.
-      int int -- int
+      // Right now, only 'int int -> int' argument layout is allowed for the main procedure.
+      int int -> int
     in let argc argv in
       "The arithmetic average of 53 and 31 is " puts 53 31 arithmetic-average putu ".\n" puts
     end 0 end  // Program exits with exit code 0.
@@ -168,7 +168,7 @@ This will compile the compiler source code and place it at *./corth*.
     endmacro
 
     proc main
-      int int -- int
+      int int -> int
     in let argc argv in
       "Josh" 
       sayHi  // This will be converted to this:
@@ -211,7 +211,7 @@ This will compile the compiler source code and place it at *./corth*.
     include linux_x86/stdio.corth
 
     proc main
-      int int -- int
+      int int -> int
     in let argc argv in
       2 2 + 5 = if
         "Well, math is broken. Nice.\n" puts // Hopefully won't be printed.
@@ -262,13 +262,13 @@ This will compile the compiler source code and place it at *./corth*.
     // The size must be a compile-time constant as memory is allocated in compile-time.
     memory count sizeof(int) end
     
-    proc increase -- in
+    proc increase -> in
       // Reads the value of 'count', adds one and writes back.
       count @64 inc count !64
     end
 
     proc main
-      int int -- int
+      int int -> int
     in let argc argv in
       // Set the value of 'count' to 0.
       0 count !64
