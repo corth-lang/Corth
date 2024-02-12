@@ -2,7 +2,7 @@ include linux_x86/sys.corth
 include linux_x86/stdio.corth
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   fork let pid in
     pid 1 neg = if

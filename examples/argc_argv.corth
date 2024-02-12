@@ -3,7 +3,7 @@ include collections/array64.corth
 include str.corth
 
 proc main
-  int ptr -- int
+  int ptr -> int
 in let argc argv in
   "argc = " puts argc putu putnl
   "argv = 0x" puts argv putx putnl

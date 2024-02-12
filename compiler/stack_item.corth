@@ -21,8 +21,8 @@ macro MODE-DATA             9 endmacro
 
 
 proc stack-item.mfree
-  // ptr: item --
-  ptr --
+  // ptr: item ->
+  ptr ->
 in let item in
   // For now, this only mfrees the dynamic object.
   // This may change in the future.
@@ -32,8 +32,8 @@ end end
 
 
 proc stack-item.copy
-  // ptr: item -- ptr: copied
-    ptr -- ptr
+  // ptr: item -> ptr: copied
+    ptr -> ptr
 in let item in
   // For now, this only copies the dynamic object.
   // This may change in the future.
@@ -43,8 +43,8 @@ end end
 
 
 proc stack-item.create
-  // int: int-type int: mode -- ptr: item
-  int int -- ptr
+  // int: int-type int: mode -> ptr: item
+  int int -> ptr
 in let int-type mode in
   24 malloc let object in
     object is-null if

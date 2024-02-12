@@ -5,7 +5,7 @@ include random.corth
 
 proc print-array
   // ptr: array-start int: array-length
-  ptr int --
+  ptr int ->
 in let array-start array-length in
   "[ " puts
   0 while dup array-length < do let i in
@@ -16,7 +16,7 @@ end end
 
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   NULLPTR time rng-seed !64
 

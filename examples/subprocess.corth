@@ -9,7 +9,7 @@ include linux_x86/subprocess.corth
 macro comma-separated true endmacro
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   malloc.init
 

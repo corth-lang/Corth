@@ -30,16 +30,16 @@ macro store-complex
   end
 endmacro
 
-// COMPLEX -- FIXED macro and procedures
+// COMPLEX -> FIXED macro and procedures
 macro lengths-c
-  // comp: x -- fixed64: length(x)
+  // comp: x -> fixed64: length(x)
   sqr-f swp sqr-f +
 endmacro
 
 
-// COMPLEX -- COMPLEX macro and procedures
+// COMPLEX -> COMPLEX macro and procedures
 macro neg-c
-  // comp: x -- comp: -x
+  // comp: x -> comp: -x
   let xr xi in
     xr neg
     xi neg
@@ -47,7 +47,7 @@ macro neg-c
 endmacro
 
 macro inv-c
-  // comp: x -- comp: 1/x
+  // comp: x -> comp: 1/x
   // NOTE: Even though length-c returns unsigned fixed, it is used like it is signed. Because of that, it may return a wrong result for very big complex numbers
   // 1 / (a + bi) = (a - bi) / (a^2 + b^2) = div-cf(conj-c(x), lengths-c(x))
   let xr xi in
@@ -58,14 +58,14 @@ macro inv-c
 endmacro
 
 macro conj-c
-  // comp: x -- comp: conj(x)
+  // comp: x -> comp: conj(x)
   // Conjugate of a complex number a + bi is a - bi
   neg
 endmacro
 
 proc sqr-c
-  // comp: x -- comp: x^2
-  comp -- comp
+  // comp: x -> comp: x^2
+  comp -> comp
 in
   let xr xi in
     // Real part
@@ -78,9 +78,9 @@ in
 end
 
 
-// COMPLEX COMPLEX -- COMPLEX macro and procedures
+// COMPLEX COMPLEX -> COMPLEX macro and procedures
 macro add-cc
-  // comp: a comp: b -- comp: a+b
+  // comp: a comp: b -> comp: a+b
   let ar ai br bi in
     ar br +
     ai bi +
@@ -88,7 +88,7 @@ macro add-cc
 endmacro
 
 macro sub-cc
-  // comp: a comp: b -- comp: a-b
+  // comp: a comp: b -> comp: a-b
   let ar ai br bi in
     ar br +
     ai bi +
@@ -96,8 +96,8 @@ macro sub-cc
 endmacro
 
 proc mul-cc
-  // comp: a comp: b -- comp: a*b
-  comp comp -- comp
+  // comp: a comp: b -> comp: a*b
+  comp comp -> comp
 in
   let ar ai br bi in
     // Real part
@@ -113,7 +113,7 @@ in
 end
 
 macro div-cc
-  // comp: a comp: b -- comp: a/b
+  // comp: a comp: b -> comp: a/b
   // a / b = a * (1/b) = mul-cc(a, inv-c(b))
 
   // (a + bi) / (c + di) = (a + bi) * (c - di) / (c^2 + d^2) = ((ac + bd) + (bc - ad)i) / (c^2 + d^2)
@@ -121,10 +121,10 @@ macro div-cc
 endmacro
 
 
-// COMPLEX FIXED -- COMPLEX macro and procedures
+// COMPLEX FIXED -> COMPLEX macro and procedures
 // NOTE: fixed argument is used as a real number
 macro add-cf
-  // comp: a fixed64: b -- comp: a+b
+  // comp: a fixed64: b -> comp: a+b
   let xr xi f in
     xr f +
     xi
@@ -132,7 +132,7 @@ macro add-cf
 endmacro
 
 macro sub-cf
-  // comp: a fixed64: b -- comp: a-b
+  // comp: a fixed64: b -> comp: a-b
   let xr xi f in
     xr f -
     xi
@@ -140,7 +140,7 @@ macro sub-cf
 endmacro
 
 macro mul-cf
-  // comp: a fixed64: b -- comp: a*b
+  // comp: a fixed64: b -> comp: a*b
   let xr xi f in
     xr f mul-ff
     xi f mul-ff
@@ -148,7 +148,7 @@ macro mul-cf
 endmacro
 
 macro div-cf
-  // comp: a fixed64: b -- comp: a*b
+  // comp: a fixed64: b -> comp: a*b
   let xr xi f in
     xr f div-ff
     xi f div-ff

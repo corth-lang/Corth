@@ -23,6 +23,6 @@ macro eputup STDERR fputup endmacro  // int: int
 
 // Reads the specified amount of bytes from a file stream.
 // Moves the file pointer.
-macro  gets  STDIN  fgets  endmacro  // ptr: str-ptr int: str-len file-desc: file-desc -- int: read-bytes
-macro  getu  STDIN  fgetu  endmacro  // ptr: number --
-macro  geti  STDIN  fgeti  endmacro  // ptr: number --
+macro  gets  STDIN  fgets  endmacro  // ptr: str-ptr int: str-len file-desc: file-desc -> int: read-bytes
+macro  getu  STDIN  fgetu  endmacro  // ptr: number ->
+macro  geti  STDIN  fgeti  endmacro  // ptr: number ->

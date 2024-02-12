@@ -1,7 +1,7 @@
 include linux_x86/sys.corth
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   STDOUT "Hello, world!\n" fwrite drop
 end 0 end

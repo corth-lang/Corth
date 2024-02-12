@@ -3,7 +3,7 @@ include core/stack.corth
 
 
 proc fib
-  int -- int
+  int -> int
 in let i in
   // Finds the nth fibonacci number using recursion
 
@@ -12,7 +12,7 @@ end end
 
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   // Find the 10th fibonacci number
   10 fib putu putnl

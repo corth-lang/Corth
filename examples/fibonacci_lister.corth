@@ -28,7 +28,7 @@ macro N 20 endmacro
 
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   memory a sizeof(int) in
   memory b sizeof(int) in

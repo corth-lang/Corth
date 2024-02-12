@@ -100,7 +100,7 @@ endmacro
 
 proc deque64.extend-left
   // ptr: source int: source-length ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
-  ptr int ptr int ptr ptr --
+  ptr int ptr int ptr ptr ->
   // Extends a deque from its beginning.
   // Source is a 64 bit array with length being passed dereferenced.
   // for (item:queue.reversed)
@@ -116,7 +116,7 @@ end end
 
 proc deque64.extend-right
   // ptr: source int: source-length ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
-  ptr int ptr int ptr ptr --
+  ptr int ptr int ptr ptr ->
   // Extends a deque from its end.
   // Source is a 64 bit array with length being passed dereferenced.
   // for (item:queue)

@@ -4,7 +4,7 @@ include debug.corth
 
 proc fgets-keep
   // ptr: start int: length file-desc: file-desc
-  ptr int file-desc -- int
+  ptr int file-desc -> int
   // Reads a region of a file stream and returns file pointer to its original position.
 in let start length file in
   // Get original position.
@@ -20,8 +20,8 @@ end end
 
 
 proc strip-file
-  // file-desc: file ptr: line-no ptr: char-no -- bool: reached-eof
-  file-desc ptr ptr -- bool
+  // file-desc: file ptr: line-no ptr: char-no -> bool: reached-eof
+  file-desc ptr ptr -> bool
   // Removes the newline and spaces from the start of a file stream
   // Keeps track the line and char number as the bytes are read.
   // Also, checks if EOF is reached.
@@ -52,8 +52,8 @@ end false end  // dummy return
 
 
 proc parse-next-token
-  // file-desc: file ptr: file-name ptr: line-no ptr: char-no ptr: buffer ptr: buffer-end file-desc: log-stream --
-  file-desc ptr ptr ptr ptr ptr file-desc --
+  // file-desc: file ptr: file-name ptr: line-no ptr: char-no ptr: buffer ptr: buffer-end file-desc: log-stream ->
+  file-desc ptr ptr ptr ptr ptr file-desc ->
   // Gets the next token string before any newline or space and fills a buffer.
   // Keeps track of the line and char number as the bytes are read.
   // NOTE: If buffer-end exceeds buffer + TOKEN-MAX-LENGTH, exits program.
@@ -91,8 +91,8 @@ end end
 
 
 proc parse-escape-sequence
-  // file-desc: file ptr: file-name ptr: line-no ptr: char-no file-desc: log-stream -- int: escape-character
-  file-desc ptr ptr ptr file-desc -- int
+  // file-desc: file ptr: file-name ptr: line-no ptr: char-no file-desc: log-stream -> int: escape-character
+  file-desc ptr ptr ptr file-desc -> int
 in let file file-name line-no char-no log-stream in
   // Buffer is 2 bytes because after \x, 2 new bytes are required.
   memory buffer 2 in
@@ -144,8 +144,8 @@ end end
 
 
 proc parse-next-string
-  // file-desc: file ptr: file-name ptr: line-no ptr: char-no ptr: buffer ptr: buffer-end file-desc: log-stream --
-  file-desc ptr ptr ptr ptr ptr file-desc --
+  // file-desc: file ptr: file-name ptr: line-no ptr: char-no ptr: buffer ptr: buffer-end file-desc: log-stream ->
+  file-desc ptr ptr ptr ptr ptr file-desc ->
   // Gets the next string before a double quote.
   // Keeps track of the line and char number as the bytes are read.
   // NOTE: If buffer-end exceeds buffer + TOKEN-MAX-LENGTH, exits program.
@@ -194,8 +194,8 @@ end end
 
 
 proc skip-line
-  // file-desc: file-desc ptr: file-name ptr: line-no ptr: char-no file-desc: log-stream --
-  file-desc ptr ptr ptr file-desc --
+  // file-desc: file-desc ptr: file-name ptr: line-no ptr: char-no file-desc: log-stream ->
+  file-desc ptr ptr ptr file-desc ->
   // Moves the file pointer until it passes a newline, or EOF is reached.
   // Keeps track of the line and char number as the bytes are read.
 in let file file-name line-no char-no log-stream in
@@ -215,8 +215,8 @@ end end
 
 
 proc skip-block-comment
-  // file-desc: file-desc ptr: file-name ptr: line-no ptr: char-np file-desc: log-stream --
-  file-desc ptr ptr ptr file-desc --
+  // file-desc: file-desc ptr: file-name ptr: line-no ptr: char-np file-desc: log-stream ->
+  file-desc ptr ptr ptr file-desc ->
   // Moves the file pointer until it passes a block comment end, or EOF is reached.
   // Keeps track of the line and char number as the bytes are read.
 in let file file-name line-no char-no log-stream in
@@ -275,8 +275,8 @@ proc create-name-token
   ptr ptr
   // ptr: buffer ptr: buffer-end
   ptr ptr
-  // file-desc: log-stream --
-  file-desc --
+  // file-desc: log-stream ->
+  file-desc ->
   // int: token-type ptr: address [int|ptr]: arg
   int ptr int
 
@@ -373,7 +373,7 @@ proc get-next-token
   // ptr: macro-names ptr: macro-tokens ptr: macros-length
   ptr ptr ptr
   // file-desc: log-stream bool: extend-macros --
-  file-desc bool --
+  file-desc bool ->
   // int: token-type ptr: address [int|ptr]: arg bool: is-available
   int ptr int bool
 

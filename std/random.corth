@@ -5,10 +5,10 @@ memory rng-seed sizeof(int) end
 
 
 macro rand64
-  // -- int: next
+  // -> int: next
   // The result integer is in the range [0, 2^64) with the step size of 1.
 
-  // -- fixed64: next
+  // -> fixed64: next
   // The result fixed64 is in the range [0, 2^32) with the step size of 2^-32.
   rng-seed @64 0xFFFFFFFFFFFFFFC5 u*
   rng-seed @64 0xFFFFFFFFFFFFFFC5 u*2 +
@@ -22,10 +22,10 @@ endmacro
 // If precompilation gets added to the compiler, this procedure will lose its meaning and rand-unif-range will be as efficient as this function.
 // But until that day, this function will be more efficient for ranges of [0, b).
 macro rand-unif
-  // int: x -- int: uniform(x)
+  // int: x -> int: uniform(x)
   // Returns a number in the range [0, x) with the step size of 1.
 
-  // fixed64: x -- fixed64: uniform(x)
+  // fixed64: x -> fixed64: uniform(x)
   // Returns a number in the range [0, x) with the step size of 2^-32.
 
   // uniform(x) = rand64 % x
@@ -36,10 +36,10 @@ endmacro
 
 
 macro rand-unif-range
-  // int: a int: b -- int: uniform-range(a, b)
+  // int: a int: b -> int: uniform-range(a, b)
   // Returns a number in the range [a, b) with the step size of 1.
 
-  // fixed64: a fixed64: b -- fixed64: uniform(a, b)
+  // fixed64: a fixed64: b -> fixed64: uniform(a, b)
   // Returns a number in the range [a, b) with the step size of 2^-32.
 
   // uniform-range(a, b) = a + uniform(b - a)
@@ -50,8 +50,8 @@ endmacro
 
 
 proc shuffle8
-  // ptr: container int: length --
-  ptr int --
+  // ptr: container int: length ->
+  ptr int ->
   // Shuffles a container that has 1-byte items using Fisher-Yates algortihm.
   // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
   // Runs with O(n) time complexity.
@@ -69,8 +69,8 @@ end end
 
 
 proc shuffle64
-  // ptr: container int: length --
-  ptr int --
+  // ptr: container int: length ->
+  ptr int ->
   // Shuffles a container that has 8-byte items using Fisher-Yates algortihm.
   // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
   // Runs with O(n) time complexity.

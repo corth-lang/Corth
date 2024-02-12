@@ -8,7 +8,7 @@ include stream_buffer.corth
 include linux_x86/stdio.corth
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   malloc.init
 

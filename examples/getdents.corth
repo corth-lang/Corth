@@ -7,7 +7,7 @@ include cstr.corth
 macro BUFFER-SIZE 0x100 endmacro
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   1 while dup argc < do let i in
     i argv array64.get let directory-name in

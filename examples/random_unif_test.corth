@@ -9,7 +9,7 @@ macro tries   10000000 endmacro
 
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   NULLPTR time rng-seed !64
 

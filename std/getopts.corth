@@ -93,8 +93,8 @@ macro E-UNKNOWN-ERROR   1 neg endmacro
 
 
 proc getopts.generate
-  // ptr: options-string -- bool: successful
-  ptr -- bool
+  // ptr: options-string -> bool: successful
+  ptr -> bool
 in let options in
   memory buffer 64 in
   memory pointer sizeof(ptr) in
@@ -140,8 +140,8 @@ memory getopts.char   sizeof(ptr) end
 
 
 proc getopts.set-arguments
-  // ptr: arguments --
-  ptr --
+  // ptr: arguments ->
+  ptr ->
 in let arguments in
   arguments getopts.option !64
   arguments @64 getopts.char   !64
@@ -155,8 +155,8 @@ endmacro
 
 
 proc getopts.parse-argument
-  // ptr: address int: length -- int: type ptr: arg1 int: arg1-length ptr: arg2 int: arg2-length
-  ptr int -- int ptr int ptr int
+  // ptr: address int: length -> int: type ptr: arg1 int: arg1-length ptr: arg2 int: arg2-length
+  ptr int -> int ptr int ptr int
 in let address length in
   address length getopts.keys getopts.values getopts.length str-map64.get-str ! if
     drop
@@ -186,8 +186,8 @@ end end
 
 
 proc getopts._parse
-  // -- int: type ptr: arg1 int: arg1-length ptr: arg2 int: arg2-length
-  -- int ptr int ptr int
+  // -> int: type ptr: arg1 int: arg1-length ptr: arg2 int: arg2-length
+  -> int ptr int ptr int
 in
   getopts.option @64 @64 getopts.char @64 = if
     getopts.char @64 is-null if
@@ -253,8 +253,8 @@ end
 
 
 proc getopts.parse
-  // -- int: type ptr: arg1 int: arg1-length ptr: arg2 int: arg2-length bool: error
-  -- int ptr int ptr int bool
+  // -> int: type ptr: arg1 int: arg1-length ptr: arg2 int: arg2-length bool: error
+  -> int ptr int ptr int bool
   // Parses options and checks for errors.
   // Output type can be expected to be non-error.
 in

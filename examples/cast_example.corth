@@ -9,7 +9,7 @@ macro is-true
 endmacro
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   0 is-true
   1 is-true

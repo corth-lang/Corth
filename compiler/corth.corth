@@ -45,7 +45,7 @@ endmacro
 
 proc move-file
   // ptr: from ptr: to
-  ptr ptr --
+  ptr ptr ->
 in let from to in
   memory copy-infop sizeof(siginfo_t) in
     subprocess.init
@@ -66,7 +66,7 @@ end end
 
 proc copy-file
   // ptr: from ptr: to
-  ptr ptr --
+  ptr ptr ->
 in let from to in
   memory copy-infop sizeof(siginfo_t) in
     subprocess.init
@@ -87,7 +87,7 @@ end end
 
 proc make-directory
   // ptr: path
-  ptr --
+  ptr ->
 in let path in
   memory mkdir-infop sizeof(siginfo_t) in
     subprocess.init
@@ -107,7 +107,7 @@ end end
 
 proc recursive-force-remove
   // ptr: path
-  ptr --
+  ptr ->
 in let path in
   memory rm-infop sizeof(siginfo_t) in
     subprocess.init
@@ -128,8 +128,8 @@ end end
 
 
 proc compile
-  // ptr: source-name ptr: output-name ptr: include-paths-set bool: full-compilation -- bool: successful
-  ptr ptr ptr bool -- bool
+  // ptr: source-name ptr: output-name ptr: include-paths-set bool: full-compilation -> bool: successful
+  ptr ptr ptr bool -> bool
   // NOTE: source-name must be a file.
 in let source-name output-name include-paths-set full-compilation in
 
@@ -178,8 +178,8 @@ end true end
 
 
 proc compile-recursive
-  // ptr: source-name ptr: output-name ptr: include-paths-set bool: full-compilation -- bool: successful
-  ptr ptr ptr bool -- bool
+  // ptr: source-name ptr: output-name ptr: include-paths-set bool: full-compilation -> bool: successful
+  ptr ptr ptr bool -> bool
   // If source-name is a directory, compiles all subpaths of it.
 in let source-name output-name include-paths-set full-compilation in
   memory stats sizeof(stat) in
@@ -236,7 +236,7 @@ in let source-name output-name include-paths-set full-compilation in
 end end
 
 
-proc command.quick-test -- in
+proc command.quick-test -> in
   getopts.clear
 
   getopts.reset-length
@@ -315,7 +315,7 @@ proc command.quick-test -- in
 end
 
 
-proc command.bootstrap -- in
+proc command.bootstrap -> in
   getopts.clear
 
   "h#help#once#e$executable$std$" drop getopts.generate ! if
@@ -466,7 +466,7 @@ proc command.bootstrap -- in
 end
 
 
-proc command.compile -- in
+proc command.compile -> in
   getopts.clear
 
   "h#help#i$include-path$o$output-path$asm#" drop getopts.generate ! if
@@ -555,7 +555,7 @@ end
 
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   // Initialize malloc.
   malloc.init

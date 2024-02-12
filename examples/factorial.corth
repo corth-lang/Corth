@@ -4,7 +4,7 @@ include math/arithmetic.corth
 // This example calculates the factorial of the number entered from the user
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   memory number sizeof(int) in
     while "Enter a number: " puts number getu ! do "Please enter a valid number.\n" puts end

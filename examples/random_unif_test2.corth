@@ -7,7 +7,7 @@ macro CHAR-SIZE 0x2000000000000000 endmacro
 
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   64 while dup isn-zero do
     64 while dup isn-zero do

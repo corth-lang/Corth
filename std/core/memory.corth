@@ -5,8 +5,8 @@ include collections/array64.corth
 
 
 proc memcmp8
-  // ptr: a-src ptr: b-src int: len -- int: cmp(a, b)
-  ptr ptr int -- int
+  // ptr: a-src ptr: b-src int: len -> int: cmp(a, b)
+  ptr ptr int -> int
   // Returns <0 if a<b.
   // Returns  0 if a=b.
   // Returns >0 if a>b.
@@ -21,8 +21,8 @@ in let a-src b-src len in
 end 0 end
 
 proc memcmp64
-  // ptr: a-src ptr: b-src int: len -- int: cmp(a, b)
-  ptr ptr int -- int
+  // ptr: a-src ptr: b-src int: len -> int: cmp(a, b)
+  ptr ptr int -> int
   // Returns <0 if a<b.
   // Returns  0 if a=b.
   // Returns >0 if a>b.
@@ -37,8 +37,8 @@ in let a-src b-src len in
 end 0 end
 
 proc memcmp8-wl
-  // ptr: a-src int: a-len ptr: b-src int: b-len -- int: cmp(a, b)
-  ptr int ptr int -- int
+  // ptr: a-src int: a-len ptr: b-src int: b-len -> int: cmp(a, b)
+  ptr int ptr int -> int
   // Returns <0 if a<b.
   // Returns  0 if a=b.
   // Returns >0 if a>b.
@@ -53,8 +53,8 @@ in let a-src a-len b-src b-len in
 end end
 
 proc memcmp64-wl
-  // ptr: a-src int: a-len ptr: b-src int: b-len -- int: cmp(a, b)
-  ptr int ptr int -- int
+  // ptr: a-src int: a-len ptr: b-src int: b-len -> int: cmp(a, b)
+  ptr int ptr int -> int
   // Returns <0 if a<b.
   // Returns  0 if a=b.
   // Returns >0 if a>b.
@@ -71,7 +71,7 @@ end end
 
 proc memset8
   // ptr: start int: length int: value
-  ptr int int --
+  ptr int int ->
   // Sets every item in a collection to a value.
 in let start length value in
   start length +
@@ -87,7 +87,7 @@ end end
 
 proc memset64
   // ptr: start int: length int: value
-  ptr int int --
+  ptr int int ->
   // Sets every item in a collection to a value.
 in let start length value in
   start length 8 * +
@@ -135,7 +135,7 @@ proc memcpy8
   // ptr: src ptr: dst int: len
   // Copies a part of memory to another location.
   // Bytes are read one-by-one.
-  ptr ptr int --
+  ptr ptr int ->
 in
   let src dst len in
     0 while dup len < do let i in
@@ -152,7 +152,7 @@ proc memcpy64
   // ptr: src ptr: dst int: len
   // Copies a part of memory to another location.
   // Bytes are read 8-by-8.
-  ptr ptr int --
+  ptr ptr int ->
 in
   let src dst len in
     0 while dup len 8 * < do let i in
@@ -168,7 +168,7 @@ proc memcpy8i
   // Copies a part of memory to another location.
   // Bytes are read one-by-one.
   // The copying is done in reverse order, aka from last item to first item.
-  ptr ptr int --
+  ptr ptr int ->
 in
   let src dst len in
     len while dup isn-zero do dec let i in
@@ -184,7 +184,7 @@ proc memcpy64i
   // Copies a part of memory to another location.
   // Bytes are read 8-by-8.
   // The copying is done in reverse order, aka from last item to first item.
-  ptr ptr int --
+  ptr ptr int ->
 in
   let src dst len in
     len 8 * while dup isn-zero do 8 - let i in
@@ -199,7 +199,7 @@ proc memswp8
   // ptr: a ptr: b int: len
   // Swaps two regions of memory.
   // Swaps one byte per iteration.
-  ptr ptr int --
+  ptr ptr int ->
 in
   let a b len in
     0 while dup len < do let i in
@@ -215,7 +215,7 @@ proc memswp64
   // ptr: a ptr: b int: len
   // Swaps two regions of memory.
   // Swaps 8 bytes per iteration.
-  ptr ptr int --
+  ptr ptr int ->
 in
   let a b len in
     0 while dup len 8 * < do let i in

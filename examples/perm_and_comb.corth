@@ -3,7 +3,7 @@ include core/stack.corth
 include math/arithmetic.corth
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
 
   memory a sizeof(int) in

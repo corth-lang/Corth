@@ -12,26 +12,26 @@ include core/ptr.corth
 
 
 macro array64.get-addr
-  // int: index ptr: array -- ptr: addr
+  // int: index ptr: array -> ptr: addr
 
   swp 8 * +
 endmacro
 
 macro array64.get
-  // int: index ptr: array -- int: value
+  // int: index ptr: array -> int: value
 
   array64.get-addr @64
 endmacro
 
 macro array64.set
-  // int: value int: index ptr: array --
+  // int: value int: index ptr: array ->
 
   array64.get-addr !64
 endmacro
 
 proc array64.min
-  // ptr: array int: length -- int: min-item
-  ptr int -- int
+  // ptr: array int: length -> int: min-item
+  ptr int -> int
   // Returns the least value (signed) in the array.
 
   // NOTE: If the array has a length of 0, returns MAX-INT (2^63-1).
@@ -52,8 +52,8 @@ in let array length in
 end end
 
 proc array64.umin
-  // ptr: array int: length -- uint: min-item
-  ptr int -- int
+  // ptr: array int: length -> uint: min-item
+  ptr int -> int
   // Returns the least value (unsigned) in the array.
 
   // NOTE: If the array has a length of 0, returns MAX-UINT (2^64-1).
@@ -74,8 +74,8 @@ in let array length in
 end end
 
 proc array64.max
-  // ptr: array int: length -- int: min-item
-  ptr int -- int
+  // ptr: array int: length -> int: min-item
+  ptr int -> int
   // Returns the least value (signed) in the array.
 
   // NOTE: If the array has a length of 0, returns MIN-INT (-2^63).
@@ -96,8 +96,8 @@ in let array length in
 end end
 
 proc array64.umax
-  // ptr: array int: length -- uint: min-item
-  ptr int -- int
+  // ptr: array int: length -> uint: min-item
+  ptr int -> int
   // Returns the least value (unsigned) in the array.
 
   // NOTE: If the array has a length of 0, returns MIN-UINT (20).

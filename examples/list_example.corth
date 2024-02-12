@@ -12,8 +12,8 @@ include collections/list64.corth
 
 
 proc putl
-  // ptr: list --
-  ptr --
+  // ptr: list ->
+  ptr ->
 in let list in
   "list(" puts
   list list64.length putu
@@ -28,7 +28,7 @@ end end
 
 
 proc main
-  int ptr -- int
+  int ptr -> int
 in let argc argv in
   memory list sizeof(ptr) in
     malloc.init

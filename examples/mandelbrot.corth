@@ -27,7 +27,7 @@ macro BUFFER-SIZE   8256  endmacro
 macro CHARS "          .........--------+++++++******=====????$$$@@%" drop endmacro
 
 proc get-iteration
-  comp -- int
+  comp -> int
 in
   memory z sizeof(comp) in
   memory c sizeof(comp) in
@@ -50,7 +50,7 @@ end
 
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   memory camera-pos  sizeof(comp)    in
   memory camera-zoom sizeof(fixed64) in

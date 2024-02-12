@@ -8,8 +8,8 @@ include core/integer.corth
 
 // -------------------------------------------------------------
 
-// int: x int: y -- bool: cmp(x, y)
-// fixed64: x fixed64: y -- bool: cmp(x, y)
+// int: x int: y -> bool: cmp(x, y)
+// fixed64: x fixed64: y -> bool: cmp(x, y)
 
 // Compares two signed numbers.
 macro != -                         cast bool endmacro
@@ -21,8 +21,8 @@ macro >= - 0x8000000000000000 / !! cast bool endmacro
 macro >  swp <                               endmacro
 macro <= >   !                               endmacro
 
-// uint: x uint: y -- bool: cmp(x, y)
-// ufixed64: x ufixed64: y -- bool: cmp(x, y)
+// uint: x uint: y -> bool: cmp(x, y)
+// ufixed64: x ufixed64: y -> bool: cmp(x, y)
 
 // Compares two unsigned integers.
 macro u<  MIN-INT + swp MIN-INT + swp <   endmacro
@@ -35,16 +35,16 @@ macro u!= !=                              endmacro
 
 // -------------------------------------------------------------
 
-// int: x int: y -- int: op(x, y)
-// uint: x uint: y -- uint: op(x, y)
+// int: x int: y -> int: op(x, y)
+// uint: x uint: y -> uint: op(x, y)
 
 macro ^^  let _a_ _b_ in _a_ !! _b_ !! || !! _a_ _b_ || !! || !!  end endmacro
 macro &&  let _a_ _b_ in _a_ !! _b_ !! || !! end endmacro
 
 // -------------------------------------------------------------
 
-// int: x -- bool: f(x)
-// fixed64: x -- bool: f(x)
+// int: x -> bool: f(x)
+// fixed64: x -> bool: f(x)
 macro is-pos   0 >   endmacro
 macro is-zero  0 =   endmacro
 macro is-neg   0 <   endmacro
@@ -55,8 +55,8 @@ macro isn-neg  0 >=  endmacro
 
 // -------------------------------------------------------------
 
-// int: x -- bool: f(x)
-// uint: x -- bool: f(x)
+// int: x -> bool: f(x)
+// uint: x -> bool: f(x)
 
 macro is-even 2 % is-zero  endmacro
 macro is-odd  2 % isn-zero endmacro
@@ -64,8 +64,8 @@ macro is-odd  2 % isn-zero endmacro
 
 // -------------------------------------------------------------
 
-// int: x -- int: f(x)
-// fixed64: x -- fixed64: f(x)
+// int: x -> int: f(x)
+// fixed64: x -> fixed64: f(x)
 macro inc    1 +                   endmacro
 macro dec    1 -                   endmacro
 macro neg    !! inc                endmacro
@@ -75,7 +75,7 @@ macro iabs   dup is-pos if neg end endmacro
 
 // -------------------------------------------------------------
 
-// int: x -- int: f(x)
+// int: x -> int: f(x)
 
 // Returns the square of the number.
 macro sqr dup * endmacro
@@ -83,7 +83,7 @@ macro sqr dup * endmacro
 
 // -------------------------------------------------------------
 
-// uint: x -- uint: f(x)
+// uint: x -> uint: f(x)
 
 // Returns the square of the number.
 macro usqr dup u* endmacro
@@ -91,8 +91,8 @@ macro usqr dup u* endmacro
 
 // -------------------------------------------------------------
 
-// int: x -- int: f(x)
-// uint: x -- uint: f(x)
+// int: x -> int: f(x)
+// uint: x -> uint: f(x)
 
 // Returns the decimal ASCII character match of the number. (0 <= number <= 9)
 macro int-to-ddigit '0' + endmacro
@@ -103,8 +103,8 @@ macro int-to-xdigit dup 9 > if 'W' else '0' end + endmacro
 
 // -------------------------------------------------------------
 
-// int: x -- int: f(x) bool: valid
-// uint: x -- uint: f(x) bool: valid
+// int: x -> int: f(x) bool: valid
+// uint: x -> uint: f(x) bool: valid
 
 // Returns the number match of the decimal ASCII character. ('0' <= number <= '9')
 // Also returns if the digit is a valid decimal character.
@@ -125,8 +125,8 @@ end endmacro
 
 // -------------------------------------------------------------
 
-// int: x int: y -- int: (x+y)/2
-// fixed64: x fixed64: y -- fixed64: (x+y)/2
+// int: x int: y -> int: (x+y)/2
+// fixed64: x fixed64: y -> fixed64: (x+y)/2
 
 // Returns the arithmetical average of the 3 numbers.
 macro avg2 +   2 / endmacro
@@ -134,15 +134,15 @@ macro avg2 +   2 / endmacro
 
 // -------------------------------------------------------------
 
-// int: x int: y int: z -- int: (x+y+z)/3
-// fixed: x fixed: y fixed: z -- fixed: (x+y+z)/3
+// int: x int: y int: z -> int: (x+y+z)/3
+// fixed: x fixed: y fixed: z -> fixed: (x+y+z)/3
 
 // Returns the arithmetical average of the 3 numbers.
 macro avg3 + + 3 / endmacro
 
 // -------------------------------------------------------------
 
-// int: x int: a int: b -- bool: contain(x, [a, b])
+// int: x int: a int: b -> bool: contain(x, [a, b])
 
 // Returns true if x is in the range of [a, b].
 macro is-range  let _x_ _a_ _b_ in _x_ _a_ < if false else _b_ _x_ < ! end end endmacro
@@ -153,8 +153,8 @@ macro isn-range let _x_ _a_ _b_ in _x_ _a_ < if true  else _b_ _x_ <   end end e
 
 // -------------------------------------------------------------
 
-// int: x int: b -- int: base(x, b)
-// fixed64: x fixed64: b -- fixed64: base(x, b)
+// int: x int: b -> int: base(x, b)
+// fixed64: x fixed64: b -> fixed64: base(x, b)
 
 // Returns the largest number that is less than or equal to x and is divisible by b.
 // lower-base(x, b) = x - (x % b)
@@ -172,8 +172,8 @@ end endmacro
 
 // -------------------------------------------------------------
 
-// int: x int: y -- int: min(x, y)
-// fixed64: x fixed64: y -- fixed64: min/max(x, y)
+// int: x int: y -> int: min(x, y)
+// fixed64: x fixed64: y -> fixed64: min/max(x, y)
 
 // Returns the minimum of the two numbers.
 macro min2 let _a_ _b_ in
@@ -188,8 +188,8 @@ end endmacro
 
 // -------------------------------------------------------------
 
-// int: x int: y int: z -- int: min(x, y, z)
-// fixed64: x fixed64: y fixed64: z -- fixed64: min/max(x, y, z)
+// int: x int: y int: z -> int: min(x, y, z)
+// fixed64: x fixed64: y fixed64: z -> fixed64: min/max(x, y, z)
 
 // Returns the maximum of the three numbers.
 macro max3 let _a_ _b_ _c_ in
@@ -212,8 +212,8 @@ end endmacro
 
 // -------------------------------------------------------------
 
-// int: x int: min int: max -- int: clipped
-// fixed64: x fixed64: min fixed64: max -- fixed64: clipped
+// int: x int: min int: max -> int: clipped
+// fixed64: x fixed64: min fixed64: max -> fixed64: clipped
 
 // Returns x if it is in the range [min, max]. If it is less, returns min and if it is higher, returns max.
 macro clip let _x_ _min_ _max_ in
@@ -231,8 +231,8 @@ end endmacro
 
 // -------------------------------------------------------------
 
-// int: x int: y -- int: min(x, y) int: max(x, y)
-// fixed64: x fixed64: y -- fixed64: min(x, y) fixed64: max(x, y)
+// int: x int: y -> int: min(x, y) int: max(x, y)
+// fixed64: x fixed64: y -> fixed64: min(x, y) fixed64: max(x, y)
 
 // Sorts two numbers in the stack.
 macro sort2 let _a_ _b_ in
@@ -246,8 +246,8 @@ end endmacro
 
 // -------------------------------------------------------------
 
-// int: x int: y int: z -- int: min(x, y, z) int: mid(x, y, z) int: max(x, y, z)
-// fixed64: x fixed64: y fixed64: z -- fixed64: min(x, y, z) fixed64: mid(x, y, z) fixed64: max(x, y, z)
+// int: x int: y int: z -> int: min(x, y, z) int: mid(x, y, z) int: max(x, y, z)
+// fixed64: x fixed64: y fixed64: z -> fixed64: min(x, y, z) fixed64: mid(x, y, z) fixed64: max(x, y, z)
 
 // Sorts three numbers in the stack.
 macro sort3 let _a_ _b_ _c_ in

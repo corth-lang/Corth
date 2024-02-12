@@ -35,7 +35,7 @@ endmacro
 
 // NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
 macro compile-procedure.get-next-token let expect-address expect-length extend-macros in
-  // str: expect-message bool: extend-macros -- int: token-type ptr: address [int|ptr]: arg
+  // str: expect-message bool: extend-macros -> int: token-type ptr: address [int|ptr]: arg
   // Calls get-next-token and checks if a token is available-dstr. If there are no tokens, prints an error message.
   source-name source-file
   line-no char-no
@@ -167,8 +167,8 @@ endmacro
 
 
 proc compare-stack-types
-  // ptr: old-stack ptr: local-stack ptr: local-stack-length -- bool: is-equal
-  ptr ptr ptr -- bool
+  // ptr: old-stack ptr: local-stack ptr: local-stack-length -> bool: is-equal
+  ptr ptr ptr -> bool
 in let old-stack local-stack local-stack-length in
   local-stack-length @64 8 * old-stack mlength != if false return end
 
@@ -179,8 +179,8 @@ end true end
 
 
 proc compare-stack-types-types
-  // ptr: types-array int: types-length ptr: local-stack ptr: local-stack-length -- bool: is-equal
-  ptr int ptr ptr -- bool
+  // ptr: types-array int: types-length ptr: local-stack ptr: local-stack-length -> bool: is-equal
+  ptr int ptr ptr -> bool
 in let
   types-array types-length
   local-stack local-stack-length
@@ -194,8 +194,8 @@ end true end
 
 
 proc compare-sub-stack-types-types
-  // ptr: types-array int: types-length ptr: local-stack ptr: local-stack-length -- bool: is-equal
-  ptr int ptr ptr -- bool
+  // ptr: types-array int: types-length ptr: local-stack ptr: local-stack-length -> bool: is-equal
+  ptr int ptr ptr -> bool
 in let
   types-array types-length
   local-stack local-stack-length
@@ -213,8 +213,8 @@ end true end
 
 
 proc fput-stack-contents
-  // ptr: stack-ptr int: stack-length file-desc: log-stream --
-  ptr int file-desc --
+  // ptr: stack-ptr int: stack-length file-desc: log-stream ->
+  ptr int file-desc ->
 in let stack length log-stream in
   length is-zero if
     "<empty>\n" log-stream fputs
@@ -230,8 +230,8 @@ end end
 
 
 proc fput-types
-  // ptr: types-array int: types-length file-desc: log-stream --
-  ptr int file-desc --
+  // ptr: types-array int: types-length file-desc: log-stream ->
+  ptr int file-desc ->
 in let types-array types-length log-stream in
   types-length is-zero if
     "<empty>\n" log-stream fputs
@@ -247,8 +247,8 @@ end end
 
 
 proc check-stack-types
-  // ptr: old-stack ptr: old-address ptr: local-stack ptr: local-stack-length ptr: token-address file-desc: log-stream --
-  ptr ptr ptr ptr ptr file-desc --
+  // ptr: old-stack ptr: old-address ptr: local-stack ptr: local-stack-length ptr: token-address file-desc: log-stream ->
+  ptr ptr ptr ptr ptr file-desc ->
 in let old-stack old-address local-stack local-stack-length token-address log-stream in
   old-stack local-stack local-stack-length compare-stack-types ! if
     LOG.ERR log-stream fputs "Stack contents do not match.\n" log-stream fputs
@@ -270,7 +270,7 @@ proc check-stack-types-types
   // ptr: local-stack ptr: local-stack-length
   ptr ptr
   // file-desc: log-stream
-  file-desc --
+  file-desc ->
 in let
   types-array types-length
   token-address
@@ -296,7 +296,7 @@ proc check-sub-stack-types-types
   // ptr: local-stack ptr: local-stack-length
   ptr ptr
   // file-desc: log-stream
-  file-desc --
+  file-desc ->
 in let
   types-array types-length
   token-address
@@ -315,8 +315,8 @@ end end
 
 
 proc add-intrinsic
-  // ptr: token-address ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
-  ptr ptr ptr file-desc file-desc --
+  // ptr: token-address ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream ->
+  ptr ptr ptr file-desc file-desc ->
 in let token-address local-stack local-stack-length output-file log-stream in
   local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
@@ -365,8 +365,8 @@ end end
 
 
 proc get-register-name
-  // int: intrinsic -- ptr: register-name int: register-name-length
-  int -- ptr int
+  // int: intrinsic -> ptr: register-name int: register-name-length
+  int -> ptr int
 in let intrinsic in
        intrinsic INTRINSIC-STORE8  = if "al"
   else intrinsic INTRINSIC-STORE16 = if "ax"
@@ -385,8 +385,8 @@ end end
 
 
 proc load-intrinsic
-  // ptr: token-address int: intrinsic ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
-  ptr int ptr ptr file-desc file-desc --
+  // ptr: token-address int: intrinsic ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream ->
+  ptr int ptr ptr file-desc file-desc ->
   // NOTE: Register is one of 'al', 'ax', 'eax', 'rax'.
 in let token-address intrinsic local-stack local-stack-length output-file log-stream in
   local-stack-length @64 1 < if invalid-usage-of-intrinsic end
@@ -423,8 +423,8 @@ end end
 
 
 proc store-intrinsic-sub
-  // ptr: value-item ptr: address-item int: address-item-length ptr: token-address int: intrinsic file-desc: output-file file-desc: log-stream --
-  ptr ptr int ptr int file-desc file-desc --
+  // ptr: value-item ptr: address-item int: address-item-length ptr: token-address int: intrinsic file-desc: output-file file-desc: log-stream ->
+  ptr ptr int ptr int file-desc file-desc ->
 in let value-item address-item address-item-length token-address intrinsic output-file log-stream in
   value-item get-mode MODE-REAL = if
     intrinsic INTRINSIC-STORE64 = if
@@ -479,8 +479,8 @@ end end
 
 
 proc store-intrinsic
-  // ptr: token-address int: intrinsic ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
-  ptr int ptr ptr file-desc file-desc --
+  // ptr: token-address int: intrinsic ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream ->
+  ptr int ptr ptr file-desc file-desc ->
   // NOTE: Register is one of 'bl', 'bx', 'ebx', 'rbx'.
 in let token-address intrinsic local-stack local-stack-length output-file log-stream in
   local-stack-length @64 2 < if invalid-usage-of-intrinsic end
@@ -526,7 +526,7 @@ end end
 
 
 proc get-log2
-  uint -- int
+  uint -> int
   // Returns 0-63 for whole powers of 2, <0 otherwise.
 in let x in
        x           1 = if 0
@@ -538,8 +538,8 @@ end end
 
 
 proc multiply-immediate-any
-  // bool: signed bool: upper int: immediate ptr: item ptr: local-stack ptr: local-stack-length file-desc: output-file --
-  bool bool int ptr ptr ptr file-desc --
+  // bool: signed bool: upper int: immediate ptr: item ptr: local-stack ptr: local-stack-length file-desc: output-file ->
+  bool bool int ptr ptr ptr file-desc ->
 in let signed upper immediate item local-stack local-stack-length output-file in
   immediate get-log2 let log2 in
     INT-TYPE-INT push-real
@@ -569,8 +569,8 @@ end end
 
 
 proc multiply-intrinsic
-  // ptr: token-address bool: signed bool: upper ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
-  ptr bool bool ptr ptr file-desc file-desc --
+  // ptr: token-address bool: signed bool: upper ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream ->
+  ptr bool bool ptr ptr file-desc file-desc ->
 in let token-address signed upper local-stack local-stack-length output-file log-stream in
   local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
@@ -611,8 +611,8 @@ end end
 
 
 proc bitwise-and-any-immediate
-  // ptr: item int: immediate ptr: local-stack ptr: local-stack-length file-desc: output-file --
-  ptr int ptr ptr file-desc --
+  // ptr: item int: immediate ptr: local-stack ptr: local-stack-length file-desc: output-file ->
+  ptr int ptr ptr file-desc ->
 in let item immediate local-stack local-stack-length output-file in
   item output-file nasm.push-int
 
@@ -621,8 +621,8 @@ end end
 
 
 proc divide-intrinsic
-  // ptr: token-address bool: signed bool: modulo ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream --
-  ptr bool bool ptr ptr file-desc file-desc --
+  // ptr: token-address bool: signed bool: modulo ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream ->
+  ptr bool bool ptr ptr file-desc file-desc ->
 in let token-address signed modulo local-stack local-stack-length output-file log-stream in
   local-stack-length @64 2 < if invalid-usage-of-intrinsic end
 
@@ -684,7 +684,7 @@ proc compile-intrinsic
   // int: token-type ptr: token-address [int|ptr]: token-arg
   int ptr int
   // file-desc: log-stream
-  file-desc --
+  file-desc ->
 
   // Compiles an intrinsic in a Corth procedure.
   // Compilation warning and errors are dumped to log-stream.
@@ -1011,7 +1011,7 @@ proc compile-keyword
   file-desc
   // ptr: local-memory-max
   ptr
-  --
+  ->
   // bool: end-of-procedure
   bool
 in let
@@ -1762,8 +1762,8 @@ proc compile-procedure
   ptr ptr ptr
   // ptr: output-array int: output-length
   ptr int
-  // file-desc: log-stream --
-  file-desc --
+  // file-desc: log-stream ->
+  file-desc ->
   // local-memory-max: int
   int
 
@@ -1962,7 +1962,7 @@ end 0 end // dummy return
 macro compile-file.get-next-token let
   expect-address expect-length extend-macros
 in
-  // str: expect-message bool: extend-macros --
+  // str: expect-message bool: extend-macros ->
   // int: token-type ptr: address [int|ptr]: arg
 
   source-name source-file
@@ -2055,7 +2055,7 @@ proc compile-file
   // libraries-set
   ptr
   // file-desc: log-stream
-  file-desc --
+  file-desc ->
 
   // Compiles a Corth source file.
   // Compilation warning and errors are dumped to log-stream.
@@ -2327,7 +2327,7 @@ in
                     end
 
                     // Check if the token is of type-type.
-                    output-token-type output-token-address "after '--'" TYPE-INT-TYPE compile-file.check-type-here
+                    output-token-type output-token-address "after '->'" TYPE-INT-TYPE compile-file.check-type-here
 
                     output-token-arg output-list list64.append
 
@@ -2417,8 +2417,8 @@ end end
 
 
 proc compile-nasm
-  // ptr: source-name ptr: output-name ptr: include-paths-set file-desc: log-stream --
-  ptr ptr ptr file-desc --
+  // ptr: source-name ptr: output-name ptr: include-paths-set file-desc: log-stream ->
+  ptr ptr ptr file-desc ->
 in let source-name output-name include-paths-set log-stream in
   // Create the output file.
   output-name 0o777 creat dup isn-pos if

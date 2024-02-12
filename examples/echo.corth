@@ -1,7 +1,7 @@
 include linux_x86/stdio.corth
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   memory char 1 in
     while char 1 gets isn-zero do

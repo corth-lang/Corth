@@ -3,8 +3,8 @@ include core/memory.corth
 
 
 proc intconvbase
-  // ptr: buffer int: value int: base int: max-digits -- ptr: result-start
-  ptr int int int -- ptr
+  // ptr: buffer int: value int: base int: max-digits -> ptr: result-start
+  ptr int int int -> ptr
   // Converts an integer to any wanted base.
 in let base max-digits in
   memory handle sizeof(ptr) in
@@ -24,35 +24,35 @@ in let base max-digits in
 end end
 
 macro intconvx
-  // ptr: buffer int: value -- ptr: result-start
+  // ptr: buffer int: value -> ptr: result-start
   // Converts an integer to a hexadecimal string.
   // NOTE: Buffer size must be 16 bytes.
   16 15 intconvbase
 endmacro
 
 macro intconvud
-  // ptr: buffer int: value -- ptr: result-start
+  // ptr: buffer int: value -> ptr: result-start
   // Converts an integer to an unsigned decimal string.
   // NOTE: Buffer size must be 20 bytes.
   10 19 intconvbase
 endmacro
 
 macro intconvo
-  // ptr: buffer int: value -- ptr: result-start
+  // ptr: buffer int: value -> ptr: result-start
   // Converts an integer to a octal string.
   // NOTE: Buffer size must be 22 bytes.
   8 21 intconvbase
 endmacro
 
 macro intconvb
-  // ptr: buffer int: value -- ptr: result-start
+  // ptr: buffer int: value -> ptr: result-start
   // Converts an integer to a binary string.
   // NOTE: Buffer size must be 64 bytes.
   2 63 intconvbase
 endmacro
 
 macro intconvd
-  // ptr: buffer int: value -- ptr: result-start
+  // ptr: buffer int: value -> ptr: result-start
   // Converts an integer to a decimal string.
   // NOTE: Buffer size must be 20 bytes.
   let _buffer_ _value_ in

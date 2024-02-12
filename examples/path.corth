@@ -9,7 +9,7 @@ include linux_x86/stdio.corth
 include linux_x86/path.corth
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   malloc.init
 

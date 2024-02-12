@@ -7,7 +7,7 @@ include dynamic/malloc.corth
 include dynamic/debug_malloc.corth
 
 proc allocate-space
-  int -- ptr
+  int -> ptr
 in let size in
   size malloc let object in
     object mlength size != if
@@ -22,7 +22,7 @@ in let size in
 end end
 
 proc deallocate-space
-  ptr --
+  ptr ->
 in let container in
   container mfree if
     "[INFO] Successfully deallocated object.\n" puts
@@ -34,7 +34,7 @@ in let container in
 end end
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   malloc.init
 

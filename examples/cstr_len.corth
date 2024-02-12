@@ -3,7 +3,7 @@ include collections/array64.corth
 include cstr.corth
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   0 while dup argc < do dup argv array64.get let i in
     "'" puts i cstr.str puts "': " puts i cstr.len putu putnl

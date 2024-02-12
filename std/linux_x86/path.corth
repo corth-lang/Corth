@@ -7,13 +7,13 @@ include string_builder.corth
 // NOTE: This library uses the string builder library. Therefore, string-builder.RESIZING must be defined.
 // NOTE: This library requires malloc.
 
-// cstr: path -- bool: is-root
+// cstr: path -> bool: is-root
 // Returns if the path starts with a slash.
 macro path.is-root @8 '/' = endmacro
 
 proc path.merge2
-  // str: path1 int: len1 str: path2 int: len2 -- dstr: combined
-  ptr int ptr int -- ptr
+  // str: path1 int: len1 str: path2 int: len2 -> dstr: combined
+  ptr int ptr int -> ptr
   // NOTE: Result is a dynamic object.
 in let path1 len1 path2 len2 in
   path1 len1 + dec @8 '/' = if
@@ -41,8 +41,8 @@ in let path1 len1 path2 len2 in
 end end
 
 proc path.merge2-cstr
-  // str: path1 int: len1 str: path2 int: len2 -- cstr: combined
-  ptr int ptr int -- ptr
+  // str: path1 int: len1 str: path2 int: len2 -> cstr: combined
+  ptr int ptr int -> ptr
   // NOTE: Arguments are NOT cstr's. The output is.
   // NOTE: Result is a dynamic object.
 in let path1 len1 path2 len2 in
@@ -101,7 +101,7 @@ macro path.merge.init
     64 _path.merge.builder.array_ _path.merge.builder.ptr_ string-builder.init
 endmacro
 
-macro path.merge.end-str // -- ptr: merged-string
+macro path.merge.end-str // -> ptr: merged-string
     _path.merge.builder.array_ @64 _path.merge.builder.ptr_ @64 != if
       _path.merge.builder.ptr_ @dec64
     end
@@ -114,7 +114,7 @@ macro path.merge.end-str // -- ptr: merged-string
   end end
 endmacro
 
-macro path.merge.end-cstr // -- cstr: merge-string
+macro path.merge.end-cstr // -> cstr: merge-string
     '\0' _path.merge.builder.ptr_ !8
 
     // Get the generated string.

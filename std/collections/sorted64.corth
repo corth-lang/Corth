@@ -7,8 +7,8 @@ include core/stack.corth
 */
 
 proc sorted64.available
-  // int: value ptr: start ptr: end -- ptr: lower-bound bool: found
-  int ptr ptr -- ptr bool
+  // int: value ptr: start ptr: end -> ptr: lower-bound bool: found
+  int ptr ptr -> ptr bool
   // Finds where the value could be placed using binary search, so that the array could stay sorted.
   // Returns if the value was found in the array.
 in

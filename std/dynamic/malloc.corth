@@ -20,7 +20,7 @@ macro malloc.avail-queue malloc.avail-queue-array malloc.avail-queue-length endm
 
 
 proc malloc.init
-  --
+  ->
 in
   // Set the available queue length to 0.
   0 malloc.avail-queue-length !64
@@ -33,31 +33,31 @@ in
 end
 
 
-// ptr: block -- ptr: next-block
+// ptr: block -> ptr: next-block
 macro malloc.next-block
   @64
 endmacro
 
 
-// ptr: next-block ptr: block --
+// ptr: next-block ptr: block ->
 macro malloc.set-next-block
   !64
 endmacro
 
 
-// ptr: container -- ptr: block
+// ptr: container -> ptr: block
 macro malloc.block
   8 -
 endmacro
 
 
-// ptr: block -- ptr: container
+// ptr: block -> ptr: container
 macro malloc.container
   8 +
 endmacro
 
 
-// ptr: block -- int: size
+// ptr: block -> int: size
 // Returns the size of the block.
 // The size of the block is equal to the difference between the next block and the current block.
 macro malloc.block-size let _block_ in
@@ -65,7 +65,7 @@ macro malloc.block-size let _block_ in
 end endmacro
 
 
-// ptr: block -- int: size
+// ptr: block -> int: size
 // Returns the size of the block.
 // The size of the container is equal to the size of the block that contains the container minus eight.
 macro malloc.container-size
@@ -74,8 +74,8 @@ endmacro
 
 
 proc malloc.find-min-available
-  // int: expected-size -- ptr: available-group int: group-size int: group-id
-  int -- ptr int int
+  // int: expected-size -> ptr: available-group int: group-size int: group-id
+  int -> ptr int int
 in let size in
   memory available-group sizeof(ptr) in
   memory available-size  sizeof(int) in
@@ -116,8 +116,8 @@ end end
 
 
 proc malloc
-  // int: length -- ptr: addr
-  int -- ptr
+  // int: length -> ptr: addr
+  int -> ptr
   // Allocates memory with a specific size, allows dynamic memory management.
   // Always allocates the smallest availiable segment for memory efficiency.
 in let size in
@@ -178,8 +178,8 @@ end end
 
 
 proc mfree
-  // ptr: container -- bool: successful
-  ptr -- bool
+  // ptr: container -> bool: successful
+  ptr -> bool
   // Frees space up allocated by malloc.
 in malloc.block let block in
   block malloc.avail-queue-array malloc.avail-queue-array malloc.avail-queue-length @64 8 * + sorted64.available if drop
@@ -220,7 +220,7 @@ end true end
 
 
 // Deallocates both the array and ALL of its sub items.
-macro mfree-deep let _array_ in // ptr: array -- bool: success
+macro mfree-deep let _array_ in // ptr: array -> bool: success
   _array_ while dup _array_ malloc.block malloc.next-block < do
     dup @64 mfree drop
   8 + end drop
@@ -230,7 +230,7 @@ end endmacro
 
 
 macro mlength
-  // ptr: addr -- int: length
+  // ptr: addr -> int: length
   // Returns the length of an object created using malloc.
   malloc.block malloc.container-size
 endmacro

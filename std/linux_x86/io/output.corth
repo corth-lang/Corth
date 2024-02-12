@@ -9,7 +9,7 @@ macro fputnl "\n" fwrite drop endmacro // file-desc: file-desc
 
 proc fputc
   // int: char file-desc: file-desc
-  int file-desc --
+  int file-desc ->
 in let file in
   memory buffer 1 in
     buffer !8
@@ -19,7 +19,7 @@ end end
 
 proc fputu
   // int: int file-desc: file-desc
-  int file-desc --
+  int file-desc ->
   // Prints an unsigned integer to a file stream.
 in let value file in
   // intconvud expects a buffer with a size of exactly 20 bytes.
@@ -32,7 +32,7 @@ end end
 
 proc fputi
   // int: int file-desc: file-desc
-  int file-desc --
+  int file-desc ->
   // Prints an integer to a file stream.
 in let value file in
   // intconvd expects a buffer with a size of exactly 20 bytes.
@@ -45,7 +45,7 @@ end end
 
 proc fputb
   // int: int file-desc: file-desc
-  int file-desc --
+  int file-desc ->
   // Prints a binary number to a file stream.
 in let value file in
   // intconvx expects a buffer with a size of exactly 64 bytes.
@@ -58,7 +58,7 @@ end end
 
 proc fputo
   // int: int file-desc: file-desc
-  int file-desc --
+  int file-desc ->
   // Prints an octal number to a file stream.
 in let value file in
   // intconvx expects a buffer with a size of exactly 23 bytes.
@@ -71,7 +71,7 @@ end end
 
 proc fputx
   // int: int file-desc: file-desc
-  int file-desc --
+  int file-desc ->
   // Prints a hexadecimal number to a file stream.
 in let value file in
   // intconvx expects a buffer with a size of exactly 16 bytes.
@@ -85,7 +85,7 @@ end end
 // TODO: This procedure requires a rewrite.
 proc fputup
   // int: int file-desc: file-desc
-  int int --
+  int int ->
   // The starting characters are always visible and the ending zeros are removed.
   // Also, does not print the first character if it is not 0.
   // Used in fixed64.put-fixed.

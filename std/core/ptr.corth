@@ -6,6 +6,6 @@ macro sizeof(ptr)  8 endmacro
 macro NULLPTR 0 endmacro
 
 
-// ptr: x -- bool: f(x)
+// ptr: x -> bool: f(x)
 macro is-null  NULLPTR =  endmacro
 macro isn-null NULLPTR != endmacro

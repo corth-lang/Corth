@@ -2,11 +2,11 @@ include linux_x86/sys.corth
 include converter/convert.corth
 
 
-macro fgets arot fread endmacro // ptr: str-ptr int: str-len file-desc: file-desc -- int: read-bytes
+macro fgets arot fread endmacro // ptr: str-ptr int: str-len file-desc: file-desc -> int: read-bytes
 
 proc fgetu
-  // ptr: address files-desc: file-desc -- bool: success
-  ptr file-desc -- bool
+  // ptr: address files-desc: file-desc -> bool: success
+  ptr file-desc -> bool
 in let number file in
   memory buffer 64 in
     buffer buffer 64 file fgets dec number convuint
@@ -14,8 +14,8 @@ in let number file in
 end end
 
 proc fgeti
-  // ptr: address file-desc: file-desc -- bool: success
-  ptr file-desc -- bool
+  // ptr: address file-desc: file-desc -> bool: success
+  ptr file-desc -> bool
 in let number file in
   memory buffer 64 in
     buffer buffer 64 file fgets dec number convint

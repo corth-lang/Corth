@@ -25,7 +25,7 @@ include core/stack.corth
 
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   10 while dup isn-zero do
     dup while dup isn-zero do

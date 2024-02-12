@@ -9,7 +9,7 @@ memory primes-list 4000000 end
 memory primes-end sizeof(int) end
 
 proc is-prime
-  int -- bool
+  int -> bool
 in
   let n in
     primes-list while dup primes-end @64 < do
@@ -31,7 +31,7 @@ in
 end
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   primes-list primes-end !64
   2 while dup END < do

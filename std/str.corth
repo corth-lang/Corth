@@ -4,22 +4,22 @@ include core/memory.corth
 macro str ptr int endmacro
 
 macro str.get-len
-  // ptr: ptr int: len -- int: len
+  // ptr: ptr int: len -> int: len
   swp drop
 endmacro
 
 macro strc.get-len
-  // ptr: ptr -- int: len
+  // ptr: ptr -> int: len
   dup while dup @8 isn-zero do inc end - neg
 endmacro
 
 macro str.to-strc
-  // ptr: ptr int: len -- ptr: ptr
+  // ptr: ptr int: len -> ptr: ptr
   drop
 endmacro
 
 macro strc.to-str
-  // ptr: ptr -- ptr: ptr int: len
+  // ptr: ptr -> ptr: ptr int: len
   dup strc.get-len
 endmacro
 
@@ -29,7 +29,7 @@ macro str.copy
 endmacro
 
 macro str.range
-  // ptr: src int: len int: start int: end -- ptr: src' int: len'
+  // ptr: src int: len int: start int: end -> ptr: src' int: len'
   let _src_ _len_ _start_ _end_ in
     _src_ _start_ +
     _end_ _start_ -

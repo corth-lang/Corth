@@ -5,7 +5,7 @@ include dynamic/malloc.corth
 
 // Can be used to debug malloc segments.
 proc debug-dynamic-memory
-  file-desc --
+  file-desc ->
   // Prints the blocks of the memory for debug purposes.
 in let  log-stream in
   "Reached debug-dynamic-memory.\n" log-stream fputs
@@ -45,7 +45,7 @@ end end
 
 // Can be used to debug malloc segments.
 proc check-dynamic-memory-integrity
-  -- bool
+  -> bool
   // Returns false if there are any problems with malloc.array.
 in
   malloc.array while dup malloc.array malloc.ARRAY-SIZE + < do let block in
@@ -56,7 +56,7 @@ true end
 
 // Can bu used to see how much space is available and to check memory leaks.
 proc get-available-dynamic-memory
-  -- int
+  -> int
 in
   memory sum sizeof(int) in
     0 sum !64

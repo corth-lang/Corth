@@ -3,7 +3,7 @@ include core/arithmetic.corth
 
 // Because of the integer limit, can return wrong results for big numbers.
 macro perm
-  // int: x int: y -- int: P(x, y)
+  // int: x int: y -> int: P(x, y)
   // P(a, b) = a! / (a-b)! = (a-b) * (a-b+1) * (a-b+2) * ... * (a-1) * a = mul-bet(a-b, a)
   // NOTE: x >= y must be satisfied.
   dupi - inc mul-bet
@@ -13,7 +13,7 @@ endmacro
 // Because of the integer limit, can return wrong results for big numbers.
 // C(28, n) can be calculated without any problem, but any bigger number may start to cause problems.
 macro comb let _a_ _b_ in
-  // int: x int: y -- int: C(x, y)
+  // int: x int: y -> int: C(x, y)
   // C(a, b) = a! / (b! * (a - b)!) = P(a, b) / b! = P(a, a-b) / (a-b)!
   // y and x-y are sorted, since if c in P(n, c) is bigger, it is faster to calculate it.
   // NOTE: x >= y must be satisfied.
@@ -31,9 +31,9 @@ end endmacro
 
 
 proc gcd
-  // int:     x int:     y -- int:     gcd(x, y)
-  // fixed64: x fixed64: y -- fixed64: gcd(x, y)
-  int int -- int
+  // int:     x int:     y -> int:     gcd(x, y)
+  // fixed64: x fixed64: y -> fixed64: gcd(x, y)
+  int int -> int
   // NOTE: x < y must be already satisfied otherwise will go in an infinite recursion loop.
 in
   while true do
@@ -49,8 +49,8 @@ drop end // dummy return
 
 
 macro lcm
-  // int:     x int:     y -- int:     lcm(x, y)
-  // fixed64: x fixed64: y -- fixed64: lcm(x, y)
+  // int:     x int:     y -> int:     lcm(x, y)
+  // fixed64: x fixed64: y -> fixed64: lcm(x, y)
   // lcm(x, y) * gcd(x, y) = x * y
   // lcm(x, y) = x * y / gcd(x, y)
   dupd gcd / *
@@ -58,8 +58,8 @@ endmacro
 
 
 proc mul-bet
-  // int: x int: y -- int: x * (x+1) * (x+2) * ... * (y-1) * y
-  int int -- int
+  // int: x int: y -> int: x * (x+1) * (x+2) * ... * (y-1) * y
+  int int -> int
   // For x <= y, multiplies the numbers between (including) x and y.
   // For y > x, returns 1.
   // NOTE: For big numbers, the result can lose its precission, because of the integer size limit.
@@ -76,15 +76,15 @@ end end
 
 // Because of the integer limit, the biggest number whose factorial can be calculated without any problem is 20.
 macro fact
-  // int: x -- int: x!
+  // int: x -> int: x!
   // x! = 1 * 2 * 3 * ... * (x-1) * x = mul-bet(2, x)
   2 swp mul-bet
 endmacro
 
 
 proc ipow
-  // int: x uint: c -- int: x^c
-  int uint -- int
+  // int: x uint: c -> int: x^c
+  int uint -> int
   // Calculates integer exponents.
 in
   memory result sizeof(int) in
@@ -110,8 +110,8 @@ end
 
 
 proc upow
-  // uint: x uint: c -- uint: x^c
-  uint uint -- int
+  // uint: x uint: c -> uint: x^c
+  uint uint -> int
   // Calculates unsigned integer exponents.
 in
   memory result sizeof(int) in

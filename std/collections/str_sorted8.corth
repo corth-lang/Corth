@@ -16,8 +16,8 @@ macro str-sorted8.available-cstr let address start end_ in
 end endmacro
 
 proc str-sorted8.available-str
-  // ptr: address int: length ptr: start ptr: end -- ptr: lower-bound bool: found
-  ptr int ptr ptr -- ptr bool
+  // ptr: address int: length ptr: start ptr: end -> ptr: lower-bound bool: found
+  ptr int ptr ptr -> ptr bool
   // Finds where the value could be placed using binary search, so that the array could stay sorted.
   // Returns if the value was found in the array.
 in

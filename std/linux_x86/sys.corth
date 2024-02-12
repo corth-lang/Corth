@@ -69,38 +69,38 @@ macro RW_OK          6 endmacro
 macro RWX_OK         7 endmacro
 
 // Standard wrappers
-macro fread      SYSREAD         syscall3 endmacro  // file-desc: file-desc ptr: str-ptr int: str-len -- int: success
-macro fwrite     SYSWRITE        syscall3 endmacro  // file-desc: file-desc ptr: str-ptr int: str-len -- int: success
-macro fopen      SYSOPEN         syscall3 endmacro  // ptr: str-ptr int: mode int: flags -- file-desc: file-desc
-macro fclose     SYSCLOSE        syscall1 endmacro  // file-desc: file -- int: success
-macro stat       SYSSTAT         syscall2 endmacro  // ptr: path ptr: buffer -- int: success
-macro fstat      SYSFSTAT        syscall2 endmacro  // file-desc: file ptr: buffer -- int: success
-macro lstat      SYSLSTAT        syscall2 endmacro  // ptr: path ptr: buffer -- int: success
-macro lseek      SYSLSEEK        syscall3 endmacro  // file-desc: file-desc int: offset int: whence -- int: success
-macro access     SYSACCESS       syscall2 endmacro  // ptr: file-name int: mode -- int: success
-macro nanosleep  SYSNANOSLEEP    syscall2 endmacro  // ptr: nanosleep-time -- int: success
-macro fork       SYSFORK         syscall0 endmacro  // -- int: child
-macro vfork      SYSVFORK        syscall0 endmacro  // -- int: child
-macro execve     SYSEXECVE       syscall3 endmacro  // ptr: file-name ptr: args ptr: env-vars -- int: success
-macro wait4      SYSWAIT4        syscall4 endmacro  // int: pid ptr: stat-addr int: options ptr: ru -- int: success
-macro exit       SYSEXIT         syscall1 endmacro  // int: exit-code -- int: success
-macro getdents   SYSGETDENTS     syscall3 endmacro  // file-desc: file-desc ptr: buffer int: length -- int: count
-macro time       SYSTIME         syscall1 endmacro  // int: address -- int: time
-macro rmdir      SYSRMDIR        syscall1 endmacro  // ptr: path -- int: success
-macro creat      SYSCREAT        syscall2 endmacro  // ptr: path int: mode -- int: success
-macro unlink     SYSUNLINK       syscall1 endmacro  // ptr: path -- int: success
-macro getdents64 SYSGETDENTS64   syscall3 endmacro  // file-desc: file-desc ptr: buffer int: length -- int: count
-macro waitid     SYSWAITID       syscall5 endmacro  // int: id-type int: pid ptr: infop int: options ptr: ru -- int: success
+macro fread      SYSREAD         syscall3 endmacro  // file-desc: file-desc ptr: str-ptr int: str-len -> int: success
+macro fwrite     SYSWRITE        syscall3 endmacro  // file-desc: file-desc ptr: str-ptr int: str-len -> int: success
+macro fopen      SYSOPEN         syscall3 endmacro  // ptr: str-ptr int: mode int: flags -> file-desc: file-desc
+macro fclose     SYSCLOSE        syscall1 endmacro  // file-desc: file -> int: success
+macro stat       SYSSTAT         syscall2 endmacro  // ptr: path ptr: buffer -> int: success
+macro fstat      SYSFSTAT        syscall2 endmacro  // file-desc: file ptr: buffer -> int: success
+macro lstat      SYSLSTAT        syscall2 endmacro  // ptr: path ptr: buffer -> int: success
+macro lseek      SYSLSEEK        syscall3 endmacro  // file-desc: file-desc int: offset int: whence -> int: success
+macro access     SYSACCESS       syscall2 endmacro  // ptr: file-name int: mode -> int: success
+macro nanosleep  SYSNANOSLEEP    syscall2 endmacro  // ptr: nanosleep-time -> int: success
+macro fork       SYSFORK         syscall0 endmacro  // -> int: child
+macro vfork      SYSVFORK        syscall0 endmacro  // -> int: child
+macro execve     SYSEXECVE       syscall3 endmacro  // ptr: file-name ptr: args ptr: env-vars -> int: success
+macro wait4      SYSWAIT4        syscall4 endmacro  // int: pid ptr: stat-addr int: options ptr: ru -> int: success
+macro exit       SYSEXIT         syscall1 endmacro  // int: exit-code -> int: success
+macro getdents   SYSGETDENTS     syscall3 endmacro  // file-desc: file-desc ptr: buffer int: length -> int: count
+macro time       SYSTIME         syscall1 endmacro  // int: address -> int: time
+macro rmdir      SYSRMDIR        syscall1 endmacro  // ptr: path -> int: success
+macro creat      SYSCREAT        syscall2 endmacro  // ptr: path int: mode -> int: success
+macro unlink     SYSUNLINK       syscall1 endmacro  // ptr: path -> int: success
+macro getdents64 SYSGETDENTS64   syscall3 endmacro  // file-desc: file-desc ptr: buffer int: length -> int: count
+macro waitid     SYSWAITID       syscall5 endmacro  // int: id-type int: pid ptr: infop int: options ptr: ru -> int: success
 
-macro ftell   0 SEEK-CUR        lseek    endmacro  // file-desc: file-desc -- int: file-pointer
+macro ftell   0 SEEK-CUR        lseek    endmacro  // file-desc: file-desc -> int: file-pointer
 
 // Non-standard wrappers
-macro fopen-r     RD-ONLY 0           fopen endmacro // ptr: str-ptr -- file-desc: file-desc
-macro fopen-w     WR-ONLY 0           fopen endmacro // ptr: str-ptr -- file-desc: file-desc
-macro fopen-rw    RDWR    0           fopen endmacro // ptr: str-ptr -- file-desc: file-desc
-macro diropen-r   RD-ONLY O_DIRECTORY fopen endmacro // ptr: str-ptr -- file-desc: file-desc
-macro diropen-w   WR-ONLY O_DIRECTORY fopen endmacro // ptr: str-ptr -- file-desc: file-desc
-macro diropen-rw  RDWR    O_DIRECTORY fopen endmacro // ptr: str-ptr -- file-desc: file-desc
+macro fopen-r     RD-ONLY 0           fopen endmacro // ptr: str-ptr -> file-desc: file-desc
+macro fopen-w     WR-ONLY 0           fopen endmacro // ptr: str-ptr -> file-desc: file-desc
+macro fopen-rw    RDWR    0           fopen endmacro // ptr: str-ptr -> file-desc: file-desc
+macro diropen-r   RD-ONLY O_DIRECTORY fopen endmacro // ptr: str-ptr -> file-desc: file-desc
+macro diropen-w   WR-ONLY O_DIRECTORY fopen endmacro // ptr: str-ptr -> file-desc: file-desc
+macro diropen-rw  RDWR    O_DIRECTORY fopen endmacro // ptr: str-ptr -> file-desc: file-desc
 
 // fopen flags
 macro O_DIRECTORY 0x1000 endmacro

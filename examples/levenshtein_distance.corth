@@ -27,8 +27,8 @@ macro REPLACE-COST 1  endmacro
 macro REMOVE-COST  1  endmacro
 
 proc rec-lev
-  // int: len-s1 int: len-s2 -- int: min
-  int int -- int
+  // int: len-s1 int: len-s2 -> int: min
+  int int -> int
 in
   // Lets say s1 is the string we modify, and s2 is the destination.
   let len1 len2 in
@@ -82,7 +82,7 @@ in
 end
 
 proc main
-  int int -- int
+  int int -> int
 in let argc argv in
   reset-remember
 

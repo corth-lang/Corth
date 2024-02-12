@@ -34,7 +34,7 @@ macro  TILDE-BUFFER-SIZE 256               endmacro
 memory tilde-buffer      TILDE-BUFFER-SIZE end
 
 
-proc debug-init -- in
+proc debug-init -> in
   // Set up the space-buffer.
   space-buffer SPACE-BUFFER-SIZE ' ' memset8
 
@@ -44,8 +44,8 @@ end
 
 
 proc generate-position
-  // int: line-no int: char-no int: at -- ptr: position
-  int int int -- ptr
+  // int: line-no int: char-no int: at -> ptr: position
+  int int int -> ptr
 in
   sizeof(position) malloc let position in
     position isn-null if
@@ -65,8 +65,8 @@ end
 
 
 proc generate-address
-  // ptr: file-name ptr: previous int: start-line int: start-char int: start-at int: end-line int: end-char int: end-at -- ptr: address
-  ptr ptr int int int int int int -- ptr
+  // ptr: file-name ptr: previous int: start-line int: start-char int: start-at int: end-line int: end-char int: end-at -> ptr: address
+  ptr ptr int int int int int int -> ptr
   // Returns a dynamicly-placed object to store the address of token.
 in
   sizeof(address) malloc let address in
@@ -93,7 +93,7 @@ end
 
 proc fput-position
   // ptr: position file-desc: file-desc
-  ptr file-desc --
+  ptr file-desc ->
   // Prints a position.
 in let position file in
   position POS.LINE + @64 file fputu ":" file fputs position POS.CHAR + @64 file fputu " (" file fputs position POS.AT + @64 file fputu ")" file fputs
@@ -102,7 +102,7 @@ end end
 
 proc seek-line
   // int: line file-desc: file-desc
-  int file-desc --
+  int file-desc ->
   // Shifts the file pointer by a specified amount of lines.
 in let file in
   memory char 1 in
@@ -118,8 +118,8 @@ end end
 
 
 proc fput-line
-  // file-desc: source file-desc: file-desc -- int: line-length
-  file-desc file-desc -- int
+  // file-desc: source file-desc: file-desc -> int: line-length
+  file-desc file-desc -> int
   // Keeps printing until a newline is found.
   // Returns the length of line read.
 in let source file in
@@ -153,7 +153,7 @@ end endmacro
 
 proc fput-address
   // ptr: address file-desc: log-stream
-  ptr file-desc --
+  ptr file-desc ->
   // Prints the formatted address of a token.
 in let address log-stream in
   address ADDR.FILE + @64 let file-name in
@@ -164,7 +164,7 @@ end end
 
 proc fput-lines
   // ptr: address file-desc: log-stream
-  ptr file-desc --
+  ptr file-desc ->
   // Prints the formatted lines of a token.
 in let address log-stream in
   address ADDR.FILE + @64 address ADDR.START + address ADDR.END + let file-name start-pos end-pos in
@@ -211,7 +211,7 @@ end end
 
 proc fput-lines-position
   // ptr: position ptr: file-name file-desc: log-stream
-  ptr ptr file-desc --
+  ptr ptr file-desc ->
   // Prints the formatted linees of a token.
 in let position file-name log-stream in
   // Add a null character for fopen.
@@ -238,8 +238,8 @@ end end
 
 
 proc fput-here
-  // ptr: address file-desc: log-stream --
-  ptr file-desc --
+  // ptr: address file-desc: log-stream ->
+  ptr file-desc ->
 in let address log-stream in
   LOG.HERE log-stream fputs address log-stream fput-address ":\n" log-stream fputs
   address log-stream fput-lines
@@ -253,14 +253,14 @@ end end
 
 
 macro fput-here-position let _position_ _file_name_ _log_stream_ in
-  // ptr: position file-desc: log-stream --
+  // ptr: position file-desc: log-stream ->
   LOG.HERE _log_stream_ fputs "At " _log_stream_ fputs _position_ _log_stream_ fput-position " in '" _log_stream_ fputs _file_name_ _file_name_ mlength _log_stream_ fputs "':\n" _log_stream_ fputs
   _position_ _file_name_ _log_stream_ fput-lines-position
 end endmacro
 
 
 macro fput-inside-procedure let _procedure_name_ _procedure_address_ _log_stream_ in
-  // ptr: _address_ ptr: _procedure_name_ ptr: _procedure_address_ file-desc: _log_stream_ --
+  // ptr: _address_ ptr: _procedure_name_ ptr: _procedure_address_ file-desc: _log_stream_ ->
   LOG.INFO _log_stream_ fputs "Inside procedure '" _log_stream_ fputs _procedure_name_ _procedure_name_ mlength _log_stream_ fputs "'.\n" _log_stream_ fputs
   LOG.HERE _log_stream_ fputs _procedure_address_ _log_stream_ fput-address ":\n" _log_stream_ fputs
 
@@ -269,8 +269,8 @@ end endmacro
 
 
 proc report-bug
-  // file-desc: file-desc --
-  file-desc --
+  // file-desc: file-desc ->
+  file-desc ->
 in let log-stream in
   LOG.ERR log-stream fputs "This should have been impossible to reach.\n" log-stream fputs
   LOG.INFO log-stream fputs "This is probably caused by a bug in the compiler.\n" log-stream fputs

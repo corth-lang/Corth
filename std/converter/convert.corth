@@ -3,8 +3,8 @@ include core/memory.corth
 
 
 proc convx
-  // ptr: start int: length ptr: address -- bool: correct
-  ptr int ptr -- bool
+  // ptr: start int: length ptr: address -> bool: correct
+  ptr int ptr -> bool
   // Converts a character array of hexadecimal number to an integer.
   // NOTE: If the number is too big, the result will be wrong.
 in let start length number in
@@ -28,8 +28,8 @@ in let start length number in
 end true end
 
 proc convud
-  // ptr: start int: length ptr: address -- bool: correct
-  ptr int ptr -- bool
+  // ptr: start int: length ptr: address -> bool: correct
+  ptr int ptr -> bool
   // Converts a character array of unsigned decimal number to an integer.
   // NOTE: If the number is too big, the result will be wrong.
 in let start length number in
@@ -41,7 +41,7 @@ in let start length number in
 end true end
 
 macro convd
-  // ptr: start int: length ptr: address -- bool: correct
+  // ptr: start int: length ptr: address -> bool: correct
   // Converts a character array of decimal number to an integer.
   // NOTE: If the number is too big, the result will be wrong.
   let _start_ _length_ _number_ in
@@ -54,8 +54,8 @@ macro convd
 endmacro
 
 proc convo
-  // ptr: start int: length ptr: address -- bool: correct
-  ptr int ptr -- bool
+  // ptr: start int: length ptr: address -> bool: correct
+  ptr int ptr -> bool
   // Converts a character array of octal number to an integer.
   // NOTE: If the number is too big, the result will be wrong.
 in let start length number in
@@ -71,8 +71,8 @@ in let start length number in
 end true end
 
 proc convb
-  // ptr: start int: length ptr: address -- bool: correct
-  ptr int ptr -- bool
+  // ptr: start int: length ptr: address -> bool: correct
+  ptr int ptr -> bool
   // Converts a character array of binary number to an integer.
   // NOTE: If the number is too big, the result will be wrong.
 in let start length number in
@@ -94,8 +94,8 @@ in let start length number in
 end true end
 
 proc convuint
-  // ptr: start int: length ptr: address -- bool: correct
-  ptr int ptr -- bool
+  // ptr: start int: length ptr: address -> bool: correct
+  ptr int ptr -> bool
   // Converts a character array of any base (binary, octal, unsigned decimal, hexadecimal) to an integer.
   // NOTE: For the number to be considered a different base, it must start with a '0' character and one of the base characters ('b', 'o' or 'x').
   // NOTE: If the number is too big, the result will be wrong.
@@ -118,8 +118,8 @@ in let start length number in
 end end
 
 proc convint
-  // ptr: start int: length ptr: address -- bool: correct
-  ptr int ptr -- bool
+  // ptr: start int: length ptr: address -> bool: correct
+  ptr int ptr -> bool
   // Converts a character array of any base (binary, octal, decimal, hexadecimal) to an integer.
   // NOTE: For the number to be considered a different base, it must start with a '0' character and one of the base characters ('b', 'o' or 'x').
   // NOTE: If the number is too big, the result will be wrong.

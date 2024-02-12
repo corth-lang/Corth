@@ -1,41 +1,41 @@
 include core/memory.corth
 include core/ptr.corth
 
-// ptr: cstr -- bool: is-empty
+// ptr: cstr -> bool: is-empty
 macro cstr.is-empty
   @8 '\0' =
 endmacro
 
-// ptr: cstr -- bool: isn-empty
+// ptr: cstr -> bool: isn-empty
 macro cstr.isn-empty
   @8 '\0' !=
 endmacro
 
-// ptr: cstr -- int: len
+// ptr: cstr -> int: len
 macro cstr.len
   let _src_ in
     _src_ while dup @8 isn-zero do inc end _src_ -
   end
 endmacro
 
-// ptr: cstr -- ptr: str-ptr int: str-len
+// ptr: cstr -> ptr: str-ptr int: str-len
 macro cstr.str
   dup cstr.len
 endmacro
 
-// ptr: cstr -- ptr: copy
+// ptr: cstr -> ptr: copy
 macro cstr.to-dynamic
   dup cstr.len to-dynamic8
 endmacro
 
-// ptr: cstr -- ptr: copy
+// ptr: cstr -> ptr: copy
 macro cstr.to-dynamic-termed
   dup cstr.len inc to-dynamic8
 endmacro
 
 proc cstr.cmp
-  // ptr: a-src ptr: b-src -- int: cmp(a, b)
-  ptr ptr -- int
+  // ptr: a-src ptr: b-src -> int: cmp(a, b)
+  ptr ptr -> int
   // Returns <0 if a<b.
   // Returns  0 if a=b.
   // Returns >0 if a>b.

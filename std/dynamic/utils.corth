@@ -11,8 +11,8 @@ include core/stack.corth
 
 
 proc dresize-up
-  // ptr: x int: length -- ptr: y
-  ptr int -- ptr
+  // ptr: x int: length -> ptr: y
+  ptr int -> ptr
   // Resizes x and creates a new dynamicly-placed collection.
   // New length must be greater than the older, otherwise undefined behaviour may be observed.
   // NOTE: If malloc fails, returns null.
@@ -27,8 +27,8 @@ end end
 
 
 proc dresize-down
-  // ptr: x int: length -- ptr: y
-  ptr int -- ptr
+  // ptr: x int: length -> ptr: y
+  ptr int -> ptr
   // Resizes x and creates a new dynamicly-placed collection.
   // New length must be less than the older, otherwise undefined behaviour may be observed.
   // NOTE: If malloc fails, returns null.
@@ -43,8 +43,8 @@ end end
 
 
 proc dresize
-  // ptr: x int: length -- ptr: y
-  ptr int -- ptr
+  // ptr: x int: length -> ptr: y
+  ptr int -> ptr
   // Resizes x and creates a new dynamicly-placed collection.
   // If the new size is less than the older size, object will be cut from its most significant bits.
   // If the new size is greater than the older size, new bits will be object's most significant bits. (But they won't be set or reset)
@@ -60,15 +60,15 @@ end end
 
 
 macro dcopy
-  // ptr: x -- ptr: y
+  // ptr: x -> ptr: y
   // Copies a dynamicly-placed collection.
   dup mlength to-dynamic8
 endmacro
 
 
 proc to-dynamic8
-  // ptr: start int: length -- ptr: x
-  ptr int -- ptr
+  // ptr: start int: length -> ptr: x
+  ptr int -> ptr
   // Creates a dynamicly-placed collection from a static or dynamic collection.
   // NOTE: If malloc fails, returns null.
 in let start length in
@@ -81,8 +81,8 @@ end end
 
 
 proc to-dynamic64
-  // ptr: start int: length -- ptr: x
-  ptr int -- ptr
+  // ptr: start int: length -> ptr: x
+  ptr int -> ptr
   // Creates a dynamicly-placed collection from a static or dynamic collection.
   // NOTE: If malloc fails, returns null.
 in let start length in
@@ -95,8 +95,8 @@ end end
 
 
 proc to-dynamic8-join
-  // ptr: a-start int: a-length ptr: b-start int: b-length -- ptr: join(a, b)
-  ptr int ptr int -- ptr
+  // ptr: a-start int: a-length ptr: b-start int: b-length -> ptr: join(a, b)
+  ptr int ptr int -> ptr
   // Joins two dynamicly-placed collections.
   // NOTE: If malloc fails, returns null.
 in let a-start a-length b-start b-length in
@@ -110,8 +110,8 @@ end end
 
 
 proc djoin
-  // ptr: a ptr: b -- ptr: join(a, b)
-  ptr ptr -- ptr
+  // ptr: a ptr: b -> ptr: join(a, b)
+  ptr ptr -> ptr
   // Joins two dynamicly-placed collections.
   // NOTE: If malloc fails, returns null.
 in let a-start b-start in
@@ -120,8 +120,8 @@ end end
 
 
 proc dappend8
-  // int: value ptr: x -- ptr: x + {value}
-  int ptr -- ptr
+  // int: value ptr: x -> ptr: x + {value}
+  int ptr -> ptr
   // Copies a dynamicly-placed collection and adds an item at the end.
   // NOTE: If malloc fails, returns null.
 in let value old in
@@ -134,8 +134,8 @@ end end
 
 
 proc dappend64
-  // int: value ptr: x -- ptr: x + {value}
-  int ptr -- ptr
+  // int: value ptr: x -> ptr: x + {value}
+  int ptr -> ptr
   // Copies a dynamicly-placed collection and adds an item at the end.
   // NOTE: If malloc fails, returns null.
 in let value old in
@@ -148,7 +148,7 @@ end end
 
 
 macro null-term8
-  // ptr: x -- ptr: x + {0}
+  // ptr: x -> ptr: x + {0}
   // Copies a dynamicly-placed collection, with a null-char at the end.
   // NOTE: If malloc fails, returns null.
   0 swp dappend8
@@ -156,7 +156,7 @@ endmacro
 
 
 macro null-term64
-  // ptr: x -- ptr: x + {0}
+  // ptr: x -> ptr: x + {0}
   // Copies a dynamicly-placed collection, with a null-char at the end.
   // NOTE: If malloc fails, returns null.
   0 swp dappend64
@@ -166,6 +166,6 @@ endmacro
 // These macros compare two dynamicly-placed collections.
 
 // See memcmp8/64 from ./libs/core/memory.corth.
-// ptr: a ptr: b -- int: cmp(a, b)
+// ptr: a ptr: b -> int: cmp(a, b)
 macro dmemcmp8  let _a_ _b_ in _a_ _a_ mlength     _b_ _b_ mlength     memcmp8-wl  end endmacro
 macro dmemcmp64 let _a_ _b_ in _a_ _a_ mlength 8 / _b_ _b_ mlength 8 / memcmp64-wl end endmacro

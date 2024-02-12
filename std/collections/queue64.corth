@@ -15,12 +15,12 @@ include core/memory.corth
 */
 
 macro queue64.get-addr
-  // int: index ptr: queue-start ptr: queue-length -- ptr: address
+  // int: index ptr: queue-start ptr: queue-length -> ptr: address
   let _queue_ _ in 8 * _queue_ + end
 endmacro
 
 macro queue64.get
-  // int: index ptr: queue-start ptr: queue-length -- int: value
+  // int: index ptr: queue-start ptr: queue-length -> int: value
   // Gets an item from a queue.
   // return queue[index]
   // NOTE: This macro assumes that the index is valid.
@@ -36,8 +36,8 @@ macro queue64.set
 endmacro
 
 proc queue64.overwrite
-  // ptr: array-start int: array-length ptr: queue-start ptr: queue-length --
-  ptr int ptr ptr --
+  // ptr: array-start int: array-length ptr: queue-start ptr: queue-length ->
+  ptr int ptr ptr ->
 in let array-start array-length queue-start queue-length in
   array-start queue-start array-length memcpy64
   array-length queue-length !64
@@ -45,7 +45,7 @@ end end
 
 proc queue64.insert
   // int: byte-to-insert int: index-to-insert ptr: queue-start ptr: queue-length
-  int int ptr ptr --
+  int int ptr ptr ->
   // Inserts an item to a queue.
   // queue.insert(value, index)
   // NOTE: This procedure assumes that the queue has enough space to insert item.
@@ -59,8 +59,8 @@ in let value index queue-start queue-length in
 end end
 
 proc queue64.pop
-  // int: index-to-pop ptr: queue-start ptr: queue-length -- int: value
-  int ptr ptr -- int
+  // int: index-to-pop ptr: queue-start ptr: queue-length -> int: value
+  int ptr ptr -> int
   // Pops an item from a queue.
   // return queue.pop(index)
 in let index queue-start queue-length in

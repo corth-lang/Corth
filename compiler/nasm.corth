@@ -2,14 +2,14 @@ include stack_item.corth
 
 
 proc is-signed-dword
-  int -- bool
+  int -> bool
 in let value in
   value 0x7fffffff <= value 0x7fffffff neg >= &
 end end
 
 
 proc global-label
-  ptr -- ptr
+  ptr -> ptr
 in let name in
   name mlength 7 + malloc let object in
     object is-null if
@@ -36,7 +36,7 @@ end end
 
 
 proc convert-alpha
-  ptr -- ptr
+  ptr -> ptr
 in let name in
   name mlength malloc let object in
     object is-null if
@@ -61,7 +61,7 @@ end end
 
 
 proc fput-alpha
-  ptr file-desc --
+  ptr file-desc ->
 in let file in
   convert-alpha let object in
     object object mlength file fputs
@@ -73,7 +73,7 @@ end end
 
 proc nasm.level
   // int: id file-desc: output-file
-  int file-desc --
+  int file-desc ->
 in let output-file in
   ".level_" output-file fputs output-file fputu ":\n" output-file fputs
 end end
@@ -81,7 +81,7 @@ end end
 
 proc nasm.jump-level
   // int: id file-desc: output-file
-  int file-desc --
+  int file-desc ->
 in let output-file in
   "    jmp     .level_" output-file fputs output-file fputu output-file fputnl
 end end
@@ -89,7 +89,7 @@ end end
 
 proc nasm.jump-zero-level
   // int: id file-desc: output-file
-  int file-desc --
+  int file-desc ->
 in let output-file in
   "    jz      .level_" output-file fputs output-file fputu output-file fputnl
 end end
@@ -97,7 +97,7 @@ end end
 
 proc nasm.mov-reg-zero
   // ptr: register-name int: register-name-length file-desc: output-file
-  ptr int file-desc --
+  ptr int file-desc ->
 in let register-name register-name-length output-file in
   "    xor     " output-file fputs register-name register-name-length output-file fputs
   ", " output-file fputs register-name register-name-length output-file fputs output-file fputnl
@@ -106,7 +106,7 @@ end end
 
 proc nasm.mov-reg-immediate
   // int: immediate ptr: register-name int: register-name-length file-desc: output-file
-  int ptr int file-desc --
+  int ptr int file-desc ->
 in let immediate register-name register-name-length output-file in
   immediate is-zero if
     register-name register-name-length output-file nasm.mov-reg-zero
@@ -119,7 +119,7 @@ end end
 
 proc nasm.mov-reg-global-address
   // ptr: global-name ptr: register-name int: register-name-length file-desc: output-file
-  ptr ptr int file-desc --
+  ptr ptr int file-desc ->
 in let global-name register-name register-name-length output-file in
   "    mov     " output-file fputs register-name register-name-length output-file fputs
   ", global_" output-file fputs global-name output-file fput-alpha output-file fputnl
@@ -128,7 +128,7 @@ end end
 
 proc nasm.mov-reg-local
   // int: offset ptr: register-name int: register-name-length file-desc: output-file
-  int ptr int file-desc --
+  int ptr int file-desc ->
 in let offset register-name register-name-length output-file in
   "    mov     " output-file fputs register-name register-name-length output-file fputs ", [local_ptr]\n" output-file fputs
 
@@ -140,7 +140,7 @@ end end
 
 proc nasm.mov-reg-@64local
   // int: offset ptr: register-name int: register-name-length file-desc: output-file
-  int ptr int file-desc --
+  int ptr int file-desc ->
 in let offset register-name register-name-length output-file in
   "    mov     " output-file fputs register-name register-name-length output-file fputs ", [local_ptr]\n" output-file fputs
   "    mov     " output-file fputs register-name register-name-length output-file fputs
@@ -156,7 +156,7 @@ end end
 
 proc nasm.mov-reg-@64global
   // ptr: global ptr: register-name int: register-name-length file-desc: output-file
-  ptr ptr int file-desc --
+  ptr ptr int file-desc ->
 in let global register-name register-name-length output-file in
   "    mov     " output-file fputs register-name register-name-length output-file fputs
   ", [global_" output-file fputs global output-file fput-alpha "]\n" output-file fputs
@@ -165,7 +165,7 @@ end end
 
 proc nasm.mov-reg-data
   // int: index ptr: register-name int: register-name-length file-desc: output-file
-  int ptr int file-desc --
+  int ptr int file-desc ->
 in let index register-name register-name-length output-file in
   "    mov     " output-file fputs register-name register-name-length output-file fputs
   ", data_" output-file fputs index output-file fputu output-file fputnl
@@ -174,7 +174,7 @@ end end
 
 proc nasm.mov-reg-item
   // ptr: item ptr: register-name int: register-name-length file-desc: output-file
-  ptr ptr int file-desc --
+  ptr ptr int file-desc ->
 in let item register-name register-name-length output-file in
   item get-mode MODE-REAL = if
     "    pop     " output-file fputs register-name register-name-length output-file fputs output-file fputnl
@@ -196,7 +196,7 @@ end end
 
 proc nasm.push-int-immediate
   // int: immediate file-desc: output-file
-  int file-desc --
+  int file-desc ->
   // NOTE: Uses R15.
 in let immediate output-file in
   immediate is-signed-dword if
@@ -210,7 +210,7 @@ end end
 
 proc nasm.push-global-address
   // ptr: global-name file-desc: output-file
-  ptr file-desc --
+  ptr file-desc ->
 in let global output-file in
   "    push    global_" output-file fputs global output-file fput-alpha output-file fputnl
 end end
@@ -218,7 +218,7 @@ end end
 
 proc nasm.push-@64local
   // int: offset file-desc: output-file
-  int file-desc --
+  int file-desc ->
 in let offset output-file in
   "    mov     r15, [local_ptr]\n" output-file fputs
   "    push    qword [r15" output-file fputs
@@ -233,7 +233,7 @@ end end
 
 proc nasm.push-@8local
   // int: offset file-desc: output-file
-  int file-desc --
+  int file-desc ->
 in let offset output-file in
   "rax" output-file nasm.mov-reg-zero
   "    mov     r15, [local_ptr]\n" output-file fputs
@@ -250,7 +250,7 @@ end end
 
 proc nasm.push-@64global
   // ptr: global-name file-desc: output-file
-  ptr file-desc --
+  ptr file-desc ->
 in let global output-file in
   "    push    qword [global_" output-file fputs global output-file fput-alpha "]\n" output-file fputs
 end end
@@ -258,7 +258,7 @@ end end
 
 proc nasm.push-@8global
   // ptr: global-name file-desc: output-file
-  ptr file-desc --
+  ptr file-desc ->
 in let global output-file in
   "rax" output-file nasm.mov-reg-zero
   "    mov    al, byte [global_" output-file fputs global output-file fput-alpha "]\n" output-file fputs
@@ -268,7 +268,7 @@ end end
 
 proc nasm.push-local
   // int: offset file-desc: output-file
-  int file-desc --
+  int file-desc ->
 in let offset output-file in
   "    push    qword [local_ptr]\n" output-file fputs
 
@@ -280,7 +280,7 @@ end end
 
 proc nasm.push-data
   // int: index file-desc: output-file
-  int file-desc --
+  int file-desc ->
 in let index output-file in
   "    push    qword data_" output-file fputs index output-file fputu output-file fputnl
 end end
@@ -288,7 +288,7 @@ end end
 
 proc nasm.push-int
   // ptr: item file-desc: output-file
-  ptr file-desc --
+  ptr file-desc ->
 in let item output-file in
   item get-mode MODE-IMM              = if item get-arg1 output-file nasm.push-int-immediate
   else item get-mode MODE-GLOBAL      = if item get-arg1 output-file nasm.push-global-address
@@ -308,7 +308,7 @@ end end
 
 proc nasm.push-bool
   // ptr: item file-desc: output-file
-  ptr file-desc --
+  ptr file-desc ->
 in let item output-file in
   item get-mode MODE-@LOCALCONST = if
     item get-arg1 output-file nasm.push-@64local
@@ -323,7 +323,7 @@ end end
 
 proc nasm.push
   // ptr: item file-desc: output-file
-  ptr file-desc --
+  ptr file-desc ->
 in let item output-file in
   item output-file
        item get-type INT-TYPE-INT  = if nasm.push-int
@@ -338,7 +338,7 @@ end end
 
 proc nasm.convert-int-to-real
   // ptr: item file-desc: output-file
-  ptr file-desc --
+  ptr file-desc ->
 in let item output-file in
   item output-file nasm.push-int
 
@@ -348,7 +348,7 @@ end end
 
 proc nasm.convert-bool-to-real
   // ptr: item file-desc: output-file
-  ptr file-desc --
+  ptr file-desc ->
 in let item output-file in
   item output-file nasm.push-bool
 
@@ -358,7 +358,7 @@ end end
 
 proc nasm.convert-item-to-real
   // ptr: item file-desc: output-file
-  ptr file-desc --
+  ptr file-desc ->
 in let item output-file in
   item output-file
        item get-type INT-TYPE-INT  = if nasm.convert-int-to-real
@@ -373,7 +373,7 @@ end end
 
 proc nasm.add-int-immediate
   // int: immediate file-desc: output-file
-  int file-desc --
+  int file-desc ->
 in let immediate output-file in
   immediate is-zero if return end
 

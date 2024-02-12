@@ -15,7 +15,7 @@ include core/stack.corth
 
 proc queue64.sort
   // ptr: queue-start ptr: queue-length
-  ptr ptr --
+  ptr ptr ->
   // Sorts an array using bubble sort ( :( )
 in
   @64 let queue-start queue-length in
@@ -35,7 +35,7 @@ end
 
 proc squeue64.append
   // int: value ptr: queue-start ptr: queue-length
-  int ptr ptr --
+  int ptr ptr ->
   // Appends an item to a sorted array.
 in let value queue-start queue-length in
   value value queue-start queue-start queue-length @64 8 * + sorted64.available drop queue-start - 8 / queue-start queue-length queue64.insert

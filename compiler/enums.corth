@@ -67,7 +67,7 @@ macro KEYWORD-ENDMACRO-STR "endmacro"  endmacro
 macro KEYWORD-PROC-STR     "proc"      endmacro
 macro KEYWORD-END-STR      "end"       endmacro
 macro KEYWORD-RETURN-STR   "return"    endmacro
-macro KEYWORD-RETURNS-STR  "--"        endmacro
+macro KEYWORD-RETURNS-STR  "->"        endmacro
 macro KEYWORD-MEMORY-STR   "memory"    endmacro
 macro KEYWORD-AND-STR      "and"       endmacro
 macro KEYWORD-IN-STR       "in"        endmacro
@@ -157,8 +157,8 @@ macro INT-TYPE-INT-SIZEOF         8 endmacro
 macro INT-TYPE-BOOL-SIZEOF        8 endmacro
 
 proc get-type-name
-  // int: type -- ptr: type-name-ptr int: type-name-length
-  int -- ptr int
+  // int: type -> ptr: type-name-ptr int: type-name-length
+  int -> ptr int
 in let type in
        type TYPE-NAME      = if TYPE-NAME-STR
   else type TYPE-INTEGER   = if TYPE-INTEGER-STR
@@ -171,8 +171,8 @@ in let type in
 end end
 
 proc get-keyword-name
-  // int: keyword -- ptr: keyword-name-ptr int: keyword-name-length
-  int -- ptr int
+  // int: keyword -> ptr: keyword-name-ptr int: keyword-name-length
+  int -> ptr int
 in let keyword in
        keyword KEYWORD-INCLUDE  = if KEYWORD-INCLUDE-STR
   else keyword KEYWORD-MACRO    = if KEYWORD-MACRO-STR
@@ -196,8 +196,8 @@ in let keyword in
 end end
 
 proc get-intrinsic-name
-  // int: intrinsic -- ptr: intrinsic-name-ptr int: intrinsic-name-length
-  int -- ptr int
+  // int: intrinsic -> ptr: intrinsic-name-ptr int: intrinsic-name-length
+  int -> ptr int
 in let intrinsic in
        intrinsic INTRINSIC-ADD      = if INTRINSIC-ADD-STR
   else intrinsic INTRINSIC-SUB      = if INTRINSIC-SUB-STR
@@ -226,8 +226,8 @@ in let intrinsic in
 end end
 
 proc get-int-type-name
-  // int: int-type -- ptr: int-type-name-ptr int: int-type-name-length
-  int -- ptr int
+  // int: int-type -> ptr: int-type-name-ptr int: int-type-name-length
+  int -> ptr int
 in let int-type in
        int-type INT-TYPE-INT  = if INT-TYPE-INT-STR
   else int-type INT-TYPE-BOOL = if INT-TYPE-BOOL-STR
@@ -236,8 +236,8 @@ in let int-type in
 end end
 
 proc get-int-type-sizeof
-  // int: int-type -- int: int-type-sizeof
-  int -- int
+  // int: int-type -> int: int-type-sizeof
+  int -> int
 in let int-type in
        int-type INT-TYPE-INT  = if INT-TYPE-INT-SIZEOF
   else int-type INT-TYPE-BOOL = if INT-TYPE-BOOL-SIZEOF
@@ -275,7 +275,7 @@ end endmacro
 
 proc fput-token
   // int: token-type [int|ptr]: token-arg file-desc: file-desc
-  int int file-desc --
+  int int file-desc ->
 in let token-type token-arg file_ in
   token-type file_ fput-type " '" file_ fputs
 
@@ -299,8 +299,8 @@ in let token-type token-arg file_ in
 end end
 
 proc get-type-size-modifier
-  // int: int-type -- ptr: int-type-size-mod-address int: int-type-size-mod-length
-  int -- ptr int
+  // int: int-type -> ptr: int-type-size-mod-address int: int-type-size-mod-length
+  int -> ptr int
 in let type in
   type INT-TYPE-INT = if       "qword"
   else type INT-TYPE-BOOL = if "word"
