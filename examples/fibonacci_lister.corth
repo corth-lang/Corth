@@ -19,8 +19,8 @@
 */
 
 
-include linux_x86/stdio.corth
-include core/stack.corth
+include "linux_x86/stdio.corth"
+include "core/stack.corth"
 
 
 // Lists the first N numbers from the fibonacci sequence.

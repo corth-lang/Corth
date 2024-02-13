@@ -39,7 +39,7 @@ Found better, 871. This number requires 178 steps
 */
 
 
-include linux_x86/stdio.corth
+include "linux_x86/stdio.corth"
 
 
 macro START 1        endmacro

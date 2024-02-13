@@ -1,10 +1,10 @@
-include linux_x86/stdio.corth
-include core/stack.corth
+include "linux_x86/stdio.corth"
+include "core/stack.corth"
 
 macro malloc.ARRAY-SIZE       0x4000 endmacro
 macro malloc.AVAIL-QUEUE-SIZE 0x100  endmacro
-include dynamic/malloc.corth
-include dynamic/debug_malloc.corth
+include "dynamic/malloc.corth"
+include "dynamic/debug_malloc.corth"
 
 proc allocate-space
   int -> ptr

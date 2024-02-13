@@ -1,11 +1,11 @@
 macro malloc.ARRAY-SIZE       0x1000 endmacro
 macro malloc.AVAIL-QUEUE-SIZE 0x100  endmacro
-include dynamic/malloc.corth
+include "dynamic/malloc.corth"
 
 macro string-builder.RESIZING 64 endmacro
-include stream_buffer.corth
+include "stream_buffer.corth"
 
-include linux_x86/stdio.corth
+include "linux_x86/stdio.corth"
 
 proc main
   int int -> int

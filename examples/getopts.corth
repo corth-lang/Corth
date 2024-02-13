@@ -1,9 +1,9 @@
 macro malloc.ARRAY-SIZE 0x1000 endmacro
 macro malloc.AVAIL-QUEUE-SIZE 0x100 endmacro
 
-include dynamic/malloc.corth
-include linux_x86/stdio.corth
-include getopts.corth
+include "dynamic/malloc.corth"
+include "linux_x86/stdio.corth"
+include "getopts.corth"
 
 proc main
   int int -> int

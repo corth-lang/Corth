@@ -1,6 +1,6 @@
-include dynamic/utils.corth
-include linux_x86/io/output.corth
-include core/stack.corth
+include "dynamic/utils.corth"
+include "linux_x86/io/output.corth"
+include "core/stack.corth"
 
 macro sizeof(position) 24 endmacro
 macro sizeof(address)  64 endmacro

@@ -1,6 +1,6 @@
-include linux_x86/sys.corth
-include linux_x86/io/output.corth
-include linux_x86/io/input.corth
+include "linux_x86/sys.corth"
+include "linux_x86/io/output.corth"
+include "linux_x86/io/input.corth"
 
 
 macro  putnl STDOUT fputnl endmacro  //

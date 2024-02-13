@@ -1,6 +1,6 @@
-include core/ptr.corth
-include cstr.corth
-include string_builder.corth
+include "core/ptr.corth"
+include "cstr.corth"
+include "string_builder.corth"
 
 // path.merge.builder string-builder objects are not designed to have a long life time, unlike a list.
 

@@ -8,10 +8,10 @@ Since Corth does not have floating point aritmetic (and since its hard), a fixed
 */
 
 
-include linux_x86/stdio.corth
-include math/complex.corth
-include math/fixed64.corth
-include core/stack.corth
+include "linux_x86/stdio.corth"
+include "math/complex.corth"
+include "math/fixed64.corth"
+include "core/stack.corth"
 
 
 macro MAX-ITERATION 55  endmacro

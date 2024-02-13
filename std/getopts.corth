@@ -72,9 +72,9 @@ corth -i./src compile -r ./src/example.corth --output=./bin/output
 corth --asm=gas bootstrap --min=3 -t -s=$corth/Corth/compiler/corth.corth -t=$corth/Corth/corth
 */
 
-include dynamic/utils.corth
-include collections/str_map64.corth
-include cstr.corth
+include "dynamic/utils.corth"
+include "collections/str_map64.corth"
+include "cstr.corth"
 
 memory getopts.keys   2048        end
 memory getopts.values 2048        end

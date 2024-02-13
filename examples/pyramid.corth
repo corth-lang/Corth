@@ -20,8 +20,8 @@ The output of this program should look like:
 */
 
 
-include linux_x86/stdio.corth
-include core/stack.corth
+include "linux_x86/stdio.corth"
+include "core/stack.corth"
 
 
 proc main

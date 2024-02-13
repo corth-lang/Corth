@@ -6,9 +6,6 @@
 
 */
 
-include core/arithmetic.corth
-include core/stack.corth
-
 macro file-desc            int endmacro
 
 macro sizeof(file-desc)      8 endmacro

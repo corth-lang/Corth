@@ -1,5 +1,5 @@
-include collections/sorted64.corth
-include memory.corth
+include "collections/sorted64.corth"
+include "memory.corth"
 
 /*
   map64 library for Corth

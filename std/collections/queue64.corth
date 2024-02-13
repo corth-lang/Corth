@@ -1,6 +1,6 @@
-include core/ptr.corth
-include core/stack.corth
-include core/memory.corth
+include "core/ptr.corth"
+include "core/stack.corth"
+include "core/memory.corth"
 
 
 /*

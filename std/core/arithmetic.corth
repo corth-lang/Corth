@@ -1,6 +1,6 @@
-include core/boolean.corth
-include core/stack.corth
-include core/integer.corth
+include "core/boolean.corth"
+include "core/stack.corth"
+include "core/integer.corth"
 
 
 // TODO: Some of these macros should be implemented back as intrinsics later.

@@ -1,5 +1,5 @@
-include core/memory.corth
-include collections/array64.corth
+include "core/memory.corth"
+include "collections/array64.corth"
 
 macro list64.RESIZING 16 endmacro
 

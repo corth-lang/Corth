@@ -1,7 +1,7 @@
-include core/ptr.corth
-include core/arithmetic.corth
-include collections/array8.corth
-include collections/array64.corth
+include "core/ptr.corth"
+include "core/arithmetic.corth"
+include "collections/array8.corth"
+include "collections/array64.corth"
 
 
 proc memcmp8

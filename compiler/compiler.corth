@@ -1,27 +1,27 @@
-include linux_x86/sys.corth
-include linux_x86/io/output.corth
-include linux_x86/io/input.corth
-include core/stack.corth
-include core/arithmetic.corth
-include core/memory.corth
+include "linux_x86/sys.corth"
+include "linux_x86/io/output.corth"
+include "linux_x86/io/input.corth"
+include "core/stack.corth"
+include "core/arithmetic.corth"
+include "core/memory.corth"
 
-include dynamic/malloc.corth
-include dynamic/utils.corth
+include "dynamic/malloc.corth"
+include "dynamic/utils.corth"
 
 macro string-builder.RESIZING 64 endmacro
 
-include linux_x86/path.corth
+include "linux_x86/path.corth"
 
-include collections/list64.corth
-include collections/deque64.corth
-include collections/queue64.corth
-include collections/str_map64.corth
-include collections/str_set8.corth
+include "collections/list64.corth"
+include "collections/deque64.corth"
+include "collections/queue64.corth"
+include "collections/str_map64.corth"
+include "collections/str_set8.corth"
 
-include lexer.corth
-include debug.corth
-include enums.corth
-include local_stack.corth
+include "lexer.corth"
+include "debug.corth"
+include "enums.corth"
+include "local_stack.corth"
 
 
 // NOTE: Designed to be used inside 'compile-procedure'. Variable names used inside this macro should not be changed as they come from 'compile-procedure'.
@@ -2113,7 +2113,7 @@ in
             "a 'name' for include path" false compile-file.get-next-token
 
             let path-token-type path-token-address path-token-arg in
-              path-token-type path-token-address "as path after 'include'" TYPE-NAME compile-file.check-type-here
+              path-token-type path-token-address "as path after 'include'" TYPE-STRING compile-file.check-type-here
               memory found 1 in
                 0 found !8
 

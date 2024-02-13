@@ -12,7 +12,7 @@ NOTE: Unless it is said to be otherwise, all fixed numbers are signed.
 
 */
 
-include math/fixed64.corth
+include "math/fixed64.corth"
 
 macro comp         fixed64 fixed64 endmacro
 macro sizeof(comp) 16              endmacro

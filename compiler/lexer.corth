@@ -1,5 +1,5 @@
-include enums.corth
-include debug.corth
+include "enums.corth"
+include "debug.corth"
 
 
 proc fgets-keep

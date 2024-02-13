@@ -1,5 +1,5 @@
-include core/stack.corth
-include math/constants.corth
+include "core/stack.corth"
+include "math/constants.corth"
 
 /*
 

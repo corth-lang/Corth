@@ -1,5 +1,5 @@
-include core/memory.corth
-include core/ptr.corth
+include "core/memory.corth"
+include "core/ptr.corth"
 
 // ptr: cstr -> bool: is-empty
 macro cstr.is-empty

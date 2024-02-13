@@ -9,8 +9,8 @@
 
 // malloc.avail-queue is a sorted queue that contains the pointers of the unused blocks.
 
-include collections/queue64.corth
-include collections/sorted64.corth
+include "collections/queue64.corth"
+include "collections/sorted64.corth"
 
 memory malloc.array              malloc.ARRAY-SIZE       end
 memory malloc.avail-queue-array  malloc.AVAIL-QUEUE-SIZE end

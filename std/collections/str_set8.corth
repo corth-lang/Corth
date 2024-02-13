@@ -1,5 +1,5 @@
-include collections/list64.corth
-include collections/str_sorted8.corth
+include "collections/list64.corth"
+include "collections/str_sorted8.corth"
 
 // Sets are sorted list objects with exactly 0 or 1 one of each instance.
 // str objects must be dynamic objects.

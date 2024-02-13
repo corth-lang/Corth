@@ -1,14 +1,14 @@
-include linux_x86/stdio.corth
-include linux_x86/sys.corth
-include core/stack.corth
-include random.corth
+include "linux_x86/stdio.corth"
+include "linux_x86/sys.corth"
+include "core/stack.corth"
+include "random.corth"
 
 macro malloc.ARRAY-SIZE       0x4000000 endmacro
 macro malloc.AVAIL-QUEUE-SIZE 0x4000 endmacro
-include dynamic/malloc.corth
-include dynamic/utils.corth
+include "dynamic/malloc.corth"
+include "dynamic/utils.corth"
 
-include collections/list64.corth
+include "collections/list64.corth"
 
 
 proc putl

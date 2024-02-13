@@ -7,8 +7,8 @@
 */
 
 
-include core/integer.corth
-include core/ptr.corth
+include "core/integer.corth"
+include "core/ptr.corth"
 
 
 macro array64.get-addr

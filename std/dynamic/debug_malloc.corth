@@ -1,6 +1,6 @@
-include linux_x86/sys.corth
-include linux_x86/io/output.corth
-include dynamic/malloc.corth
+include "linux_x86/sys.corth"
+include "linux_x86/io/output.corth"
+include "dynamic/malloc.corth"
 
 
 // Can be used to debug malloc segments.

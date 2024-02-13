@@ -1,14 +1,14 @@
 macro malloc.ARRAY-SIZE       0x800000 endmacro
 macro malloc.AVAIL-QUEUE-SIZE 0x100000 endmacro
-include dynamic/malloc.corth
-include dynamic/utils.corth
+include "dynamic/malloc.corth"
+include "dynamic/utils.corth"
 
-include linux_x86/subprocess.corth
-include linux_x86/stdio.corth
-include cstr.corth
-include getopts.corth
+include "linux_x86/subprocess.corth"
+include "linux_x86/stdio.corth"
+include "cstr.corth"
+include "getopts.corth"
 
-include compiler.corth
+include "compiler.corth"
 
 
 macro EXIT-SUCCESS 0 endmacro

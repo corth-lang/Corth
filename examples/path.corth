@@ -1,12 +1,12 @@
 macro malloc.ARRAY-SIZE       0x4000 endmacro
 macro malloc.AVAIL-QUEUE-SIZE 0x100  endmacro
-include dynamic/malloc.corth
+include "dynamic/malloc.corth"
 
 macro string-builder.RESIZING 64 endmacro
 macro path.merge.BUFFER-SIZE 0x400 endmacro
 
-include linux_x86/stdio.corth
-include linux_x86/path.corth
+include "linux_x86/stdio.corth"
+include "linux_x86/path.corth"
 
 proc main
   int int -> int

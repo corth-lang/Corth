@@ -1,7 +1,7 @@
-include core/memory.corth
-include dynamic/utils.corth
-include collections/array64.corth
-include cstr.corth
+include "core/memory.corth"
+include "dynamic/utils.corth"
+include "collections/array64.corth"
+include "cstr.corth"
 
 // string-builder is not designed to have a long life, unlike a list.
 // This library requires malloc.

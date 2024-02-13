@@ -1,7 +1,7 @@
-include collections/list64.corth
-include linux_x86/sys.corth
-include core/ptr.corth
-include cstr.corth
+include "collections/list64.corth"
+include "linux_x86/sys.corth"
+include "core/ptr.corth"
+include "cstr.corth"
 
 
 macro subprocess.init

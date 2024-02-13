@@ -1,6 +1,6 @@
-include collections/queue64.corth
-include collections/sorted64.corth
-include core/stack.corth
+include "collections/queue64.corth"
+include "collections/sorted64.corth"
+include "core/stack.corth"
 
 
 /*
