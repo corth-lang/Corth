@@ -93,7 +93,9 @@ macro INTRINSIC-UMUL     7  endmacro
 macro INTRINSIC-UMUL2    8  endmacro
 macro INTRINSIC-UDIV     9  endmacro
 macro INTRINSIC-UMOD     10 endmacro
-macro INTRINSIC-BOR      16 endmacro
+macro INTRINSIC-BOR      14 endmacro
+macro INTRINSIC-BAND     15 endmacro
+macro INTRINSIC-BXOR     16 endmacro
 macro INTRINSIC-BNOT     17 endmacro
 macro INTRINSIC-LOAD8    18 endmacro
 macro INTRINSIC-STORE8   19 endmacro
@@ -124,6 +126,8 @@ macro INTRINSIC-UMUL2-STR    "u*2"       endmacro
 macro INTRINSIC-UDIV-STR     "u/"        endmacro
 macro INTRINSIC-UMOD-STR     "u%"        endmacro
 macro INTRINSIC-BOR-STR      "||"        endmacro
+macro INTRINSIC-BAND-STR     "&&"        endmacro
+macro INTRINSIC-BXOR-STR     "^^"        endmacro
 macro INTRINSIC-BNOT-STR     "!!"        endmacro
 macro INTRINSIC-LOAD8-STR    "@8"        endmacro
 macro INTRINSIC-STORE8-STR   "!8"        endmacro
@@ -205,6 +209,8 @@ in let intrinsic in
   else intrinsic INTRINSIC-DIV      = if INTRINSIC-DIV-STR
   else intrinsic INTRINSIC-MOD      = if INTRINSIC-MOD-STR
   else intrinsic INTRINSIC-BOR      = if INTRINSIC-BOR-STR
+  else intrinsic INTRINSIC-BAND     = if INTRINSIC-BAND-STR
+  else intrinsic INTRINSIC-BXOR     = if INTRINSIC-BXOR-STR
   else intrinsic INTRINSIC-BNOT     = if INTRINSIC-BNOT-STR
   else intrinsic INTRINSIC-LOAD8    = if INTRINSIC-LOAD8-STR
   else intrinsic INTRINSIC-STORE8   = if INTRINSIC-STORE8-STR
@@ -222,7 +228,7 @@ in let intrinsic in
   else intrinsic INTRINSIC-SYSCALL5 = if INTRINSIC-SYSCALL5-STR
   else intrinsic INTRINSIC-SYSCALL6 = if INTRINSIC-SYSCALL6-STR
   else                                   INTRINSIC-UNKNOWN-STR
-  end end end end end end end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end end end end end end end end end
 end end
 
 proc get-int-type-name

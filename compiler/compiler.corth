@@ -743,6 +743,44 @@ in
       item2 stack-item.mfree
     end
 
+  else token-arg INTRINSIC-BAND = if
+    // -------- Intrinsic '&&' --------
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+    
+    pop-item pop-item let item1 item2 in
+      item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+
+      INT-TYPE-INT push-real
+
+      item2 "rax" output-file nasm.mov-reg-item
+      item1       output-file nasm.push-int
+
+      "    and     [rsp], rax\n" output-file fputs
+
+      item1 stack-item.mfree
+      item2 stack-item.mfree
+    end
+    
+  else token-arg INTRINSIC-BXOR = if
+    // -------- Intrinsic '^^' --------
+    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+    
+    pop-item pop-item let item1 item2 in
+      item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+      item2 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
+
+      INT-TYPE-INT push-real
+
+      item2 "rax" output-file nasm.mov-reg-item
+      item1       output-file nasm.push-int
+
+      "    xor     [rsp], rax\n" output-file fputs
+
+      item1 stack-item.mfree
+      item2 stack-item.mfree
+    end
+
   else token-arg INTRINSIC-BNOT = if
     // -------- Intrinsic '!!' --------
 
@@ -978,7 +1016,7 @@ in
     token-address log-stream fput-here
     procedure-name procedure-address log-stream fput-inside-procedure
     ERROR-EXIT-CODE exit drop
-  end end end end end end end end end end end end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end end end end end end end end end end end end end end
 end end
 
 

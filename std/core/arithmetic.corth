@@ -35,14 +35,6 @@ macro u!= !=                              endmacro
 
 // -------------------------------------------------------------
 
-// int: x int: y -> int: op(x, y)
-// uint: x uint: y -> uint: op(x, y)
-
-macro ^^  let _a_ _b_ in _a_ !! _b_ !! || !! _a_ _b_ || !! || !!  end endmacro
-macro &&  let _a_ _b_ in _a_ !! _b_ !! || !! end endmacro
-
-// -------------------------------------------------------------
-
 // int: x -> bool: f(x)
 // fixed64: x -> bool: f(x)
 macro is-pos   0 >   endmacro
