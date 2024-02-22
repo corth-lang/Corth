@@ -248,11 +248,23 @@ This will compile the compiler source code and place it at *./corth*.
      // Otherwise, the stack values will be stored in local memory and loaded inside the structure.
      3 4 let x y in
        x y * x + y -
-     end puti
-     // 
+     end
+     // Stack = { 10 }
 
 - `let` keyword stores stack items in local memory. The stored values can not be modified but can be read later.
-- When any `let` variable is called, it directly returns its value, unlike a `memory` variable which returns its address.
+- When any `let` variable is called, it directly returns its value; unlike a `memory` variable which returns its address.
+
+### Peek:
+
+     // The rightmost variable collects the newest item in the stack. So x = 3 and y = 4.
+     // From now on, x will be replaced with 3 and y will be replaced with 4.
+     3 4 peek x y in
+       x y * x + y -
+     end
+     // Stack = { 3, 4, 10 }
+
+- `peek` works very similar to `let`, except it does not pop the items from the stack. This allows it to directly load them from the stack instead of using the local memory.
+- When any `peek` variable is called, it directly returns its value; just like `let`.
 
 ### Static memory management:
 
@@ -309,9 +321,9 @@ This will compile the compiler source code and place it at *./corth*.
     // Assume this is inside a procedure.
     100 malloc let buffer in  // Allocate 100 bytes of memory and save the object pointer as a constant named `buffer`.
       // Loop through every byte in `buffer`.
-      buffer while dup buffer 100 + < do let address in
+      buffer while dup buffer 100 + < do peek address in
         0x67 address !8  // Set the byte to 0x67.
-      address end inc end drop
+      end inc end drop
 
       buffer mfree drop // Deallocate the space.
     end

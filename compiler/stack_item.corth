@@ -19,6 +19,8 @@ macro MODE-@LOCALCONST      8 endmacro
 
 macro MODE-DATA             9 endmacro
 
+macro MODE-PEEKED          10 endmacro
+
 
 proc stack-item.mfree
   // ptr: item ->

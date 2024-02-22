@@ -307,6 +307,7 @@ in let
     else buffer buffer-size KEYWORD-AND-STR        memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-AND
     else buffer buffer-size KEYWORD-IN-STR         memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-IN
     else buffer buffer-size KEYWORD-LET-STR        memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-LET
+    else buffer buffer-size KEYWORD-PEEK-STR       memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-PEEK
     else buffer buffer-size KEYWORD-IF-STR         memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-IF
     else buffer buffer-size KEYWORD-ELSE-STR       memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-ELSE
     else buffer buffer-size KEYWORD-WHILE-STR      memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-WHILE
@@ -355,7 +356,7 @@ in let
 
     // This is nightmare fuel.
     end end end end end end end end end end end end end end end end end end end end end end end end end
-    end end end end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end end end end end
 
     let token-type token-arg in
       // Generate the address and return.

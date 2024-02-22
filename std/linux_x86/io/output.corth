@@ -106,10 +106,10 @@ in let file in
 
     dup end-of-buffer !64
 
-    while dup buffer >= do let i in
+    while dup buffer >= do peek i in
       value @64 10 % int-to-ddigit i !8
       value @64 10 / value !64
-    i end dec end drop
+    end dec end drop
 
     buffer inc end-of-buffer @64 buffer - file fputs
   end end end

@@ -4,7 +4,7 @@ proc main
   int int -> int
 in let argc argv in
   memory char 1 in
-    1 while char 1 gets drop char @8 '\n' = do let i in
+    1 while char 1 gets drop char @8 '\n' = do peek i in
       i 15 % is-zero if
         "FizzBuzz\n" puts
       else i 3 % is-zero if
@@ -14,6 +14,6 @@ in let argc argv in
       else
         i putu putnl
       end end end
-    i end inc end drop
+    end inc end drop
   end
 end 0 end

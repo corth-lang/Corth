@@ -138,10 +138,10 @@ proc memcpy8
   ptr ptr int ->
 in
   let src dst len in
-    0 while dup len < do let i in
+    0 while dup len < do peek i in
       src i + @8
       dst i + !8
-    i end inc end drop
+    end inc end drop
   end
 end
 
@@ -155,10 +155,10 @@ proc memcpy64
   ptr ptr int ->
 in
   let src dst len in
-    0 while dup len 8 * < do let i in
+    0 while dup len 8 * < do peek i in
       src i + @64
       dst i + !64
-    i end 8 + end drop
+    end 8 + end drop
   end
 end
 
@@ -202,9 +202,9 @@ proc memswp8
   ptr ptr int ->
 in
   let a b len in
-    0 while dup len < do let i in
+    0 while dup len < do peek i in
       a i + b i + @swp8
-    i end inc end drop
+    end inc end drop
   end
 end
 
@@ -218,8 +218,8 @@ proc memswp64
   ptr ptr int ->
 in
   let a b len in
-    0 while dup len 8 * < do let i in
+    0 while dup len 8 * < do peek i in
       a i + b i + @swp64
-    i end 8 + end drop
+    end 8 + end drop
   end
 end

@@ -9,7 +9,7 @@ macro BUFFER-SIZE 0x100 endmacro
 proc main
   int int -> int
 in let argc argv in
-  1 while dup argc < do let i in
+  1 while dup argc < do peek i in
     i argv array64.get let directory-name in
       directory-name diropen-r let directory in
         directory isn-pos if
@@ -38,5 +38,5 @@ in let argc argv in
         end
       end
     end
-  i end inc end drop
+  end inc end drop
 end 0 end

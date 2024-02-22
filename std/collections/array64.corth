@@ -39,13 +39,13 @@ in let array length in
   memory min sizeof(int) in
     MAX-INT min !64
 
-    0 while dup length < do let i in
+    0 while dup length < do peek i in
       i array array64.get let value in
         value min @64 < if
           value min !64
         end
       end
-    i end inc end drop
+    end inc end drop
 
     min @64
   end
@@ -61,13 +61,13 @@ in let array length in
   memory min sizeof(int) in
     MAX-UINT min !64
 
-    0 while dup length u< do let i in
+    0 while dup length u< do peek i in
       array i 8 * + @64 let value in
         value min @64 u< if
           value min !64
         end
       end
-    i end inc end drop
+    end inc end drop
 
     min @64
   end
@@ -83,13 +83,13 @@ in let array length in
   memory max sizeof(int) in
     MIN-INT max !64
 
-    0 while dup length > do let i in
+    0 while dup length > do peek i in
       array i 8 * + @64 let value in
         value max @64 > if
           value max !64
         end
       end
-    i end inc end drop
+    end inc end drop
 
     max @64
   end
@@ -105,13 +105,13 @@ in let array length in
   memory max sizeof(int) in
     MIN-UINT max !64
 
-    0 while dup length u> do let i in
+    0 while dup length u> do peek i in
       array i 8 * + @64 let value in
         value max @64 u> if
           value max !64
         end
       end
-    i end inc end drop
+    end inc end drop
 
     max @64
   end

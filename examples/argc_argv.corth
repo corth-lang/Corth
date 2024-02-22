@@ -8,7 +8,7 @@ in let argc argv in
   "argc = " puts argc putu putnl
   "argv = 0x" puts argv putx putnl
 
-  0 while dup argc < do let i in
+  0 while dup argc < do peek i in
     "argv[" puts i putu "] = \"" puts i argv array64.get dup strc.get-len puts "\"\n" puts
-  i end inc end drop
+  end inc end drop
 end 0 end

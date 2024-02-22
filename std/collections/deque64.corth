@@ -109,9 +109,9 @@ proc deque64.extend-left
   // NOTE: Array must be a linearly placed 64-bit array. A deque can not be used.
   // NOTE: This macro assumes that the queue has enough space to insert item.
 in let source length deque capacity start-index end-index in
-  length while dup isn-zero do dec let i in
+  length while dup isn-zero do dec peek i in
     source i 8 * + @64 deque capacity start-index end-index deque64.append-first
-  i end end drop
+  end end drop
 end end
 
 proc deque64.extend-right
@@ -125,7 +125,7 @@ proc deque64.extend-right
   // NOTE: Array must be a linearly placed 64-bit array. A deque can not be used.
   // NOTE: This macro assumes that the queue has enough space to insert item.
 in let source length deque capacity start-index end-index in
-  0 while dup length < do let i in
+  0 while dup length < do peek i in
     source i 8 * + @64 deque capacity start-index end-index deque64.append-last
-  i end inc end drop
+  end inc end drop
 end end

@@ -19,16 +19,16 @@ proc queue64.sort
   // Sorts an array using bubble sort ( :( )
 in
   @64 let queue-start queue-length in
-    queue-length dec while dup isn-zero do let i in
-      0 while dup i < do let j in
+    queue-length dec while dup isn-zero do peek i in
+      0 while dup i < do peek j in
         queue-start j 8 * + @64 queue-start j inc 8 * + @64 let x y in
           x y > if
             y queue-start j     8 * + !64
             x queue-start j inc 8 * + !64
           end
         end
-      j end inc end drop
-    i end dec end drop
+      end inc end drop
+    end dec end drop
   end
 end
 

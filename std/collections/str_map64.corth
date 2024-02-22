@@ -22,9 +22,9 @@ proc str-map64.clear
   ptr ptr ptr ->
   // mfree's all allocated strings.
 in let key-array value-array length in
-  0 while dup length @64 < do let i in
+  0 while dup length @64 < do peek i in
     i key-array array64.get mfree drop
-  i end inc end drop
+  end inc end drop
 
   0 length !64
 end end

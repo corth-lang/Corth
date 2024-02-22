@@ -20,9 +20,9 @@ in let list in
   ":" puts
   list list64.capacity putu
   ")[" puts
-  0 while dup list list64.length < do let i in
+  0 while dup list list64.length < do peek i in
     i list list64.get putu ", " puts
-  i end inc end drop
+  end inc end drop
   "]" puts
 end end
 

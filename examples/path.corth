@@ -14,8 +14,8 @@ in let argc argv in
   malloc.init
 
   path.merge.init
-    1 while dup argc < do let i in
+    1 while dup argc < do peek i in
       i argv array64.get path.merge.append-cstr
-    i end inc end drop
+    end inc end drop
   path.merge.end-str dup mlength puts putnl
 end 0 end

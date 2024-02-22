@@ -11,6 +11,11 @@ macro pop-item
   local-stack local-stack-length queue64.pop-last
 endmacro
 
+// int: argument-count -> bool: available
+macro is-items-available
+  local-stack-length @64 peeked-item @64 - <=
+endmacro
+
 // int: immediate-value
 macro push-int-immediate let _immediate_ in
   INT-TYPE-INT MODE-IMM stack-item.create let _item_ in
@@ -79,7 +84,6 @@ proc local-stack.convert-items-real
   // int: start-index int: end-index ptr: local-stack ptr: local-stack-length file-desc: output-file ->
   int int ptr ptr file-desc ->
 in let start-index end-index local-stack local-stack-length output-file in
-  // We have reached the start of all of the non-real stack values.
   start-index while dup end-index < do dup
     local-stack array64.get output-file nasm.convert-item-to-real
   inc end drop
@@ -170,9 +174,9 @@ proc __local-stack.mfree-items
   ptr int ->
 in let local-stack local-stack-length in
   // Iterate through the items and mfree them.
-  0 while dup local-stack-length < do let i in
+  0 while dup local-stack-length < do peek i in
     i local-stack array64.get stack-item.mfree
-  i end inc end drop
+  end inc end drop
 end end
 
 
@@ -207,9 +211,9 @@ in let local-stack local-stack-length in
     end
 
     // Copy the items from the local-stack to the copy-array.
-    0 while dup local-stack-length @64 < do let i in
+    0 while dup local-stack-length @64 < do peek i in
       i local-stack array64.get stack-item.copy i copy-array array64.set
-    i end inc end drop
+    end inc end drop
 
     // Return copy array.
     copy-array
@@ -225,9 +229,9 @@ in let overwrite local-stack local-stack-length in
   local-stack local-stack-length @64 __local-stack.mfree-items
 
   // Copy the items from the overwrite to the local-stack.
-  0 while dup overwrite mlength 8 / < do let i in
+  0 while dup overwrite mlength 8 / < do peek i in
     i overwrite array64.get stack-item.copy i local-stack array64.set
-  i end inc end drop
+  end inc end drop
 
   overwrite mlength 8 / local-stack-length !64
 end end

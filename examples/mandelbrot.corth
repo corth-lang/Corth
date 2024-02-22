@@ -74,11 +74,11 @@ in let argc argv in
         buffer i !64
 
         // Loop over the lines.
-        0 while dup HEIGHT < do let console-y in
+        0 while dup HEIGHT < do peek console-y in
           console-y HALF-HEIGHT - int-to-fixed64 let imag in
 
             // Loop over the columns in the line.
-            0 while dup WIDTH < do let console-x in
+            0 while dup WIDTH < do peek console-x in
               console-x HALF-WIDTH - int-to-fixed64
 
               // Get the character that should be appended to the buffer.
@@ -87,7 +87,7 @@ in let argc argv in
                 char i @64 !8 i @inc64
                 char i @64 !8 i @inc64
               end
-            console-x end inc end drop
+            end inc end drop
 
             // Append a newline at the end of the buffer.
             '\n' i @64 !8
@@ -95,7 +95,7 @@ in let argc argv in
             // Shift the character pointer.
             i @inc64
           end
-        console-y end inc end drop
+        end inc end drop
 
         // Dump the buffer on the screen.
         buffer BUFFER-SIZE puts

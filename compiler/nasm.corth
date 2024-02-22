@@ -19,7 +19,7 @@ in let name in
 
     "global_" drop object 7 memcpy8
 
-    0 while dup name mlength < do let i in
+    0 while dup name mlength < do peek i in
       name i + @8 let char in
         char 'a' 'z' is-range
         char 'A' 'Z' is-range |
@@ -29,7 +29,7 @@ in let name in
           '_' object 7 + i + !8
         end
       end
-    i end inc end drop
+    end inc end drop
     object
   end
 end end
@@ -44,7 +44,7 @@ in let name in
       ERROR-EXIT-CODE exit drop
     end
 
-    0 while dup name mlength < do let i in
+    0 while dup name mlength < do peek i in
       name i + @8 let char in
         char 'a' 'z' is-range
         char 'A' 'Z' is-range |
@@ -54,7 +54,7 @@ in let name in
           '_' object i + !8
         end
       end
-    i end inc end drop
+    end inc end drop
     object
   end
 end end

@@ -1,4 +1,5 @@
 include "linux_x86/io/output.corth"
+include "core/arithmetic.corth"
 
 include "debug.corth"
 
@@ -51,14 +52,15 @@ macro KEYWORD-RETURN   7  endmacro
 macro KEYWORD-MEMORY   8  endmacro
 macro KEYWORD-AND      9  endmacro
 macro KEYWORD-LET      10 endmacro
-macro KEYWORD-IF       11 endmacro
-macro KEYWORD-ELSE     12 endmacro
-macro KEYWORD-WHILE    13 endmacro
-macro KEYWORD-DO       14 endmacro
-macro KEYWORD-BREAK    15 endmacro
-macro KEYWORD-INCLUDE  16 endmacro
-macro KEYWORD-CAST     17 endmacro
-macro KEYWORD-SIZEOF   18 endmacro
+macro KEYWORD-PEEK     11 endmacro
+macro KEYWORD-IF       12 endmacro
+macro KEYWORD-ELSE     13 endmacro
+macro KEYWORD-WHILE    14 endmacro
+macro KEYWORD-DO       15 endmacro
+macro KEYWORD-BREAK    16 endmacro
+macro KEYWORD-INCLUDE  17 endmacro
+macro KEYWORD-CAST     18 endmacro
+macro KEYWORD-SIZEOF   19 endmacro
 
 // Keyword strings
 macro KEYWORD-UNKNOWN-STR  "<unknown>" endmacro
@@ -72,6 +74,7 @@ macro KEYWORD-MEMORY-STR   "memory"    endmacro
 macro KEYWORD-AND-STR      "and"       endmacro
 macro KEYWORD-IN-STR       "in"        endmacro
 macro KEYWORD-LET-STR      "let"       endmacro
+macro KEYWORD-PEEK-STR     "peek"      endmacro
 macro KEYWORD-IF-STR       "if"        endmacro
 macro KEYWORD-ELSE-STR     "else"      endmacro
 macro KEYWORD-WHILE-STR    "while"     endmacro
@@ -189,6 +192,7 @@ in let keyword in
   else keyword KEYWORD-AND      = if KEYWORD-AND-STR
   else keyword KEYWORD-IN       = if KEYWORD-IN-STR
   else keyword KEYWORD-LET      = if KEYWORD-LET-STR
+  else keyword KEYWORD-PEEK     = if KEYWORD-PEEK-STR      
   else keyword KEYWORD-IF       = if KEYWORD-IF-STR
   else keyword KEYWORD-ELSE     = if KEYWORD-ELSE-STR
   else keyword KEYWORD-WHILE    = if KEYWORD-WHILE-STR
@@ -196,7 +200,7 @@ in let keyword in
   else keyword KEYWORD-BREAK    = if KEYWORD-BREAK-STR
   else keyword KEYWORD-SIZEOF   = if KEYWORD-SIZEOF-STR
   else                               KEYWORD-UNKNOWN-STR
-  end end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end end end
 end end
 
 proc get-intrinsic-name

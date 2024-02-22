@@ -221,9 +221,9 @@ in let stack length log-stream in
     return
   end
 
-  0 while dup length dec < do let i in
+  0 while dup length dec < do peek i in
     i stack array64.get get-type log-stream fput-int-type " " log-stream fputs
-  i end inc end drop
+  end inc end drop
 
   length dec stack array64.get get-type log-stream fput-int-type
 end end
@@ -238,9 +238,9 @@ in let types-array types-length log-stream in
     return
   end
 
-  0 while dup types-length dec < do let i in
+  0 while dup types-length dec < do peek i in
     i types-array array64.get log-stream fput-int-type " " log-stream fputs
-  i end inc end drop
+  end inc end drop
 
   types-length dec types-array array64.get log-stream fput-int-type
 end end
@@ -315,10 +315,10 @@ end end
 
 
 proc add-intrinsic
-  // ptr: token-address ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream ->
-  ptr ptr ptr file-desc file-desc ->
-in let token-address local-stack local-stack-length output-file log-stream in
-  local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+  // ptr: token-address ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file file-desc: log-stream ->
+  ptr ptr ptr ptr file-desc file-desc ->
+in let token-address local-stack local-stack-length peeked-item output-file log-stream in
+  2 is-items-available ! if invalid-usage-of-intrinsic end
 
   pop-item pop-item let item2 item1 in
     item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -385,11 +385,11 @@ end end
 
 
 proc load-intrinsic
-  // ptr: token-address int: intrinsic ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream ->
-  ptr int ptr ptr file-desc file-desc ->
+  // ptr: token-address int: intrinsic ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file file-desc: log-stream ->
+  ptr int ptr ptr ptr file-desc file-desc ->
   // NOTE: Register is one of 'al', 'ax', 'eax', 'rax'.
-in let token-address intrinsic local-stack local-stack-length output-file log-stream in
-  local-stack-length @64 1 < if invalid-usage-of-intrinsic end
+in let token-address intrinsic local-stack local-stack-length peeked-item output-file log-stream in
+  1 is-items-available ! if invalid-usage-of-intrinsic end
 
   pop-item let item in
     item get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -479,11 +479,11 @@ end end
 
 
 proc store-intrinsic
-  // ptr: token-address int: intrinsic ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream ->
-  ptr int ptr ptr file-desc file-desc ->
+  // ptr: token-address int: intrinsic ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file file-desc: log-stream ->
+  ptr int ptr ptr ptr file-desc file-desc ->
   // NOTE: Register is one of 'bl', 'bx', 'ebx', 'rbx'.
-in let token-address intrinsic local-stack local-stack-length output-file log-stream in
-  local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+in let token-address intrinsic local-stack local-stack-length peeked-item output-file log-stream in
+  2 is-items-available ! if invalid-usage-of-intrinsic end
 
   pop-item pop-item let address-item value-item in
     value-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -538,9 +538,9 @@ end end
 
 
 proc multiply-immediate-any
-  // bool: signed bool: upper int: immediate ptr: item ptr: local-stack ptr: local-stack-length file-desc: output-file ->
-  bool bool int ptr ptr ptr file-desc ->
-in let signed upper immediate item local-stack local-stack-length output-file in
+  // bool: signed bool: upper int: immediate ptr: item ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file ->
+  bool bool int ptr ptr ptr ptr file-desc ->
+in let signed upper immediate item local-stack local-stack-length peeked-item output-file in
   immediate get-log2 let log2 in
     INT-TYPE-INT push-real
 
@@ -569,10 +569,10 @@ end end
 
 
 proc multiply-intrinsic
-  // ptr: token-address bool: signed bool: upper ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream ->
-  ptr bool bool ptr ptr file-desc file-desc ->
-in let token-address signed upper local-stack local-stack-length output-file log-stream in
-  local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+  // ptr: token-address bool: signed bool: upper ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file file-desc: log-stream ->
+  ptr bool bool ptr ptr ptr file-desc file-desc ->
+in let token-address signed upper local-stack local-stack-length peeked-item output-file log-stream in
+  2 is-items-available ! if invalid-usage-of-intrinsic end
 
   pop-item pop-item let item2 item1 in
     item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -587,12 +587,12 @@ in let token-address signed upper local-stack local-stack-length output-file log
 
         push-int-immediate
       else
-        signed upper item1 get-arg1 item2 local-stack local-stack-length output-file multiply-immediate-any
+        signed upper item1 get-arg1 item2 local-stack local-stack-length peeked-item output-file multiply-immediate-any
       end
 
     else
       item2 get-mode MODE-IMM = if
-        signed upper item2 get-arg1 item1 local-stack local-stack-length output-file multiply-immediate-any
+        signed upper item2 get-arg1 item1 local-stack local-stack-length peeked-item output-file multiply-immediate-any
       else
         INT-TYPE-INT push-real
 
@@ -621,10 +621,10 @@ end end
 
 
 proc divide-intrinsic
-  // ptr: token-address bool: signed bool: modulo ptr: local-stack ptr: local-stack-length file-desc: output-file file-desc: log-stream ->
-  ptr bool bool ptr ptr file-desc file-desc ->
-in let token-address signed modulo local-stack local-stack-length output-file log-stream in
-  local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+  // ptr: token-address bool: signed bool: modulo ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file file-desc: log-stream ->
+  ptr bool bool ptr ptr ptr file-desc file-desc ->
+in let token-address signed modulo local-stack local-stack-length peeked-item output-file log-stream in
+  2 is-items-available ! if invalid-usage-of-intrinsic end
 
   pop-item pop-item let item2 item1 in
     item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -674,6 +674,8 @@ proc compile-intrinsic
   ptr ptr
   // ptr: local-stack ptr: local-stack-length
   ptr ptr
+  // ptr: peeked-item
+  ptr
   // int: token-type ptr: token-address [int|ptr]: token-arg
   int ptr int
   // file-desc: log-stream
@@ -686,13 +688,14 @@ in let
   line-no char-no
   procedure-name procedure-address
   local-stack local-stack-length
+  peeked-item
   token-type token-address token-arg
   log-stream
 in
-       token-arg INTRINSIC-ADD = if token-address local-stack local-stack-length output-file log-stream add-intrinsic
+       token-arg INTRINSIC-ADD = if token-address local-stack local-stack-length peeked-item output-file log-stream add-intrinsic
   else token-arg INTRINSIC-SUB = if
     // -------- Intrinsic '-' --------
-    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+    2 is-items-available ! if invalid-usage-of-intrinsic end
 
     pop-item pop-item let item2 item1 in
       item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -719,7 +722,7 @@ in
 
   else token-arg INTRINSIC-BOR = if
     // -------- Intrinsic '||' --------
-    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+    2 is-items-available ! if invalid-usage-of-intrinsic end
 
     pop-item pop-item let item2 item1 in
       item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -738,7 +741,7 @@ in
 
   else token-arg INTRINSIC-BAND = if
     // -------- Intrinsic '&&' --------
-    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+    2 is-items-available ! if invalid-usage-of-intrinsic end
     
     pop-item pop-item let item1 item2 in
       item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -757,7 +760,7 @@ in
     
   else token-arg INTRINSIC-BXOR = if
     // -------- Intrinsic '^^' --------
-    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+    2 is-items-available ! if invalid-usage-of-intrinsic end
     
     pop-item pop-item let item1 item2 in
       item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -777,7 +780,7 @@ in
   else token-arg INTRINSIC-BNOT = if
     // -------- Intrinsic '!!' --------
 
-    local-stack-length @64 1 < if invalid-usage-of-intrinsic end
+    1 is-items-available ! if invalid-usage-of-intrinsic end
 
     pop-item let item in
       item get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -795,30 +798,30 @@ in
       item stack-item.mfree
     end
 
-  else token-arg INTRINSIC-MUL     = if token-address true false local-stack local-stack-length output-file log-stream multiply-intrinsic
-  else token-arg INTRINSIC-MUL2    = if token-address true true  local-stack local-stack-length output-file log-stream multiply-intrinsic
-  else token-arg INTRINSIC-DIV     = if token-address true false local-stack local-stack-length output-file log-stream divide-intrinsic
-  else token-arg INTRINSIC-MOD     = if token-address true true  local-stack local-stack-length output-file log-stream divide-intrinsic
+  else token-arg INTRINSIC-MUL     = if token-address true false local-stack local-stack-length peeked-item output-file log-stream multiply-intrinsic
+  else token-arg INTRINSIC-MUL2    = if token-address true true  local-stack local-stack-length peeked-item output-file log-stream multiply-intrinsic
+  else token-arg INTRINSIC-DIV     = if token-address true false local-stack local-stack-length peeked-item output-file log-stream divide-intrinsic
+  else token-arg INTRINSIC-MOD     = if token-address true true  local-stack local-stack-length peeked-item output-file log-stream divide-intrinsic
 
-  else token-arg INTRINSIC-UMUL    = if token-address false false local-stack local-stack-length output-file log-stream multiply-intrinsic
-  else token-arg INTRINSIC-UMUL2   = if token-address false true  local-stack local-stack-length output-file log-stream multiply-intrinsic
-  else token-arg INTRINSIC-UDIV    = if token-address false false local-stack local-stack-length output-file log-stream divide-intrinsic
-  else token-arg INTRINSIC-UMOD    = if token-address false true  local-stack local-stack-length output-file log-stream divide-intrinsic
+  else token-arg INTRINSIC-UMUL    = if token-address false false local-stack local-stack-length peeked-item output-file log-stream multiply-intrinsic
+  else token-arg INTRINSIC-UMUL2   = if token-address false true  local-stack local-stack-length peeked-item output-file log-stream multiply-intrinsic
+  else token-arg INTRINSIC-UDIV    = if token-address false false local-stack local-stack-length peeked-item output-file log-stream divide-intrinsic
+  else token-arg INTRINSIC-UMOD    = if token-address false true  local-stack local-stack-length peeked-item output-file log-stream divide-intrinsic
 
-  else token-arg INTRINSIC-LOAD8   = if token-address token-arg local-stack local-stack-length output-file log-stream load-intrinsic
-  else token-arg INTRINSIC-LOAD16  = if token-address token-arg local-stack local-stack-length output-file log-stream load-intrinsic
-  else token-arg INTRINSIC-LOAD32  = if token-address token-arg local-stack local-stack-length output-file log-stream load-intrinsic
-  else token-arg INTRINSIC-LOAD64  = if token-address token-arg local-stack local-stack-length output-file log-stream load-intrinsic
-
-  else token-arg INTRINSIC-STORE8  = if token-address token-arg local-stack local-stack-length output-file log-stream store-intrinsic
-  else token-arg INTRINSIC-STORE16 = if token-address token-arg local-stack local-stack-length output-file log-stream store-intrinsic
-  else token-arg INTRINSIC-STORE32 = if token-address token-arg local-stack local-stack-length output-file log-stream store-intrinsic
-  else token-arg INTRINSIC-STORE64 = if token-address token-arg local-stack local-stack-length output-file log-stream store-intrinsic
+  else token-arg INTRINSIC-LOAD8   = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream load-intrinsic
+  else token-arg INTRINSIC-LOAD16  = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream load-intrinsic
+  else token-arg INTRINSIC-LOAD32  = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream load-intrinsic
+  else token-arg INTRINSIC-LOAD64  = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream load-intrinsic
+  
+  else token-arg INTRINSIC-STORE8  = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream store-intrinsic
+  else token-arg INTRINSIC-STORE16 = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream store-intrinsic
+  else token-arg INTRINSIC-STORE32 = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream store-intrinsic
+  else token-arg INTRINSIC-STORE64 = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream store-intrinsic
 
   else token-arg INTRINSIC-SYSCALL0 = if
     // -------- Intrinsic 'syscall0' --------
 
-    local-stack-length @64 1 < if invalid-usage-of-intrinsic end
+    1 is-items-available ! if invalid-usage-of-intrinsic end
 
     pop-item let op-item in
       op-item   get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -836,7 +839,7 @@ in
   else token-arg INTRINSIC-SYSCALL1 = if
     // -------- Intrinsic 'syscall1' --------
 
-    local-stack-length @64 2 < if invalid-usage-of-intrinsic end
+    2 is-items-available ! if invalid-usage-of-intrinsic end
 
     pop-item pop-item let op-item arg-item1 in
       arg-item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -857,7 +860,7 @@ in
   else token-arg INTRINSIC-SYSCALL2 = if
     // -------- Intrinsic 'syscall2' --------
 
-    local-stack-length @64 3 < if invalid-usage-of-intrinsic end
+    3 is-items-available ! if invalid-usage-of-intrinsic end
 
     pop-item pop-item pop-item let op-item arg-item2 arg-item1 in
       arg-item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -881,7 +884,7 @@ in
   else token-arg INTRINSIC-SYSCALL3 = if
     // -------- Intrinsic 'syscall3' --------
 
-    local-stack-length @64 4 < if invalid-usage-of-intrinsic end
+    4 is-items-available ! if invalid-usage-of-intrinsic end
 
     pop-item pop-item pop-item pop-item  let op-item arg-item3 arg-item2 arg-item1 in
       arg-item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -908,7 +911,7 @@ in
   else token-arg INTRINSIC-SYSCALL4 = if
     // -------- Intrinsic 'syscall4' --------
 
-    local-stack-length @64 5 < if invalid-usage-of-intrinsic end
+    5 is-items-available ! if invalid-usage-of-intrinsic end
 
     pop-item pop-item pop-item pop-item pop-item let op-item arg-item4 arg-item3 arg-item2 arg-item1 in
       arg-item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -938,7 +941,7 @@ in
   else token-arg INTRINSIC-SYSCALL5 = if
     // -------- Intrinsic 'syscall5' --------
 
-    local-stack-length @64 6 < if invalid-usage-of-intrinsic end
+    6 is-items-available ! if invalid-usage-of-intrinsic end
 
     pop-item pop-item pop-item pop-item pop-item pop-item let op-item arg-item5 arg-item4 arg-item3 arg-item2 arg-item1 in
       arg-item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -971,7 +974,7 @@ in
   else token-arg INTRINSIC-SYSCALL6 = if
     // -------- Intrinsic 'syscall6' --------
 
-    local-stack-length @64 7 < if invalid-usage-of-intrinsic end
+    7 is-items-available ! if invalid-usage-of-intrinsic end
 
     pop-item pop-item pop-item pop-item pop-item pop-item pop-item let op-item arg-item6 arg-item5 arg-item4 arg-item3 arg-item2 arg-item1 in
       arg-item1 get-type INT-TYPE-INT != if invalid-usage-of-intrinsic end
@@ -1013,6 +1016,62 @@ in
 end end
 
 
+proc collect-let-like-names
+  // ptr: new-names-list
+  ptr
+  // ptr: source-name file-desc: source-file
+  ptr file-desc
+  // ptr: line-no ptr: char-no
+  ptr ptr
+  // ptr: macro-names ptr: macro-tokens ptr: macros-length
+  ptr ptr ptr
+  // ptr: procedure-name ptr: procedure-address
+  ptr ptr
+  // ptr: extended-array ptr: extended-start ptr: extended-end
+  ptr ptr ptr
+  // file-desc: log-stream
+  file-desc
+  ->
+  // Fills new-names-list until an 'in' keyword is found.
+in let
+  new-names-list
+  source-name source-file
+  line-no char-no
+  macro-names macro-tokens macros-length
+  procedure-name procedure-address
+  extended-array extended-start extended-end
+  log-stream
+in
+  // Get the names of the 'let' variables.
+  while true do
+    // Get the name of the variable.
+    "a 'name' for 'let' variable" false compile-procedure.get-next-token
+
+    let new-token-type new-token-address new-token-arg in
+      new-token-type TYPE-KEYWORD = if
+        // If token is a keyword, it must be a 'in' keyword.
+        new-token-arg new-token-address "after 'let'" KEYWORD-IN compile-procedure.check-keyword-here
+
+        // Deallocate 'new-token-address'.
+        new-token-address mfree drop
+
+        // If the token is a 'in' keyword, break the loop.
+        break
+      end
+
+      // Check the type of the token.
+      new-token-type new-token-address "after 'let'" TYPE-NAME compile-procedure.check-type-here
+
+      // TODO: Change the way that the variables are stored, so that we can also store their addresses.
+      new-token-arg new-names-list list64.append
+
+      // Deallocate 'new-token-address'.
+      new-token-address mfree drop
+    end
+  end
+end end
+
+
 proc compile-keyword
   // ptr: source-name file-desc: source-file file-desc: output-file
   ptr ptr file-desc
@@ -1024,6 +1083,8 @@ proc compile-keyword
   ptr ptr
   // ptr: local-stack ptr: local-stack-length
   ptr ptr
+  // ptr: peeked-item
+  ptr
   // ptr: extended-array ptr: extended-start ptr: extended-end
   ptr ptr ptr
   // int: token-type ptr: token-address [int|ptr]: token-arg
@@ -1051,6 +1112,7 @@ in let
   macro-names macro-tokens macros-length
   procedure-name procedure-address
   local-stack local-stack-length
+  peeked-item
   extended-array extended-start extended-end
   token-type token-address token-arg
   levels-list level-id-counter
@@ -1165,7 +1227,7 @@ in
           // -------- End of 'let' --------
 
           level 16 + @64 level 24 + @64 let new-names old-local-memory-end in
-            0 while dup new-names mlength 8 / < do let i in i 8 * new-names + @64 let name in
+            0 while dup new-names mlength 8 / < do peek i in i 8 * new-names + @64 let name in
               name mlength 1 = if name @8 '_' != else true end if
                 name let-names let-addresses let-vars-length str-map64.remove-dstr ! if
                   LOG.ERR  log-stream fputs "Could not find the 'let' variable name '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
@@ -1174,7 +1236,7 @@ in
                   ERROR-EXIT-CODE exit drop
                 end
               end
-            end i end inc end drop
+            end end inc end drop
 
             old-local-memory-end local-stack local-stack-length output-file local-stack.convert-deleted-real
 
@@ -1184,11 +1246,30 @@ in
             new-names mfree drop
           end
 
+        else start-keyword KEYWORD-PEEK = if
+          // -------- End of 'peek' --------
+
+          level 16 + @64 level 24 + @64 let new-names old-peeked-item in
+            0 while dup new-names mlength 8 / < do peek i in i 8 * new-names + @64 let name in
+              name let-names let-addresses let-vars-length str-map64.remove-dstr ! if
+                LOG.ERR  log-stream fputs "Could not find the 'peek' variable name '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
+                log-stream report-bug
+                start-address compile-procedure.show-here
+                ERROR-EXIT-CODE exit drop
+              end
+            end end inc end drop
+
+            old-peeked-item peeked-item !64
+
+            // Deallocate 'new-names'.
+            new-names mfree drop
+          end
+
         else start-keyword KEYWORD-MEMORY = if
           // -------- End of 'memory' --------
 
           level 16 + @64 level 24 + @64 let new-names old-local-memory-end in
-            0 while dup new-names mlength 8 / < do let i in i 8 * new-names + @64 let name in
+            0 while dup new-names mlength 8 / < do peek i in i 8 * new-names + @64 let name in
               name let-names let-addresses let-vars-length str-map64.remove-dstr ! if
                 LOG.ERR  log-stream fputs "Could not find the local variable name '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
 
@@ -1197,7 +1278,7 @@ in
                 start-address compile-procedure.show-here
                 ERROR-EXIT-CODE exit drop
               end
-            end i end inc end drop
+            end end inc end drop
 
             old-local-memory-end local-stack local-stack-length output-file local-stack.convert-deleted-real
 
@@ -1212,7 +1293,7 @@ in
           token-address log-stream fput-here
           start-address compile-procedure.show-here
           ERROR-EXIT-CODE exit drop
-        end end end end end end
+        end end end end end end end
 
         // Deallocate 'start-address'.
         start-address mfree drop
@@ -1239,7 +1320,7 @@ in
     // Branch should not be cut before 'else'.
     token-address "before 'if'" compile-procedure.check-branch-here
 
-    local-stack-length @64 is-zero if
+    1 is-items-available ! if
       LOG.ERR log-stream fputs "'if' requires a bool, there was no items in the stack.\n" log-stream fputs
       token-address compile-procedure.show-here
       ERROR-EXIT-CODE exit drop
@@ -1389,7 +1470,7 @@ in
     token-address "call 'do'" compile-procedure.check-branch-here
 
     // Check if the local stack contains any item.
-    local-stack-length @64 is-zero if
+    1 is-items-available ! if
       LOG.ERR log-stream fputs "'do' requires a bool, there was no items in the stack.\n" log-stream fputs
       token-address compile-procedure.show-here
       ERROR-EXIT-CODE exit drop
@@ -1595,38 +1676,19 @@ in
         dynamic new-names-list !64
       end
 
-      // Get the names of the 'let' variables.
-      while true do
-        // Get the name of the variable.
-        "a 'name' for 'let' variable" false compile-procedure.get-next-token
-
-        let new-token-type new-token-address new-token-arg in
-          new-token-type TYPE-KEYWORD = if
-            // If token is a keyword, it must be a 'in' keyword.
-            new-token-arg new-token-address "after 'let'" KEYWORD-IN compile-procedure.check-keyword-here
-
-            // Deallocate 'new-token-address'.
-            new-token-address mfree drop
-
-            // If the token is a 'in' keyword, break the loop.
-            break
-          end
-
-          // Check the type of the token.
-          new-token-type new-token-address "after 'let'" TYPE-NAME compile-procedure.check-type-here
-
-          // TODO: Change the way that the variables are stored, so that we can also store their addresses.
-          new-token-arg new-names-list list64.append
-
-          // Deallocate 'new-token-address'.
-          new-token-address mfree drop
-        end
-      end
+      new-names-list
+      source-name source-file
+      line-no char-no
+      macro-names macro-tokens macros-length
+      procedure-name procedure-address
+      extended-array extended-start extended-end
+      log-stream
+      collect-let-like-names
 
       local-memory-end @64 let old-local-memory-end in
         // This loop is separated from the one above, since this loop must run in the reverse order.
-        new-names-list list64.length while dup isn-zero do dec let i in
-          local-stack-length @64 is-zero if
+        new-names-list list64.length while dup isn-zero do dec peek i in
+          1 is-items-available ! if
             LOG.ERR log-stream fputs "Expected a data before 'let' variable, but the stack was empty.\n" log-stream fputs
             token-address compile-procedure.show-here
             ERROR-EXIT-CODE exit drop
@@ -1680,7 +1742,7 @@ in
               local-memory-end @64 8 + local-memory-end !64
             end
           end
-        i end end drop
+        end end drop
 
         local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
 
@@ -1697,6 +1759,94 @@ in
       end
 
       // Deallocate 'new-names-list' but keep the 'let' variable names.
+      new-names-list list64.mfree drop
+    end
+
+  else token-arg KEYWORD-PEEK = if
+    // -------- Keyword 'peek' --------
+    // peek <name>* in <any> end
+
+    // Level structure:
+    //  0- 7 -> KEYWORD-PEEK
+    //  8-15 -> Starter address
+    // 16-23 -> New names
+    // 24-32 -> Old peeked-item
+
+    // Branch should not be cut before 'let'.
+    token-address "call 'peek'" compile-procedure.check-branch-here
+
+    // New names are stored in new-names and new-names-length queue. When the 'end' of 'peek' is reached, new names are deleted from the namespace.
+    memory new-names-list sizeof(ptr) in
+      16 list64.init let dynamic in
+        dynamic "creating list dynamic object for 'peek'" compile-procedure.check-null-here
+
+        dynamic new-names-list !64
+      end
+
+      new-names-list
+      source-name source-file
+      line-no char-no
+      macro-names macro-tokens macros-length
+      procedure-name procedure-address
+      extended-array extended-start extended-end
+      log-stream
+      collect-let-like-names
+
+      new-names-list list64.length is-items-available ! if
+        LOG.ERR log-stream fputs "Stack does not contain enough items for 'peek'.\n" log-stream fputs
+        token-address log-stream fput-here
+        ERROR-EXIT-CODE exit drop
+      end
+
+      peeked-item @64 let old-peeked-item in
+        local-stack-length @64 peeked-item !64
+
+        // This loop is separated from the one above, since this loop must run in the reverse order.
+        new-names-list list64.length while dup isn-zero do dec peek i in
+          local-stack-length @64 new-names-list list64.length - i + let item-index in
+            item-index local-stack array64.get let item in
+              i new-names-list list64.get let variable-name in
+                item get-mode MODE-IMM         =
+                item get-mode MODE-GLOBAL      = |
+                item get-mode MODE-@LOCALCONST = |
+                item get-mode MODE-LOCAL       = |
+                item get-mode MODE-DATA        = | if
+
+                  item stack-item.copy
+
+                else
+                  item get-type MODE-PEEKED stack-item.create let replace-item in
+                    item-index replace-item set-arg1
+                  replace-item end
+                end
+
+                let replace-item in
+                  variable-name replace-item let-names let-addresses let-vars-length str-map64.set-dstr if
+                    LOG.ERR log-stream fputs "'peek' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+
+                    // TODO: This does not show the address of the 'peek' variable. This should be changed.
+                    token-address compile-procedure.show-here
+                    ERROR-EXIT-CODE exit drop
+                  end
+                end
+              end
+            end
+          end
+        end end drop
+
+        32 malloc let new-level in
+          new-level "creating a level object for 'peek'" compile-procedure.check-null-here
+
+          KEYWORD-PEEK                     new-level      !64
+          token-address dcopy              new-level  8 + !64
+          new-names-list list64.copy-array new-level 16 + !64
+          old-peeked-item                  new-level 24 + !64
+
+          new-level levels-list list64.append
+        end
+      end
+
+      // Deallocate 'new-names-list' but keep the 'peek' variable names.
       new-names-list list64.mfree drop
     end
 
@@ -1768,7 +1918,7 @@ in
     LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
     token-address compile-procedure.show-here
     ERROR-EXIT-CODE exit drop
-  end end end end end end end end end end end
+  end end end end end end end end end end end end
 end false end
 
 
@@ -1789,6 +1939,8 @@ proc compile-procedure
   ptr ptr
   // ptr: local-stack ptr: local-stack-length
   ptr ptr
+  // ptr: peeked-item
+  ptr
   // ptr: extended-array ptr: extended-start ptr: extended-end
   ptr ptr ptr
   // ptr: output-array int: output-length
@@ -1809,6 +1961,7 @@ in let
   macro-names macro-tokens macros-length
   procedure-name procedure-address
   local-stack local-stack-length
+  peeked-item
   extended-array extended-start extended-end
   output-types-array output-types-length
   log-stream
@@ -1886,7 +2039,16 @@ in
             // -------- local variables --------
 
             let replace-item in
-              replace-item stack-item.copy push-item
+              // TODO: This is a quick work-around for 'peek' keyword. This condition should be removed and rewritten ASAP.
+              
+              replace-item get-mode MODE-PEEKED = if
+                replace-item get-type push-real
+
+                "    push    qword [rsp + " output-file fputs local-stack-length @64 replace-item get-arg1 - 2 - 8 * output-file fputi "]\n" output-file fputs
+              else
+              
+                replace-item stack-item.copy push-item
+              end
             end
 
           else drop token-arg global-names-array global-sizes-array globals-length str-map64.get-dstr if
@@ -1913,11 +2075,11 @@ in
                 log-stream
                 check-sub-stack-types-types
 
-                0 while dup output-address @64 mlength 8 / < do let i in
+                0 while dup output-address @64 mlength 8 / < do peek i in
                   i output-address @64 array64.get let output in
                     output push-real
                   end
-                i end inc end drop
+                end inc end drop
 
                 compile-procedure.new-level-id let level-id in
                   "    xchg    rsp, [call_ptr]\n"              output-file fputs
@@ -1949,6 +2111,7 @@ in
           line-no char-no
           procedure-name procedure-address
           local-stack local-stack-length
+          peeked-item
           token-type token-address token-arg
           log-stream
           compile-intrinsic
@@ -1961,6 +2124,7 @@ in
           macro-names macro-tokens macros-length
           procedure-name procedure-address
           local-stack local-stack-length
+          peeked-item
           extended-array extended-start extended-end
           token-type token-address token-arg
           levels-list level-id-counter
@@ -2148,7 +2312,7 @@ in
               memory found 1 in
                 0 found !8
 
-                0 while dup include-paths-set list64.length < do let i in
+                0 while dup include-paths-set list64.length < do peek i in
                   i include-paths-set list64.get let directory in
                     directory cstr.str path-token-arg path-token-arg mlength path.merge2-cstr let include-path in
                       // Check if the user has the required permissions.
@@ -2185,7 +2349,7 @@ in
                             end end
                           end
 
-                          i break
+                          break
                         end
                       end
 
@@ -2193,7 +2357,7 @@ in
                       include-path mfree drop
                     end
                   end
-                i end inc end drop
+                end inc end drop
 
                 // Check if any library is found.
                 found @8 is-zero if
@@ -2398,14 +2562,16 @@ in
                 // Create the stack for the procedure.
                 memory local-stack        STACK-MAX-ITEMS in
                 memory local-stack-length sizeof(int)     in
+                memory peeked-item        sizeof(int)     in
 
                   0 local-stack-length !64
+                  0 peeked-item        !64
 
-                  0 while dup input-list list64.length < do let i in
+                  0 while dup input-list list64.length < do peek i in
                     i input-list list64.get let type in
                       type push-real
                     end
-                  i end inc end drop
+                  end inc end drop
 
                   source-name source-file output-file
                   line-no char-no
@@ -2415,6 +2581,7 @@ in
                   macro-names macro-tokens macros-length
                   proc-name-token-arg proc-name-token-address
                   local-stack local-stack-length
+                  peeked-item
                   extended-array extended-start extended-end
                   output-list list64.to-array
                   log-stream
@@ -2426,7 +2593,7 @@ in
                   "    pop     rax\n"                 output-file fputs
                   "    xchg    rsp, [call_ptr]\n"     output-file fputs
                   "    jmp     rax\n"                 output-file fputs
-                end end
+                end end end
 
                 // Deallocate input-list and output-list.
                 input-list  list64.mfree drop
@@ -2537,18 +2704,18 @@ in let source-name output-name include-paths-set log-stream in
       compile-file
 
       // Deallocate space allocated for procedures.
-      0 while dup procs-length @64 < do let i in
+      0 while dup procs-length @64 < do peek i in
         i proc-names-array   array64.get mfree drop
         i proc-inputs-array  array64.get mfree drop
         i proc-outputs-array array64.get mfree drop
-      i end inc end drop
+      end inc end drop
 
       // Deallocate space allocated for macros.
-      0 while dup macros-length @64 < do let i in
+      0 while dup macros-length @64 < do peek i in
         i macro-names array64.get mfree drop
 
         i macro-tokens array64.get let tokens in
-          0 while dup tokens mlength 24 / < do let j in
+          0 while dup tokens mlength 24 / < do peek j in
             j tokens array64.get j inc tokens array64.get j 2 + tokens array64.get let token-type token-address token-arg in
               // Deallocate 'token-address'.
               token-address mfree drop
@@ -2558,26 +2725,26 @@ in let source-name output-name include-paths-set log-stream in
                 token-arg mfree drop
               end
             end
-          j end 3 + end drop
+          end 3 + end drop
 
           // Deallocate 'tokens'.
           tokens mfree drop
         end
-      i end inc end drop
+      end inc end drop
 
       // Deallocate the space allocated for libraries-set.
       libraries-set list64.mfree-deep drop
 
       "segment .data\n" output-file fputs
-      0 while dup data-definitions-list list64.length < do let i in
+      0 while dup data-definitions-list list64.length < do peek i in
         "    data_" output-file fputs i output-file fputu ": db " output-file fputs
         i data-definitions-list list64.get let data in
-          0 while dup data mlength < do let j in
+          0 while dup data mlength < do peek j in
             j data + @8 output-file fputu ", " output-file fputs
-          j end inc end drop
+          end inc end drop
         end
         output-file fputnl
-      i end inc end drop
+      end inc end drop
 
       // Deallocate the space allocated for data-definitions-list
       data-definitions-list list64.mfree-deep drop
@@ -2588,7 +2755,7 @@ in let source-name output-name include-paths-set log-stream in
       "    call_stack:     resb 67108864\n"               output-file fputs
       "    call_ptr:       resq 1\n"                      output-file fputs
 
-      0 while dup globals-length @64 < do let i in
+      0 while dup globals-length @64 < do peek i in
         i global-names-array array64.get i global-sizes-array array64.get let variable-name variable-size in
           "    global_"  output-file fputs
           i global-names-array array64.get output-file fput-alpha
@@ -2599,7 +2766,7 @@ in let source-name output-name include-paths-set log-stream in
           // Deallocate the name of the variable.
           variable-name mfree drop
         end
-      i end inc end drop
+      end inc end drop
     end end end end end end end end end end end end
 
     output-file fclose drop
