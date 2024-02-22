@@ -635,23 +635,16 @@ in let token-address signed modulo local-stack local-stack-length output-file lo
         INT-TYPE-INT push-real
 
         // TODO: Division/modulo by numbers that are not whole powers of 2 without using the 'div' instruction is possible.
-        log2 is-neg if
+        log2 isn-neg modulo & if
+          item1 item2 get-arg1 dec local-stack local-stack-length output-file bitwise-and-any-immediate
+          
+        else
           item2 "rbx" output-file nasm.mov-reg-item
           item1 "rax" output-file nasm.mov-reg-item
                 "rdx" output-file nasm.mov-reg-zero
 
           signed if "    idiv    rbx\n" else "    div     rbx\n" end output-file fputs
           modulo if "    push    rdx\n" else "    push    rax\n" end output-file fputs
-
-        else
-          modulo if
-            item1 item2 get-arg1 dec local-stack local-stack-length output-file bitwise-and-any-immediate
-
-          else
-            item1 output-file nasm.push-int
-
-            signed if "    sar     qword [rsp], " else "    shr     qword [rsp], " end output-file fputs log2 output-file fputu output-file fputnl
-          end
         end
       end
 
