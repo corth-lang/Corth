@@ -296,67 +296,69 @@ in let
   buffer-end @64 buffer - let buffer-size in
     // Check if the token is a keyword.
     // I hate my life.
-         buffer buffer-size KEYWORD-INCLUDE-STR    memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-INCLUDE
-    else buffer buffer-size KEYWORD-MACRO-STR      memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-MACRO
-    else buffer buffer-size KEYWORD-ENDMACRO-STR   memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-ENDMACRO
-    else buffer buffer-size KEYWORD-PROC-STR       memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-PROC
-    else buffer buffer-size KEYWORD-END-STR        memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-END
-    else buffer buffer-size KEYWORD-RETURN-STR     memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-RETURN
-    else buffer buffer-size KEYWORD-RETURNS-STR    memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-RETURNS
-    else buffer buffer-size KEYWORD-MEMORY-STR     memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-MEMORY
-    else buffer buffer-size KEYWORD-AND-STR        memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-AND
-    else buffer buffer-size KEYWORD-IN-STR         memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-IN
-    else buffer buffer-size KEYWORD-LET-STR        memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-LET
-    else buffer buffer-size KEYWORD-PEEK-STR       memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-PEEK
-    else buffer buffer-size KEYWORD-IF-STR         memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-IF
-    else buffer buffer-size KEYWORD-ELSE-STR       memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-ELSE
-    else buffer buffer-size KEYWORD-WHILE-STR      memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-WHILE
-    else buffer buffer-size KEYWORD-DO-STR         memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-DO
-    else buffer buffer-size KEYWORD-BREAK-STR      memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-BREAK
-    else buffer buffer-size KEYWORD-CAST-STR       memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-CAST
-    else buffer buffer-size KEYWORD-SIZEOF-STR     memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-SIZEOF
+         buffer buffer-size KEYWORD-INCLUDE-STR        memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-INCLUDE
+    else buffer buffer-size KEYWORD-MACRO-STR          memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-MACRO
+    else buffer buffer-size KEYWORD-ENDMACRO-STR       memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-ENDMACRO
+    else buffer buffer-size KEYWORD-NAMESPACE-STR      memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-NAMESPACE
+    else buffer buffer-size KEYWORD-ENDNAMESPACE-STR   memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-ENDNAMESPACE
+    else buffer buffer-size KEYWORD-PROC-STR           memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-PROC
+    else buffer buffer-size KEYWORD-END-STR            memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-END
+    else buffer buffer-size KEYWORD-RETURN-STR         memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-RETURN
+    else buffer buffer-size KEYWORD-RETURNS-STR        memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-RETURNS
+    else buffer buffer-size KEYWORD-MEMORY-STR         memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-MEMORY
+    else buffer buffer-size KEYWORD-AND-STR            memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-AND
+    else buffer buffer-size KEYWORD-IN-STR             memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-IN
+    else buffer buffer-size KEYWORD-LET-STR            memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-LET
+    else buffer buffer-size KEYWORD-PEEK-STR           memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-PEEK
+    else buffer buffer-size KEYWORD-IF-STR             memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-IF
+    else buffer buffer-size KEYWORD-ELSE-STR           memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-ELSE
+    else buffer buffer-size KEYWORD-WHILE-STR          memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-WHILE
+    else buffer buffer-size KEYWORD-DO-STR             memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-DO
+    else buffer buffer-size KEYWORD-BREAK-STR          memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-BREAK
+    else buffer buffer-size KEYWORD-CAST-STR           memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-CAST
+    else buffer buffer-size KEYWORD-SIZEOF-STR         memcmp8-wl is-zero if TYPE-KEYWORD KEYWORD-SIZEOF
 
-    // I still hate my life.
-    else buffer buffer-size INTRINSIC-ADD-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-ADD
-    else buffer buffer-size INTRINSIC-SUB-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SUB
-    else buffer buffer-size INTRINSIC-MUL-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-MUL
-    else buffer buffer-size INTRINSIC-MUL2-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-MUL2
-    else buffer buffer-size INTRINSIC-DIV-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-DIV
-    else buffer buffer-size INTRINSIC-MOD-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-MOD
-    else buffer buffer-size INTRINSIC-UMUL-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UMUL
-    else buffer buffer-size INTRINSIC-UMUL2-STR    memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UMUL2
-    else buffer buffer-size INTRINSIC-UDIV-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UDIV
-    else buffer buffer-size INTRINSIC-UMOD-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UMOD
-    else buffer buffer-size INTRINSIC-BOR-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-BOR
-    else buffer buffer-size INTRINSIC-BAND-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-BAND
-    else buffer buffer-size INTRINSIC-BXOR-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-BXOR
-    else buffer buffer-size INTRINSIC-BNOT-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-BNOT
-    else buffer buffer-size INTRINSIC-LOAD8-STR    memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD8
-    else buffer buffer-size INTRINSIC-STORE8-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE8
-    else buffer buffer-size INTRINSIC-LOAD16-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD16
-    else buffer buffer-size INTRINSIC-STORE16-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE16
-    else buffer buffer-size INTRINSIC-LOAD32-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD32
-    else buffer buffer-size INTRINSIC-STORE32-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE32
-    else buffer buffer-size INTRINSIC-LOAD64-STR   memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD64
-    else buffer buffer-size INTRINSIC-STORE64-STR  memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE64
-    else buffer buffer-size INTRINSIC-SYSCALL0-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL0
-    else buffer buffer-size INTRINSIC-SYSCALL1-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL1
-    else buffer buffer-size INTRINSIC-SYSCALL2-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL2
-    else buffer buffer-size INTRINSIC-SYSCALL3-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL3
-    else buffer buffer-size INTRINSIC-SYSCALL4-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL4
-    else buffer buffer-size INTRINSIC-SYSCALL5-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL5
-    else buffer buffer-size INTRINSIC-SYSCALL6-STR memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL6
+    // I still hate my life.    
+    else buffer buffer-size INTRINSIC-ADD-STR          memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-ADD
+    else buffer buffer-size INTRINSIC-SUB-STR          memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SUB
+    else buffer buffer-size INTRINSIC-MUL-STR          memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-MUL
+    else buffer buffer-size INTRINSIC-MUL2-STR         memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-MUL2
+    else buffer buffer-size INTRINSIC-DIV-STR          memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-DIV
+    else buffer buffer-size INTRINSIC-MOD-STR          memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-MOD
+    else buffer buffer-size INTRINSIC-UMUL-STR         memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UMUL
+    else buffer buffer-size INTRINSIC-UMUL2-STR        memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UMUL2
+    else buffer buffer-size INTRINSIC-UDIV-STR         memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UDIV
+    else buffer buffer-size INTRINSIC-UMOD-STR         memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-UMOD
+    else buffer buffer-size INTRINSIC-BOR-STR          memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-BOR
+    else buffer buffer-size INTRINSIC-BAND-STR         memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-BAND
+    else buffer buffer-size INTRINSIC-BXOR-STR         memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-BXOR
+    else buffer buffer-size INTRINSIC-BNOT-STR         memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-BNOT
+    else buffer buffer-size INTRINSIC-LOAD8-STR        memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD8
+    else buffer buffer-size INTRINSIC-STORE8-STR       memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE8
+    else buffer buffer-size INTRINSIC-LOAD16-STR       memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD16
+    else buffer buffer-size INTRINSIC-STORE16-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE16
+    else buffer buffer-size INTRINSIC-LOAD32-STR       memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD32
+    else buffer buffer-size INTRINSIC-STORE32-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE32
+    else buffer buffer-size INTRINSIC-LOAD64-STR       memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-LOAD64
+    else buffer buffer-size INTRINSIC-STORE64-STR      memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-STORE64
+    else buffer buffer-size INTRINSIC-SYSCALL0-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL0
+    else buffer buffer-size INTRINSIC-SYSCALL1-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL1
+    else buffer buffer-size INTRINSIC-SYSCALL2-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL2
+    else buffer buffer-size INTRINSIC-SYSCALL3-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL3
+    else buffer buffer-size INTRINSIC-SYSCALL4-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL4
+    else buffer buffer-size INTRINSIC-SYSCALL5-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL5
+    else buffer buffer-size INTRINSIC-SYSCALL6-STR     memcmp8-wl is-zero if TYPE-INTRINSIC INTRINSIC-SYSCALL6
 
-    else buffer buffer-size INT-TYPE-INT-STR       memcmp8-wl is-zero if TYPE-INT-TYPE INT-TYPE-INT
-    else buffer buffer-size INT-TYPE-BOOL-STR      memcmp8-wl is-zero if TYPE-INT-TYPE INT-TYPE-BOOL
+    else buffer buffer-size INT-TYPE-INT-STR           memcmp8-wl is-zero if TYPE-INT-TYPE INT-TYPE-INT
+    else buffer buffer-size INT-TYPE-BOOL-STR          memcmp8-wl is-zero if TYPE-INT-TYPE INT-TYPE-BOOL
 
     else
       // Return token type and argument.
       TYPE-NAME buffer buffer-size to-dynamic8
 
     // This is nightmare fuel.
-    end end end end end end end end end end end end end end end end end end end end end end end end end
-    end end end end end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end end end end end end
 
     let token-type token-arg in
       // Generate the address and return.

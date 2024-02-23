@@ -2285,6 +2285,8 @@ in
     memory line-no         sizeof(int)         in
     memory char-no         sizeof(int)         in
 
+    memory namespace-name  sizeof(ptr)         in
+
       // Reset extended-tokens.
       0 extended-start !64
       0 extended-end   !64
@@ -2292,6 +2294,9 @@ in
       // Reset line-no and char-no variables.
       1 line-no !64
       0 char-no !64
+
+      // Reset namespace.
+      NULLPTR namespace-name !64
 
       // Get next token and check if there is one available-dstr.
       while source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream true get-next-token do
@@ -2314,7 +2319,7 @@ in
 
                 0 while dup include-paths-set list64.length < do peek i in
                   i include-paths-set list64.get let directory in
-                    directory cstr.str path-token-arg path-token-arg mlength path.merge2-cstr let include-path in
+                    directory cstr:str path-token-arg path-token-arg mlength path.merge2-cstr let include-path in
                       // Check if the user has the required permissions.
                       memory stats sizeof(stat) in
                         include-path stats stat drop
@@ -2451,7 +2456,13 @@ in
                 end
 
                 // TODO: Check if the macros queue was filled.
-                macro-name-token-arg macro-tokens-list list64.copy-array macro-names macro-tokens macros-length str-map64.set-dstr drop
+                namespace-name @64 is-null if
+                  macro-name-token-arg
+                else
+                  namespace-name @64 macro-name-token-arg djoin
+                end
+                
+                macro-tokens-list list64.copy-array macro-names macro-tokens macros-length str-map64.set-dstr drop
 
                 // Deallocate 'macro-tokens-list'.
                 macro-tokens-list list64.mfree drop
@@ -2531,83 +2542,117 @@ in
                   end
                 end
 
-                // Store the procedure name, input and outputs.
+                // Store the full name of the procedure, its input and outputs.
                 // Check if the procedure was defined already.
-                proc-name-token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available-dstr if
-                  drop
-                  LOG.ERR log-stream fputs "Procedure '" log-stream fputs proc-name-token-arg proc-name-token-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-                  proc-name-token-address log-stream fput-here
-                  ERROR-EXIT-CODE exit drop
-                  return
+                namespace-name @64 is-null if
+                  proc-name-token-arg
+                else
+                  namespace-name @64 proc-name-token-arg djoin
                 end
 
-                let name-address in
-                  name-address proc-names-array - let delta in
-                    proc-inputs-array delta + proc-outputs-array delta + let input-address output-address in
-                      // Shift the array to insert the name, input and output.
-                      name-address   name-address   8 + procs-length @64 name-address   proc-names-array   - 8 / - memcpy64i
-                      input-address  input-address  8 + procs-length @64 input-address  proc-inputs-array  - 8 / - memcpy64i
-                      output-address output-address 8 + procs-length @64 output-address proc-outputs-array - 8 / - memcpy64i
+                let full-name in
+                  full-name proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available-dstr if
+                    drop
+                    LOG.ERR log-stream fputs "Procedure '" log-stream fputs full-name full-name  mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+                    proc-name-token-address log-stream fput-here
+                    ERROR-EXIT-CODE exit drop
+                    return
+                  end
 
-                      // Save the name, inputs and outputs of the procedure.
-                      proc-name-token-arg             dcopy name-address   !64
-                      input-list          list64.copy-array input-address  !64
-                      output-list         list64.copy-array output-address !64
+                  let name-address in
+                    name-address proc-names-array - let delta in
+                      proc-inputs-array delta + proc-outputs-array delta + let input-address output-address in
+                        // Shift the array to insert the name, input and output.
+                        name-address   name-address   8 + procs-length @64 name-address   proc-names-array   - 8 / - memcpy64i
+                        input-address  input-address  8 + procs-length @64 input-address  proc-inputs-array  - 8 / - memcpy64i
+                        output-address output-address 8 + procs-length @64 output-address proc-outputs-array - 8 / - memcpy64i
 
-                      procs-length @inc64
+                        // Save the name, inputs and outputs of the procedure.
+                        full-name                       dcopy name-address   !64
+                        input-list          list64.copy-array input-address  !64
+                        output-list         list64.copy-array output-address !64
+
+                        procs-length @inc64
+                      end
                     end
                   end
+
+                  // Create the stack for the procedure.
+                  memory local-stack        STACK-MAX-ITEMS in
+                  memory local-stack-length sizeof(int)     in
+                  memory peeked-item        sizeof(int)     in
+
+                    0 local-stack-length !64
+                    0 peeked-item        !64
+
+                    0 while dup input-list list64.length < do peek i in
+                      i input-list list64.get let type in
+                        type push-real
+                      end
+                    end inc end drop
+
+                    source-name source-file output-file
+                    line-no char-no
+                    data-definitions-list
+                    global-names-array global-sizes-array globals-length
+                    proc-names-array proc-inputs-array proc-outputs-array procs-length
+                    macro-names macro-tokens macros-length
+                    full-name proc-name-token-address
+                    local-stack local-stack-length
+                    peeked-item
+                    extended-array extended-start extended-end
+                    output-list list64.to-array
+                    log-stream
+                    compile-procedure drop
+
+                    ".return:\n"                        output-file fputs
+                    "    xchg    rsp, [call_ptr]\n"     output-file fputs
+                    "    pop     qword [local_ptr]\n"   output-file fputs
+                    "    pop     rax\n"                 output-file fputs
+                    "    xchg    rsp, [call_ptr]\n"     output-file fputs
+                    "    jmp     rax\n"                 output-file fputs
+                  end end end
                 end
-
-                // Create the stack for the procedure.
-                memory local-stack        STACK-MAX-ITEMS in
-                memory local-stack-length sizeof(int)     in
-                memory peeked-item        sizeof(int)     in
-
-                  0 local-stack-length !64
-                  0 peeked-item        !64
-
-                  0 while dup input-list list64.length < do peek i in
-                    i input-list list64.get let type in
-                      type push-real
-                    end
-                  end inc end drop
-
-                  source-name source-file output-file
-                  line-no char-no
-                  data-definitions-list
-                  global-names-array global-sizes-array globals-length
-                  proc-names-array proc-inputs-array proc-outputs-array procs-length
-                  macro-names macro-tokens macros-length
-                  proc-name-token-arg proc-name-token-address
-                  local-stack local-stack-length
-                  peeked-item
-                  extended-array extended-start extended-end
-                  output-list list64.to-array
-                  log-stream
-                  compile-procedure drop
-
-                  ".return:\n"                        output-file fputs
-                  "    xchg    rsp, [call_ptr]\n"     output-file fputs
-                  "    pop     qword [local_ptr]\n"   output-file fputs
-                  "    pop     rax\n"                 output-file fputs
-                  "    xchg    rsp, [call_ptr]\n"     output-file fputs
-                  "    jmp     rax\n"                 output-file fputs
-                end end end
 
                 // Deallocate input-list and output-list.
                 input-list  list64.mfree drop
                 output-list list64.mfree drop
               end end
             end
+            
+          else token-arg KEYWORD-NAMESPACE = if
+            namespace-name @64 isn-null if
+              LOG.ERR log-stream fputs "Keyword 'namespace' can not be used inside a namespace.\n" log-stream fputs
+              token-address log-stream fput-here
+              ERROR-EXIT-CODE exit drop
+            end
+
+            // Get the next token, which should be the name of the procedure.
+            "a 'name' after 'namespace'" false compile-file.get-next-token
+
+            let name-type name-address name-arg in
+              name-type name-address "as namespace name after 'namespace'" TYPE-NAME compile-file.check-type-here
+
+              ':' name-arg dappend8 namespace-name !64
+            end
+
+          else token-arg KEYWORD-ENDNAMESPACE = if
+            namespace-name @64 is-null if
+              LOG.ERR log-stream fputs "Keyword 'endnamespace' must be used after a 'namespace' keyword.\n" log-stream fputs
+              token-address log-stream fput-here
+              ERROR-EXIT-CODE exit drop
+            end
+
+            NULLPTR namespace-name !64
+            
           else
             LOG.ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
             token-address log-stream fput-here
             ERROR-EXIT-CODE exit drop
-          end end end end
+          end end end end end end
         end
       end drop drop drop
-    end end end end end
+    end end end end end end
 
     source-file fclose drop
   end
@@ -2620,14 +2665,14 @@ proc compile-nasm
 in let source-name output-name include-paths-set log-stream in
   // Create the output file.
   output-name 0o777 creat dup isn-pos if
-    LOG.ERR log-stream fputs "Could not create output file '" log-stream fputs output-name output-name cstr.len log-stream fputs "'.\n" log-stream fputs
+    LOG.ERR log-stream fputs "Could not create output file '" log-stream fputs output-name output-name cstr:len log-stream fputs "'.\n" log-stream fputs
     ERROR-EXIT-CODE exit drop
   end
 
   let output-file in
     // Check if the file is opened successfully.
     output-file isn-pos if
-      LOG.ERR log-stream fputs "Could not open output file '" log-stream fputs output-name output-name cstr.len log-stream fputs "'.\n" log-stream fputs
+      LOG.ERR log-stream fputs "Could not open output file '" log-stream fputs output-name output-name cstr:len log-stream fputs "'.\n" log-stream fputs
       ERROR-EXIT-CODE exit drop
     end
 

@@ -12,7 +12,7 @@ macro str-sorted8.available-dstr let address start end_ in
 end endmacro
 
 macro str-sorted8.available-cstr let address start end_ in
-  address address cstr.len start end_ str-sorted8.available-str
+  address address cstr:len start end_ str-sorted8.available-str
 end endmacro
 
 proc str-sorted8.available-str

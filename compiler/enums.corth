@@ -41,48 +41,52 @@ macro TYPE-STRING-STR    "string"    endmacro
 macro TYPE-INT-TYPE-STR  "int-type"  endmacro
 
 // Keyword IDs
-macro KEYWORD-UNKNOWN  0  endmacro
-macro KEYWORD-MACRO    1  endmacro
-macro KEYWORD-ENDMACRO 2  endmacro
-macro KEYWORD-PROC     3  endmacro
-macro KEYWORD-RETURNS  4  endmacro
-macro KEYWORD-IN       5  endmacro
-macro KEYWORD-END      6  endmacro
-macro KEYWORD-RETURN   7  endmacro
-macro KEYWORD-MEMORY   8  endmacro
-macro KEYWORD-AND      9  endmacro
-macro KEYWORD-LET      10 endmacro
-macro KEYWORD-PEEK     11 endmacro
-macro KEYWORD-IF       12 endmacro
-macro KEYWORD-ELSE     13 endmacro
-macro KEYWORD-WHILE    14 endmacro
-macro KEYWORD-DO       15 endmacro
-macro KEYWORD-BREAK    16 endmacro
-macro KEYWORD-INCLUDE  17 endmacro
-macro KEYWORD-CAST     18 endmacro
-macro KEYWORD-SIZEOF   19 endmacro
+macro KEYWORD-UNKNOWN      0  endmacro
+macro KEYWORD-MACRO        1  endmacro
+macro KEYWORD-ENDMACRO     2  endmacro
+macro KEYWORD-PROC         3  endmacro
+macro KEYWORD-RETURNS      4  endmacro
+macro KEYWORD-IN           5  endmacro
+macro KEYWORD-END          6  endmacro
+macro KEYWORD-RETURN       7  endmacro
+macro KEYWORD-MEMORY       8  endmacro
+macro KEYWORD-AND          9  endmacro
+macro KEYWORD-LET          10 endmacro
+macro KEYWORD-PEEK         11 endmacro
+macro KEYWORD-IF           12 endmacro
+macro KEYWORD-ELSE         13 endmacro
+macro KEYWORD-WHILE        14 endmacro
+macro KEYWORD-DO           15 endmacro
+macro KEYWORD-BREAK        16 endmacro
+macro KEYWORD-INCLUDE      17 endmacro
+macro KEYWORD-CAST         18 endmacro
+macro KEYWORD-SIZEOF       19 endmacro
+macro KEYWORD-NAMESPACE    20 endmacro
+macro KEYWORD-ENDNAMESPACE 21 endmacro
 
 // Keyword strings
-macro KEYWORD-UNKNOWN-STR  "<unknown>" endmacro
-macro KEYWORD-MACRO-STR    "macro"     endmacro
-macro KEYWORD-ENDMACRO-STR "endmacro"  endmacro
-macro KEYWORD-PROC-STR     "proc"      endmacro
-macro KEYWORD-END-STR      "end"       endmacro
-macro KEYWORD-RETURN-STR   "return"    endmacro
-macro KEYWORD-RETURNS-STR  "->"        endmacro
-macro KEYWORD-MEMORY-STR   "memory"    endmacro
-macro KEYWORD-AND-STR      "and"       endmacro
-macro KEYWORD-IN-STR       "in"        endmacro
-macro KEYWORD-LET-STR      "let"       endmacro
-macro KEYWORD-PEEK-STR     "peek"      endmacro
-macro KEYWORD-IF-STR       "if"        endmacro
-macro KEYWORD-ELSE-STR     "else"      endmacro
-macro KEYWORD-WHILE-STR    "while"     endmacro
-macro KEYWORD-DO-STR       "do"        endmacro
-macro KEYWORD-BREAK-STR    "break"     endmacro
-macro KEYWORD-INCLUDE-STR  "include"   endmacro
-macro KEYWORD-CAST-STR     "cast"      endmacro
-macro KEYWORD-SIZEOF-STR   "sizeof"    endmacro
+macro KEYWORD-UNKNOWN-STR      "<unknown>"    endmacro
+macro KEYWORD-MACRO-STR        "macro"        endmacro
+macro KEYWORD-ENDMACRO-STR     "endmacro"     endmacro
+macro KEYWORD-PROC-STR         "proc"         endmacro
+macro KEYWORD-END-STR          "end"          endmacro
+macro KEYWORD-RETURN-STR       "return"       endmacro
+macro KEYWORD-RETURNS-STR      "->"           endmacro
+macro KEYWORD-MEMORY-STR       "memory"       endmacro
+macro KEYWORD-AND-STR          "and"          endmacro
+macro KEYWORD-IN-STR           "in"           endmacro
+macro KEYWORD-LET-STR          "let"          endmacro
+macro KEYWORD-PEEK-STR         "peek"         endmacro
+macro KEYWORD-IF-STR           "if"           endmacro
+macro KEYWORD-ELSE-STR         "else"         endmacro
+macro KEYWORD-WHILE-STR        "while"        endmacro
+macro KEYWORD-DO-STR           "do"           endmacro
+macro KEYWORD-BREAK-STR        "break"        endmacro
+macro KEYWORD-INCLUDE-STR      "include"      endmacro
+macro KEYWORD-CAST-STR         "cast"         endmacro
+macro KEYWORD-SIZEOF-STR       "sizeof"       endmacro
+macro KEYWORD-NAMESPACE-STR    "namespace"    endmacro
+macro KEYWORD-ENDNAMESPACE-STR "endnamespace" endmacro
 
 // Intrinsic IDs
 macro INTRINSIC-UNKNOWN  0  endmacro
@@ -181,26 +185,28 @@ proc get-keyword-name
   // int: keyword -> ptr: keyword-name-ptr int: keyword-name-length
   int -> ptr int
 in let keyword in
-       keyword KEYWORD-INCLUDE  = if KEYWORD-INCLUDE-STR
-  else keyword KEYWORD-MACRO    = if KEYWORD-MACRO-STR
-  else keyword KEYWORD-ENDMACRO = if KEYWORD-ENDMACRO-STR
-  else keyword KEYWORD-PROC     = if KEYWORD-PROC-STR
-  else keyword KEYWORD-END      = if KEYWORD-END-STR
-  else keyword KEYWORD-RETURN   = if KEYWORD-RETURN-STR
-  else keyword KEYWORD-RETURNS  = if KEYWORD-RETURNS-STR
-  else keyword KEYWORD-MEMORY   = if KEYWORD-MEMORY-STR
-  else keyword KEYWORD-AND      = if KEYWORD-AND-STR
-  else keyword KEYWORD-IN       = if KEYWORD-IN-STR
-  else keyword KEYWORD-LET      = if KEYWORD-LET-STR
-  else keyword KEYWORD-PEEK     = if KEYWORD-PEEK-STR      
-  else keyword KEYWORD-IF       = if KEYWORD-IF-STR
-  else keyword KEYWORD-ELSE     = if KEYWORD-ELSE-STR
-  else keyword KEYWORD-WHILE    = if KEYWORD-WHILE-STR
-  else keyword KEYWORD-DO       = if KEYWORD-DO-STR
-  else keyword KEYWORD-BREAK    = if KEYWORD-BREAK-STR
-  else keyword KEYWORD-SIZEOF   = if KEYWORD-SIZEOF-STR
-  else                               KEYWORD-UNKNOWN-STR
-  end end end end end end end end end end end end end end end end end end
+       keyword KEYWORD-INCLUDE      = if KEYWORD-INCLUDE-STR
+  else keyword KEYWORD-MACRO        = if KEYWORD-MACRO-STR
+  else keyword KEYWORD-ENDMACRO     = if KEYWORD-ENDMACRO-STR
+  else keyword KEYWORD-NAMESPACE    = if KEYWORD-NAMESPACE-STR
+  else keyword KEYWORD-ENDNAMESPACE = if KEYWORD-ENDNAMESPACE-STR
+  else keyword KEYWORD-PROC         = if KEYWORD-PROC-STR
+  else keyword KEYWORD-END          = if KEYWORD-END-STR
+  else keyword KEYWORD-RETURN       = if KEYWORD-RETURN-STR
+  else keyword KEYWORD-RETURNS      = if KEYWORD-RETURNS-STR
+  else keyword KEYWORD-MEMORY       = if KEYWORD-MEMORY-STR
+  else keyword KEYWORD-AND          = if KEYWORD-AND-STR
+  else keyword KEYWORD-IN           = if KEYWORD-IN-STR
+  else keyword KEYWORD-LET          = if KEYWORD-LET-STR
+  else keyword KEYWORD-PEEK         = if KEYWORD-PEEK-STR      
+  else keyword KEYWORD-IF           = if KEYWORD-IF-STR
+  else keyword KEYWORD-ELSE         = if KEYWORD-ELSE-STR
+  else keyword KEYWORD-WHILE        = if KEYWORD-WHILE-STR
+  else keyword KEYWORD-DO           = if KEYWORD-DO-STR
+  else keyword KEYWORD-BREAK        = if KEYWORD-BREAK-STR
+  else keyword KEYWORD-SIZEOF       = if KEYWORD-SIZEOF-STR
+  else                                   KEYWORD-UNKNOWN-STR
+  end end end end end end end end end end end end end end end end end end end end
 end end
 
 proc get-intrinsic-name

@@ -173,7 +173,7 @@ in let address length in
         O-ERROR NULLPTR E-EXPECTED-ARGUMENT address length return
       end
 
-      O-ARGUMENT address length getopts.char @64 dup cstr.len
+      O-ARGUMENT address length getopts.char @64 dup cstr:len
 
       getopts.next-option
 
@@ -210,7 +210,7 @@ in
           O-INPLACE getopts.char @64 2 - 2 NULLPTR 0
         else
           // --arg
-          getopts.char @64 dup cstr.len getopts.next-option getopts.parse-argument
+          getopts.char @64 dup cstr:len getopts.next-option getopts.parse-argument
         end
 
       else
@@ -228,7 +228,7 @@ in
 
     else
       // arg
-      O-INPLACE getopts.option @64 @64 dup cstr.len NULLPTR 0
+      O-INPLACE getopts.option @64 @64 dup cstr:len NULLPTR 0
       getopts.next-option
     end
 

@@ -126,7 +126,7 @@ macro path.merge.end-cstr // -> cstr: merge-string
 endmacro
 
 macro path.merge.append-cstr let _string_ in // cstr: string
-  _string_ cstr.len let _length_ in
+  _string_ cstr:len let _length_ in
     _string_ _length_ _path.merge.builder.array_ _path.merge.builder.ptr_ string-builder.append-str
     _string_ _length_ + dec @8 '/' != if
       '/' _path.merge.builder.array_ _path.merge.builder.ptr_ string-builder.append-char

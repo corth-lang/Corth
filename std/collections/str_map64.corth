@@ -63,7 +63,7 @@ end endmacro
 
 
 macro str-map64.get-cstr let key key-array value-array length in
-  key key cstr.len key-array value-array length str-map64.get-str
+  key key cstr:len key-array value-array length str-map64.get-str
 end endmacro
 
 
@@ -87,7 +87,7 @@ end endmacro
 
 
 macro str-map64.remove-cstr let key key-array value-array length in
-  key key cstr.len key-array value-array length str-map64.remove-str
+  key key cstr:len key-array value-array length str-map64.remove-str
 end endmacro
 
 
