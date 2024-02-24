@@ -1063,7 +1063,7 @@ in
       new-token-type new-token-address "after 'let'" TOKEN-TYPE:NAME compile-procedure:check-type-here
 
       // TODO: Change the way that the variables are stored, so that we can also store their addresses.
-      new-token-arg new-names-list list64.append
+      new-token-arg new-names-list list64:append
 
       // Deallocate 'new-token-address'.
       new-token-address mfree drop
@@ -1126,7 +1126,7 @@ in
   token-arg KEYWORD:END = if
     // -------- Keyword 'end' --------
 
-    levels-list list64.length is-zero if
+    levels-list list64:length is-zero if
       // -------- End of 'proc' --------
 
       // Branch should not be cut before the main procedure return.
@@ -1144,7 +1144,7 @@ in
       true return
     end
 
-    levels-list list64.pop-last let level in
+    levels-list list64:pop-last let level in
       level @64 level 8 + @64 let start-keyword start-address in
         start-keyword KEYWORD:IF = if
           // -------- End of 'if' --------
@@ -1348,7 +1348,7 @@ in
           level-id             obj 16 + !64
           copy-stack           obj 24 + !64
 
-          obj levels-list list64.append
+          obj levels-list list64:append
 
           "    pop     rax\n"      output-file fputs
           "    test    rax, rax\n" output-file fputs
@@ -1371,7 +1371,7 @@ in
     // Branch should not be cut before 'else'.
     token-address "before 'else'" compile-procedure:check-branch-here
 
-    levels-list list64.length is-zero if
+    levels-list list64:length is-zero if
       LOG:ERR log-stream fputs "'else' requires 'if'.\n" log-stream fputs
       token-address compile-procedure:show-here
       EXIT-CODE:ERROR exit drop
@@ -1379,7 +1379,7 @@ in
 
     local-stack local-stack-length output-file local-stack.convert-last-items-real
 
-    levels-list list64.pop-last let level in
+    levels-list list64:pop-last let level in
       level @64 level 8 + @64 let old-keyword old-address in
         old-keyword old-address token-address "before 'else'" KEYWORD:IF compile-procedure:check-level-here
 
@@ -1401,7 +1401,7 @@ in
                 level-id             new-level 24 + !64
                 copy-stack           new-level 32 + !64
 
-                new-level levels-list list64.append
+                new-level levels-list list64:append
               end
             end
           end
@@ -1444,7 +1444,7 @@ in
           level-id             new-level 16 + !64
           copy-stack           new-level 24 + !64
 
-          new-level levels-list list64.append
+          new-level levels-list list64:append
         end
       end
     end
@@ -1490,7 +1490,7 @@ in
     end
 
     // Get the 'while' level.
-    levels-list list64.pop-last let old-level in
+    levels-list list64:pop-last let old-level in
       old-level @64 old-level 8 + @64 let old-keyword old-address in
         // Check if the level type is 'while'.
         old-keyword old-address token-address "before 'do'" KEYWORD:WHILE compile-procedure:check-level-here
@@ -1516,7 +1516,7 @@ in
                   broken-end-id            new-level 40 + !64
                   old-stack                new-level 48 + !64
                   copy-stack               new-level 56 + !64
-                  new-level levels-list list64.append
+                  new-level levels-list list64:append
                 end
               end
             end
@@ -1532,7 +1532,7 @@ in
     // Branch should not be cut before 'break'.
     token-address "call 'break'" compile-procedure:check-branch-here
 
-    levels-list list64.end-addr while dup levels-list list64.array-addr > do 8 - let level-addr in
+    levels-list list64:end-addr while dup levels-list list64:array-addr > do 8 - let level-addr in
       level-addr @64 @64 level-addr @64 8 + @64 let old-keyword old-address in
         old-keyword KEYWORD:DO = if
           level-addr @64 32 + @64 level-addr @64 24 + @64 level-addr @64 56 + @64 let broken-end-id do-address do-stack in
@@ -1574,7 +1574,7 @@ in
 
     // New names are stored in new-names and new-names-length stack. When the 'end' of 'memory' is reached, new names are deleted from the namespace.
     memory new-names-list sizeof(ptr) in
-      16 list64.init let dynamic in
+      16 list64:init let dynamic in
         dynamic "creating list dynamic object for 'memory'" compile-procedure:check-null-here
 
         dynamic new-names-list !64
@@ -1612,7 +1612,7 @@ in
             // Check if the keyword is 'in'.
             memory-end-arg memory-end-address "after 'memory'" KEYWORD:IN compile-procedure:check-keyword-here
 
-            memory-name-arg new-names-list list64.append
+            memory-name-arg new-names-list list64:append
 
             INT-TYPE:INT STACK-MODE:LOCAL stack-item:create let replace-item in
               local-memory-end @64 replace-item stack-item:set-arg1
@@ -1645,14 +1645,14 @@ in
 
         KEYWORD:MEMORY                   new-level      !64
         token-address dcopy              new-level  8 + !64
-        new-names-list list64.copy-array new-level 16 + !64
+        new-names-list list64:copy-array new-level 16 + !64
         local-memory-end @64             new-level 24 + !64
 
-        new-level levels-list list64.append
+        new-level levels-list list64:append
       end
 
       // Deallocate 'new-names-list' but keep the 'memory' variable names.
-      new-names-list list64.mfree drop
+      new-names-list list64:mfree drop
     end
 
   else token-arg KEYWORD:LET = if
@@ -1670,7 +1670,7 @@ in
 
     // New names are stored in new-names and new-names-length stack. When the 'end' of 'let' is reached, new names are deleted from the namespace.
     memory new-names-list sizeof(ptr) in
-      16 list64.init let dynamic in
+      16 list64:init let dynamic in
         dynamic "creating list dynamic object for 'let'" compile-procedure:check-null-here
 
         dynamic new-names-list !64
@@ -1687,14 +1687,14 @@ in
 
       local-memory-end @64 let old-local-memory-end in
         // This loop is separated from the one above, since this loop must run in the reverse order.
-        new-names-list list64.length while dup isn-zero do dec peek i in
+        new-names-list list64:length while dup isn-zero do dec peek i in
           1 is-items-available ! if
             LOG:ERR log-stream fputs "Expected a data before 'let' variable, but the stack was empty.\n" log-stream fputs
             token-address compile-procedure:show-here
             EXIT-CODE:ERROR exit drop
           end
 
-          pop-item i new-names-list list64.get let item variable-name in
+          pop-item i new-names-list list64:get let item variable-name in
             variable-name mlength 1 = if variable-name @8 '_' = else false end if
               item stack-item:get-mode STACK-MODE:REAL = if
                 "    pop     r15\n" output-file fputs
@@ -1751,15 +1751,15 @@ in
 
           KEYWORD:LET                      new-level      !64
           token-address dcopy              new-level  8 + !64
-          new-names-list list64.copy-array new-level 16 + !64
+          new-names-list list64:copy-array new-level 16 + !64
           old-local-memory-end             new-level 24 + !64
 
-          new-level levels-list list64.append
+          new-level levels-list list64:append
         end
       end
 
       // Deallocate 'new-names-list' but keep the 'let' variable names.
-      new-names-list list64.mfree drop
+      new-names-list list64:mfree drop
     end
 
   else token-arg KEYWORD:PEEK = if
@@ -1777,7 +1777,7 @@ in
 
     // New names are stored in new-names and new-names-length stack. When the 'end' of 'peek' is reached, new names are deleted from the namespace.
     memory new-names-list sizeof(ptr) in
-      16 list64.init let dynamic in
+      16 list64:init let dynamic in
         dynamic "creating list dynamic object for 'peek'" compile-procedure:check-null-here
 
         dynamic new-names-list !64
@@ -1792,7 +1792,7 @@ in
       log-stream
       collect-let-like-names
 
-      new-names-list list64.length is-items-available ! if
+      new-names-list list64:length is-items-available ! if
         LOG:ERR log-stream fputs "Stack does not contain enough items for 'peek'.\n" log-stream fputs
         token-address log-stream fput-here
         EXIT-CODE:ERROR exit drop
@@ -1802,10 +1802,10 @@ in
         local-stack-length @64 peeked-item !64
 
         // This loop is separated from the one above, since this loop must run in the reverse order.
-        new-names-list list64.length while dup isn-zero do dec peek i in
-          local-stack-length @64 new-names-list list64.length - i + let item-index in
+        new-names-list list64:length while dup isn-zero do dec peek i in
+          local-stack-length @64 new-names-list list64:length - i + let item-index in
             item-index local-stack array64:get let item in
-              i new-names-list list64.get let variable-name in
+              i new-names-list list64:get let variable-name in
                 item stack-item:get-mode STACK-MODE:IMM         =
                 item stack-item:get-mode STACK-MODE:GLOBAL      = |
                 item stack-item:get-mode STACK-MODE:@LOCALCONST = |
@@ -1839,15 +1839,15 @@ in
 
           KEYWORD:PEEK                     new-level      !64
           token-address dcopy              new-level  8 + !64
-          new-names-list list64.copy-array new-level 16 + !64
+          new-names-list list64:copy-array new-level 16 + !64
           old-peeked-item                  new-level 24 + !64
 
-          new-level levels-list list64.append
+          new-level levels-list list64:append
         end
       end
 
       // Deallocate 'new-names-list' but keep the 'peek' variable names.
-      new-names-list list64.mfree drop
+      new-names-list list64:mfree drop
     end
 
   else token-arg KEYWORD:RETURN = if
@@ -1988,7 +1988,7 @@ in
   // branch-active keeps track of if the branch of the code ended.
   memory branch-active    1                in
 
-    16 list64.init let dynamic in
+    16 list64:init let dynamic in
       dynamic "creating a list dynamic object" compile-procedure:check-null
 
       dynamic levels-list !64
@@ -2024,10 +2024,10 @@ in
           // Branch should not be cut before string immediate.
           token-address "push a string" compile-procedure:check-branch-here
 
-          data-definitions-list list64.length push-data
+          data-definitions-list list64:length push-data
           token-arg mlength dec               push-int-immediate
 
-          token-arg data-definitions-list list64.append
+          token-arg data-definitions-list list64:append
 
         else token-type TOKEN-TYPE:NAME = if
           // -------- Names --------
@@ -2148,7 +2148,7 @@ in
     end
 
     // Deallocate 'levels-list'.
-    levels-list list64.mfree-deep drop
+    levels-list list64:mfree-deep drop
   end end end end end end end end
 end 0 end // dummy return
 
@@ -2317,8 +2317,8 @@ in
               memory found 1 in
                 0 found !8
 
-                0 while dup include-paths-set list64.length < do peek i in
-                  i include-paths-set list64.get let directory in
+                0 while dup include-paths-set list64:length < do peek i in
+                  i include-paths-set list64:get let directory in
                     directory cstr:str path-token-arg path-token-arg mlength path:merge2-cstr let include-path in
                       // Check if the user has the required permissions.
                       memory stats sizeof(stat) in
@@ -2439,7 +2439,7 @@ in
 
               // macro-tokens and macro-tokens-length are used to create a STACK for macro tokens.
               memory macro-tokens-list sizeof(ptr) in
-                16 list64.init let dynamic in
+                16 list64:init let dynamic in
                   dynamic "creating list dynamic object for 'macro'" compile-file:check-null-here
 
                   dynamic macro-tokens-list !64
@@ -2458,9 +2458,9 @@ in
                     end
 
                     // Add the token attributes to the macro-tokens-list.
-                    macro-new-token-type    macro-tokens-list list64.append
-                    macro-new-token-address macro-tokens-list list64.append
-                    macro-new-token-arg     macro-tokens-list list64.append
+                    macro-new-token-type    macro-tokens-list list64:append
+                    macro-new-token-address macro-tokens-list list64:append
+                    macro-new-token-arg     macro-tokens-list list64:append
                   end
                 end
 
@@ -2471,10 +2471,10 @@ in
                   namespace-name @64 macro-name-token-arg djoin
                 end
                 
-                macro-tokens-list list64.copy-array macro-names macro-tokens macros-length str-map64.set-dstr drop
+                macro-tokens-list list64:copy-array macro-names macro-tokens macros-length str-map64.set-dstr drop
 
                 // Deallocate 'macro-tokens-list'.
-                macro-tokens-list list64.mfree drop
+                macro-tokens-list list64:mfree drop
               end
 
               // Deallocate 'macro-name-token-address'.
@@ -2494,8 +2494,8 @@ in
               memory output-list sizeof(ptr) in
 
                 // TODO: Check if the dynamic object is NULLPTR or not.
-                16 list64.init input-list !64
-                16 list64.init output-list !64
+                16 list64:init input-list !64
+                16 list64:init output-list !64
 
                 // Get the input types.
                 while true do
@@ -2517,7 +2517,7 @@ in
                     // Check if the token is of type-type.
                     input-token-type input-token-address "after 'proc'" TOKEN-TYPE:INT-TYPE compile-file:check-type-here
 
-                    input-token-arg input-list list64.append
+                    input-token-arg input-list list64:append
 
                     // Deallocate 'input-token-address'.
                     input-token-address mfree drop
@@ -2544,7 +2544,7 @@ in
                     // Check if the token is of type-type.
                     output-token-type output-token-address "after '->'" TOKEN-TYPE:INT-TYPE compile-file:check-type-here
 
-                    output-token-arg output-list list64.append
+                    output-token-arg output-list list64:append
 
                     // Deallocate 'output-token-address'.
                     output-token-address mfree drop
@@ -2578,8 +2578,8 @@ in
 
                         // Save the name, inputs and outputs of the procedure.
                         full-name                       dcopy name-address   !64
-                        input-list          list64.copy-array input-address  !64
-                        output-list         list64.copy-array output-address !64
+                        input-list          list64:copy-array input-address  !64
+                        output-list         list64:copy-array output-address !64
 
                         procs-length @inc64
                       end
@@ -2594,8 +2594,8 @@ in
                     0 local-stack-length !64
                     0 peeked-item        !64
 
-                    0 while dup input-list list64.length < do peek i in
-                      i input-list list64.get let type in
+                    0 while dup input-list list64:length < do peek i in
+                      i input-list list64:get let type in
                         type push-real
                       end
                     end inc end drop
@@ -2610,7 +2610,7 @@ in
                     local-stack local-stack-length
                     peeked-item
                     extended-array extended-start extended-end
-                    output-list list64.to-array
+                    output-list list64:to-array
                     log-stream
                     compile-procedure drop
 
@@ -2624,8 +2624,8 @@ in
                 end
 
                 // Deallocate input-list and output-list.
-                input-list  list64.mfree drop
-                output-list list64.mfree drop
+                input-list  list64:mfree drop
+                output-list list64:mfree drop
               end end
             end
             
@@ -2735,13 +2735,13 @@ in let source-name output-name include-paths-set log-stream in
       0 procs-length     !64
       0 macros-length    !64
 
-      16 list64.init let dynamic in
+      16 list64:init let dynamic in
         dynamic "creating a list dynamic object for data-definitions-list" compile-file:check-null
 
         dynamic data-definitions-list !64
       end
 
-      16 list64.init let dynamic in
+      16 list64:init let dynamic in
         dynamic "creating a list dynamic object for libraries-set.\n" compile-file:check-null
 
         dynamic libraries-set !64
@@ -2787,12 +2787,12 @@ in let source-name output-name include-paths-set log-stream in
       end inc end drop
 
       // Deallocate the space allocated for libraries-set.
-      libraries-set list64.mfree-deep drop
+      libraries-set list64:mfree-deep drop
 
       "segment .data\n" output-file fputs
-      0 while dup data-definitions-list list64.length < do peek i in
+      0 while dup data-definitions-list list64:length < do peek i in
         "    data_" output-file fputs i output-file fputu ": db " output-file fputs
-        i data-definitions-list list64.get let data in
+        i data-definitions-list list64:get let data in
           0 while dup data mlength < do peek j in
             j data + @8 output-file fputu ", " output-file fputs
           end inc end drop
@@ -2801,7 +2801,7 @@ in let source-name output-name include-paths-set log-stream in
       end inc end drop
 
       // Deallocate the space allocated for data-definitions-list
-      data-definitions-list list64.mfree-deep drop
+      data-definitions-list list64:mfree-deep drop
 
       "segment .bss\n"                                    output-file fputs
       "    local_memory:   resb 67108864\n"               output-file fputs

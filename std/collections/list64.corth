@@ -1,9 +1,11 @@
 include "core/memory.corth"
 include "collections/array64.corth"
 
-macro list64.RESIZING 16 endmacro
+namespace list64
 
-macro list64.init
+macro RESIZING 16 endmacro
+
+macro init
   // int: start-size -> ptr: dynamic-object
   // Start size is the capacity the dynamic object has when the object is created.
   // Save the dynamic object to a variable and use that variable address as the list object.
@@ -14,105 +16,105 @@ macro list64.init
   _dynamic_ end
 endmacro
 
-macro list64.mfree
+macro mfree
   // ptr: list64 -> bool: successful
-  list64.get-dynamic mfree
+  list64:get-dynamic mfree
 endmacro
 
-macro list64.mfree-deep let _list_ in
+macro mfree-deep let _list_ in
   // ptr: list64 -> bool: successful
-  0 while dup _list_ list64.length < do peek i in
-    i _list_ list64.get mfree drop
+  0 while dup _list_ list64:length < do peek i in
+    i _list_ list64:get mfree drop
   end inc end drop
 
-  _list_ list64.mfree
+  _list_ list64:mfree
 end endmacro
 
-macro list64.get-dynamic
+macro get-dynamic
   // ptr: list64 -> ptr: dynamic
   @64
 endmacro
 
-macro list64.length-addr
+macro length-addr
   // ptr: list64 -> ptr: length
-  list64.get-dynamic
+  list64:get-dynamic
 endmacro
 
-macro list64.array-addr
+macro array-addr
   // ptr: list64 -> ptr: array
-  list64.get-dynamic 8 +
+  list64:get-dynamic 8 +
 endmacro
 
-macro list64.to-array let _list_ in
+macro to-array let _list_ in
   // ptr: list64 -> ptr: array int: length
-  _list_ list64.array-addr _list_ list64.length
+  _list_ list64:array-addr _list_ list64:length
 end endmacro
 
-macro list64.copy-array
+macro copy-array
   // ptr: list64 -> ptr: array
-  list64.to-array to-dynamic64
+  list64:to-array to-dynamic64
 endmacro
 
-macro list64.length
+macro length
   // ptr: list64 -> int: length
-  list64.length-addr @64
+  list64:length-addr @64
 endmacro
 
-macro list64.end-addr let _list_ in
+macro end-addr let _list_ in
   // ptr: list64 -> ptr: end-addr
 
   // Return the address of array.length()th item of array.
-  _list_ list64.length _list_ list64.array-addr array64:get-addr
+  _list_ list64:length _list_ list64:array-addr array64:get-addr
 end endmacro
 
-macro list64.capacity
+macro capacity
   // ptr: list64 -> int: capacity
   // Capacity is the total amount of indexes available.
-  list64.get-dynamic mlength 8 / dec
+  list64:get-dynamic mlength 8 / dec
 endmacro
 
-macro list64.avail
+macro avail
   // ptr: list64 -> int: avail
   // Returns the number of indexes available on the list without any resizing.
 
   let _list_ in
-    _list_ list64.get-dynamic mlength 8 / _list_ list64.length - dec
+    _list_ list64:get-dynamic mlength 8 / _list_ list64:length - dec
   end
 endmacro
 
-macro list64.get-addr
+macro get-addr
   // int: index ptr: list64 -> ptr: address
-  list64.array-addr array64:get-addr
+  list64:array-addr array64:get-addr
 endmacro
 
-macro list64.get
+macro get
   // int: index ptr: list64 -> int: value
   // NOTE: This macro assumes that the index is valid.
-  list64.get-addr @64
+  list64:get-addr @64
 endmacro
 
-macro list64.set
+macro set
   // int: value int: index ptr: list64 ->
   // NOTE: This macro assumes that the index is valid.
-  list64.get-addr !64
+  list64:get-addr !64
 endmacro
 
-macro list64.inc-length
+macro inc-length
   // ptr: list64 ->
-  list64.length-addr @inc64
+  list64:length-addr @inc64
 endmacro
 
-macro list64.dec-length
+macro dec-length
   // ptr: list64 ->
-  list64.length-addr @dec64
+  list64:length-addr @dec64
 endmacro
 
-proc list64.inc-capacity
+proc inc-capacity
   // int: extend ptr: list64 ->
   int ptr ->
   // NOTE: If a problem with mfree occurs, it is ignored. This behavior should be changed in the future.
 in let extend list in
-  list list64.get-dynamic let old_dynamic in
+  list list64:get-dynamic let old_dynamic in
     // Resize and save the dynamic object.
     old_dynamic old_dynamic mlength extend 8 * + dresize-up list !64
 
@@ -121,71 +123,73 @@ in let extend list in
   end
 end end
 
-macro list64.check-capacity
+macro check-capacity
   // int: length ptr: list ->
   // Length is the expected available length.
   let _length_ _list_ in
-    _length_ _list_ list64.get-dynamic mlength 8 / _list_ list64.length - dec - let _avail_ in
+    _length_ _list_ list64:get-dynamic mlength 8 / _list_ list64:length - dec - let _avail_ in
       _avail_ is-pos if
-        _avail_ list64.RESIZING upper-base _list_ list64.inc-capacity
+        _avail_ list64:RESIZING upper-base _list_ list64:inc-capacity
       end
     end
   end
 endmacro
 
-proc list64.insert
+proc insert
   // int: value int: index ptr: list ->
   int int ptr ->
 in let value index list in
   // Check if the list has enough capacity.
-  1 list list64.check-capacity
+  1 list list64:check-capacity
 
   // Move content to right.
-  index list list64.get-addr dup 8 + list list64.length index - memcpy64i
+  index list list64:get-addr dup 8 + list list64:length index - memcpy64i
 
   // Set value.
-  value index list list64.set
+  value index list list64:set
 
   // Increase the length of the list.
-  list list64.inc-length
+  list list64:inc-length
 end end
 
-proc list64.pop
+proc pop
   // int: index ptr: list -> int: value
   int ptr -> int
 in let index list in
-  index list list64.get-addr let page-addr in
+  index list list64:get-addr let page-addr in
     // Return the value.
     page-addr @64
 
     // Move content to left.
-    page-addr 8 + page-addr list list64.length index - dec memcpy64
+    page-addr 8 + page-addr list list64:length index - dec memcpy64
   end
 
-  list list64.dec-length
+  list list64:dec-length
 end end
 
-proc list64.append
+proc append
   // int: value ptr: list ->
   int ptr ->
 in let value list in
   // Check if the list has enough capacity.
-  1 list list64.check-capacity
+  1 list list64:check-capacity
 
   // Set value.
-  value list list64.length list list64.set
+  value list list64:length list list64:set
 
   // Increase the length of the list.
-  list list64.inc-length
+  list list64:inc-length
 end end
 
-proc list64.pop-last
+proc pop-last
   // ptr: list -> int: value
   ptr -> int
 in let list in
   // Decrease the length of the list.
-  list list64.dec-length
+  list list64:dec-length
 
   // Return the last item.
-  list list64.length list list64.get
+  list list64:length list list64:get
 end end
+
+endnamespace

@@ -249,16 +249,16 @@ proc command.quick-test -> in
   memory test-paths        sizeof(ptr) in
   memory include-paths-set sizeof(ptr) in
   memory full-compilation  sizeof(int) in
-    16 list64.init test-paths !64
-    16 list64.init include-paths-set !64
+    16 list64:init test-paths !64
+    16 list64:init include-paths-set !64
 
     test-paths @64 is-null if
-      "error: 'list64.init' failed\n" eputs
+      "error: 'list64:init' failed\n" eputs
       EXIT-ERROR exit drop
     end
 
     include-paths-set @64 is-null if
-      "error: 'list64.init' failed\n" eputs
+      "error: 'list64:init' failed\n" eputs
       EXIT-ERROR exit drop
     end
 
@@ -270,7 +270,7 @@ proc command.quick-test -> in
         type O-END = if                  break end
 
         type O-INPLACE = if
-          arg1 arg1-length inc to-dynamic8 test-paths list64.append
+          arg1 arg1-length inc to-dynamic8 test-paths list64:append
 
         else type O-SWITCH = if
             arg1 arg1-length "h"    memcmp8-wl is-zero
@@ -299,7 +299,7 @@ proc command.quick-test -> in
       end
     end
 
-    0 while dup test-paths list64.length < do dup test-paths list64.get let test-file in
+    0 while dup test-paths list64:length < do dup test-paths list64:get let test-file in
       test-file
       "/dev/null" drop
       include-paths-set
@@ -308,7 +308,7 @@ proc command.quick-test -> in
     end inc end drop
 
     // Deallocate 'include-paths-set'.
-    include-paths-set list64.mfree drop
+    include-paths-set list64:mfree drop
   end end end
 
   EXIT-SUCCESS exit drop
@@ -482,10 +482,10 @@ proc command.compile -> in
     NULLPTR       source-file !64
     "output" drop output-file !64
 
-    16 list64.init include-paths-set !64
+    16 list64:init include-paths-set !64
 
     include-paths-set @64 is-null if
-      "'list64.init' failed\n" puts
+      "'list64:init' failed\n" puts
       EXIT-ERROR exit drop
     end
 
@@ -547,7 +547,7 @@ proc command.compile -> in
     compile ! if EXIT-ERROR exit drop end
 
     // Deallocate 'include-paths-set'.
-    include-paths-set list64.mfree drop
+    include-paths-set list64:mfree drop
   end end end end
 
   EXIT-SUCCESS exit drop
