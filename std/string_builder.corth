@@ -96,7 +96,7 @@ end end
 
 // cstr: string ptr: builder.array ptr: builder.ptr ->
 macro string-builder.append-cstr let _string_ _builder.array_ _builder.ptr_ in
-  _string_ _string_ cstr.len _builder.array_ _builder.ptr_ string-builder.append-str
+  _string_ _string_ cstr:len _builder.array_ _builder.ptr_ string-builder.append-str
 end endmacro
 
 // dstr: string ptr: builder.array ptr: builder.ptr ->

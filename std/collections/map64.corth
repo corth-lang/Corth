@@ -11,14 +11,16 @@ Length shows the length of both arrays.
 */
 
 
-proc map64.set
+namespace map64
+
+proc set
   // int: key int: value ptr: key-array ptr: value-array ptr: length -> bool: found
   int int ptr ptr ptr -> bool
-  // Sets the matching value of the key to a specified value in a map64.
+  // Sets the matching value of the key to a specified value in a map64:
   // If the key could not have been found, appends this key-value pair.
   // Returns if the key was found.
 in let key value key-array value-array length in
-  key key-array key-array length @64 8 * + sorted64.available "a\n" puts if
+  key key-array key-array length @64 8 * + sorted64:available "a\n" puts if
     // Found the key, sets the value.
     let address in
       value address !64
@@ -36,13 +38,13 @@ in let key value key-array value-array length in
 end end
 
 
-proc map64.get
+proc get
   // int: key ptr: key-array ptr: value-array ptr: length -> int: value bool: found
   int ptr ptr ptr ptr -> int
   // Finds a key-value pair from a key in a map64 and returns the value.
   // Returns if the key was found.
 in let key key-array value-array default in
-  key key-array key-array length @64 8 * + sorted64.available if
+  key key-array key-array length @64 8 * + sorted64:available if
     @64 true
   else
     drop 0 false
@@ -50,13 +52,13 @@ in let key key-array value-array default in
 end end
 
 
-proc map64.remove
+proc remove
   // int: key ptr: key-array ptr: value-array ptr: length -> bool: found
   int ptr ptr ptr -> bool
   // Removes a key-value pair from a map64, if it is found.
   // Returns if the key was found.
 in let key key-array value-array length in
-  key key-array key-array length @64 8 * + sorted64.available if
+  key key-array key-array length @64 8 * + sorted64:available if
     let address in
       address 8 + address length @64 address key-array - 8 / - dec memcpy64
       value-array address + key-array - let value-address in
@@ -68,3 +70,5 @@ in let key key-array value-array length in
     drop false
   end
 end end
+
+endnamespace

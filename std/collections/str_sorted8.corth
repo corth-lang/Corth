@@ -7,15 +7,17 @@ include "dynamic/malloc.corth"
 Requires dmemeq8 and dmemlt8.
 */
 
-macro str-sorted8.available-dstr let address start end_ in
-  address address mlength start end_ str-sorted8.available-str
+namespace str-sorted8
+
+macro available-dstr let address start end_ in
+  address address mlength start end_ str-sorted8:available-str
 end endmacro
 
-macro str-sorted8.available-cstr let address start end_ in
-  address address cstr.len start end_ str-sorted8.available-str
+macro available-cstr let address start end_ in
+  address address cstr:len start end_ str-sorted8:available-str
 end endmacro
 
-proc str-sorted8.available-str
+proc available-str
   // ptr: address int: length ptr: start ptr: end -> ptr: lower-bound bool: found
   ptr int ptr ptr -> ptr bool
   // Finds where the value could be placed using binary search, so that the array could stay sorted.
@@ -54,3 +56,5 @@ in
     end
   end end
 NULLPTR false end  // dummy return
+
+endnamespace

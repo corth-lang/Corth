@@ -1,3 +1,21 @@
+// Using namespaces like enumerators.
+namespace STACK-MODE
+macro REAL             0 endmacro
+macro IMM              1 endmacro
+macro GLOBAL           2 endmacro
+macro @64GLOBAL        3 endmacro
+macro @8GLOBAL         4 endmacro
+macro LOCAL            5 endmacro
+macro @8LOCAL          6 endmacro
+macro @64LOCAL         7 endmacro
+macro @LOCALCONST      8 endmacro
+macro DATA             9 endmacro
+macro PEEKED          10 endmacro
+endnamespace
+
+
+namespace stack-item
+
 macro get-type      @64 endmacro
 macro set-type      !64 endmacro
 macro get-mode 8  + @64 endmacro
@@ -5,24 +23,8 @@ macro set-mode 8  + !64 endmacro
 macro get-arg1 16 + @64 endmacro
 macro set-arg1 16 + !64 endmacro
 
-macro MODE-REAL             0 endmacro
-macro MODE-IMM              1 endmacro
 
-macro MODE-GLOBAL           2 endmacro
-macro MODE-@64GLOBAL        3 endmacro
-macro MODE-@8GLOBAL         4 endmacro
-
-macro MODE-LOCAL            5 endmacro
-macro MODE-@8LOCAL          6 endmacro
-macro MODE-@64LOCAL         7 endmacro
-macro MODE-@LOCALCONST      8 endmacro
-
-macro MODE-DATA             9 endmacro
-
-macro MODE-PEEKED          10 endmacro
-
-
-proc stack-item.mfree
+proc mfree
   // ptr: item ->
   ptr ->
 in let item in
@@ -33,7 +35,7 @@ in let item in
 end end
 
 
-proc stack-item.copy
+proc copy
   // ptr: item -> ptr: copied
     ptr -> ptr
 in let item in
@@ -44,19 +46,21 @@ in let item in
 end end
 
 
-proc stack-item.create
+proc create
   // int: int-type int: mode -> ptr: item
   int int -> ptr
 in let int-type mode in
   24 malloc let object in
     object is-null if
       "'malloc' failed while creating a stack item.\n" STDERR fputs
-      ERROR-EXIT-CODE exit drop
+      EXIT-CODE:ERROR exit drop
     end
 
-    int-type  object set-type
-    mode      object set-mode
+    int-type  object stack-item:set-type
+    mode      object stack-item:set-mode
 
     object
   end
 end end
+
+endnamespace

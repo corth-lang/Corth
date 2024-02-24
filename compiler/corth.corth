@@ -1,5 +1,5 @@
-macro malloc.ARRAY-SIZE       0x800000 endmacro
-macro malloc.AVAIL-QUEUE-SIZE 0x100000 endmacro
+macro malloc:ARRAY-SIZE       0x800000 endmacro
+macro malloc:AVAIL-STACK-SIZE 0x100000 endmacro
 include "dynamic/malloc.corth"
 include "dynamic/utils.corth"
 
@@ -18,7 +18,7 @@ macro EXIT-ERROR   1 endmacro
 memory executable-file-name sizeof(ptr) end
 
 macro put-exe
-  executable-file-name @64 dup cstr.len puts
+  executable-file-name @64 dup cstr:len puts
 endmacro
 
 macro main.unknown-command
@@ -48,18 +48,18 @@ proc move-file
   ptr ptr ->
 in let from to in
   memory copy-infop sizeof(siginfo_t) in
-    subprocess.init
-      "/bin/mv"  drop subprocess.file-name
-      from            subprocess.add-option
-      to              subprocess.add-option
-    copy-infop subprocess.end
+    subprocess:init
+      "/bin/mv"  drop subprocess:file-name
+      from            subprocess:add-option
+      to              subprocess:add-option
+    copy-infop subprocess:_end
 
     copy-infop 8 + @32 CLD_EXITED != copy-infop 24 + @32 isn-zero | if
-      "error: could not move " eputs from cstr.str eputs eputnl
+      "error: could not move " eputs from cstr:str eputs eputnl
       EXIT-ERROR exit drop
     end
 
-    "info: moved " puts from cstr.str puts " to " puts to cstr.str puts putnl
+    "info: moved " puts from cstr:str puts " to " puts to cstr:str puts putnl
   end
 end end
 
@@ -69,18 +69,18 @@ proc copy-file
   ptr ptr ->
 in let from to in
   memory copy-infop sizeof(siginfo_t) in
-    subprocess.init
-      "/bin/cp"  drop subprocess.file-name
-      from            subprocess.add-option
-      to              subprocess.add-option
-    copy-infop subprocess.end
+    subprocess:init
+      "/bin/cp"  drop subprocess:file-name
+      from            subprocess:add-option
+      to              subprocess:add-option
+    copy-infop subprocess:_end
 
     copy-infop 8 + @32 CLD_EXITED != copy-infop 24 + @32 isn-zero | if
-      "error: could not copy " eputs from cstr.str eputs eputnl
+      "error: could not copy " eputs from cstr:str eputs eputnl
       EXIT-ERROR exit drop
     end
 
-    "info: copied " puts from cstr.str puts " to " puts to cstr.str puts putnl
+    "info: copied " puts from cstr:str puts " to " puts to cstr:str puts putnl
   end
 end end
 
@@ -90,17 +90,17 @@ proc make-directory
   ptr ->
 in let path in
   memory mkdir-infop sizeof(siginfo_t) in
-    subprocess.init
-      "/bin/mkdir"  drop subprocess.file-name
-      path               subprocess.add-option
-    mkdir-infop subprocess.end
+    subprocess:init
+      "/bin/mkdir"  drop subprocess:file-name
+      path               subprocess:add-option
+    mkdir-infop subprocess:_end
 
     mkdir-infop 8 + @32 CLD_EXITED != mkdir-infop 24 + @32 isn-zero | if
-      "error: could not create directory " eputs path cstr.str eputs eputnl
+      "error: could not create directory " eputs path cstr:str eputs eputnl
       EXIT-ERROR exit drop
     end
 
-    "info: created directory " puts path cstr.str puts putnl
+    "info: created directory " puts path cstr:str puts putnl
   end
 end end
 
@@ -110,18 +110,18 @@ proc recursive-force-remove
   ptr ->
 in let path in
   memory rm-infop sizeof(siginfo_t) in
-    subprocess.init
-      "/bin/rm"  drop subprocess.file-name
-      "-rf"      drop subprocess.file-name
-      path            subprocess.add-option
-    rm-infop subprocess.end
+    subprocess:init
+      "/bin/rm"  drop subprocess:file-name
+      "-rf"      drop subprocess:file-name
+      path            subprocess:add-option
+    rm-infop subprocess:_end
 
     rm-infop 8 + @32 CLD_EXITED != rm-infop 24 + @32 isn-zero | if
-      "error: could not remove " eputs path cstr.str eputs eputnl
+      "error: could not remove " eputs path cstr:str eputs eputnl
       EXIT-ERROR exit drop
     end
 
-    "info: created directory " puts path cstr.str puts putnl
+    "info: created directory " puts path cstr:str puts putnl
   end
 end end
 
@@ -148,13 +148,13 @@ in let source-name output-name include-paths-set full-compilation in
   memory ld-infop sizeof(siginfo_t) in
 
     // Execute NASM.
-    subprocess.init
-      "/bin/nasm"  drop subprocess.file-name
-      "output.asm" drop subprocess.add-option
-      "-felf64"    drop subprocess.add-option
-      "-o"         drop subprocess.add-option
-      "output.o"   drop subprocess.add-option
-    nasm-infop subprocess.end
+    subprocess:init
+      "/bin/nasm"  drop subprocess:file-name
+      "output.asm" drop subprocess:add-option
+      "-felf64"    drop subprocess:add-option
+      "-o"         drop subprocess:add-option
+      "output.o"   drop subprocess:add-option
+    nasm-infop subprocess:_end
 
     nasm-infop 8 + @32 CLD_EXITED != nasm-infop 24 + @32 isn-zero | if
       "error: NASM failed\n" eputs
@@ -162,12 +162,12 @@ in let source-name output-name include-paths-set full-compilation in
     end
 
     // Execute linker.
-    subprocess.init
-      "/bin/ld"   drop subprocess.file-name
-      "output.o"  drop subprocess.add-option
-      "-o"        drop subprocess.add-option
-      output-name      subprocess.add-option
-    ld-infop subprocess.end
+    subprocess:init
+      "/bin/ld"   drop subprocess:file-name
+      "output.o"  drop subprocess:add-option
+      "-o"        drop subprocess:add-option
+      output-name      subprocess:add-option
+    ld-infop subprocess:_end
 
     ld-infop 8 + @32 CLD_EXITED != ld-infop 24 + @32 isn-zero | if
       "error: linker failed\n" eputs
@@ -185,8 +185,8 @@ in let source-name output-name include-paths-set full-compilation in
   memory stats sizeof(stat) in
     source-name stats stat drop
 
-    // Check if user has access to the path.
-    source-name R_OK access isn-zero if
+    // Check if user has access to the path:
+    source-name ACCESS-MODE:R_OK access isn-zero if
       "error: can not access file '" eputs source-name source-name mlength eputs "'\n" eputs
       EXIT-ERROR exit drop
     end
@@ -198,7 +198,7 @@ in let source-name output-name include-paths-set full-compilation in
       else masked S_IFDIR = if
         source-name diropen-r let directory in
           directory is-neg if
-            "error: could not open directory '" eputs source-name cstr.str eputs "'\n" eputs
+            "error: could not open directory '" eputs source-name cstr:str eputs "'\n" eputs
             false return
           end
 
@@ -213,9 +213,9 @@ in let source-name output-name include-paths-set full-compilation in
                 length is-zero if true return end
 
                 buffer while dup buffer length + < do let _subpath in
-                  _subpath 19 + "."  drop cstr.cmp isn-zero
-                  _subpath 19 + ".." drop cstr.cmp isn-zero & if
-                    source-name source-name mlength dec _subpath 19 + cstr.str path.merge2-cstr let subpath in
+                  _subpath 19 + "."  drop cstr:cmp isn-zero
+                  _subpath 19 + ".." drop cstr:cmp isn-zero & if
+                    source-name source-name mlength dec _subpath 19 + cstr:str path:merge2-cstr let subpath in
                       subpath output-name include-paths-set full-compilation compile-recursive ! if false return end
                     end
                   end
@@ -249,16 +249,16 @@ proc command.quick-test -> in
   memory test-paths        sizeof(ptr) in
   memory include-paths-set sizeof(ptr) in
   memory full-compilation  sizeof(int) in
-    16 list64.init test-paths !64
-    16 list64.init include-paths-set !64
+    16 list64:init test-paths !64
+    16 list64:init include-paths-set !64
 
     test-paths @64 is-null if
-      "error: 'list64.init' failed\n" eputs
+      "error: 'list64:init' failed\n" eputs
       EXIT-ERROR exit drop
     end
 
     include-paths-set @64 is-null if
-      "error: 'list64.init' failed\n" eputs
+      "error: 'list64:init' failed\n" eputs
       EXIT-ERROR exit drop
     end
 
@@ -270,7 +270,7 @@ proc command.quick-test -> in
         type O-END = if                  break end
 
         type O-INPLACE = if
-          arg1 arg1-length inc to-dynamic8 test-paths list64.append
+          arg1 arg1-length inc to-dynamic8 test-paths list64:append
 
         else type O-SWITCH = if
             arg1 arg1-length "h"    memcmp8-wl is-zero
@@ -291,7 +291,7 @@ proc command.quick-test -> in
         else type O-ARGUMENT = if
           arg1 arg1-length "i"            memcmp8-wl is-zero
           arg1 arg1-length "include-path" memcmp8-wl is-zero | if
-            arg2 arg2-length inc to-dynamic8 include-paths-set str-set8.add drop
+            arg2 arg2-length inc to-dynamic8 include-paths-set str-set8:add drop
 
           else EXIT-ERROR exit drop end
 
@@ -299,7 +299,7 @@ proc command.quick-test -> in
       end
     end
 
-    0 while dup test-paths list64.length < do dup test-paths list64.get let test-file in
+    0 while dup test-paths list64:length < do dup test-paths list64:get let test-file in
       test-file
       "/dev/null" drop
       include-paths-set
@@ -308,7 +308,7 @@ proc command.quick-test -> in
     end inc end drop
 
     // Deallocate 'include-paths-set'.
-    include-paths-set list64.mfree drop
+    include-paths-set list64:mfree drop
   end end end
 
   EXIT-SUCCESS exit drop
@@ -393,23 +393,23 @@ proc command.bootstrap -> in
 
     executable @64 "./old" drop copy-file
 
-    source @64 cstr.str "corth.corth" path.merge2-cstr let source-file-path in
+    source @64 cstr:str "corth.corth" path:merge2-cstr let source-file-path in
       memory compiler-infop sizeof(siginfo_t) in
       memory diff-infop     sizeof(siginfo_t) in
         1 while
           "info: starting iteration " puts dup putu putnl
 
-          subprocess.init
-            "./old"     drop subprocess.file-name
-            "compile"   drop subprocess.add-option
-            source-file-path subprocess.add-option
-            "-o"        drop subprocess.add-option
-            "./new"     drop subprocess.add-option
-            "-i"        drop subprocess.add-option
-            std @64          subprocess.add-option
-            "-i"        drop subprocess.add-option
-            source @64       subprocess.add-option
-          compiler-infop subprocess.end
+          subprocess:init
+            "./old"     drop subprocess:file-name
+            "compile"   drop subprocess:add-option
+            source-file-path subprocess:add-option
+            "-o"        drop subprocess:add-option
+            "./new"     drop subprocess:add-option
+            "-i"        drop subprocess:add-option
+            std @64          subprocess:add-option
+            "-i"        drop subprocess:add-option
+            source @64       subprocess:add-option
+          compiler-infop subprocess:_end
 
           compiler-infop 8 + @32 CLD_EXITED != compiler-infop 24 + @32 isn-zero | if
             "error: compilation failed\n" eputs
@@ -418,11 +418,11 @@ proc command.bootstrap -> in
 
           "info: successfully compiled\n" puts
 
-          subprocess.init
-            "/bin/diff" drop subprocess.file-name
-            "./old"     drop subprocess.add-option
-            "./new"     drop subprocess.add-option
-          diff-infop subprocess.end
+          subprocess:init
+            "/bin/diff" drop subprocess:file-name
+            "./old"     drop subprocess:add-option
+            "./new"     drop subprocess:add-option
+          diff-infop subprocess:_end
 
           diff-infop 8 + @32 CLD_EXITED != if
             "error: diff did not exit\n" eputs
@@ -438,13 +438,13 @@ proc command.bootstrap -> in
         "info: reached stability in " puts putu " tries, starting tests...\n" puts
 
         memory quick-test-infop sizeof(siginfo_t) in
-          subprocess.init
-            "./new"      drop subprocess.file-name
-            "quick-test" drop subprocess.add-option
-            "./examples" drop subprocess.add-option
-            "-i"         drop subprocess.add-option
-            std @64           subprocess.add-option
-          quick-test-infop subprocess.end
+          subprocess:init
+            "./new"      drop subprocess:file-name
+            "quick-test" drop subprocess:add-option
+            "./examples" drop subprocess:add-option
+            "-i"         drop subprocess:add-option
+            std @64           subprocess:add-option
+          quick-test-infop subprocess:_end
 
           quick-test-infop 8 + @32 CLD_EXITED != quick-test-infop 24 + @32 isn-zero | if
             "error: quick tests failed\n" eputs
@@ -482,10 +482,10 @@ proc command.compile -> in
     NULLPTR       source-file !64
     "output" drop output-file !64
 
-    16 list64.init include-paths-set !64
+    16 list64:init include-paths-set !64
 
     include-paths-set @64 is-null if
-      "'list64.init' failed\n" puts
+      "'list64:init' failed\n" puts
       EXIT-ERROR exit drop
     end
 
@@ -523,7 +523,7 @@ proc command.compile -> in
         else type O-ARGUMENT = if
           arg1 arg1-length "i"            memcmp8-wl is-zero
           arg1 arg1-length "include-path" memcmp8-wl is-zero | if
-            arg2 arg2-length inc to-dynamic8 include-paths-set str-set8.add drop
+            arg2 arg2-length inc to-dynamic8 include-paths-set str-set8:add drop
 
           else arg1 arg1-length "o"           memcmp8-wl is-zero
                arg1 arg1-length "output-path" memcmp8-wl is-zero | if
@@ -547,7 +547,7 @@ proc command.compile -> in
     compile ! if EXIT-ERROR exit drop end
 
     // Deallocate 'include-paths-set'.
-    include-paths-set list64.mfree drop
+    include-paths-set list64:mfree drop
   end end end end
 
   EXIT-SUCCESS exit drop
@@ -558,7 +558,7 @@ proc main
   int int -> int
 in let argc argv in
   // Initialize malloc.
-  malloc.init
+  malloc:init
 
   // Initialize debug.
   debug-init

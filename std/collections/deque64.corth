@@ -17,42 +17,44 @@ include "core/stack.corth"
   The length of a deque can be found as:  end-index - start-index
 */
 
-macro deque64.get-addr
+namespace deque64
+
+macro get-addr
   // int: index ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
 
   let _index_ _deque_ _capacity_ _start_ _end_ in _start_ @64 _index_ + _capacity_ % 8 * _deque_ + end
 endmacro
 
-macro deque64.first-addr
+macro first-addr
   // ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
 
   let _deque_ _capacity_ _start_ _end_ in _start_ @64 _capacity_ % 8 * _deque_ + end
 endmacro
 
-macro deque64.last-addr
+macro last-addr
   // ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
 
   let _deque_ _capacity_ _start_ _end_ in _end_ @64 _capacity_ % 8 * _deque_ + end
 endmacro
 
-macro deque64.get
+macro get
   // int: index ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
   // Gets an item from a deque.
   // return deque[index]
 
-  deque64.get-addr @64
+  deque64:get-addr @64
 endmacro
 
-macro deque64.set
+macro set
   // int: value ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
   // Sets an item on a deque.
   // deque[index] = value
   // NOTE: This macro assumes that the index is valid.
 
-  deque64.get-addr !64
+  deque64:get-addr !64
 endmacro
 
-macro deque64.append-first
+macro append-first
   // int: value ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
   // Appends an item to a deque to its beginning.
   // deque.insert(value, 0)
@@ -64,7 +66,7 @@ macro deque64.append-first
   end
 endmacro
 
-macro deque64.pop-first
+macro pop-first
   // int: value ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
   // Removes an item from a deque to its beginning.
   // return deque.pop(0)
@@ -75,7 +77,7 @@ macro deque64.pop-first
   end
 endmacro
 
-macro deque64.append-last
+macro append-last
   // int: value ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
   // Appends an item to a deque to its end.
   // deque.insert(value, deque.length)
@@ -87,7 +89,7 @@ macro deque64.append-last
   end
 endmacro
 
-macro deque64.pop-last
+macro pop-last
   // int: value ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
   // Removes an item from a deque to its beginning.
   // return deque.pop(deque.length - 1)
@@ -98,7 +100,7 @@ macro deque64.pop-last
   end
 endmacro
 
-proc deque64.extend-left
+proc extend-left
   // ptr: source int: source-length ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
   ptr int ptr int ptr ptr ->
   // Extends a deque from its beginning.
@@ -110,11 +112,11 @@ proc deque64.extend-left
   // NOTE: This macro assumes that the queue has enough space to insert item.
 in let source length deque capacity start-index end-index in
   length while dup isn-zero do dec peek i in
-    source i 8 * + @64 deque capacity start-index end-index deque64.append-first
+    source i 8 * + @64 deque capacity start-index end-index deque64:append-first
   end end drop
 end end
 
-proc deque64.extend-right
+proc extend-right
   // ptr: source int: source-length ptr: deque-array int: deque-capacity ptr: start-index ptr: end-index
   ptr int ptr int ptr ptr ->
   // Extends a deque from its end.
@@ -126,6 +128,8 @@ proc deque64.extend-right
   // NOTE: This macro assumes that the queue has enough space to insert item.
 in let source length deque capacity start-index end-index in
   0 while dup length < do peek i in
-    source i 8 * + @64 deque capacity start-index end-index deque64.append-last
+    source i 8 * + @64 deque capacity start-index end-index deque64:append-last
   end inc end drop
 end end
+
+endnamespace

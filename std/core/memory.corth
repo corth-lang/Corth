@@ -12,7 +12,7 @@ proc memcmp8
   // Returns >0 if a>b.
 in let a-src b-src len in
   0 while dup len < do let i in
-    i a-src array8.get i b-src array8.get - let cmp in
+    i a-src array8:get i b-src array8:get - let cmp in
       cmp isn-zero if
         cmp return
       end
@@ -28,7 +28,7 @@ proc memcmp64
   // Returns >0 if a>b.
 in let a-src b-src len in
   0 while dup len < do let i in
-    i a-src array64.get i b-src array64.get - let cmp in
+    i a-src array64:get i b-src array64:get - let cmp in
       cmp isn-zero if
         cmp return
       end

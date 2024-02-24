@@ -6,7 +6,9 @@ include "core/stack.corth"
 
 */
 
-proc sorted64.available
+namespace sorted64
+
+proc available
   // int: value ptr: start ptr: end -> ptr: lower-bound bool: found
   int ptr ptr -> ptr bool
   // Finds where the value could be placed using binary search, so that the array could stay sorted.
@@ -42,3 +44,5 @@ in
     end
   end end
 NULLPTR false end  // dummy return
+
+endnamespace

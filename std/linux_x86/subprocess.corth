@@ -4,39 +4,41 @@ include "core/ptr.corth"
 include "cstr.corth"
 
 
-macro subprocess.init
+namespace subprocess
+
+macro init
   memory _subprocess.file-name_ sizeof(ptr) in
   memory _subprocess.argv_      sizeof(ptr) in
   memory _subprocess.envp_      sizeof(ptr) in
 
-    8 list64.init _subprocess.argv_ !64
-    8 list64.init _subprocess.envp_ !64
+    8 list64:init _subprocess.argv_ !64
+    8 list64:init _subprocess.envp_ !64
 endmacro
 
-macro subprocess.success
-  _subprocess.argv_ @64 _subprocess.envp_ @64 isn-null
+macro success
+  _subprocess._argv_ @64 _subprocess.envp_ @64 isn-null
 endmacro
 
-macro subprocess.file-name let _file-name_ in
+macro file-name let _file-name_ in
   _file-name_ _subprocess.file-name_ !64
-  _file-name_ _subprocess.argv_ list64.append
+  _file-name_ _subprocess.argv_ list64:append
 end endmacro
 
-macro subprocess.add-option
-  _subprocess.argv_ list64.append
+macro add-option
+  _subprocess.argv_ list64:append
 endmacro
 
-macro subprocess.add-switch
+macro add-switch
   swp if
-    _subprocess.argv_ list64.append
+    _subprocess.argv_ list64:append
   else drop end
 endmacro
 
-macro subprocess.add-env
-  _subprocess.envp_ list64.append
+macro add-env
+  _subprocess.envp_ list64:append
 endmacro
 
-proc subprocess._exec
+proc _exec
   // ptr: file-name ptr: argv ptr: envp ptr: infop ->
   ptr ptr ptr ptr ->
 in let file-name argv envp infop in
@@ -57,13 +59,15 @@ in let file-name argv envp infop in
   end
 end end
 
-macro subprocess.end let _infop_ in
-    NULLPTR _subprocess.argv_ list64.append
-    NULLPTR _subprocess.envp_ list64.append
+macro _end let _infop_ in
+    NULLPTR _subprocess.argv_ list64:append
+    NULLPTR _subprocess.envp_ list64:append
 
-    _subprocess.file-name_ @64 _subprocess.argv_ list64.array-addr _subprocess.envp_ list64.array-addr _infop_ subprocess._exec
+    _subprocess.file-name_ @64 _subprocess.argv_ list64:array-addr _subprocess.envp_ list64:array-addr _infop_ subprocess:_exec
 
-    _subprocess.argv_ list64.mfree drop
-    _subprocess.envp_ list64.mfree drop
+    _subprocess.argv_ list64:mfree drop
+    _subprocess.envp_ list64:mfree drop
   end end end
 end endmacro
+
+endnamespace

@@ -18,162 +18,185 @@ macro LOCAL-MEMORY-SIZE   0x80000    endmacro
 macro CALL-STACK-SIZE     0x80000    endmacro
 
 // Exit codes
-macro SUCCESS-EXIT-CODE    0 endmacro
-macro ERROR-EXIT-CODE      1 endmacro
-macro SOFT-ERROR-EXIT-CODE 2 endmacro
+namespace EXIT-CODE
+macro SUCCESS    0 endmacro
+macro ERROR      1 endmacro
+macro SOFT-ERROR 2 endmacro
+endnamespace
 
 // Type IDs
-macro TYPE-UNKNOWN   0 endmacro
-macro TYPE-NAME      1 endmacro
-macro TYPE-INTEGER   2 endmacro
-macro TYPE-KEYWORD   3 endmacro
-macro TYPE-INTRINSIC 4 endmacro
-macro TYPE-STRING    5 endmacro
-macro TYPE-INT-TYPE  6 endmacro
+namespace TOKEN-TYPE
+macro UNKNOWN   0 endmacro
+macro NAME      1 endmacro
+macro INTEGER   2 endmacro
+macro KEYWORD   3 endmacro
+macro INTRINSIC 4 endmacro
+macro STRING    5 endmacro
+macro INT-TYPE  6 endmacro
+endnamespace
 
 // Type strings
-macro TYPE-UNKNOWN-STR   "<unknown>" endmacro
-macro TYPE-NAME-STR      "name"      endmacro
-macro TYPE-INTEGER-STR   "integer"   endmacro
-macro TYPE-KEYWORD-STR   "keyword"   endmacro
-macro TYPE-INTRINSIC-STR "intrinsic" endmacro
-macro TYPE-STRING-STR    "string"    endmacro
-macro TYPE-INT-TYPE-STR  "int-type"  endmacro
+namespace TOKEN-TYPE-NAME
+macro UNKNOWN   "<unknown>" endmacro
+macro NAME      "name"      endmacro
+macro INTEGER   "integer"   endmacro
+macro KEYWORD   "keyword"   endmacro
+macro INTRINSIC "intrinsic" endmacro
+macro STRING    "string"    endmacro
+macro INT-TYPE  "int-type"  endmacro
+endnamespace
 
 // Keyword IDs
-macro KEYWORD-UNKNOWN  0  endmacro
-macro KEYWORD-MACRO    1  endmacro
-macro KEYWORD-ENDMACRO 2  endmacro
-macro KEYWORD-PROC     3  endmacro
-macro KEYWORD-RETURNS  4  endmacro
-macro KEYWORD-IN       5  endmacro
-macro KEYWORD-END      6  endmacro
-macro KEYWORD-RETURN   7  endmacro
-macro KEYWORD-MEMORY   8  endmacro
-macro KEYWORD-AND      9  endmacro
-macro KEYWORD-LET      10 endmacro
-macro KEYWORD-PEEK     11 endmacro
-macro KEYWORD-IF       12 endmacro
-macro KEYWORD-ELSE     13 endmacro
-macro KEYWORD-WHILE    14 endmacro
-macro KEYWORD-DO       15 endmacro
-macro KEYWORD-BREAK    16 endmacro
-macro KEYWORD-INCLUDE  17 endmacro
-macro KEYWORD-CAST     18 endmacro
-macro KEYWORD-SIZEOF   19 endmacro
+namespace KEYWORD
+macro UNKNOWN      0  endmacro
+macro MACRO        1  endmacro
+macro ENDMACRO     2  endmacro
+macro PROC         3  endmacro
+macro RETURNS      4  endmacro
+macro IN           5  endmacro
+macro END          6  endmacro
+macro RETURN       7  endmacro
+macro MEMORY       8  endmacro
+macro AND          9  endmacro
+macro LET          10 endmacro
+macro PEEK         11 endmacro
+macro IF           12 endmacro
+macro ELSE         13 endmacro
+macro WHILE        14 endmacro
+macro DO           15 endmacro
+macro BREAK        16 endmacro
+macro INCLUDE      17 endmacro
+macro CAST         18 endmacro
+macro SIZEOF       19 endmacro
+macro NAMESPACE    20 endmacro
+macro ENDNAMESPACE 21 endmacro
+endnamespace
 
 // Keyword strings
-macro KEYWORD-UNKNOWN-STR  "<unknown>" endmacro
-macro KEYWORD-MACRO-STR    "macro"     endmacro
-macro KEYWORD-ENDMACRO-STR "endmacro"  endmacro
-macro KEYWORD-PROC-STR     "proc"      endmacro
-macro KEYWORD-END-STR      "end"       endmacro
-macro KEYWORD-RETURN-STR   "return"    endmacro
-macro KEYWORD-RETURNS-STR  "->"        endmacro
-macro KEYWORD-MEMORY-STR   "memory"    endmacro
-macro KEYWORD-AND-STR      "and"       endmacro
-macro KEYWORD-IN-STR       "in"        endmacro
-macro KEYWORD-LET-STR      "let"       endmacro
-macro KEYWORD-PEEK-STR     "peek"      endmacro
-macro KEYWORD-IF-STR       "if"        endmacro
-macro KEYWORD-ELSE-STR     "else"      endmacro
-macro KEYWORD-WHILE-STR    "while"     endmacro
-macro KEYWORD-DO-STR       "do"        endmacro
-macro KEYWORD-BREAK-STR    "break"     endmacro
-macro KEYWORD-INCLUDE-STR  "include"   endmacro
-macro KEYWORD-CAST-STR     "cast"      endmacro
-macro KEYWORD-SIZEOF-STR   "sizeof"    endmacro
+namespace KEYWORD-NAME
+macro UNKNOWN      "<unknown>"    endmacro
+macro MACRO        "macro"        endmacro
+macro ENDMACRO     "endmacro"     endmacro
+macro PROC         "proc"         endmacro
+macro END          "end"          endmacro
+macro RETURN       "return"       endmacro
+macro RETURNS      "->"           endmacro
+macro MEMORY       "memory"       endmacro
+macro AND          "and"          endmacro
+macro IN           "in"           endmacro
+macro LET          "let"          endmacro
+macro PEEK         "peek"         endmacro
+macro IF           "if"           endmacro
+macro ELSE         "else"         endmacro
+macro WHILE        "while"        endmacro
+macro DO           "do"           endmacro
+macro BREAK        "break"        endmacro
+macro INCLUDE      "include"      endmacro
+macro CAST         "cast"         endmacro
+macro SIZEOF       "sizeof"       endmacro
+macro NAMESPACE    "namespace"    endmacro
+macro ENDNAMESPACE "endnamespace" endmacro
+endnamespace
 
 // Intrinsic IDs
-macro INTRINSIC-UNKNOWN  0  endmacro
-macro INTRINSIC-ADD      1  endmacro
-macro INTRINSIC-SUB      2  endmacro
-macro INTRINSIC-MUL      3  endmacro
-macro INTRINSIC-MUL2     4  endmacro
-macro INTRINSIC-DIV      5  endmacro
-macro INTRINSIC-MOD      6  endmacro
-macro INTRINSIC-UMUL     7  endmacro
-macro INTRINSIC-UMUL2    8  endmacro
-macro INTRINSIC-UDIV     9  endmacro
-macro INTRINSIC-UMOD     10 endmacro
-macro INTRINSIC-BOR      14 endmacro
-macro INTRINSIC-BAND     15 endmacro
-macro INTRINSIC-BXOR     16 endmacro
-macro INTRINSIC-BNOT     17 endmacro
-macro INTRINSIC-LOAD8    18 endmacro
-macro INTRINSIC-STORE8   19 endmacro
-macro INTRINSIC-LOAD16   20 endmacro
-macro INTRINSIC-STORE16  21 endmacro
-macro INTRINSIC-LOAD32   22 endmacro
-macro INTRINSIC-STORE32  23 endmacro
-macro INTRINSIC-LOAD64   24 endmacro
-macro INTRINSIC-STORE64  25 endmacro
-macro INTRINSIC-SYSCALL0 26 endmacro
-macro INTRINSIC-SYSCALL1 27 endmacro
-macro INTRINSIC-SYSCALL2 28 endmacro
-macro INTRINSIC-SYSCALL3 29 endmacro
-macro INTRINSIC-SYSCALL4 30 endmacro
-macro INTRINSIC-SYSCALL5 31 endmacro
-macro INTRINSIC-SYSCALL6 32 endmacro
+namespace INTRINSIC
+macro UNKNOWN  0  endmacro
+macro ADD      1  endmacro
+macro SUB      2  endmacro
+macro MUL      3  endmacro
+macro MUL2     4  endmacro
+macro DIV      5  endmacro
+macro MOD      6  endmacro
+macro UMUL     7  endmacro
+macro UMUL2    8  endmacro
+macro UDIV     9  endmacro
+macro UMOD     10 endmacro
+macro BOR      14 endmacro
+macro BAND     15 endmacro
+macro BXOR     16 endmacro
+macro BNOT     17 endmacro
+macro LOAD8    18 endmacro
+macro STORE8   19 endmacro
+macro LOAD16   20 endmacro
+macro STORE16  21 endmacro
+macro LOAD32   22 endmacro
+macro STORE32  23 endmacro
+macro LOAD64   24 endmacro
+macro STORE64  25 endmacro
+macro SYSCALL0 26 endmacro
+macro SYSCALL1 27 endmacro
+macro SYSCALL2 28 endmacro
+macro SYSCALL3 29 endmacro
+macro SYSCALL4 30 endmacro
+macro SYSCALL5 31 endmacro
+macro SYSCALL6 32 endmacro
+endnamespace
 
 // Intrinsic strings
-macro INTRINSIC-UNKNOWN-STR  "<unknown>" endmacro
-macro INTRINSIC-ADD-STR      "+"         endmacro
-macro INTRINSIC-SUB-STR      "-"         endmacro
-macro INTRINSIC-MUL-STR      "*"         endmacro
-macro INTRINSIC-MUL2-STR     "*2"        endmacro
-macro INTRINSIC-DIV-STR      "/"         endmacro
-macro INTRINSIC-MOD-STR      "%"         endmacro
-macro INTRINSIC-UMUL-STR     "u*"        endmacro
-macro INTRINSIC-UMUL2-STR    "u*2"       endmacro
-macro INTRINSIC-UDIV-STR     "u/"        endmacro
-macro INTRINSIC-UMOD-STR     "u%"        endmacro
-macro INTRINSIC-BOR-STR      "||"        endmacro
-macro INTRINSIC-BAND-STR     "&&"        endmacro
-macro INTRINSIC-BXOR-STR     "^^"        endmacro
-macro INTRINSIC-BNOT-STR     "!!"        endmacro
-macro INTRINSIC-LOAD8-STR    "@8"        endmacro
-macro INTRINSIC-STORE8-STR   "!8"        endmacro
-macro INTRINSIC-LOAD16-STR   "@16"       endmacro
-macro INTRINSIC-STORE16-STR  "!16"       endmacro
-macro INTRINSIC-LOAD32-STR   "@32"       endmacro
-macro INTRINSIC-STORE32-STR  "!32"       endmacro
-macro INTRINSIC-LOAD64-STR   "@64"       endmacro
-macro INTRINSIC-STORE64-STR  "!64"       endmacro
-macro INTRINSIC-SYSCALL0-STR "syscall0"  endmacro
-macro INTRINSIC-SYSCALL1-STR "syscall1"  endmacro
-macro INTRINSIC-SYSCALL2-STR "syscall2"  endmacro
-macro INTRINSIC-SYSCALL3-STR "syscall3"  endmacro
-macro INTRINSIC-SYSCALL4-STR "syscall4"  endmacro
-macro INTRINSIC-SYSCALL5-STR "syscall5"  endmacro
-macro INTRINSIC-SYSCALL6-STR "syscall6"  endmacro
+namespace INTRINSIC-NAME
+macro UNKNOWN  "<unknown>" endmacro
+macro ADD      "+"         endmacro
+macro SUB      "-"         endmacro
+macro MUL      "*"         endmacro
+macro MUL2     "*2"        endmacro
+macro DIV      "/"         endmacro
+macro MOD      "%"         endmacro
+macro UMUL     "u*"        endmacro
+macro UMUL2    "u*2"       endmacro
+macro UDIV     "u/"        endmacro
+macro UMOD     "u%"        endmacro
+macro BOR      "||"        endmacro
+macro BAND     "&&"        endmacro
+macro BXOR     "^^"        endmacro
+macro BNOT     "!!"        endmacro
+macro LOAD8    "@8"        endmacro
+macro STORE8   "!8"        endmacro
+macro LOAD16   "@16"       endmacro
+macro STORE16  "!16"       endmacro
+macro LOAD32   "@32"       endmacro
+macro STORE32  "!32"       endmacro
+macro LOAD64   "@64"       endmacro
+macro STORE64  "!64"       endmacro
+macro SYSCALL0 "syscall0"  endmacro
+macro SYSCALL1 "syscall1"  endmacro
+macro SYSCALL2 "syscall2"  endmacro
+macro SYSCALL3 "syscall3"  endmacro
+macro SYSCALL4 "syscall4"  endmacro
+macro SYSCALL5 "syscall5"  endmacro
+macro SYSCALL6 "syscall6"  endmacro
+endnamespace
 
 // Intrinsic type IDs
-macro INT-TYPE-UNKNOWN 0 endmacro
-macro INT-TYPE-INT     1 endmacro
-macro INT-TYPE-BOOL    2 endmacro
+namespace INT-TYPE
+macro INT     1 endmacro
+macro BOOL    2 endmacro
+endnamespace
 
 // Intrinsic type strings
-macro INT-TYPE-UNKNOWN-STR "<unknown>" endmacro
-macro INT-TYPE-INT-STR     "int"       endmacro
-macro INT-TYPE-BOOL-STR    "bool"      endmacro
+namespace INT-TYPE-NAME
+macro UNKNOWN "<unknown>" endmacro
+macro INT     "int"       endmacro
+macro BOOL    "bool"      endmacro
+endnamespace
 
 // Intrinsic type sizes
-macro INT-TYPE-UNKNOWN-SIZEOF 1 neg endmacro
-macro INT-TYPE-INT-SIZEOF         8 endmacro
-macro INT-TYPE-BOOL-SIZEOF        8 endmacro
+namespace INT-TYPE-SIZE
+macro UNKNOWN 1 neg endmacro
+macro INT         8 endmacro
+macro BOOL        8 endmacro
+endnamespace
 
 proc get-type-name
   // int: type -> ptr: type-name-ptr int: type-name-length
   int -> ptr int
 in let type in
-       type TYPE-NAME      = if TYPE-NAME-STR
-  else type TYPE-INTEGER   = if TYPE-INTEGER-STR
-  else type TYPE-KEYWORD   = if TYPE-KEYWORD-STR
-  else type TYPE-INTRINSIC = if TYPE-INTRINSIC-STR
-  else type TYPE-STRING    = if TYPE-STRING-STR
-  else type TYPE-INT-TYPE  = if TYPE-INT-TYPE-STR
-  else                          TYPE-UNKNOWN-STR
+       type TOKEN-TYPE:NAME      = if TOKEN-TYPE-NAME:NAME
+  else type TOKEN-TYPE:INTEGER   = if TOKEN-TYPE-NAME:INTEGER
+  else type TOKEN-TYPE:KEYWORD   = if TOKEN-TYPE-NAME:KEYWORD
+  else type TOKEN-TYPE:INTRINSIC = if TOKEN-TYPE-NAME:INTRINSIC
+  else type TOKEN-TYPE:STRING    = if TOKEN-TYPE-NAME:STRING
+  else type TOKEN-TYPE:INT-TYPE  = if TOKEN-TYPE-NAME:INT-TYPE
+  else                                TOKEN-TYPE-NAME:UNKNOWN
   end end end end end end
 end end
 
@@ -181,57 +204,59 @@ proc get-keyword-name
   // int: keyword -> ptr: keyword-name-ptr int: keyword-name-length
   int -> ptr int
 in let keyword in
-       keyword KEYWORD-INCLUDE  = if KEYWORD-INCLUDE-STR
-  else keyword KEYWORD-MACRO    = if KEYWORD-MACRO-STR
-  else keyword KEYWORD-ENDMACRO = if KEYWORD-ENDMACRO-STR
-  else keyword KEYWORD-PROC     = if KEYWORD-PROC-STR
-  else keyword KEYWORD-END      = if KEYWORD-END-STR
-  else keyword KEYWORD-RETURN   = if KEYWORD-RETURN-STR
-  else keyword KEYWORD-RETURNS  = if KEYWORD-RETURNS-STR
-  else keyword KEYWORD-MEMORY   = if KEYWORD-MEMORY-STR
-  else keyword KEYWORD-AND      = if KEYWORD-AND-STR
-  else keyword KEYWORD-IN       = if KEYWORD-IN-STR
-  else keyword KEYWORD-LET      = if KEYWORD-LET-STR
-  else keyword KEYWORD-PEEK     = if KEYWORD-PEEK-STR      
-  else keyword KEYWORD-IF       = if KEYWORD-IF-STR
-  else keyword KEYWORD-ELSE     = if KEYWORD-ELSE-STR
-  else keyword KEYWORD-WHILE    = if KEYWORD-WHILE-STR
-  else keyword KEYWORD-DO       = if KEYWORD-DO-STR
-  else keyword KEYWORD-BREAK    = if KEYWORD-BREAK-STR
-  else keyword KEYWORD-SIZEOF   = if KEYWORD-SIZEOF-STR
-  else                               KEYWORD-UNKNOWN-STR
-  end end end end end end end end end end end end end end end end end end
+       keyword KEYWORD:INCLUDE      = if KEYWORD-NAME:INCLUDE
+  else keyword KEYWORD:MACRO        = if KEYWORD-NAME:MACRO
+  else keyword KEYWORD:ENDMACRO     = if KEYWORD-NAME:ENDMACRO
+  else keyword KEYWORD:NAMESPACE    = if KEYWORD-NAME:NAMESPACE
+  else keyword KEYWORD:ENDNAMESPACE = if KEYWORD-NAME:ENDNAMESPACE
+  else keyword KEYWORD:PROC         = if KEYWORD-NAME:PROC
+  else keyword KEYWORD:END          = if KEYWORD-NAME:END
+  else keyword KEYWORD:RETURN       = if KEYWORD-NAME:RETURN
+  else keyword KEYWORD:RETURNS      = if KEYWORD-NAME:RETURNS
+  else keyword KEYWORD:MEMORY       = if KEYWORD-NAME:MEMORY
+  else keyword KEYWORD:AND          = if KEYWORD-NAME:AND
+  else keyword KEYWORD:IN           = if KEYWORD-NAME:IN
+  else keyword KEYWORD:LET          = if KEYWORD-NAME:LET
+  else keyword KEYWORD:PEEK         = if KEYWORD-NAME:PEEK
+  else keyword KEYWORD:IF           = if KEYWORD-NAME:IF
+  else keyword KEYWORD:ELSE         = if KEYWORD-NAME:ELSE
+  else keyword KEYWORD:WHILE        = if KEYWORD-NAME:WHILE
+  else keyword KEYWORD:DO           = if KEYWORD-NAME:DO
+  else keyword KEYWORD:BREAK        = if KEYWORD-NAME:BREAK
+  else keyword KEYWORD:SIZEOF       = if KEYWORD-NAME:SIZEOF
+  else                                   KEYWORD-NAME:UNKNOWN
+  end end end end end end end end end end end end end end end end end end end end
 end end
 
 proc get-intrinsic-name
   // int: intrinsic -> ptr: intrinsic-name-ptr int: intrinsic-name-length
   int -> ptr int
 in let intrinsic in
-       intrinsic INTRINSIC-ADD      = if INTRINSIC-ADD-STR
-  else intrinsic INTRINSIC-SUB      = if INTRINSIC-SUB-STR
-  else intrinsic INTRINSIC-MUL      = if INTRINSIC-MUL-STR
-  else intrinsic INTRINSIC-DIV      = if INTRINSIC-DIV-STR
-  else intrinsic INTRINSIC-MOD      = if INTRINSIC-MOD-STR
-  else intrinsic INTRINSIC-BOR      = if INTRINSIC-BOR-STR
-  else intrinsic INTRINSIC-BAND     = if INTRINSIC-BAND-STR
-  else intrinsic INTRINSIC-BXOR     = if INTRINSIC-BXOR-STR
-  else intrinsic INTRINSIC-BNOT     = if INTRINSIC-BNOT-STR
-  else intrinsic INTRINSIC-LOAD8    = if INTRINSIC-LOAD8-STR
-  else intrinsic INTRINSIC-STORE8   = if INTRINSIC-STORE8-STR
-  else intrinsic INTRINSIC-LOAD16   = if INTRINSIC-LOAD16-STR
-  else intrinsic INTRINSIC-STORE16  = if INTRINSIC-STORE16-STR
-  else intrinsic INTRINSIC-LOAD32   = if INTRINSIC-LOAD32-STR
-  else intrinsic INTRINSIC-STORE32  = if INTRINSIC-STORE32-STR
-  else intrinsic INTRINSIC-LOAD64   = if INTRINSIC-LOAD64-STR
-  else intrinsic INTRINSIC-STORE64  = if INTRINSIC-STORE64-STR
-  else intrinsic INTRINSIC-SYSCALL0 = if INTRINSIC-SYSCALL0-STR
-  else intrinsic INTRINSIC-SYSCALL1 = if INTRINSIC-SYSCALL1-STR
-  else intrinsic INTRINSIC-SYSCALL2 = if INTRINSIC-SYSCALL2-STR
-  else intrinsic INTRINSIC-SYSCALL3 = if INTRINSIC-SYSCALL3-STR
-  else intrinsic INTRINSIC-SYSCALL4 = if INTRINSIC-SYSCALL4-STR
-  else intrinsic INTRINSIC-SYSCALL5 = if INTRINSIC-SYSCALL5-STR
-  else intrinsic INTRINSIC-SYSCALL6 = if INTRINSIC-SYSCALL6-STR
-  else                                   INTRINSIC-UNKNOWN-STR
+       intrinsic INTRINSIC:ADD      = if INTRINSIC-NAME:ADD
+  else intrinsic INTRINSIC:SUB      = if INTRINSIC-NAME:SUB
+  else intrinsic INTRINSIC:MUL      = if INTRINSIC-NAME:MUL
+  else intrinsic INTRINSIC:DIV      = if INTRINSIC-NAME:DIV
+  else intrinsic INTRINSIC:MOD      = if INTRINSIC-NAME:MOD
+  else intrinsic INTRINSIC:BOR      = if INTRINSIC-NAME:BOR
+  else intrinsic INTRINSIC:BAND     = if INTRINSIC-NAME:BAND
+  else intrinsic INTRINSIC:BXOR     = if INTRINSIC-NAME:BXOR
+  else intrinsic INTRINSIC:BNOT     = if INTRINSIC-NAME:BNOT
+  else intrinsic INTRINSIC:LOAD8    = if INTRINSIC-NAME:LOAD8
+  else intrinsic INTRINSIC:STORE8   = if INTRINSIC-NAME:STORE8
+  else intrinsic INTRINSIC:LOAD16   = if INTRINSIC-NAME:LOAD16
+  else intrinsic INTRINSIC:STORE16  = if INTRINSIC-NAME:STORE16
+  else intrinsic INTRINSIC:LOAD32   = if INTRINSIC-NAME:LOAD32
+  else intrinsic INTRINSIC:STORE32  = if INTRINSIC-NAME:STORE32
+  else intrinsic INTRINSIC:LOAD64   = if INTRINSIC-NAME:LOAD64
+  else intrinsic INTRINSIC:STORE64  = if INTRINSIC-NAME:STORE64
+  else intrinsic INTRINSIC:SYSCALL0 = if INTRINSIC-NAME:SYSCALL0
+  else intrinsic INTRINSIC:SYSCALL1 = if INTRINSIC-NAME:SYSCALL1
+  else intrinsic INTRINSIC:SYSCALL2 = if INTRINSIC-NAME:SYSCALL2
+  else intrinsic INTRINSIC:SYSCALL3 = if INTRINSIC-NAME:SYSCALL3
+  else intrinsic INTRINSIC:SYSCALL4 = if INTRINSIC-NAME:SYSCALL4
+  else intrinsic INTRINSIC:SYSCALL5 = if INTRINSIC-NAME:SYSCALL5
+  else intrinsic INTRINSIC:SYSCALL6 = if INTRINSIC-NAME:SYSCALL6
+  else                                   INTRINSIC-NAME:UNKNOWN
   end end end end end end end end end end end end end end end end end end end end end end end end
 end end
 
@@ -239,9 +264,9 @@ proc get-int-type-name
   // int: int-type -> ptr: int-type-name-ptr int: int-type-name-length
   int -> ptr int
 in let int-type in
-       int-type INT-TYPE-INT  = if INT-TYPE-INT-STR
-  else int-type INT-TYPE-BOOL = if INT-TYPE-BOOL-STR
-  else                             INT-TYPE-UNKNOWN-STR
+       int-type INT-TYPE:INT  = if INT-TYPE-NAME:INT
+  else int-type INT-TYPE:BOOL = if INT-TYPE-NAME:BOOL
+  else                             INT-TYPE-NAME:UNKNOWN
   end end
 end end
 
@@ -249,9 +274,9 @@ proc get-int-type-sizeof
   // int: int-type -> int: int-type-sizeof
   int -> int
 in let int-type in
-       int-type INT-TYPE-INT  = if INT-TYPE-INT-SIZEOF
-  else int-type INT-TYPE-BOOL = if INT-TYPE-BOOL-SIZEOF
-  else                             INT-TYPE-UNKNOWN-SIZEOF
+       int-type INT-TYPE:INT  = if INT-TYPE-SIZE:INT
+  else int-type INT-TYPE:BOOL = if INT-TYPE-SIZE:BOOL
+  else                             INT-TYPE-SIZE:UNKNOWN
   end end
 end end
 
@@ -289,17 +314,17 @@ proc fput-token
 in let token-type token-arg file_ in
   token-type file_ fput-type " '" file_ fputs
 
-  token-type TYPE-NAME = if
+  token-type TOKEN-TYPE:NAME = if
     token-arg token-arg mlength file_ fputs
-  else token-type TYPE-INTEGER = if
+  else token-type TOKEN-TYPE:INTEGER = if
     token-arg file_ fputi
-  else token-type TYPE-KEYWORD = if
+  else token-type TOKEN-TYPE:KEYWORD = if
     token-arg file_ fput-keyword
-  else token-type TYPE-INTRINSIC = if
+  else token-type TOKEN-TYPE:INTRINSIC = if
     token-arg file_ fput-intrinsic
-  else token-type TYPE-STRING = if
+  else token-type TOKEN-TYPE:STRING = if
     token-arg token-arg mlength file_ fputs
-  else token-type TYPE-INT-TYPE = if
+  else token-type TOKEN-TYPE:INT-TYPE = if
     token-arg file_ fput-int-type
   else
     token-arg file_ fputi
@@ -312,12 +337,12 @@ proc get-type-size-modifier
   // int: int-type -> ptr: int-type-size-mod-address int: int-type-size-mod-length
   int -> ptr int
 in let type in
-  type INT-TYPE-INT = if       "qword"
-  else type INT-TYPE-BOOL = if "word"
+       type INT-TYPE:INT  = if "qword"
+  else type INT-TYPE:BOOL = if "word"
   else
-    LOG.ERR STDERR fputs "Unknown stack data type for 'get-type-size-modifier'.\n" STDERR fputs
+    LOG:ERR STDERR fputs "Unknown stack data type for 'get-type-size-modifier'.\n" STDERR fputs
     STDERR report-bug
-    ERROR-EXIT-CODE exit drop
+    EXIT-CODE:ERROR exit drop
     NULLPTR 0 // dummy
   end end
 end end

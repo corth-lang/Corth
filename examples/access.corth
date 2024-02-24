@@ -16,23 +16,23 @@ in let argv argc in
         0 buffer length + dec !8
 
         // Check if the file exists.
-        buffer F_OK access is-zero if
+        buffer ACCESS-MODE:F_OK access is-zero if
           // File exists, check the user's permissions.
           "File exists.\n" puts
 
-          buffer R_OK access is-zero if
+          buffer ACCESS-MODE:R_OK access is-zero if
             "File can be read.\n" puts
           else
             "File can not be read.\n" puts
           end
 
-          buffer W_OK access is-zero if
+          buffer ACCESS-MODE:W_OK access is-zero if
             "File can be written.\n" puts
           else
             "File can not be written.\n" puts
           end
 
-          buffer X_OK access is-zero if
+          buffer ACCESS-MODE:X_OK access is-zero if
             "File can be executed.\n" puts
           else
             "File can not be executed.\n" puts
