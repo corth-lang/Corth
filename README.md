@@ -42,7 +42,7 @@ This will compile the compiler source code and place it at *./corth*.
 
     // From ./examples/hello_world.corth
     
-    include linux_86x/stdio.corth
+    include "linux_86x/stdio.corth"
     
     proc main
       int int -> int
@@ -102,7 +102,7 @@ This will compile the compiler source code and place it at *./corth*.
 
 ### Include:
 
-    include str.corth
+    include "str.corth"
 
 - When compiler sees an `include` keyword, it starts to compile the file whose path is given after the `include` keyword.
 - Right now, the compiler does not allow including directories. A todo error will be given if tried.
@@ -208,7 +208,7 @@ This will compile the compiler source code and place it at *./corth*.
 
 ### Control flow:
 
-    include linux_x86/stdio.corth
+    include "linux_x86/stdio.corth"
 
     proc main
       int int -> int
@@ -268,7 +268,7 @@ This will compile the compiler source code and place it at *./corth*.
 
 ### Static memory management:
 
-    include core/memory.corth
+    include "core/memory.corth"
 
     // This is a global variable.
     // The size must be a compile-time constant as memory is allocated in compile-time.
@@ -316,7 +316,7 @@ This will compile the compiler source code and place it at *./corth*.
 
 ### Dynamic memory management:
 
-    include dynamic/malloc.corth
+    include "dynamic/malloc.corth"
 
     // Assume this is inside a procedure.
     100 malloc let buffer in  // Allocate 100 bytes of memory and save the object pointer as a constant named `buffer`.
