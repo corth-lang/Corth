@@ -10,14 +10,15 @@ Key array is a sorted queue, where each key in that array corresponds to a value
 Length shows the length of both arrays.
 */
 
+namespace str-map64
 
 // ptr: key-array ptr: value-array ptr: length ->
-macro str-map64.reset-length let _ _ length in
+macro reset-length let _ _ length in
   0 length !64
 end endmacro
 
 
-proc str-map64.clear
+proc clear
   // ptr: key-array ptr: value-array ptr: length ->
   ptr ptr ptr ->
   // mfree's all allocated strings.
@@ -30,10 +31,10 @@ in let key-array value-array length in
 end end
 
 
-proc str-map64.set-dstr
+proc set-dstr
   // ptr: key int: value ptr: key-array ptr: value-array ptr: length -> bool: found
   int int ptr ptr ptr -> bool
-  // Sets the matching value of the key to a specified value in a map64.
+  // Sets the matching value of the key to a specified value in a map64:
   // If the key could not have been found, appends this key-value pair.
   // Returns if the key was found.
 in let key value key-array value-array length in
@@ -57,17 +58,17 @@ in let key value key-array value-array length in
 end end
 
 
-macro str-map64.get-dstr let key key-array value-array length in
-  key key mlength key-array value-array length str-map64.get-str
+macro get-dstr let key key-array value-array length in
+  key key mlength key-array value-array length str-map64:get-str
 end endmacro
 
 
-macro str-map64.get-cstr let key key-array value-array length in
-  key key cstr:len key-array value-array length str-map64.get-str
+macro get-cstr let key key-array value-array length in
+  key key cstr:len key-array value-array length str-map64:get-str
 end endmacro
 
 
-proc str-map64.get-str
+proc get-str
   // ptr: key int: key-length ptr: key-array ptr: value-array ptr: length -> int: value bool: found
   ptr int ptr ptr ptr -> int bool
   // Finds a key-value pair from a key in a map64 and returns the value.
@@ -81,17 +82,17 @@ in let key key-length key-array value-array length in
 end end
 
 
-macro str-map64.remove-dstr let key key-array value-array length in
-  key key mlength key-array value-array length str-map64.remove-str
+macro remove-dstr let key key-array value-array length in
+  key key mlength key-array value-array length str-map64:remove-str
 end endmacro
 
 
-macro str-map64.remove-cstr let key key-array value-array length in
-  key key cstr:len key-array value-array length str-map64.remove-str
+macro remove-cstr let key key-array value-array length in
+  key key cstr:len key-array value-array length str-map64:remove-str
 end endmacro
 
 
-proc str-map64.remove-str
+proc remove-str
   // ptr: key int: key-length ptr: key-array ptr: value-array ptr: length -> bool: found
   ptr int ptr ptr ptr -> bool
   // Removes a key-value pair from a map64, if it is found.

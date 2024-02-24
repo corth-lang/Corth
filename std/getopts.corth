@@ -102,11 +102,11 @@ in let options in
 
     options while dup @8 isn-zero do let i in i @8 let char in
       char '#' = if
-        buffer pointer @64 buffer - to-dynamic8 O-SWITCH getopts.keys getopts.values getopts.length str-map64.set-dstr if false return end
+        buffer pointer @64 buffer - to-dynamic8 O-SWITCH getopts.keys getopts.values getopts.length str-map64:set-dstr if false return end
         buffer pointer !64
 
       else char '$' = if
-        buffer pointer @64 buffer - to-dynamic8 O-ARGUMENT getopts.keys getopts.values getopts.length str-map64.set-dstr if false return end
+        buffer pointer @64 buffer - to-dynamic8 O-ARGUMENT getopts.keys getopts.values getopts.length str-map64:set-dstr if false return end
         buffer pointer !64
 
       else
@@ -126,12 +126,12 @@ end end
 
 
 macro getopts.reset-length
-  getopts.keys getopts.values getopts.length str-map64.reset-length
+  getopts.keys getopts.values getopts.length str-map64:reset-length
 endmacro
 
 
 macro getopts.clear
-  getopts.keys getopts.values getopts.length str-map64.clear
+  getopts.keys getopts.values getopts.length str-map64:clear
 endmacro
 
 
@@ -158,7 +158,7 @@ proc getopts.parse-argument
   // ptr: address int: length -> int: type ptr: arg1 int: arg1-length ptr: arg2 int: arg2-length
   ptr int -> int ptr int ptr int
 in let address length in
-  address length getopts.keys getopts.values getopts.length str-map64.get-str ! if
+  address length getopts.keys getopts.values getopts.length str-map64:get-str ! if
     drop
     O-ERROR NULLPTR E-UNKNOWN-OPTION address length return
   end

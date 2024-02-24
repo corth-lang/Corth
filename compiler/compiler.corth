@@ -1229,7 +1229,7 @@ in
           level 16 + @64 level 24 + @64 let new-names old-local-memory-end in
             0 while dup new-names mlength 8 / < do peek i in i 8 * new-names + @64 let name in
               name mlength 1 = if name @8 '_' != else true end if
-                name let-names let-addresses let-vars-length str-map64.remove-dstr ! if
+                name let-names let-addresses let-vars-length str-map64:remove-dstr ! if
                   LOG:ERR  log-stream fputs "Could not find the 'let' variable name '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
                   log-stream report-bug
                   start-address compile-procedure:show-here
@@ -1251,7 +1251,7 @@ in
 
           level 16 + @64 level 24 + @64 let new-names old-peeked-item in
             0 while dup new-names mlength 8 / < do peek i in i 8 * new-names + @64 let name in
-              name let-names let-addresses let-vars-length str-map64.remove-dstr ! if
+              name let-names let-addresses let-vars-length str-map64:remove-dstr ! if
                 LOG:ERR  log-stream fputs "Could not find the 'peek' variable name '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
                 log-stream report-bug
                 start-address compile-procedure:show-here
@@ -1270,7 +1270,7 @@ in
 
           level 16 + @64 level 24 + @64 let new-names old-local-memory-end in
             0 while dup new-names mlength 8 / < do peek i in i 8 * new-names + @64 let name in
-              name let-names let-addresses let-vars-length str-map64.remove-dstr ! if
+              name let-names let-addresses let-vars-length str-map64:remove-dstr ! if
                 LOG:ERR  log-stream fputs "Could not find the local variable name '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
 
                 log-stream report-bug
@@ -1617,7 +1617,7 @@ in
             INT-TYPE:INT STACK-MODE:LOCAL stack-item:create let replace-item in
               local-memory-end @64 replace-item stack-item:set-arg1
 
-              memory-name-arg replace-item let-names let-addresses let-vars-length str-map64.set-dstr if
+              memory-name-arg replace-item let-names let-addresses let-vars-length str-map64:set-dstr if
                 LOG:ERR log-stream fputs "Local variable '" log-stream fputs memory-name-arg memory-name-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
                 memory-name-address compile-procedure:show-here
                 EXIT-CODE:ERROR exit drop
@@ -1730,7 +1730,7 @@ in
               end
 
               let replace-item in
-                variable-name replace-item let-names let-addresses let-vars-length str-map64.set-dstr if
+                variable-name replace-item let-names let-addresses let-vars-length str-map64:set-dstr if
                   LOG:ERR log-stream fputs "'let' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
 
                   // TODO: This does not show the address of the 'let' variable. This should be changed.
@@ -1821,7 +1821,7 @@ in
                 end
 
                 let replace-item in
-                  variable-name replace-item let-names let-addresses let-vars-length str-map64.set-dstr if
+                  variable-name replace-item let-names let-addresses let-vars-length str-map64:set-dstr if
                     LOG:ERR log-stream fputs "'peek' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
 
                     // TODO: This does not show the address of the 'peek' variable. This should be changed.
@@ -1974,7 +1974,7 @@ in
   // level-id-counter allows to create unique IDs for level labels.
   memory level-id-counter sizeof(int)      in
 
-  // let-names, let-addresses and let-vars-length create a str_map64.
+  // let-names, let-addresses and let-vars-length create a str_map64:
   memory let-names        LET-MAX-COUNT    in
   memory let-addresses    LET-MAX-COUNT    in
   memory let-vars-length  sizeof(int)      in
@@ -2035,7 +2035,7 @@ in
           // Branch should not be cut before name.
           token-address "calling a name" compile-procedure:check-branch-here
 
-          token-arg let-names let-addresses let-vars-length str-map64.get-dstr if
+          token-arg let-names let-addresses let-vars-length str-map64:get-dstr if
             // -------- local variables --------
 
             let replace-item in
@@ -2051,7 +2051,7 @@ in
               end
             end
 
-          else drop token-arg global-names-array global-sizes-array globals-length str-map64.get-dstr if
+          else drop token-arg global-names-array global-sizes-array globals-length str-map64:get-dstr if
             // -------- global 'memory' variables --------
 
             let address in
@@ -2418,7 +2418,7 @@ in
                 end
 
                 // Store the variable.
-                memory-size-arg global-names-array global-sizes-array globals-length str-map64.set-dstr drop
+                memory-size-arg global-names-array global-sizes-array globals-length str-map64:set-dstr drop
 
                 // Deallocate 'memory-size-address'.
                 memory-size-address mfree drop
@@ -2471,7 +2471,7 @@ in
                   namespace-name @64 macro-name-token-arg djoin
                 end
                 
-                macro-tokens-list list64:copy-array macro-names macro-tokens macros-length str-map64.set-dstr drop
+                macro-tokens-list list64:copy-array macro-names macro-tokens macros-length str-map64:set-dstr drop
 
                 // Deallocate 'macro-tokens-list'.
                 macro-tokens-list list64:mfree drop
