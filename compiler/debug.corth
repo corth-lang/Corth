@@ -180,7 +180,7 @@ in let address log-stream in
       start-pos POS.LINE + @64 start-pos POS.CHAR + @64 end-pos POS.LINE + @64 end-pos POS.CHAR + @64 let start-line start-char end-line end-char in
 
         // Move the file pointer to the start.
-        file 0 SEEK-SET lseek drop start-line dec file seek-line
+        file 0 SEEK-WHENCE:SET lseek drop start-line dec file seek-line
 
         start-line end-line = if
           start-line log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
@@ -225,7 +225,7 @@ in let position file-name log-stream in
 
     position POS.LINE + @64 position POS.CHAR + @64 position POS.AT + @64 let line-no char-no at in
       // Move the file pointer to the start,
-      file 0 SEEK-SET lseek drop line-no dec file seek-line
+      file 0 SEEK-WHENCE:SET lseek drop line-no dec file seek-line
 
       line-no log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
         "                      " log-stream fputs space-buffer char-no log-stream fputs tilde-buffer 1 log-stream fputs log-stream fputnl

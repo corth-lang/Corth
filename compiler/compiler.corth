@@ -2325,7 +2325,7 @@ in
                         include-path stats stat drop
 
                         // Check if user has access to the path:
-                        include-path R_OK access is-zero if
+                        include-path ACCESS-MODE:R_OK access is-zero if
                           // Mark as found.
                           0xff found !8
 

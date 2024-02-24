@@ -14,7 +14,7 @@ in let start length file in
     start length file fgets
 
     // Return the file pointer to its original pointer.
-    file original SEEK-SET lseek drop
+    file original SEEK-WHENCE:SET lseek drop
   end
 end end
 
@@ -40,7 +40,7 @@ in let file line-no char-no in
 
       else
         char @8 ' ' != if
-          file 1 neg SEEK-CUR lseek drop
+          file 1 neg SEEK-WHENCE:CUR lseek drop
           false return
         end
 
@@ -82,7 +82,7 @@ in let file file-name line-no char-no buffer buffer-end log-stream in
       line-no @64 char-no @64 file ftell generate-position file-name log-stream fput-here-position
       EXIT-CODE:ERROR exit drop
     else                                                  // There is still space in the buffer.
-      file 1 SEEK-CUR lseek drop
+      file 1 SEEK-WHENCE:CUR lseek drop
       buffer-end @inc64
       char-no    @inc64
     end
@@ -533,7 +533,7 @@ in let
               file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros get-next-token ! if false return end
             else
               // -------- Name and keyword types --------
-              file 1 neg SEEK-CUR lseek drop
+              file 1 neg SEEK-WHENCE:CUR lseek drop
 
               file-name file start-line start-char start-at line-no char-no buffer buffer-end log-stream create-name-token
             end end

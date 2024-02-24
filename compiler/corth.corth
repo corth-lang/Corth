@@ -186,7 +186,7 @@ in let source-name output-name include-paths-set full-compilation in
     source-name stats stat drop
 
     // Check if user has access to the path:
-    source-name R_OK access isn-zero if
+    source-name ACCESS-MODE:R_OK access isn-zero if
       "error: can not access file '" eputs source-name source-name mlength eputs "'\n" eputs
       EXIT-ERROR exit drop
     end
