@@ -334,8 +334,8 @@ in let token-address local-stack local-stack-length peeked-item output-file log-
       else
         INT-TYPE-INT push-real
 
-        item2          output-file nasm.push-int
-        item1 get-arg1 output-file nasm.add-int-immediate
+        item2          output-file nasm:push-int
+        item1 get-arg1 output-file nasm:add-int-immediate
       end end
 
     else item2 get-mode MODE-IMM = if
@@ -345,15 +345,15 @@ in let token-address local-stack local-stack-length peeked-item output-file log-
       else
         INT-TYPE-INT push-real
 
-        item1          output-file nasm.push-int
-        item2 get-arg1 output-file nasm.add-int-immediate
+        item1          output-file nasm:push-int
+        item2 get-arg1 output-file nasm:add-int-immediate
       end
 
     else
       INT-TYPE-INT push-real
 
-      item2 "rax" output-file nasm.mov-reg-item
-      item1       output-file nasm.push-int
+      item2 "rax" output-file nasm:mov-reg-item
+      item1       output-file nasm:push-int
 
       "    add     [rsp], rax\n" output-file fputs
     end end
@@ -407,13 +407,13 @@ in let token-address intrinsic local-stack local-stack-length peeked-item output
     INT-TYPE-INT push-real
 
     intrinsic INTRINSIC-LOAD64 = if
-      item "rbx" output-file nasm.mov-reg-item
+      item "rbx" output-file nasm:mov-reg-item
 
       "    push    qword [rbx]\n" output-file fputs
 
     else
-      item "rbx" output-file nasm.mov-reg-item
-           "rax" output-file nasm.mov-reg-zero
+      item "rbx" output-file nasm:mov-reg-item
+           "rax" output-file nasm:mov-reg-zero
 
       "    mov     " output-file fputs intrinsic get-register-name output-file fputs ", [rbx]\n" output-file fputs
       "    push    rax\n" output-file fputs
@@ -435,7 +435,7 @@ in let value-item address-item address-item-length token-address intrinsic outpu
 
   value-item get-mode MODE-IMM = if
     intrinsic INTRINSIC-STORE64 = if
-      value-item get-arg1 is-signed-dword if
+      value-item get-arg1 nasm:is-signed-dword if
         "    mov     qword [" output-file fputs address-item address-item-length output-file fputs
         "], " output-file fputs value-item get-arg1 output-file fputi output-file fputnl
         return
@@ -455,7 +455,7 @@ in let value-item address-item address-item-length token-address intrinsic outpu
     end
 
     "    mov     qword [" output-file fputs address-item address-item-length output-file fputs
-    "], global_" output-file fputs value-item get-arg1 output-file fput-alpha output-file fputnl
+    "], global_" output-file fputs value-item get-arg1 output-file nasm:fput-alpha output-file fputnl
     return
   end
 
@@ -471,7 +471,7 @@ in let value-item address-item address-item-length token-address intrinsic outpu
     return
   end
 
-  value-item   "rax" output-file nasm.mov-reg-item
+  value-item   "rax" output-file nasm:mov-reg-item
   "    mov     [" output-file fputs address-item address-item-length output-file fputs
   "], " output-file fputs intrinsic get-register-name output-file fputs output-file fputnl
 end end
@@ -512,13 +512,13 @@ in let token-address intrinsic local-stack local-stack-length peeked-item output
       end
 
     else address-item get-mode MODE-GLOBAL = if
-      address-item get-arg1 global-label let label in
+      address-item get-arg1 nasm:global-label let label in
         value-item label label mlength token-address intrinsic output-file log-stream store-intrinsic-sub
         label mfree drop
       end
 
     else
-      address-item "rbx" output-file nasm.mov-reg-item
+      address-item "rbx" output-file nasm:mov-reg-item
       value-item "rbx" token-address intrinsic output-file log-stream store-intrinsic-sub
     end end end
   end
@@ -546,20 +546,20 @@ in let signed upper immediate item local-stack local-stack-length peeked-item ou
 
     // TODO: Multiplication by numbers that are not whole powers of 2 without using the 'mul' instruction is possible.
     log2 is-neg if
-      item      "rax" output-file nasm.mov-reg-item
-      immediate "rbx" output-file nasm.mov-reg-immediate
+      item      "rax" output-file nasm:mov-reg-item
+      immediate "rbx" output-file nasm:mov-reg-immediate
 
       signed if "    imul    rbx\n" else "    mul     rbx\n" end output-file fputs
       upper  if "    push    rdx\n" else "    push    rax\n" end output-file fputs
 
     else
       upper if
-        item output-file nasm.push-int
+        item output-file nasm:push-int
 
         signed if "    sar     qword [rsp], " else "    shr     qword [rsp], " end output-file fputs 64 log2 - output-file fputu output-file fputnl
 
       else
-        item output-file nasm.push-int
+        item output-file nasm:push-int
 
         "    sal    qword [rsp], " output-file fputs log2 output-file fputu output-file fputnl
       end
@@ -596,8 +596,8 @@ in let token-address signed upper local-stack local-stack-length peeked-item out
       else
         INT-TYPE-INT push-real
 
-        item2 "rbx" output-file nasm.mov-reg-item
-        item1 "rax" output-file nasm.mov-reg-item
+        item2 "rbx" output-file nasm:mov-reg-item
+        item1 "rax" output-file nasm:mov-reg-item
 
         signed if "    imul    rbx\n" else "    mul     rbx\n" end output-file fputs
         upper  if "    push    rdx\n" else "    push    rax\n" end output-file fputs
@@ -614,7 +614,7 @@ proc bitwise-and-any-immediate
   // ptr: item int: immediate ptr: local-stack ptr: local-stack-length file-desc: output-file ->
   ptr int ptr ptr file-desc ->
 in let item immediate local-stack local-stack-length output-file in
-  item output-file nasm.push-int
+  item output-file nasm:push-int
 
   "    and     qword [rsp], " output-file fputs immediate output-file fputu output-file fputnl
 end end
@@ -639,9 +639,9 @@ in let token-address signed modulo local-stack local-stack-length peeked-item ou
           item1 item2 get-arg1 dec local-stack local-stack-length output-file bitwise-and-any-immediate
           
         else
-          item2 "rbx" output-file nasm.mov-reg-item
-          item1 "rax" output-file nasm.mov-reg-item
-                "rdx" output-file nasm.mov-reg-zero
+          item2 "rbx" output-file nasm:mov-reg-item
+          item1 "rax" output-file nasm:mov-reg-item
+                "rdx" output-file nasm:mov-reg-zero
 
           signed if "    idiv    rbx\n" else "    div     rbx\n" end output-file fputs
           modulo if "    push    rdx\n" else "    push    rax\n" end output-file fputs
@@ -651,9 +651,9 @@ in let token-address signed modulo local-stack local-stack-length peeked-item ou
     else
       INT-TYPE-INT push-real
 
-      item2 "rbx" output-file nasm.mov-reg-item
-      item1 "rax" output-file nasm.mov-reg-item
-            "rdx" output-file nasm.mov-reg-zero
+      item2 "rbx" output-file nasm:mov-reg-item
+      item1 "rax" output-file nasm:mov-reg-item
+            "rdx" output-file nasm:mov-reg-zero
 
       signed if "    idiv    rbx\n" else "    div     rbx\n" end output-file fputs
       modulo if "    push    rdx\n" else "    push    rax\n" end output-file fputs
@@ -704,14 +704,14 @@ in
       item2 get-mode MODE-IMM = if
         INT-TYPE-INT push-real
 
-        item1              output-file nasm.push-int
-        item2 get-arg1 neg output-file nasm.add-int-immediate
+        item1              output-file nasm:push-int
+        item2 get-arg1 neg output-file nasm:add-int-immediate
 
       else
         INT-TYPE-INT push-real
 
-        item2 "rax" output-file nasm.mov-reg-item
-        item1       output-file nasm.push-int
+        item2 "rax" output-file nasm:mov-reg-item
+        item1       output-file nasm:push-int
 
         "    sub     [rsp], rax\n" output-file fputs
       end
@@ -730,8 +730,8 @@ in
 
       INT-TYPE-INT push-real
 
-      item2 "rax" output-file nasm.mov-reg-item
-      item1       output-file nasm.push-int
+      item2 "rax" output-file nasm:mov-reg-item
+      item1       output-file nasm:push-int
 
       "    or      [rsp], rax\n" output-file fputs
 
@@ -749,8 +749,8 @@ in
 
       INT-TYPE-INT push-real
 
-      item2 "rax" output-file nasm.mov-reg-item
-      item1       output-file nasm.push-int
+      item2 "rax" output-file nasm:mov-reg-item
+      item1       output-file nasm:push-int
 
       "    and     [rsp], rax\n" output-file fputs
 
@@ -768,8 +768,8 @@ in
 
       INT-TYPE-INT push-real
 
-      item2 "rax" output-file nasm.mov-reg-item
-      item1       output-file nasm.push-int
+      item2 "rax" output-file nasm:mov-reg-item
+      item1       output-file nasm:push-int
 
       "    xor     [rsp], rax\n" output-file fputs
 
@@ -791,7 +791,7 @@ in
       else
         INT-TYPE-INT push-real
 
-        item output-file nasm.push-int
+        item output-file nasm:push-int
         "    not     qword [rsp]\n" output-file fputs
       end
 
@@ -828,7 +828,7 @@ in
 
       INT-TYPE-INT push-real
 
-      op-item   "rax" output-file nasm.mov-reg-item
+      op-item   "rax" output-file nasm:mov-reg-item
 
       "    syscall\n"     output-file fputs
       "    push    rax\n" output-file fputs
@@ -847,8 +847,8 @@ in
 
       INT-TYPE-INT push-real
 
-      op-item   "rax" output-file nasm.mov-reg-item
-      arg-item1 "rdi" output-file nasm.mov-reg-item
+      op-item   "rax" output-file nasm:mov-reg-item
+      arg-item1 "rdi" output-file nasm:mov-reg-item
 
       "    syscall\n"     output-file fputs
       "    push    rax\n" output-file fputs
@@ -869,9 +869,9 @@ in
 
       INT-TYPE-INT push-real
 
-      op-item   "rax" output-file nasm.mov-reg-item
-      arg-item2 "rsi" output-file nasm.mov-reg-item
-      arg-item1 "rdi" output-file nasm.mov-reg-item
+      op-item   "rax" output-file nasm:mov-reg-item
+      arg-item2 "rsi" output-file nasm:mov-reg-item
+      arg-item1 "rdi" output-file nasm:mov-reg-item
 
       "    syscall\n"     output-file fputs
       "    push    rax\n" output-file fputs
@@ -894,10 +894,10 @@ in
 
       INT-TYPE-INT push-real
 
-      op-item   "rax" output-file nasm.mov-reg-item
-      arg-item3 "rdx" output-file nasm.mov-reg-item
-      arg-item2 "rsi" output-file nasm.mov-reg-item
-      arg-item1 "rdi" output-file nasm.mov-reg-item
+      op-item   "rax" output-file nasm:mov-reg-item
+      arg-item3 "rdx" output-file nasm:mov-reg-item
+      arg-item2 "rsi" output-file nasm:mov-reg-item
+      arg-item1 "rdi" output-file nasm:mov-reg-item
 
       "    syscall\n"     output-file fputs
       "    push    rax\n" output-file fputs
@@ -922,11 +922,11 @@ in
 
       INT-TYPE-INT push-real
 
-      op-item   "rax" output-file nasm.mov-reg-item
-      arg-item4 "r10" output-file nasm.mov-reg-item
-      arg-item3 "rdx" output-file nasm.mov-reg-item
-      arg-item2 "rsi" output-file nasm.mov-reg-item
-      arg-item1 "rdi" output-file nasm.mov-reg-item
+      op-item   "rax" output-file nasm:mov-reg-item
+      arg-item4 "r10" output-file nasm:mov-reg-item
+      arg-item3 "rdx" output-file nasm:mov-reg-item
+      arg-item2 "rsi" output-file nasm:mov-reg-item
+      arg-item1 "rdi" output-file nasm:mov-reg-item
 
       "    syscall\n"     output-file fputs
       "    push    rax\n" output-file fputs
@@ -953,12 +953,12 @@ in
 
       INT-TYPE-INT push-real
 
-      op-item   "rax" output-file nasm.mov-reg-item
-      arg-item5 "r8"  output-file nasm.mov-reg-item
-      arg-item4 "r10" output-file nasm.mov-reg-item
-      arg-item3 "rdx" output-file nasm.mov-reg-item
-      arg-item2 "rsi" output-file nasm.mov-reg-item
-      arg-item1 "rdi" output-file nasm.mov-reg-item
+      op-item   "rax" output-file nasm:mov-reg-item
+      arg-item5 "r8"  output-file nasm:mov-reg-item
+      arg-item4 "r10" output-file nasm:mov-reg-item
+      arg-item3 "rdx" output-file nasm:mov-reg-item
+      arg-item2 "rsi" output-file nasm:mov-reg-item
+      arg-item1 "rdi" output-file nasm:mov-reg-item
 
       "    syscall\n"     output-file fputs
       "    push    rax\n" output-file fputs
@@ -987,13 +987,13 @@ in
 
       INT-TYPE-INT push-real
 
-      op-item   "rax" output-file nasm.mov-reg-item
-      arg-item6 "r9"  output-file nasm.mov-reg-item
-      arg-item5 "r8"  output-file nasm.mov-reg-item
-      arg-item4 "r10" output-file nasm.mov-reg-item
-      arg-item3 "rdx" output-file nasm.mov-reg-item
-      arg-item2 "rsi" output-file nasm.mov-reg-item
-      arg-item1 "rdi" output-file nasm.mov-reg-item
+      op-item   "rax" output-file nasm:mov-reg-item
+      arg-item6 "r9"  output-file nasm:mov-reg-item
+      arg-item5 "r8"  output-file nasm:mov-reg-item
+      arg-item4 "r10" output-file nasm:mov-reg-item
+      arg-item3 "rdx" output-file nasm:mov-reg-item
+      arg-item2 "rsi" output-file nasm:mov-reg-item
+      arg-item1 "rdi" output-file nasm:mov-reg-item
 
       "    syscall\n"     output-file fputs
       "    push    rax\n" output-file fputs
@@ -1162,7 +1162,7 @@ in
             // Check for the stack changes.
             start-stack start-address local-stack local-stack-length token-address log-stream check-stack-types
 
-            start-id output-file nasm.level
+            start-id output-file nasm:level
 
             // Deallocate 'start-stack'.
             start-stack _local-stack.mfree
@@ -1180,7 +1180,7 @@ in
             // Check for the stack changes.
             start-stack else-address local-stack local-stack-length token-address log-stream check-stack-types
 
-            start-id output-file nasm.level
+            start-id output-file nasm:level
 
             // Deallocate 'else-address' and 'start-stack'.
             else-address mfree drop
@@ -1213,9 +1213,9 @@ in
             // Overwrite the contents of the local-stack.
             do-stack local-stack local-stack-length local-stack.overwrite
 
-            while-level-id  output-file nasm.jump-level
-            unbroken-end-id output-file nasm.level
-            broken-end-id   output-file nasm.level
+            while-level-id  output-file nasm:jump-level
+            unbroken-end-id output-file nasm:level
+            broken-end-id   output-file nasm:level
 
             // Deallocate 'do-address', 'while-stack' and 'do-stack'.
             do-address mfree drop
@@ -1333,7 +1333,7 @@ in
         ERROR-EXIT-CODE exit drop
       end
 
-      item output-file nasm.convert-bool-to-real
+      item output-file nasm:convert-bool-to-real
 
       item stack-item.mfree
     end
@@ -1352,7 +1352,7 @@ in
 
           "    pop     rax\n"      output-file fputs
           "    test    rax, rax\n" output-file fputs
-          level-id output-file nasm.jump-zero-level
+          level-id output-file nasm:jump-zero-level
         end
       end
     end
@@ -1389,8 +1389,8 @@ in
             start-stack local-stack local-stack-length local-stack.overwrite
 
             compile-procedure.new-level-id let level-id in
-              level-id output-file nasm.jump-level
-              start-id output-file nasm.level
+              level-id output-file nasm:jump-level
+              start-id output-file nasm:level
 
               40 malloc let new-level in
                 new-level "creating a level object for 'else'" compile-procedure.check-null-here
@@ -1434,7 +1434,7 @@ in
       compile-procedure.new-level-id let level-id in
         local-stack local-stack-length output-file local-stack.convert-last-items-real
 
-        level-id output-file nasm.level
+        level-id output-file nasm:level
 
         32 malloc let new-level in
           new-level "creating a level object for 'while'" compile-procedure.check-null-here
@@ -1500,7 +1500,7 @@ in
             compile-procedure.new-level-id compile-procedure.new-level-id let unbroken-end-id broken-end-id in
               "    pop     rax\n"      output-file fputs
               "    test    rax, rax\n" output-file fputs
-              unbroken-end-id output-file nasm.jump-zero-level
+              unbroken-end-id output-file nasm:jump-zero-level
 
               local-stack local-stack-length local-stack.copy let copy-stack in
                 copy-stack "copying the stack for 'do'" compile-procedure.check-null-here
@@ -1541,7 +1541,7 @@ in
 
             local-stack local-stack-length output-file local-stack.convert-last-items-real
 
-            broken-end-id output-file nasm.jump-level
+            broken-end-id output-file nasm:jump-level
           end
 
           0 branch-active !8
@@ -1711,7 +1711,7 @@ in
 
               else
                 local-stack local-stack-length output-file local-stack.convert-last-items-real
-                item output-file nasm.convert-item-to-real
+                item output-file nasm:convert-item-to-real
 
                 "    mov     r15, [local_ptr]\n" output-file fputs
                 local-memory-end @64 is-zero if
@@ -1967,7 +1967,7 @@ in let
   log-stream
 in
 
-  "proc_" output-file fputs procedure-name output-file fput-alpha ":\n" output-file fputs
+  "proc_" output-file fputs procedure-name output-file nasm:fput-alpha ":\n" output-file fputs
 
   memory levels-list      sizeof(ptr)      in
 
@@ -2087,8 +2087,8 @@ in
                   "    push    qword [local_ptr]\n"            output-file fputs
                   "    add     qword [local_ptr], "            output-file fputs local-memory-end @64 output-file fputu output-file fputnl
                   "    xchg    rsp, [call_ptr]\n"              output-file fputs
-                  "    jmp     proc_"                          output-file fputs token-arg output-file fput-alpha output-file fputnl
-                  level-id output-file nasm.level
+                  "    jmp     proc_"                          output-file fputs token-arg output-file nasm:fput-alpha output-file fputnl
+                  level-id output-file nasm:level
                 end
               end
             end end
@@ -2812,7 +2812,7 @@ in let source-name output-name include-paths-set log-stream in
       0 while dup globals-length @64 < do peek i in
         i global-names-array array64:get i global-sizes-array array64:get let variable-name variable-size in
           "    global_"  output-file fputs
-          i global-names-array array64:get output-file fput-alpha
+          i global-names-array array64:get output-file nasm:fput-alpha
           ": resb " output-file fputs
           variable-size output-file fputu
           output-file fputnl

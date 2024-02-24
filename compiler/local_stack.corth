@@ -85,7 +85,7 @@ proc local-stack.convert-items-real
   int int ptr ptr file-desc ->
 in let start-index end-index local-stack local-stack-length output-file in
   start-index while dup end-index < do dup
-    local-stack array64:get output-file nasm.convert-item-to-real
+    local-stack array64:get output-file nasm:convert-item-to-real
   inc end drop
 end end
 
