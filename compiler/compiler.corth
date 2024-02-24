@@ -2062,7 +2062,7 @@ in
               end
             end
 
-          else drop token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available-dstr if
+          else drop token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8:available-dstr if
             // -------- 'proc' calls --------
 
             let name-address in name-address proc-names-array - let delta in
@@ -2560,7 +2560,7 @@ in
                 end
 
                 let full-name in
-                  full-name proc-names-array proc-names-array procs-length @64 8 * + str-sorted8.available-dstr if
+                  full-name proc-names-array proc-names-array procs-length @64 8 * + str-sorted8:available-dstr if
                     drop
                     LOG:ERR log-stream fputs "Procedure '" log-stream fputs full-name full-name  mlength log-stream fputs "' was already defined before.\n" log-stream fputs
                     proc-name-token-address log-stream fput-here

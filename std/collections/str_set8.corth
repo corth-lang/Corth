@@ -10,7 +10,7 @@ macro available-dstr
   // ptr: str ptr: str-set -> bool: contains
 
   let _str_ _set_ in
-    _str_ _set_ list64:array-addr _set_ list64:end-addr str-sorted8.available-dstr
+    _str_ _set_ list64:array-addr _set_ list64:end-addr str-sorted8:available-dstr
   end
 endmacro
 

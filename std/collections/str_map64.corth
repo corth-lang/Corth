@@ -38,7 +38,7 @@ proc set-dstr
   // If the key could not have been found, appends this key-value pair.
   // Returns if the key was found.
 in let key value key-array value-array length in
-  key key-array key-array length @64 8 * + str-sorted8.available-dstr if
+  key key-array key-array length @64 8 * + str-sorted8:available-dstr if
     // Found the key, sets the value.
     let address in
       value address !64
@@ -74,7 +74,7 @@ proc get-str
   // Finds a key-value pair from a key in a map64 and returns the value.
   // Returns if the key was found.
 in let key key-length key-array value-array length in
-  key key-length key-array key-array length @64 8 * + str-sorted8.available-str if
+  key key-length key-array key-array length @64 8 * + str-sorted8:available-str if
     key-array - value-array + @64 true
   else
     drop 0 false
@@ -98,7 +98,7 @@ proc remove-str
   // Removes a key-value pair from a map64, if it is found.
   // Returns if the key was found.
 in let key key-length key-array value-array length in
-  key key-length key-array key-array length @64 8 * + str-sorted8.available-str if
+  key key-length key-array key-array length @64 8 * + str-sorted8:available-str if
     let key-address in key-address key-array - value-array + let value-address in
       key-address   8 + key-address   length @64 key-address key-array - 8 / - dec memcpy64
       value-address 8 + value-address length @64 key-address key-array - 8 / - dec memcpy64
