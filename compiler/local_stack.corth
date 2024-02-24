@@ -18,8 +18,8 @@ endmacro
 
 // int: immediate-value
 macro push-int-immediate let _immediate_ in
-  INT-TYPE-INT MODE-IMM stack-item.create let _item_ in
-    _immediate_ _item_ set-arg1
+  INT-TYPE:INT STACK-MODE:IMM stack-item:create let _item_ in
+    _immediate_ _item_ stack-item:set-arg1
 
     _item_ push-item
   end
@@ -27,8 +27,8 @@ end endmacro
 
 // int: offset
 macro push-int-local let _offset_ in
-  INT-TYPE-INT MODE-LOCAL stack-item.create let _item_ in
-    _offset_ _item_ set-arg1
+  INT-TYPE:INT STACK-MODE:LOCAL stack-item:create let _item_ in
+    _offset_ _item_ stack-item:set-arg1
 
     _item_ push-item
   end
@@ -36,8 +36,8 @@ end endmacro
 
 // int: offset
 macro push-@64local let _offset_ in
-  INT-TYPE-INT MODE-@64LOCAL stack-item.create let _item_ in
-    _offset_ _item_ set-arg1
+  INT-TYPE:INT STACK-MODE:@64LOCAL stack-item:create let _item_ in
+    _offset_ _item_ stack-item:set-arg1
 
     _item_ push-item
   end
@@ -45,8 +45,8 @@ end endmacro
 
 // int: offset
 macro push-@8local let _offset_ in
-  INT-TYPE-INT MODE-@8LOCAL stack-item.create let _item_ in
-    _offset_ _item_ set-arg1
+  INT-TYPE:INT STACK-MODE:@8LOCAL stack-item:create let _item_ in
+    _offset_ _item_ stack-item:set-arg1
 
     _item_ push-item
   end
@@ -54,8 +54,8 @@ end endmacro
 
 // int: offset
 macro push-@64global let _offset_ in
-  INT-TYPE-INT MODE-@64GLOBAL stack-item.create let _item_ in
-    _offset_ _item_ set-arg1
+  INT-TYPE:INT STACK-MODE:@64GLOBAL stack-item:create let _item_ in
+    _offset_ _item_ stack-item:set-arg1
 
     _item_ push-item
   end
@@ -63,8 +63,8 @@ end endmacro
 
 // int: offset
 macro push-@8global let _offset_ in
-  INT-TYPE-INT MODE-@8GLOBAL stack-item.create let _item_ in
-    _offset_ _item_ set-arg1
+  INT-TYPE:INT STACK-MODE:@8GLOBAL stack-item:create let _item_ in
+    _offset_ _item_ stack-item:set-arg1
 
     _item_ push-item
   end
@@ -72,8 +72,8 @@ end endmacro
 
 // int: index
 macro push-data let _index_ in
-  INT-TYPE-INT MODE-DATA stack-item.create let _item_ in
-    _index_ _item_ set-arg1
+  INT-TYPE:INT STACK-MODE:DATA stack-item:create let _item_ in
+    _index_ _item_ stack-item:set-arg1
 
     _item_ push-item
   end
@@ -95,7 +95,7 @@ proc local-stack.find-first-non-real
   ptr ptr -> int
 in let local-stack local-stack-length in
   0 while dup local-stack-length @64 < do dup
-    local-stack array64:get get-mode MODE-REAL != if break end
+    local-stack array64:get stack-item:get-mode STACK-MODE:REAL != if break end
   inc end
 end end
 
@@ -106,8 +106,8 @@ proc local-stack.find-last-deleted
 in let local-memory-end local-stack local-stack-length in
   local-stack-length @64 while dup 0 > do dec dup
     local-stack array64:get let item in
-      item get-mode MODE-@LOCALCONST = if
-        item get-arg1 local-memory-end >= if
+      item stack-item:get-mode STACK-MODE:@LOCALCONST = if
+        item stack-item:get-arg1 local-memory-end >= if
           inc break
         end
       end
@@ -122,8 +122,8 @@ proc local-stack.find-last-@local
 in let local-stack local-stack-length in
   local-stack-length @64 while dup 0 > do dec dup
     local-stack array64:get let item in
-      item get-mode MODE-@8LOCAL  =
-      item get-mode MODE-@64LOCAL = | if
+      item stack-item:get-mode STACK-MODE:@8LOCAL  =
+      item stack-item:get-mode STACK-MODE:@64LOCAL = | if
         inc break
       end
     end
@@ -165,7 +165,7 @@ end end
 macro push-real let _int-type_ in
   local-stack local-stack-length output-file local-stack.convert-last-items-real
 
-  _int-type_ MODE-REAL stack-item.create push-item
+  _int-type_ STACK-MODE:REAL stack-item:create push-item
 end endmacro
 
 
@@ -175,7 +175,7 @@ proc __local-stack.mfree-items
 in let local-stack local-stack-length in
   // Iterate through the items and mfree them.
   0 while dup local-stack-length < do peek i in
-    i local-stack array64:get stack-item.mfree
+    i local-stack array64:get stack-item:mfree
   end inc end drop
 end end
 
@@ -206,13 +206,13 @@ proc local-stack.copy
 in let local-stack local-stack-length in
   local-stack-length @64 8 * malloc let copy-array in
     copy-array is-null if
-      LOG.ERR STDERR fputs "'malloc' failed while copying the local stack.\n" STDERR fputs
-      ERROR-EXIT-CODE exit drop
+      LOG:ERR STDERR fputs "'malloc' failed while copying the local stack.\n" STDERR fputs
+      EXIT-CODE:ERROR exit drop
     end
 
     // Copy the items from the local-stack to the copy-array.
     0 while dup local-stack-length @64 < do peek i in
-      i local-stack array64:get stack-item.copy i copy-array array64:set
+      i local-stack array64:get stack-item:copy i copy-array array64:set
     end inc end drop
 
     // Return copy array.
@@ -230,7 +230,7 @@ in let overwrite local-stack local-stack-length in
 
   // Copy the items from the overwrite to the local-stack.
   0 while dup overwrite mlength 8 / < do peek i in
-    i overwrite array64:get stack-item.copy i local-stack array64:set
+    i overwrite array64:get stack-item:copy i local-stack array64:set
   end inc end drop
 
   overwrite mlength 8 / local-stack-length !64

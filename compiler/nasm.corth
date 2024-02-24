@@ -16,7 +16,7 @@ in let name in
   name mlength 7 + malloc let object in
     object is-null if
       "'malloc' failed while allocating space for nasm:fput-alpha.\n" STDERR fputs
-      ERROR-EXIT-CODE exit drop
+      EXIT-CODE:ERROR exit drop
     end
 
     "global_" drop object 7 memcpy8
@@ -43,7 +43,7 @@ in let name in
   name mlength malloc let object in
     object is-null if
       "'malloc' failed while allocating space for nasm:fput-alpha.\n" STDERR fputs
-      ERROR-EXIT-CODE exit drop
+      EXIT-CODE:ERROR exit drop
     end
 
     0 while dup name mlength < do peek i in
@@ -178,20 +178,20 @@ proc mov-reg-item
   // ptr: item ptr: register-name int: register-name-length file-desc: output-file
   ptr ptr int file-desc ->
 in let item register-name register-name-length output-file in
-  item get-mode MODE-REAL = if
+  item stack-item:get-mode STACK-MODE:REAL = if
     "    pop     " output-file fputs register-name register-name-length output-file fputs output-file fputnl
 
-  else item get-mode MODE-IMM         = if item get-arg1 register-name register-name-length output-file nasm:mov-reg-immediate
-  else item get-mode MODE-GLOBAL      = if item get-arg1 register-name register-name-length output-file nasm:mov-reg-global-address
-  else item get-mode MODE-@LOCALCONST = if item get-arg1 register-name register-name-length output-file nasm:mov-reg-@64local
-  else item get-mode MODE-LOCAL       = if item get-arg1 register-name register-name-length output-file nasm:mov-reg-local
-  else item get-mode MODE-@64LOCAL    = if item get-arg1 register-name register-name-length output-file nasm:mov-reg-@64local
-  else item get-mode MODE-@64GLOBAL   = if item get-arg1 register-name register-name-length output-file nasm:mov-reg-@64global
-  else item get-mode MODE-DATA        = if item get-arg1 register-name register-name-length output-file nasm:mov-reg-data
+  else item stack-item:get-mode STACK-MODE:IMM         = if item stack-item:get-arg1 register-name register-name-length output-file nasm:mov-reg-immediate
+  else item stack-item:get-mode STACK-MODE:GLOBAL      = if item stack-item:get-arg1 register-name register-name-length output-file nasm:mov-reg-global-address
+  else item stack-item:get-mode STACK-MODE:@LOCALCONST = if item stack-item:get-arg1 register-name register-name-length output-file nasm:mov-reg-@64local
+  else item stack-item:get-mode STACK-MODE:LOCAL       = if item stack-item:get-arg1 register-name register-name-length output-file nasm:mov-reg-local
+  else item stack-item:get-mode STACK-MODE:@64LOCAL    = if item stack-item:get-arg1 register-name register-name-length output-file nasm:mov-reg-@64local
+  else item stack-item:get-mode STACK-MODE:@64GLOBAL   = if item stack-item:get-arg1 register-name register-name-length output-file nasm:mov-reg-@64global
+  else item stack-item:get-mode STACK-MODE:DATA        = if item stack-item:get-arg1 register-name register-name-length output-file nasm:mov-reg-data
   else
-    LOG.ERR STDERR fputs "Unknown integer mode while trying to move integer to register.\n" STDERR fputs
+    LOG:ERR STDERR fputs "Unknown integer mode while trying to move integer to register.\n" STDERR fputs
     STDERR report-bug
-    ERROR-EXIT-CODE exit drop
+    EXIT-CODE:ERROR exit drop
   end end end end end end end end
 end end
 
@@ -292,18 +292,18 @@ proc push-int
   // ptr: item file-desc: output-file
   ptr file-desc ->
 in let item output-file in
-  item get-mode MODE-IMM              = if item get-arg1 output-file nasm:push-int-immediate
-  else item get-mode MODE-GLOBAL      = if item get-arg1 output-file nasm:push-global-address
-  else item get-mode MODE-@64GLOBAL   = if item get-arg1 output-file nasm:push-@64global
-  else item get-mode MODE-@LOCALCONST = if item get-arg1 output-file nasm:push-@64local
-  else item get-mode MODE-LOCAL       = if item get-arg1 output-file nasm:push-local
-  else item get-mode MODE-@64LOCAL    = if item get-arg1 output-file nasm:push-@64local
-  else item get-mode MODE-@8LOCAL     = if item get-arg1 output-file nasm:push-@8local
-  else item get-mode MODE-DATA        = if item get-arg1 output-file nasm:push-data
-  else item get-mode MODE-REAL       != if
-    LOG.ERR STDERR fputs "Unknown integer mode while trying to push an integer item.\n" STDERR fputs
+  item stack-item:get-mode STACK-MODE:IMM              = if item stack-item:get-arg1 output-file nasm:push-int-immediate
+  else item stack-item:get-mode STACK-MODE:GLOBAL      = if item stack-item:get-arg1 output-file nasm:push-global-address
+  else item stack-item:get-mode STACK-MODE:@64GLOBAL   = if item stack-item:get-arg1 output-file nasm:push-@64global
+  else item stack-item:get-mode STACK-MODE:@LOCALCONST = if item stack-item:get-arg1 output-file nasm:push-@64local
+  else item stack-item:get-mode STACK-MODE:LOCAL       = if item stack-item:get-arg1 output-file nasm:push-local
+  else item stack-item:get-mode STACK-MODE:@64LOCAL    = if item stack-item:get-arg1 output-file nasm:push-@64local
+  else item stack-item:get-mode STACK-MODE:@8LOCAL     = if item stack-item:get-arg1 output-file nasm:push-@8local
+  else item stack-item:get-mode STACK-MODE:DATA        = if item stack-item:get-arg1 output-file nasm:push-data
+  else item stack-item:get-mode STACK-MODE:REAL       != if
+    LOG:ERR STDERR fputs "Unknown integer mode while trying to push an integer item.\n" STDERR fputs
     STDERR report-bug
-    ERROR-EXIT-CODE exit drop
+    EXIT-CODE:ERROR exit drop
   end end end end end end end end end
 end end
 
@@ -312,13 +312,13 @@ proc push-bool
   // ptr: item file-desc: output-file
   ptr file-desc ->
 in let item output-file in
-  item get-mode MODE-@LOCALCONST = if
-    item get-arg1 output-file nasm:push-@64local
+  item stack-item:get-mode STACK-MODE:@LOCALCONST = if
+    item stack-item:get-arg1 output-file nasm:push-@64local
 
-  else item get-mode MODE-REAL != if
-    LOG.ERR STDERR fputs "Unknown bool mode while trying to push a boolean item.\n" STDERR fputs
+  else item stack-item:get-mode STACK-MODE:REAL != if
+    LOG:ERR STDERR fputs "Unknown bool mode while trying to push a boolean item.\n" STDERR fputs
     STDERR report-bug
-    ERROR-EXIT-CODE exit drop
+    EXIT-CODE:ERROR exit drop
   end end
 end end
 
@@ -328,12 +328,12 @@ proc push
   ptr file-desc ->
 in let item output-file in
   item output-file
-       item get-type INT-TYPE-INT  = if nasm:push-int
-  else item get-type INT-TYPE-BOOL = if nasm:push-bool
+       item stack-item:get-type INT-TYPE:INT  = if nasm:push-int
+  else item stack-item:get-type INT-TYPE:BOOL = if nasm:push-bool
   else drop drop
-    LOG.ERR STDERR fputs "Unknown intrinsic type to push\n" STDERR fputs
+    LOG:ERR STDERR fputs "Unknown intrinsic type to push\n" STDERR fputs
     STDERR report-bug
-    ERROR-EXIT-CODE exit drop
+    EXIT-CODE:ERROR exit drop
   end end
 end end
 
@@ -344,7 +344,7 @@ proc convert-int-to-real
 in let item output-file in
   item output-file nasm:push-int
 
-  MODE-REAL item set-mode
+  STACK-MODE:REAL item stack-item:set-mode
 end end
 
 
@@ -354,7 +354,7 @@ proc convert-bool-to-real
 in let item output-file in
   item output-file nasm:push-bool
 
-  MODE-REAL item set-mode
+  STACK-MODE:REAL item stack-item:set-mode
 end end
 
 
@@ -363,12 +363,12 @@ proc convert-item-to-real
   ptr file-desc ->
 in let item output-file in
   item output-file
-       item get-type INT-TYPE-INT  = if nasm:convert-int-to-real
-  else item get-type INT-TYPE-BOOL = if nasm:convert-bool-to-real
+       item stack-item:get-type INT-TYPE:INT  = if nasm:convert-int-to-real
+  else item stack-item:get-type INT-TYPE:BOOL = if nasm:convert-bool-to-real
   else drop drop
-    LOG.ERR STDERR fputs "Unknown intrinsic type to convert to real.\n" STDERR fputs
+    LOG:ERR STDERR fputs "Unknown intrinsic type to convert to real.\n" STDERR fputs
     STDERR report-bug
-    ERROR-EXIT-CODE exit drop
+    EXIT-CODE:ERROR exit drop
   end end
 end end
 

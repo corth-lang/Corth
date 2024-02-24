@@ -185,7 +185,7 @@ in let source-name output-name include-paths-set full-compilation in
   memory stats sizeof(stat) in
     source-name stats stat drop
 
-    // Check if user has access to the path.
+    // Check if user has access to the path:
     source-name R_OK access isn-zero if
       "error: can not access file '" eputs source-name source-name mlength eputs "'\n" eputs
       EXIT-ERROR exit drop
@@ -215,7 +215,7 @@ in let source-name output-name include-paths-set full-compilation in
                 buffer while dup buffer length + < do let _subpath in
                   _subpath 19 + "."  drop cstr:cmp isn-zero
                   _subpath 19 + ".." drop cstr:cmp isn-zero & if
-                    source-name source-name mlength dec _subpath 19 + cstr:str path.merge2-cstr let subpath in
+                    source-name source-name mlength dec _subpath 19 + cstr:str path:merge2-cstr let subpath in
                       subpath output-name include-paths-set full-compilation compile-recursive ! if false return end
                     end
                   end
@@ -393,7 +393,7 @@ proc command.bootstrap -> in
 
     executable @64 "./old" drop copy-file
 
-    source @64 cstr:str "corth.corth" path.merge2-cstr let source-file-path in
+    source @64 cstr:str "corth.corth" path:merge2-cstr let source-file-path in
       memory compiler-infop sizeof(siginfo_t) in
       memory diff-infop     sizeof(siginfo_t) in
         1 while
