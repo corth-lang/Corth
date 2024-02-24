@@ -1,5 +1,5 @@
-macro malloc.ARRAY-SIZE       0x1000 endmacro
-macro malloc.AVAIL-QUEUE-SIZE 0x100  endmacro
+macro malloc:ARRAY-SIZE       0x1000 endmacro
+macro malloc:AVAIL-STACK-SIZE 0x100  endmacro
 include "dynamic/malloc.corth"
 include "dynamic/utils.corth"
 
@@ -11,7 +11,7 @@ macro comma-separated true endmacro
 proc main
   int int -> int
 in let argc argv in
-  malloc.init
+  malloc:init
 
   memory infop sizeof(siginfo_t) in
     123 infop 24 + !32

@@ -8,19 +8,9 @@ macro str.get-len
   swp drop
 endmacro
 
-macro strc.get-len
-  // ptr: ptr -> int: len
-  dup while dup @8 isn-zero do inc end - neg
-endmacro
-
 macro str.to-strc
   // ptr: ptr int: len -> ptr: ptr
   drop
-endmacro
-
-macro strc.to-str
-  // ptr: ptr -> ptr: ptr int: len
-  dup strc.get-len
 endmacro
 
 macro str.copy

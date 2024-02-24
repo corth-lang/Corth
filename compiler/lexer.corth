@@ -401,9 +401,9 @@ in let
         ERROR-EXIT-CODE exit drop
       end
 
-      extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.pop-first
-      extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.pop-first
-      extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.pop-first
+      extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64:pop-first
+      extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64:pop-first
+      extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64:pop-first
 
     else
       memory buffer     TOKEN-MAX-LENGTH in
@@ -560,15 +560,15 @@ in let
                 // -- Token argument --
                 // If the type of the token is a 'name' or a 'string', we need to copy the argument.
                 token-argument token-type TYPE-NAME = token-type TYPE-STRING = | if dcopy end
-                extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.append-first
+                extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64:append-first
 
                 // -- Token address --
                 // Change the ADDR.PREV of the address.
                 address token-address ADDR.PREV + !64
-                token-address dcopy extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.append-first
+                token-address dcopy extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64:append-first
 
                 // -- Token type --
-                token-type extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64.append-first
+                token-type extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64:append-first
               end
             i end end drop
 

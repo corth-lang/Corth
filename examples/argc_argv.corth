@@ -1,6 +1,6 @@
 include "linux_x86/stdio.corth"
 include "collections/array64.corth"
-include "str.corth"
+include "cstr.corth"
 
 proc main
   int ptr -> int
@@ -9,6 +9,6 @@ in let argc argv in
   "argv = 0x" puts argv putx putnl
 
   0 while dup argc < do peek i in
-    "argv[" puts i putu "] = \"" puts i argv array64.get dup strc.get-len puts "\"\n" puts
+    "argv[" puts i putu "] = \"" puts i argv array64:get dup cstr:len puts "\"\n" puts
   end inc end drop
 end 0 end

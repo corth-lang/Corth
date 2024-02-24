@@ -5,7 +5,7 @@ include "cstr.corth"
 proc main
   int int -> int
 in let argc argv in
-  0 while dup argc < do dup argv array64.get let i in
+  0 while dup argc < do dup argv array64:get let i in
     "'" puts i cstr:str puts "': " puts i cstr:len putu putnl
   end inc end drop
 end 0 end

@@ -1,5 +1,5 @@
-macro malloc.ARRAY-SIZE       0x1000 endmacro
-macro malloc.AVAIL-QUEUE-SIZE 0x100  endmacro
+macro malloc:ARRAY-SIZE       0x1000 endmacro
+macro malloc:AVAIL-STACK-SIZE 0x100  endmacro
 include "dynamic/malloc.corth"
 
 macro string-builder.RESIZING 64 endmacro
@@ -10,7 +10,7 @@ include "linux_x86/stdio.corth"
 proc main
   int int -> int
 in let argc argv in
-  malloc.init
+  malloc:init
 
   64 sb.init
     "Hello!" sb.add-str sb.nl

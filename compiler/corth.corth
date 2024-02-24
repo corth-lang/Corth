@@ -1,5 +1,5 @@
-macro malloc.ARRAY-SIZE       0x800000 endmacro
-macro malloc.AVAIL-QUEUE-SIZE 0x100000 endmacro
+macro malloc:ARRAY-SIZE       0x800000 endmacro
+macro malloc:AVAIL-STACK-SIZE 0x100000 endmacro
 include "dynamic/malloc.corth"
 include "dynamic/utils.corth"
 
@@ -558,7 +558,7 @@ proc main
   int int -> int
 in let argc argv in
   // Initialize malloc.
-  malloc.init
+  malloc:init
 
   // Initialize debug.
   debug-init

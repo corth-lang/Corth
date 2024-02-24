@@ -10,26 +10,27 @@
 include "core/integer.corth"
 include "core/ptr.corth"
 
+namespace array64
 
-macro array64.get-addr
+macro get-addr
   // int: index ptr: array -> ptr: addr
 
   swp 8 * +
 endmacro
 
-macro array64.get
+macro get
   // int: index ptr: array -> int: value
 
-  array64.get-addr @64
+  array64:get-addr @64
 endmacro
 
-macro array64.set
+macro set
   // int: value int: index ptr: array ->
 
-  array64.get-addr !64
+  array64:get-addr !64
 endmacro
 
-proc array64.min
+proc min
   // ptr: array int: length -> int: min-item
   ptr int -> int
   // Returns the least value (signed) in the array.
@@ -40,7 +41,7 @@ in let array length in
     MAX-INT min !64
 
     0 while dup length < do peek i in
-      i array array64.get let value in
+      i array array64:get let value in
         value min @64 < if
           value min !64
         end
@@ -51,7 +52,7 @@ in let array length in
   end
 end end
 
-proc array64.umin
+proc umin
   // ptr: array int: length -> uint: min-item
   ptr int -> int
   // Returns the least value (unsigned) in the array.
@@ -73,7 +74,7 @@ in let array length in
   end
 end end
 
-proc array64.max
+proc max
   // ptr: array int: length -> int: min-item
   ptr int -> int
   // Returns the least value (signed) in the array.
@@ -95,7 +96,7 @@ in let array length in
   end
 end end
 
-proc array64.umax
+proc umax
   // ptr: array int: length -> uint: min-item
   ptr int -> int
   // Returns the least value (unsigned) in the array.
@@ -116,3 +117,5 @@ in let array length in
     max @64
   end
 end end
+
+endnamespace

@@ -14,7 +14,7 @@ include "linux_x86/path.corth"
 
 include "collections/list64.corth"
 include "collections/deque64.corth"
-include "collections/queue64.corth"
+include "collections/stack64.corth"
 include "collections/str_map64.corth"
 include "collections/str_set8.corth"
 
@@ -173,7 +173,7 @@ in let old-stack local-stack local-stack-length in
   local-stack-length @64 8 * old-stack mlength != if false return end
 
   0 while dup local-stack-length @64 < do let i in
-    i old-stack array64.get get-type i local-stack array64.get get-type != if false return end
+    i old-stack array64:get get-type i local-stack array64:get get-type != if false return end
   i end inc end drop
 end true end
 
@@ -188,7 +188,7 @@ in
   types-length local-stack-length @64 != if false return end
 
   0 while dup types-length < do let i in
-    i local-stack array64.get get-type i types-array array64.get != if false return end
+    i local-stack array64:get get-type i types-array array64:get != if false return end
   i end inc end drop
 end true end
 
@@ -204,7 +204,7 @@ in
 
   types-length while dup isn-zero do dec let i in
     pop-item let item in
-      i types-array array64.get let expected in
+      i types-array array64:get let expected in
         item get-type expected != if false return end
       end
     end
@@ -222,10 +222,10 @@ in let stack length log-stream in
   end
 
   0 while dup length dec < do peek i in
-    i stack array64.get get-type log-stream fput-int-type " " log-stream fputs
+    i stack array64:get get-type log-stream fput-int-type " " log-stream fputs
   end inc end drop
 
-  length dec stack array64.get get-type log-stream fput-int-type
+  length dec stack array64:get get-type log-stream fput-int-type
 end end
 
 
@@ -239,10 +239,10 @@ in let types-array types-length log-stream in
   end
 
   0 while dup types-length dec < do peek i in
-    i types-array array64.get log-stream fput-int-type " " log-stream fputs
+    i types-array array64:get log-stream fput-int-type " " log-stream fputs
   end inc end drop
 
-  types-length dec types-array array64.get log-stream fput-int-type
+  types-length dec types-array array64:get log-stream fput-int-type
 end end
 
 
@@ -1572,7 +1572,7 @@ in
     // Branch should not be cut before 'memory'.
     token-address "call 'memory'" compile-procedure.check-branch-here
 
-    // New names are stored in new-names and new-names-length queue. When the 'end' of 'memory' is reached, new names are deleted from the namespace.
+    // New names are stored in new-names and new-names-length stack. When the 'end' of 'memory' is reached, new names are deleted from the namespace.
     memory new-names-list sizeof(ptr) in
       16 list64.init let dynamic in
         dynamic "creating list dynamic object for 'memory'" compile-procedure.check-null-here
@@ -1668,7 +1668,7 @@ in
     // Branch should not be cut before 'let'.
     token-address "call 'let'" compile-procedure.check-branch-here
 
-    // New names are stored in new-names and new-names-length queue. When the 'end' of 'let' is reached, new names are deleted from the namespace.
+    // New names are stored in new-names and new-names-length stack. When the 'end' of 'let' is reached, new names are deleted from the namespace.
     memory new-names-list sizeof(ptr) in
       16 list64.init let dynamic in
         dynamic "creating list dynamic object for 'let'" compile-procedure.check-null-here
@@ -1775,7 +1775,7 @@ in
     // Branch should not be cut before 'let'.
     token-address "call 'peek'" compile-procedure.check-branch-here
 
-    // New names are stored in new-names and new-names-length queue. When the 'end' of 'peek' is reached, new names are deleted from the namespace.
+    // New names are stored in new-names and new-names-length stack. When the 'end' of 'peek' is reached, new names are deleted from the namespace.
     memory new-names-list sizeof(ptr) in
       16 list64.init let dynamic in
         dynamic "creating list dynamic object for 'peek'" compile-procedure.check-null-here
@@ -1804,7 +1804,7 @@ in
         // This loop is separated from the one above, since this loop must run in the reverse order.
         new-names-list list64.length while dup isn-zero do dec peek i in
           local-stack-length @64 new-names-list list64.length - i + let item-index in
-            item-index local-stack array64.get let item in
+            item-index local-stack array64:get let item in
               i new-names-list list64.get let variable-name in
                 item get-mode MODE-IMM         =
                 item get-mode MODE-GLOBAL      = |
@@ -1884,7 +1884,7 @@ in
       local-stack local-stack-length output-file local-stack.convert-last-items-real
 
       // Change the type of the last item.
-      local-stack-length @64 dec local-stack array64.get let item in
+      local-stack-length @64 dec local-stack array64:get let item in
         type-arg item set-type
       end
 
@@ -2076,7 +2076,7 @@ in
                 check-sub-stack-types-types
 
                 0 while dup output-address @64 mlength 8 / < do peek i in
-                  i output-address @64 array64.get let output in
+                  i output-address @64 array64:get let output in
                     output push-real
                   end
                 end inc end drop
@@ -2408,8 +2408,17 @@ in
                   end-token-address mfree drop
                 end
 
-                // TODO: Check if the global variable queue was filled.
-                memory-name-arg memory-size-arg global-names-array global-sizes-array globals-length str-map64.set-dstr drop
+                // TODO: Check if the global variable stack was filled.
+
+                // Get the full name of the variable.
+                namespace-name @64 is-null if
+                  memory-name-arg
+                else
+                  namespace-name @64 memory-name-arg djoin
+                end
+
+                // Store the variable.
+                memory-size-arg global-names-array global-sizes-array globals-length str-map64.set-dstr drop
 
                 // Deallocate 'memory-size-address'.
                 memory-size-address mfree drop
@@ -2428,7 +2437,7 @@ in
             let macro-name-token-type macro-name-token-address macro-name-token-arg in
               macro-name-token-type macro-name-token-address "as macro name after 'macro'" TYPE-NAME compile-file.check-type-here
 
-              // macro-tokens and macro-tokens-length are used to create a QUEUE for macro tokens.
+              // macro-tokens and macro-tokens-length are used to create a STACK for macro tokens.
               memory macro-tokens-list sizeof(ptr) in
                 16 list64.init let dynamic in
                   dynamic "creating list dynamic object for 'macro'" compile-file.check-null-here
@@ -2455,7 +2464,7 @@ in
                   end
                 end
 
-                // TODO: Check if the macros queue was filled.
+                // TODO: Check if the macros stack was filled.
                 namespace-name @64 is-null if
                   macro-name-token-arg
                 else
@@ -2750,18 +2759,18 @@ in let source-name output-name include-paths-set log-stream in
 
       // Deallocate space allocated for procedures.
       0 while dup procs-length @64 < do peek i in
-        i proc-names-array   array64.get mfree drop
-        i proc-inputs-array  array64.get mfree drop
-        i proc-outputs-array array64.get mfree drop
+        i proc-names-array   array64:get mfree drop
+        i proc-inputs-array  array64:get mfree drop
+        i proc-outputs-array array64:get mfree drop
       end inc end drop
 
       // Deallocate space allocated for macros.
       0 while dup macros-length @64 < do peek i in
-        i macro-names array64.get mfree drop
+        i macro-names array64:get mfree drop
 
-        i macro-tokens array64.get let tokens in
+        i macro-tokens array64:get let tokens in
           0 while dup tokens mlength 24 / < do peek j in
-            j tokens array64.get j inc tokens array64.get j 2 + tokens array64.get let token-type token-address token-arg in
+            j tokens array64:get j inc tokens array64:get j 2 + tokens array64:get let token-type token-address token-arg in
               // Deallocate 'token-address'.
               token-address mfree drop
 
@@ -2801,9 +2810,9 @@ in let source-name output-name include-paths-set log-stream in
       "    call_ptr:       resq 1\n"                      output-file fputs
 
       0 while dup globals-length @64 < do peek i in
-        i global-names-array array64.get i global-sizes-array array64.get let variable-name variable-size in
+        i global-names-array array64:get i global-sizes-array array64:get let variable-name variable-size in
           "    global_"  output-file fputs
-          i global-names-array array64.get output-file fput-alpha
+          i global-names-array array64:get output-file fput-alpha
           ": resb " output-file fputs
           variable-size output-file fputu
           output-file fputnl

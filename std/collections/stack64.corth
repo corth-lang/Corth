@@ -1,0 +1,101 @@
+include "core/ptr.corth"
+include "core/stack.corth"
+include "core/memory.corth"
+
+
+/*
+  Stack library for Corth.
+
+  Stacks are static-placed collections that allow appending and popping items from them
+
+  Appending and popping an item to the end is O(1) while any other index is O(n).
+
+  To create a stack, an array with the preferred size and a pointer should be created.
+  After that, the stack should be initialized using stack64:init.
+*/
+
+namespace stack64
+
+macro get-addr
+  // int: index ptr: stack-start ptr: stack-length -> ptr: address
+  let _stack_ _ in 8 * _stack_ + end
+endmacro
+
+macro get
+  // int: index ptr: stack-start ptr: stack-length -> int: value
+  // Gets an item from a stack.
+  // return stack[index]
+  // NOTE: This macro assumes that the index is valid.
+  stack64:get-addr @64
+endmacro
+
+macro set
+  // int: value int: index ptr: stack-start ptr: stack-length
+  // Sets an item on a stack.
+  // stack[index] = value
+  // NOTE: This macro assumes that the index is valid.
+  stack64:get-addr !64
+endmacro
+
+proc overwrite
+  // ptr: array-start int: array-length ptr: stack-start ptr: stack-length ->
+  ptr int ptr ptr ->
+in let array-start array-length stack-start stack-length in
+  array-start stack-start array-length memcpy64
+  array-length stack-length !64
+end end
+
+proc insert
+  // int: byte-to-insert int: index-to-insert ptr: stack-start ptr: stack-length
+  int int ptr ptr ->
+  // Inserts an item to a stack.
+  // stack.insert(value, index)
+  // NOTE: This procedure assumes that the stack has enough space to insert item.
+in let value index stack-start stack-length in
+  stack-start index 8 * + let page-addr in
+    // Move content to right.
+    page-addr page-addr 8 + stack-length @64 index - memcpy64i
+    value stack-start index 8 * + !64
+    stack-length @inc64
+  end
+end end
+
+proc pop
+  // int: index-to-pop ptr: stack-start ptr: stack-length -> int: value
+  int ptr ptr -> int
+  // Pops an item from a stack.
+  // return stack.pop(index)
+in let index stack-start stack-length in
+  stack-start index 8 * + let page-addr in
+    // Return the value at page address.
+    page-addr @64
+
+    // Move the contents to the left.
+    page-addr 8 + page-addr stack-length @64 index - dec memcpy64
+  end
+  stack-length @dec64
+end end
+
+macro append
+  // int: value ptr: stack-start ptr: stack-length
+  // Appends an item to a stack.
+  // stack.append(value)
+
+  let _value_ _stack_ _length_ in
+    _value_ _stack_ _length_ @64 8 * + !64
+    _length_ @inc64
+  end
+endmacro
+
+macro pop-last
+  // int: value ptr: stack-start ptr: stack-length
+  // Removes the last item of the stack.
+  // return stack.pop(stack.length - 1)
+
+  let _stack_ _length_ in
+    _length_ @dec64
+    _stack_ _length_ @64 8 * + @64
+  end
+endmacro
+
+endnamespace

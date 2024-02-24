@@ -10,7 +10,7 @@ proc main
   int int -> int
 in let argc argv in
   1 while dup argc < do peek i in
-    i argv array64.get let directory-name in
+    i argv array64:get let directory-name in
       directory-name diropen-r let directory in
         directory isn-pos if
           "Could not open directory '" puts directory-name cstr:str puts "'.\n" puts
