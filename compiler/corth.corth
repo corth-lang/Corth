@@ -291,7 +291,7 @@ proc command.quick-test -> in
         else type O-ARGUMENT = if
           arg1 arg1-length "i"            memcmp8-wl is-zero
           arg1 arg1-length "include-path" memcmp8-wl is-zero | if
-            arg2 arg2-length inc to-dynamic8 include-paths-set str-set8.add drop
+            arg2 arg2-length inc to-dynamic8 include-paths-set str-set8:add drop
 
           else EXIT-ERROR exit drop end
 
@@ -523,7 +523,7 @@ proc command.compile -> in
         else type O-ARGUMENT = if
           arg1 arg1-length "i"            memcmp8-wl is-zero
           arg1 arg1-length "include-path" memcmp8-wl is-zero | if
-            arg2 arg2-length inc to-dynamic8 include-paths-set str-set8.add drop
+            arg2 arg2-length inc to-dynamic8 include-paths-set str-set8:add drop
 
           else arg1 arg1-length "o"           memcmp8-wl is-zero
                arg1 arg1-length "output-path" memcmp8-wl is-zero | if

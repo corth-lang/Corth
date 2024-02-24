@@ -2268,7 +2268,7 @@ in let
   log-stream
 in
   // Check if the library was included already.
-  source-name libraries-set str-set8.add ! if return end
+  source-name libraries-set str-set8:add ! if return end
 
   // Open the source file.
   source-name fopen-r let source-file in

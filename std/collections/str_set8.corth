@@ -4,7 +4,9 @@ include "collections/str_sorted8.corth"
 // Sets are sorted list objects with exactly 0 or 1 one of each instance.
 // str objects must be dynamic objects.
 
-macro str-set8.available-dstr
+namespace str-set8
+
+macro available-dstr
   // ptr: str ptr: str-set -> bool: contains
 
   let _str_ _set_ in
@@ -12,12 +14,12 @@ macro str-set8.available-dstr
   end
 endmacro
 
-proc str-set8.add
+proc add
   // ptr: str ptr: str-set -> bool: added
   ptr ptr -> bool
 in let value str-set in
   // If the string already exists in the set, return false.
-  value str-set str-set8.available-dstr if drop false return end
+  value str-set str-set8:available-dstr if drop false return end
 
   str-set list64:array-addr - 8 / let index in
     // Add the item to the list dynamic object.
@@ -28,12 +30,12 @@ in let value str-set in
   end
 end end
 
-proc str-set8.remove
+proc remove
   // ptr: str ptr: str-set -> bool: removed
   ptr ptr -> bool
 in let value str-set in
   // If the string does not exist, return false.
-  value str-set str-set8.available-dstr ! if drop false return end
+  value str-set str-set8:available-dstr ! if drop false return end
 
   // Remove the item from the list dynamic object.
   str-set list64:get-dynamic - 8 / str-set list64:pop drop
@@ -42,7 +44,7 @@ in let value str-set in
   true
 end end
 
-proc str-set8.union
+proc union
   // ptr: set1 ptr: set2 -> ptr: union-set
   ptr ptr -> ptr
   // Creates and returns a set that is the union of two sets.
@@ -111,7 +113,7 @@ in let set1 set2 in
   end
 end NULLPTR end // dummy-return
 
-proc str-set8.intersection
+proc intersection
   // ptr: set1 ptr: set2 -> ptr: intersection-set
   ptr ptr -> ptr
   // Creates and returns a set that is the intersection of two sets.
@@ -164,3 +166,5 @@ in let set1 set2 in
     end end end
   end
 end NULLPTR end // dummy-return
+
+endnamespace
