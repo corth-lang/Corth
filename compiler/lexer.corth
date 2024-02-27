@@ -40,7 +40,7 @@ in let file line-no char-no in
 
       else
         char @8 ' ' != if
-          file 1 neg SEEK-WHENCE:CUR lseek drop
+          file -1 SEEK-WHENCE:CUR lseek drop
           false return
         end
 
@@ -506,6 +506,42 @@ in let
             // Return token type, address and argument.
             TOKEN-TYPE:STRING get-next-token.generate-address buffer buffer-end @64 buffer - to-dynamic8
 
+          else buffer @8 '-' = if
+            // -------- Dash (Integers and names) --------
+
+            buffer inc 1 file fgets is-zero if
+              LOG:ERR log-stream fputs "Reached EOF while expecting character after dash (-).\n" log-stream fputs
+              EXIT-CODE:ERROR exit drop
+            end
+            
+            char-no @inc64
+
+            buffer-end @inc64
+
+            buffer inc @8 is-ddigit if
+              // Get full token.
+              file file-name line-no char-no buffer buffer-end log-stream parse-next-token
+
+              get-next-token.generate-address let address in
+                memory number sizeof(int) in
+                  buffer buffer-end @64 buffer - number convint ! if
+                    LOG:ERR log-stream fputs "Could not convert integer.\n" log-stream fputs
+                    address log-stream fput-here
+                    EXIT-CODE:ERROR exit drop
+                  end
+
+                  TOKEN-TYPE:INTEGER address number @64
+                end
+              end
+
+            else
+              file -1 SEEK-WHENCE:CUR lseek drop
+
+              buffer-end @dec64
+
+              file-name file start-line start-char start-at line-no char-no buffer buffer-end log-stream create-name-token
+            end
+
           else buffer @8 '/' = if
             // -------- Slash (Name and comments) --------
 
@@ -533,7 +569,7 @@ in let
               file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream extend-macros get-next-token ! if false return end
             else
               // -------- Name and keyword types --------
-              file 1 neg SEEK-WHENCE:CUR lseek drop
+              file -1 SEEK-WHENCE:CUR lseek drop
 
               file-name file start-line start-char start-at line-no char-no buffer buffer-end log-stream create-name-token
             end end
@@ -541,7 +577,7 @@ in let
           else
             // -------- Name and keyword types --------
             file-name file start-line start-char start-at line-no char-no buffer buffer-end log-stream create-name-token
-          end end end end
+          end end end end end
         end
       end end
     end

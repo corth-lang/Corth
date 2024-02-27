@@ -84,12 +84,12 @@ macro O-SWITCH              1 endmacro
 macro O-ARGUMENT            2 endmacro
 macro O-INPLACE             3 endmacro
 macro O-END                 4 endmacro
-macro O-ERROR           1 neg endmacro
+macro O-ERROR              -1 endmacro
 
 macro E-SYNTAX-ERROR        1 endmacro
 macro E-UNKNOWN-OPTION      2 endmacro
 macro E-EXPECTED-ARGUMENT   3 endmacro
-macro E-UNKNOWN-ERROR   1 neg endmacro
+macro E-UNKNOWN-ERROR      -1 endmacro
 
 
 proc getopts.generate

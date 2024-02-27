@@ -181,7 +181,7 @@ endnamespace
 
 // Intrinsic type sizes
 namespace INT-TYPE-SIZE
-macro UNKNOWN 1 neg endmacro
+macro UNKNOWN    -1 endmacro
 macro INT         8 endmacro
 macro BOOL        8 endmacro
 endnamespace

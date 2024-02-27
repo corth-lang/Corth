@@ -43,7 +43,7 @@ proc _exec
   ptr ptr ptr ptr ->
 in let file-name argv envp infop in
   fork let pid in
-    pid 1 neg = if
+    pid -1 = if
       STDERR "subprocess._exec: Could not fork child\n" fwrite drop
       1 exit drop
 

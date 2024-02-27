@@ -5,7 +5,7 @@ proc main
   int int -> int
 in let argc argv in
   fork let pid in
-    pid 1 neg = if
+    pid -1 = if
       "error: could not fork child\n" puts
       1 exit drop
 
