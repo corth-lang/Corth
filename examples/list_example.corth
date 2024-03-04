@@ -1,7 +1,7 @@
 include "linux_x86/stdio.corth"
 include "linux_x86/sys.corth"
 include "core/stack.corth"
-include "random.corth"
+include "math/random.corth"
 
 macro malloc:ARRAY-SIZE       0x4000000 endmacro
 macro malloc:AVAIL-STACK-SIZE 0x4000 endmacro
