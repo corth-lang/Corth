@@ -1,0 +1,31 @@
+include "linux_x86/stdio.corth"
+include "cstr.corth"
+include "str.corth"
+
+proc main
+  int int -> int
+in let argc argv in
+  argc 3 != if
+    "usage: " eputs 0 argv array64:get cstr:str eputs " <pattern> <search>\n" eputs
+    1 exit drop
+  end
+
+  1 argv array64:get 2 argv array64:get let pattern search in
+    "'" puts search cstr:str puts
+    pattern cstr:str search cstr:str str:starts-with if "' starts with '" else "' does not start with '" end puts
+    pattern cstr:str puts "'\n" puts
+
+    "'" puts search cstr:str puts
+    pattern cstr:str search cstr:str str:ends-with if "' ends with '" else "' does not end with '" end puts
+    pattern cstr:str puts "'\n" puts
+
+    pattern @8 search cstr:str str:find-char let index in
+      "Character '" puts pattern 1 puts
+      index is-neg if
+        "' is not in '" puts search cstr:str puts "'\n" puts
+      else
+        "' is the #" puts index putu " character in '" puts search cstr:str puts "'\n" puts
+      end
+    end
+  end
+end 0 end

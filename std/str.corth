@@ -1,56 +1,101 @@
 include "core/stack.corth"
 include "core/memory.corth"
 
-macro str ptr int endmacro
+namespace str
 
-macro str.get-len
-  // ptr: ptr int: len -> int: len
-  swp drop
-endmacro
+macro get-addr drop array8:get-addr endmacro
+macro get      drop array8:get      endmacro
+macro set      drop array8:set      endmacro
 
-macro str.to-strc
-  // ptr: ptr int: len -> ptr: ptr
-  drop
-endmacro
+// Returns the last index of string.
+macro last     + dec endmacro
 
-macro str.copy
-  // ptr: src int: len ptr: dst
-  memcpy
-endmacro
+// Returns the back index of string. If the string was null terminated, should be null terminator. Otherwise should be out of bounds of the string.
+macro back     +     endmacro
 
-macro str.range
-  // ptr: src int: len int: start int: end -> ptr: src' int: len'
-  let _src_ _len_ _start_ _end_ in
-    _src_ _start_ +
-    _end_ _start_ -
+
+proc starts-with
+  // ptr: pattern int: pattern-length ptr: search int: search-length -> bool: result
+  ptr int ptr int -> bool
+in
+  // A very good example of why we need quick parameter storing.
+
+  memory search  sizeof(ptr) in
+  memory pattern sizeof(ptr) in
+    let search-length in
+      // Store parameter search.
+      search !64
+
+      let pattern-length in
+        // Check if pattern-length is greater than search-length.
+        pattern-length search-length > if drop false return end
+
+        // Store parameter pattern.
+        pattern !64
+
+        pattern-length while dup isn-zero do dec let i in
+          pattern @64 @8 search @64 @8 != if false return end
+
+          pattern @inc64
+          search  @inc64
+        i end end drop
+      end
+    end
+  end end
+true end
+
+
+proc ends-with
+  // ptr: pattern int: pattern-length ptr: search int: search-length -> bool: result
+  ptr int ptr int -> bool
+in
+  // A very good example of why we need quick parameter storing.
+
+  memory search  sizeof(ptr) in
+  memory pattern sizeof(ptr) in
+    let search-length in
+      // Store parameter search.
+      search-length + dec search !64
+
+      let pattern-length in
+        // Check if pattern-length is greater than search-length.
+        pattern-length search-length > if drop false return end
+
+        // Store parameter pattern.
+        pattern-length + dec pattern !64
+
+        pattern-length while dup isn-zero do dec let i in
+          pattern @64 @8 search @64 @8 != if false return end
+
+          pattern @dec64
+          search  @dec64
+        i end end drop
+      end
+    end
+  end end
+true end
+
+
+proc find-char
+  // char: pattern ptr: search int: search-length -> int: first-occurrence
+  int ptr int -> int
+  // Returns the index if found, <0 otherwise.
+in
+  memory search sizeof(ptr) in
+    let search-length in
+      search !64
+
+      let pattern in
+        0 while dup search-length < do
+          search @64 @8 pattern = if return end
+
+          search @inc64
+        inc end drop
+      end
+    end
   end
-endmacro
+-1 end
 
-/*
-IT IS RECOMMENDED TO NOT USE THIS LIBRARY
-THIS LIBRARY AND STRING TYPE REQUIRES A TON OF REWORK
+// TODO: find-str
 
-There are two types of strings in Corth: char arrays and C-like strings.
-
-char arrays:
-
-  Stack:
-    [cs] [cl]
-
-  Memory:
-    [c0] [c1] [c2] ... [c+cl]
-     cs^
-
-  cs points to the array pointer and right after it comes the length of the array.
-
-C-like strings:
-
-  Stack:
-    [cs]
-
-  Memory:
-    [c0] [c1] [c2] ... [c+len] 00
-     cs^
-
-  cs points to the first char in the string and the last character is 0x00 (null-char).
-*/
+endnamespace
