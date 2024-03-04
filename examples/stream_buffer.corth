@@ -12,19 +12,19 @@ proc main
 in let argc argv in
   malloc:init
 
-  64 sb.init
-    "Hello!" sb.add-str sb.nl
-    "This is stream buffer library in action." drop sb.add-cstr sb.nl
-    123     sb.add-uint sb.spc
-    234 neg sb.add-int  sb.spc
-    345     sb.add-hex  sb.spc
-    456     sb.add-oct  sb.spc
-    567     sb.add-bin  sb.nl
+  64 sb:init
+    "Hello!" sb:add-str sb:nl
+    "This is stream buffer library in action." drop sb:add-cstr sb:nl
+    123     sb:add-uint sb:spc
+    234 neg sb:add-int  sb:spc
+    345     sb:add-hex  sb:spc
+    456     sb:add-oct  sb:spc
+    567     sb:add-bin  sb:nl
 
-    sb.nl
-    "Tabs are awesome!" sb.add-str sb.nl
-    1231354 sb.add-uint sb.tab 53     sb.add-uint sb.tab 73263 sb.add-uint sb.nl
-    187     sb.add-uint sb.tab 26354  sb.add-uint sb.tab 1     sb.add-uint sb.nl
-    1515    sb.add-uint sb.tab 2635   sb.add-uint sb.tab 1324  sb.add-uint sb.nl
-  STDOUT sb.end
+    sb:nl
+    "Tabs are awesome!" sb:add-str sb:nl
+    1231354 sb:add-uint sb:tab 53     sb:add-uint sb:tab 73263 sb:add-uint sb:nl
+    187     sb:add-uint sb:tab 26354  sb:add-uint sb:tab 1     sb:add-uint sb:nl
+    1515    sb:add-uint sb:tab 2635   sb:add-uint sb:tab 1324  sb:add-uint sb:nl
+  STDOUT sb:_end
 end 0 end
