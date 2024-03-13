@@ -11,6 +11,7 @@ macro file-desc            int endmacro
 macro sizeof(file-desc)      8 endmacro
 macro sizeof(stat)         144 endmacro
 macro sizeof(siginfo_t)    128 endmacro
+macro sizeof(timespec)      16 endmacro
 
 // Main streams
 macro STDIN          0 endmacro
@@ -19,32 +20,33 @@ macro STDERR         2 endmacro
 
 // SYSCALLs
 namespace SYSCALL
-macro READ         0 endmacro
-macro WRITE        1 endmacro
-macro OPEN         2 endmacro
-macro CLOSE        3 endmacro
-macro STAT         4 endmacro
-macro FSTAT        5 endmacro
-macro LSTAT        6 endmacro
-macro POLL         7 endmacro
-macro LSEEK        8 endmacro
-macro ACCESS      21 endmacro
-macro NANOSLEEP   35 endmacro
-macro FORK        57 endmacro
-macro VFORK       58 endmacro
-macro EXECVE      59 endmacro
-macro EXIT        60 endmacro
-macro WAIT4       61 endmacro
-macro GETDENTS    78 endmacro
-macro RMDIR       84 endmacro
-macro CREAT       85 endmacro
-macro LINK        86 endmacro
-macro UNLINK      87 endmacro
-macro GETTOD      96 endmacro
-macro SETTOD     164 endmacro
-macro TIME       201 endmacro
-macro GETDENTS64 217 endmacro
-macro WAITID     247 endmacro
+macro READ             0 endmacro
+macro WRITE            1 endmacro
+macro OPEN             2 endmacro
+macro CLOSE            3 endmacro
+macro STAT             4 endmacro
+macro FSTAT            5 endmacro
+macro LSTAT            6 endmacro
+macro POLL             7 endmacro
+macro LSEEK            8 endmacro
+macro ACCESS          21 endmacro
+macro NANOSLEEP       35 endmacro
+macro FORK            57 endmacro
+macro VFORK           58 endmacro
+macro EXECVE          59 endmacro
+macro EXIT            60 endmacro
+macro WAIT4           61 endmacro
+macro GETDENTS        78 endmacro
+macro RMDIR           84 endmacro
+macro CREAT           85 endmacro
+macro LINK            86 endmacro
+macro UNLINK          87 endmacro
+macro GETTOD          96 endmacro
+macro SETTOD         164 endmacro
+macro TIME           201 endmacro
+macro GETDENTS64     217 endmacro
+macro CLOCK_GETTIME  228 endmacro
+macro WAITID         247 endmacro
 endnamespace
 
 // File modes
@@ -74,28 +76,29 @@ macro RWX_OK         7 endmacro
 endnamespace
 
 // Standard wrappers
-macro fread      SYSCALL:READ         syscall3 endmacro  // file-desc: file-desc ptr: str-ptr int: str-len -> int: success
-macro fwrite     SYSCALL:WRITE        syscall3 endmacro  // file-desc: file-desc ptr: str-ptr int: str-len -> int: success
-macro fopen      SYSCALL:OPEN         syscall3 endmacro  // ptr: str-ptr int: mode int: flags -> file-desc: file-desc
-macro fclose     SYSCALL:CLOSE        syscall1 endmacro  // file-desc: file -> int: success
-macro stat       SYSCALL:STAT         syscall2 endmacro  // ptr: path ptr: buffer -> int: success
-macro fstat      SYSCALL:FSTAT        syscall2 endmacro  // file-desc: file ptr: buffer -> int: success
-macro lstat      SYSCALL:LSTAT        syscall2 endmacro  // ptr: path ptr: buffer -> int: success
-macro lseek      SYSCALL:LSEEK        syscall3 endmacro  // file-desc: file-desc int: offset int: whence -> int: success
-macro access     SYSCALL:ACCESS       syscall2 endmacro  // ptr: file-name int: mode -> int: success
-macro nanosleep  SYSCALL:NANOSLEEP    syscall2 endmacro  // ptr: nanosleep-time -> int: success
-macro fork       SYSCALL:FORK         syscall0 endmacro  // -> int: child
-macro vfork      SYSCALL:VFORK        syscall0 endmacro  // -> int: child
-macro execve     SYSCALL:EXECVE       syscall3 endmacro  // ptr: file-name ptr: args ptr: env-vars -> int: success
-macro wait4      SYSCALL:WAIT4        syscall4 endmacro  // int: pid ptr: stat-addr int: options ptr: ru -> int: success
-macro exit       SYSCALL:EXIT         syscall1 endmacro  // int: exit-code -> int: success
-macro getdents   SYSCALL:GETDENTS     syscall3 endmacro  // file-desc: file-desc ptr: buffer int: length -> int: count
-macro time       SYSCALL:TIME         syscall1 endmacro  // int: address -> int: time
-macro rmdir      SYSCALL:RMDIR        syscall1 endmacro  // ptr: path -> int: success
-macro creat      SYSCALL:CREAT        syscall2 endmacro  // ptr: path int: mode -> int: success
-macro unlink     SYSCALL:UNLINK       syscall1 endmacro  // ptr: path -> int: success
-macro getdents64 SYSCALL:GETDENTS64   syscall3 endmacro  // file-desc: file-desc ptr: buffer int: length -> int: count
-macro waitid     SYSCALL:WAITID       syscall5 endmacro  // int: id-type int: pid ptr: infop int: options ptr: ru -> int: success
+macro fread               SYSCALL:READ              syscall3 endmacro  // file-desc: file-desc ptr: str-ptr int: str-len -> int: success
+macro fwrite              SYSCALL:WRITE             syscall3 endmacro  // file-desc: file-desc ptr: str-ptr int: str-len -> int: success
+macro fopen               SYSCALL:OPEN              syscall3 endmacro  // ptr: str-ptr int: mode int: flags -> file-desc: file-desc
+macro fclose              SYSCALL:CLOSE             syscall1 endmacro  // file-desc: file -> int: success
+macro stat                SYSCALL:STAT              syscall2 endmacro  // ptr: path ptr: buffer -> int: success
+macro fstat               SYSCALL:FSTAT             syscall2 endmacro  // file-desc: file ptr: buffer -> int: success
+macro lstat               SYSCALL:LSTAT             syscall2 endmacro  // ptr: path ptr: buffer -> int: success
+macro lseek               SYSCALL:LSEEK             syscall3 endmacro  // file-desc: file-desc int: offset int: whence -> int: success
+macro access              SYSCALL:ACCESS            syscall2 endmacro  // ptr: file-name int: mode -> int: success
+macro nanosleep           SYSCALL:NANOSLEEP         syscall2 endmacro  // ptr: nanosleep-time -> int: success
+macro fork                SYSCALL:FORK              syscall0 endmacro  // -> int: child
+macro vfork               SYSCALL:VFORK             syscall0 endmacro  // -> int: child
+macro execve              SYSCALL:EXECVE            syscall3 endmacro  // ptr: file-name ptr: args ptr: env-vars -> int: success
+macro wait4               SYSCALL:WAIT4             syscall4 endmacro  // int: pid ptr: stat-addr int: options ptr: ru -> int: success
+macro exit                SYSCALL:EXIT              syscall1 endmacro  // int: exit-code -> int: success
+macro getdents            SYSCALL:GETDENTS          syscall3 endmacro  // file-desc: file-desc ptr: buffer int: length -> int: count
+macro time                SYSCALL:TIME              syscall1 endmacro  // int: address -> int: time
+macro rmdir               SYSCALL:RMDIR             syscall1 endmacro  // ptr: path -> int: success
+macro creat               SYSCALL:CREAT             syscall2 endmacro  // ptr: path int: mode -> int: success
+macro unlink              SYSCALL:UNLINK            syscall1 endmacro  // ptr: path -> int: success
+macro getdents64          SYSCALL:GETDENTS64        syscall3 endmacro  // file-desc: file-desc ptr: buffer int: length -> int: count
+macro clock_gettime       SYSCALL:CLOCK_GETTIME     syscall2 endmacro  // int: clock-id ptr: timespec -> int: success
+macro waitid              SYSCALL:WAITID            syscall5 endmacro  // int: id-type int: pid ptr: infop int: options ptr: ru -> int: success
 
 macro ftell   0 SEEK-WHENCE:CUR        lseek    endmacro  // file-desc: file-desc -> int: file-pointer
 
@@ -129,3 +132,18 @@ macro P_PIDFD  3 endmacro
 macro WEXITED  4 endmacro
 
 macro CLD_EXITED 1 endmacro
+
+// Clocks
+namespace CLOCK
+macro REALTIME                    0 endmacro
+macro MONOTONIC                   1 endmacro
+macro PROCESS_CPUTIME_ID          2 endmacro
+macro THREAD_CPUTIME_ID           3 endmacro
+macro MONOTONIC_RAW               4 endmacro
+macro REALTIME_COARSE             5 endmacro
+macro MONOTONIC_COARSE            6 endmacro
+macro BOOTTIME                    7 endmacro
+macro REALTIME_ALARM              8 endmacro
+macro BOOTTIME_ALARM              9 endmacro
+macro TAI                        11 endmacro
+endnamespace

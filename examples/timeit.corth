@@ -1,0 +1,34 @@
+include "linux_x86/stdio.corth"
+include "linux_x86/timeit.corth"
+
+
+proc main int int -> int in let argc argv in
+  "/dev/null" drop fopen-r let file in
+    file is-neg if
+       "error: could not open /dev/null\n" puts
+       1 exit drop
+    end
+
+    timeit:init
+
+      0 while dup 1000 < do
+        "Hello, world!\n" file fputs
+      inc end drop
+
+      timeit:_break let sec nano in
+        "printing 1000 times took " puts sec putu " sec " puts nano putu " nanosecs.\n" puts
+      end
+
+      0 while dup 5000 < do
+        "Hello, world!\n" file fputs
+      inc end drop
+
+      timeit:_break let sec nano in
+        "printing 5000 times took " puts sec putu " sec " puts nano putu " nanosecs.\n" puts
+      end
+
+    timeit:_end
+
+    file fclose drop
+  end
+end 0 end

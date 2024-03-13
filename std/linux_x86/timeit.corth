@@ -1,0 +1,53 @@
+include "linux_x86/sys.corth"
+
+/*
+
+usage example (from ./examples/timeit.corth):
+
+timeit:init
+
+  0 while dup 1000 < do
+    "Hello, world!\n" puts
+  inc end drop
+
+  timeit:_break let sec nano in
+    "printing 1000 times took " puts sec putu " sec " puts nano putu " nanosecs.\n"
+  end
+
+  0 while dup 5000 < do
+    "Hello, world!\n" puts
+  inc end drop
+
+  timeit:_break let sec nano in
+    "printing 5000 times took " puts sec putu " sec " puts nano putu " nanosecs.\n"
+  end
+
+timeit:_end
+
+*/
+
+namespace timeit
+
+macro init
+  memory timeit:timespec sizeof(timespec) in
+    CLOCK:MONOTONIC timeit:timespec clock_gettime drop
+endmacro
+
+macro _break
+    timeit:timespec     @64
+    timeit:timespec 8 + @64 let old-sec old-nano in
+       CLOCK:MONOTONIC timeit:timespec clock_gettime drop
+
+      timeit:timespec     @64 old-sec  -
+      timeit:timespec 8 + @64 old-nano - let sec nano in
+        nano is-neg if   sec dec nano 1000000000 +
+                    else sec nano end
+      end
+    end
+endmacro
+
+macro _end
+  end
+endmacro
+
+endnamespace
