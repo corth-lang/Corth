@@ -5,6 +5,7 @@ include "dynamic/utils.corth"
 
 include "linux_x86/subprocess.corth"
 include "linux_x86/stdio.corth"
+include "linux_x86/timeit.corth"
 include "cstr.corth"
 include "getopts.corth"
 
@@ -132,48 +133,67 @@ proc compile
   ptr ptr ptr bool -> bool
   // NOTE: source-name must be a file.
 in let source-name output-name include-paths-set full-compilation in
+  timeit:init
 
+    // Compile Corth file to NASM file.
+    source-name
+    "output.asm" drop
+    include-paths-set
+    STDERR
+    compile-nasm
 
-  // Compile Corth file to NASM file.
-  source-name
-  "output.asm" drop
-  include-paths-set
-  STDERR
-  compile-nasm
-
-  // Keep going if we are in full-compilation mode.
-  full-compilation ! if true return end
-
-  memory nasm-infop sizeof(siginfo_t) in
-  memory ld-infop sizeof(siginfo_t) in
-
-    // Execute NASM.
-    subprocess:init
-      "/bin/nasm"  drop subprocess:file-name
-      "output.asm" drop subprocess:add-option
-      "-felf64"    drop subprocess:add-option
-      "-o"         drop subprocess:add-option
-      "output.o"   drop subprocess:add-option
-    nasm-infop subprocess:_end
-
-    nasm-infop 8 + @32 CLD_EXITED != nasm-infop 24 + @32 isn-zero | if
-      "error: NASM failed\n" eputs
-      false return
+    timeit:_break let seconds nanoseconds in
+      "info: compiling to asm took " STDOUT fputs
+      seconds STDOUT fputu " seconds " STDOUT fputs
+      nanoseconds 1000000 / STDOUT fputu " milliseconds.\n" STDOUT fputs
     end
 
-    // Execute linker.
-    subprocess:init
-      "/bin/ld"   drop subprocess:file-name
-      "output.o"  drop subprocess:add-option
-      "-o"        drop subprocess:add-option
-      output-name      subprocess:add-option
-    ld-infop subprocess:_end
+    // Keep going if we are in full-compilation mode.
+    full-compilation ! if true return end
 
-    ld-infop 8 + @32 CLD_EXITED != ld-infop 24 + @32 isn-zero | if
-      "error: linker failed\n" eputs
-      false return
-    end
-  end end
+    memory nasm-infop sizeof(siginfo_t) in
+    memory ld-infop sizeof(siginfo_t) in
+
+      // Execute NASM.
+      subprocess:init
+        "/bin/nasm"  drop subprocess:file-name
+        "output.asm" drop subprocess:add-option
+        "-felf64"    drop subprocess:add-option
+        "-o"         drop subprocess:add-option
+        "output.o"   drop subprocess:add-option
+      nasm-infop subprocess:_end
+
+      timeit:_break let seconds nanoseconds in
+        "info: nasm took " STDOUT fputs
+        seconds STDOUT fputu " seconds " STDOUT fputs
+        nanoseconds 1000000 / STDOUT fputu " milliseconds.\n" STDOUT fputs
+      end
+
+      nasm-infop 8 + @32 CLD_EXITED != nasm-infop 24 + @32 isn-zero | if
+        "error: NASM failed\n" eputs
+        false return
+      end
+
+      // Execute linker.
+      subprocess:init
+        "/bin/ld"   drop subprocess:file-name
+        "output.o"  drop subprocess:add-option
+        "-o"        drop subprocess:add-option
+        output-name      subprocess:add-option
+      ld-infop subprocess:_end
+
+      timeit:_break let seconds nanoseconds in
+        "info: ld took " STDOUT fputs
+        seconds STDOUT fputu " seconds " STDOUT fputs
+        nanoseconds 1000000 / STDOUT fputu " milliseconds.\n" STDOUT fputs
+      end
+
+      ld-infop 8 + @32 CLD_EXITED != ld-infop 24 + @32 isn-zero | if
+        "error: linker failed\n" eputs
+        false return
+      end
+    end end
+  timeit:_end
 end true end
 
 
