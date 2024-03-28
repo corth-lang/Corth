@@ -328,13 +328,11 @@ end end
 proc get-type-size-modifier
   // int: int-type -> ptr: int-type-size-mod-address int: int-type-size-mod-length
   int -> ptr int
-in let type in
-       type INT-TYPE:INT  = if "qword"
-  else type INT-TYPE:BOOL = if "word"
-  else
-    LOG:ERR STDERR fputs "Unknown stack data type for 'get-type-size-modifier'.\n" STDERR fputs
-    STDERR report-bug
-    EXIT-CODE:ERROR exit drop
-    NULLPTR 0 // dummy
-  end end
+in get-int-type-sizeof let size in
+       size 1 = if "byte"
+  else size 2 = if "word"
+  else size 4 = if "dword"
+  else size 8 = if "qword"
+  else             "<unknown>"
+  end end end end
 end end
