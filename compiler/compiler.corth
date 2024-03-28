@@ -2108,7 +2108,7 @@ in
     // sizeof <string-immediate>
     // sizeof <local-name>
 
-    "a type after 'cast'" true compile-procedure:get-next-token
+    "a type after 'sizeof'" true compile-procedure:get-next-token
 
     let type-type type-address type-arg in
       // The token afrer 'sizeof' should be an 'intrinsic type'.
