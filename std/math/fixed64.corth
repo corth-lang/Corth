@@ -182,8 +182,8 @@ proc sqrt-f
   // x' = 1/2 (x + E/x)
 in let epsilon in
   epsilon FONE-HALF mul-ff let h-epsilon in
-    memory x sizeof(fixed64) in
-    memory i sizeof(int)     in
+    memory x sizeof(fixed64) and
+           i sizeof(int)     in
 
       0 i !64
       FONE x !64
@@ -194,7 +194,7 @@ in let epsilon in
         i @64 SQRT.DEPTH >= if break end
       end
       x @64
-    end end
+    end
   end
 end end
 
@@ -211,9 +211,9 @@ in
   PI 2 * %
 
   let x in
-    memory sum sizeof(fixed64) in
-    memory a   sizeof(fixed64) in
-    memory i   sizeof(int)     in
+    memory sum sizeof(fixed64) and
+           a   sizeof(fixed64) and
+           i   sizeof(int)     in
 
       a   x !64
       sum x !64
@@ -231,7 +231,7 @@ in
       end drop
 
       sum @64
-    end end end
+    end
   end
 end
 
@@ -243,9 +243,9 @@ in
   PI 2 * %
 
   let x in
-    memory sum sizeof(fixed64) in
-    memory a   sizeof(fixed64) in
-    memory i   sizeof(int)     in
+    memory sum sizeof(fixed64) and
+           a   sizeof(fixed64) and
+           i   sizeof(int)     in
 
       0x0000000100000000 a   !64
       0x0000000100000000 sum !64
@@ -263,7 +263,7 @@ in
       end drop
 
       sum @64
-    end end end
+    end
   end
 end
 

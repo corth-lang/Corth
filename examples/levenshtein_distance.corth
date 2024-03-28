@@ -8,13 +8,11 @@ include "linux_x86/stdio.corth"
 macro MAX-SIZE 0x100 endmacro
 macro UNKNOWN  0xff endmacro
 
-memory ptr1 sizeof(ptr) end
-memory ptr2 sizeof(ptr) end
-
-memory remember 0x10000 end
-
-memory number-of-calls sizeof(int) end
-memory number-of-rembs sizeof(int) end
+memory ptr1            sizeof(ptr) and
+       ptr2            sizeof(ptr) and
+       remember        0x10000     and
+       number-of-calls sizeof(int) and
+       number-of-rembs sizeof(int) end
 
 macro reset-remember
   0 number-of-calls !64

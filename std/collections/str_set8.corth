@@ -55,9 +55,9 @@ proc union
   // TODO: The maximum length of the union set is already known, m(A) + m(B). This can be used to make this algorithm more efficient.
 in let set1 set2 in
   set1 list64:end-addr set2 list64:end-addr let end1 end2 in
-    memory hand1 sizeof(ptr) in
-    memory hand2 sizeof(ptr) in
-    memory union sizeof(ptr) in
+    memory hand1 sizeof(ptr) and
+           hand2 sizeof(ptr) and
+           union sizeof(ptr) in
 
       // Start the hands at the start points of the list starts.
       set1 list64:array-addr hand1 !64
@@ -109,7 +109,7 @@ in let set1 set2 in
           end
         end end
       end
-    end end end
+    end
   end
 end NULLPTR end // dummy-return
 
@@ -123,9 +123,9 @@ proc intersection
   // TODO: The maximum length of the intersection set is already known, min(m(A), m(B)). This can be used to make this algorithm more efficient.
 in let set1 set2 in
   set1 list64:end-addr set2 list64:end-addr let end1 end2 in
-    memory hand1 sizeof(ptr) in
-    memory hand2 sizeof(ptr) in
-    memory inter sizeof(ptr) in
+    memory hand1 sizeof(ptr) and
+           hand2 sizeof(ptr) and
+           inter sizeof(ptr) in
 
       // Start the hands at the start points of the list starts.
       set1 list64:array-addr hand1 !64
@@ -163,7 +163,7 @@ in let set1 set2 in
           end
         end
       end
-    end end end
+    end
   end
 end NULLPTR end // dummy-return
 

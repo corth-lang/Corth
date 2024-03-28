@@ -12,9 +12,9 @@
 include "collections/stack64.corth"
 include "collections/sorted64.corth"
 
-memory malloc:array              malloc:ARRAY-SIZE       end
-memory malloc:avail-stack-array  malloc:AVAIL-STACK-SIZE end
-memory malloc:avail-stack-length sizeof(int)             end
+memory malloc:array              malloc:ARRAY-SIZE       and
+       malloc:avail-stack-array  malloc:AVAIL-STACK-SIZE and
+       malloc:avail-stack-length sizeof(int)             end
 
 namespace malloc
 
@@ -77,9 +77,9 @@ proc find-min-available
   // int: expected-size -> ptr: available-group int: group-size int: group-id
   int -> ptr int int
 in let size in
-  memory available-group sizeof(ptr) in
-  memory available-size  sizeof(int) in
-  memory available-id    sizeof(int) in
+  memory available-group sizeof(ptr) and
+         available-size  sizeof(int) and
+         available-id    sizeof(int) in
 
     // available-id is the ID of stack item that points to the group.
     // group = stack[id]
@@ -111,7 +111,7 @@ in let size in
     id end inc end drop
 
     available-group @64 available-size @64 available-id @64
-  end end end
+  end
 end end
 
 endnamespace

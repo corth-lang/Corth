@@ -102,8 +102,8 @@ NOTE: path:merge can not be used inside another path:merge in the same procedure
 namespace path-merge
 
 macro init
-  memory _path-merge:builder.array_ sizeof(ptr) in
-  memory _path-merge:builder.ptr_   sizeof(ptr) in
+  memory _path-merge:builder.array_ sizeof(ptr) and
+         _path-merge:builder.ptr_   sizeof(ptr) in
     64 _path-merge:builder.array_ _path-merge:builder.ptr_ string-builder.init
 endmacro
 
@@ -117,7 +117,7 @@ macro end-str // -> ptr: merged-string
 
     // Free the allocated resources.
     _path-merge:builder.array_ @64 mfree drop
-  end end
+  end
 endmacro
 
 macro end-cstr // -> cstr: merge-string

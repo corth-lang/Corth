@@ -76,9 +76,9 @@ include "dynamic/utils.corth"
 include "collections/str_map64.corth"
 include "cstr.corth"
 
-memory getopts.keys   2048        end
-memory getopts.values 2048        end
-memory getopts.length sizeof(int) end
+memory getopts.keys   2048        and
+       getopts.values 2048        and
+       getopts.length sizeof(int) end
 
 macro O-SWITCH              1 endmacro
 macro O-ARGUMENT            2 endmacro
@@ -96,8 +96,9 @@ proc getopts.generate
   // ptr: options-string -> bool: successful
   ptr -> bool
 in let options in
-  memory buffer 64 in
-  memory pointer sizeof(ptr) in
+  memory buffer  64          and
+         pointer sizeof(ptr) in
+
     buffer pointer !64
 
     options while dup @8 isn-zero do let i in i @8 let char in
@@ -121,7 +122,7 @@ in let options in
 
     // Check if the buffer is empty.
     buffer pointer @64 =
-  end end
+  end
 end end
 
 
@@ -135,8 +136,8 @@ macro getopts.clear
 endmacro
 
 
-memory getopts.option sizeof(ptr) end
-memory getopts.char   sizeof(ptr) end
+memory getopts.option sizeof(ptr) and
+       getopts.char   sizeof(ptr) end
 
 
 proc getopts.set-arguments

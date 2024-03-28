@@ -34,8 +34,8 @@ namespace sb
 
 // Create a string builder.
 macro init
-  memory _sb:array_ sizeof(ptr) in
-  memory _sb:ptr_   sizeof(ptr) in
+  memory _sb:array_ sizeof(ptr) and
+         _sb:ptr_   sizeof(ptr) in
     _sb:array_ _sb:ptr_ string-builder.init
 endmacro
 
@@ -48,7 +48,7 @@ macro _end // file-desc: stream-to-dump
       // Deallocate the string builder object.
       _sb:array_ @64 mfree drop
     end
-  end end
+  end
 endmacro
 
 macro sb _sb:array_ _sb:ptr_ endmacro

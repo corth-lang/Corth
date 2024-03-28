@@ -23,8 +23,8 @@ proc available-str
   // Finds where the value could be placed using binary search, so that the array could stay sorted.
   // Returns if the value was found in the array.
 in
-  memory lower sizeof(ptr) in
-  memory upper sizeof(ptr) in
+  memory lower sizeof(ptr) and
+         upper sizeof(ptr) in
 
     upper !64
     lower !64
@@ -54,7 +54,7 @@ in
         end
       end
     end
-  end end
+  end
 NULLPTR false end  // dummy return
 
 endnamespace

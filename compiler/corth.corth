@@ -133,7 +133,7 @@ macro compile:info-time
     "info: " STDOUT fputs STDOUT fputs " took " STDOUT fputs
     seconds STDOUT fputu " seconds " STDOUT fputs
     nanoseconds 1000000 / STDOUT fputu " milliseconds.\n" STDOUT fputs
-  end  
+  end
 endmacro
 
 
@@ -157,8 +157,8 @@ in let source-name output-name include-paths-set full-compilation in
     // Keep going if we are in full-compilation mode.
     full-compilation ! if true return end
 
-    memory nasm-infop sizeof(siginfo_t) in
-    memory ld-infop sizeof(siginfo_t) in
+    memory nasm-infop sizeof(siginfo_t) and
+           ld-infop   sizeof(siginfo_t) in
 
       // Execute NASM.
       subprocess:init
@@ -192,7 +192,7 @@ in let source-name output-name include-paths-set full-compilation in
         "error: linker failed\n" eputs
         false return
       end
-    end end
+    end
   timeit:_end
 end true end
 
@@ -266,9 +266,10 @@ proc command.quick-test -> in
     EXIT-ERROR exit drop
   end
 
-  memory test-paths        sizeof(ptr) in
-  memory include-paths-set sizeof(ptr) in
-  memory full-compilation  sizeof(int) in
+  memory test-paths        sizeof(ptr) and
+         include-paths-set sizeof(ptr) and
+         full-compilation  sizeof(int) in
+
     16 list64:init test-paths !64
     16 list64:init include-paths-set !64
 
@@ -329,7 +330,7 @@ proc command.quick-test -> in
 
     // Deallocate 'include-paths-set'.
     include-paths-set list64:mfree drop
-  end end end
+  end
 
   EXIT-SUCCESS exit drop
 end
@@ -346,11 +347,11 @@ proc command.bootstrap -> in
   // source is the directory that the compiler.corth is in.
   // This directory should contain every file that the compiler needs except the standard library.
 
-  memory source          sizeof(ptr)  in
-  memory executable      sizeof(ptr)  in
-  memory std             sizeof(ptr)  in
-  memory once            sizeof(bool) in
-  memory ignore-examples sizeof(bool) in
+  memory source          sizeof(ptr)  and
+         executable      sizeof(ptr)  and
+         std             sizeof(ptr)  and
+         once            sizeof(bool) and
+         ignore-examples sizeof(bool) in
 
     NULLPTR source !64
     NULLPTR std    !64
@@ -424,8 +425,9 @@ proc command.bootstrap -> in
     executable @64 "./old" drop copy-file
 
     source @64 cstr:str "corth.corth" path:merge2-cstr let source-file-path in
-      memory compiler-infop sizeof(siginfo_t) in
-      memory diff-infop     sizeof(siginfo_t) in
+      memory compiler-infop sizeof(siginfo_t) and
+             diff-infop     sizeof(siginfo_t) in
+
         1 while
           "info: starting iteration " puts dup putu putnl
 
@@ -466,7 +468,7 @@ proc command.bootstrap -> in
         inc end
 
         "info: reached stability in " puts putu " tries\n" puts
-        
+
         ignore-examples @bool ! if
           "info: starting tests...\n" puts
 
@@ -486,17 +488,17 @@ proc command.bootstrap -> in
           end
 
           "info: tests succeeded\n" puts
-        else 
+        else
           "info: skipping tests...\n" puts
-        end 
+        end
 
         "./new" drop executable @64 move-file
-      end end
+      end
 
       // Deallocate 'source-file-path'.
       source-file-path mfree drop
     end
-  end end end end end
+  end
 
   EXIT-SUCCESS exit drop
 end
@@ -510,10 +512,10 @@ proc command.compile -> in
     EXIT-ERROR exit drop
   end
 
-  memory source-file       sizeof(ptr)  in
-  memory output-file       sizeof(ptr)  in
-  memory include-paths-set sizeof(ptr)  in
-  memory asm-only          sizeof(bool) in
+  memory source-file       sizeof(ptr)  and
+         output-file       sizeof(ptr)  and
+         include-paths-set sizeof(ptr)  and
+         asm-only          sizeof(bool) in
 
     NULLPTR       source-file !64
     "output" drop output-file !64
@@ -584,7 +586,7 @@ proc command.compile -> in
 
     // Deallocate 'include-paths-set'.
     include-paths-set list64:mfree drop
-  end end end end
+  end
 
   EXIT-SUCCESS exit drop
 end

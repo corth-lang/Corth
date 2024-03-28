@@ -20,8 +20,9 @@ proc starts-with
 in
   // A very good example of why we need quick parameter storing.
 
-  memory search  sizeof(ptr) in
-  memory pattern sizeof(ptr) in
+  memory search  sizeof(ptr) and
+         pattern sizeof(ptr) in
+
     let search-length in
       // Store parameter search.
       search !64
@@ -41,7 +42,7 @@ in
         i end end drop
       end
     end
-  end end
+  end
 true end
 
 
@@ -51,8 +52,9 @@ proc ends-with
 in
   // A very good example of why we need quick parameter storing.
 
-  memory search  sizeof(ptr) in
-  memory pattern sizeof(ptr) in
+  memory search  sizeof(ptr) and
+         pattern sizeof(ptr) in
+
     let search-length in
       // Store parameter search.
       search-length + dec search !64
@@ -72,7 +74,7 @@ in
         i end end drop
       end
     end
-  end end
+  end
 true end
 
 

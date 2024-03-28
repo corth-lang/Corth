@@ -30,8 +30,8 @@ macro N 20 endmacro
 proc main
   int int -> int
 in let argc argv in
-  memory a sizeof(int) in
-  memory b sizeof(int) in
+  memory a sizeof(int) and
+         b sizeof(int) in
 
     // Start with a=1 and b=1.
     1 a !64
@@ -45,5 +45,5 @@ in let argc argv in
       // a'=a+b; b'=a
       b @64 dup a @64 + b !64 a !64
     dec end drop
-  end end
+  end
 end 0 end

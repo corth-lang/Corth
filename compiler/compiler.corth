@@ -137,6 +137,87 @@ macro compile-procedure:new-level-id
 endmacro
 
 
+// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
+macro compile-file:get-next-token let
+  expect-address expect-length extend-macros
+in
+  // str: expect-message bool: extend-macros ->
+  // int: token-type ptr: address [int|ptr]: arg
+
+  source-name source-file
+  line-no char-no
+  extended-array extended-start extended-end
+  macro-names macro-tokens macros-length
+  log-stream extend-macros get-next-token ! if
+    LOG:ERR log-stream fputs "Reached EOF while expecting " log-stream fputs expect-address expect-length log-stream fputs log-stream fputnl
+    EXIT-CODE:ERROR exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
+macro compile-file:check-type let _token_type_ expect-address expect-length expected-token-type in
+  expected-token-type _token_type_ != if
+    LOG:ERR log-stream fputs "Expected a '" log-stream fputs expected-token-type log-stream fput-type  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_type_ log-stream fput-type "'.\n" log-stream fputs
+
+    EXIT-CODE:ERROR exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
+macro compile-file:check-type-here let _token_type_ _token_addr_ expect-address expect-length expected-token-type in
+  expected-token-type _token_type_ != if
+    LOG:ERR log-stream fputs "Expected a '" log-stream fputs expected-token-type log-stream fput-type  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_type_ log-stream fput-type "'.\n" log-stream fputs
+
+    _token_addr_ log-stream fput-here
+    EXIT-CODE:ERROR exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
+macro compile-file:check-keyword let _token_arg_ expect-address expect-length expected-token-arg in
+  expected-token-arg _token_arg_ != if
+    LOG:ERR log-stream fputs "Expected a '" log-stream fputs expected-token-arg log-stream fput-keyword  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_arg_ log-stream fput-keyword "'.\n" log-stream fputs
+
+    EXIT-CODE:ERROR exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
+macro compile-file:check-keyword-here let _token_arg_ _token_addr_ expect-address expect-length expected-token-arg in
+  expected-token-arg _token_arg_ != if
+    LOG:ERR log-stream fputs "Expected a '" log-stream fputs expected-token-arg log-stream fput-keyword  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_arg_ log-stream fput-keyword "'.\n" log-stream fputs
+
+    _token_addr_ log-stream fput-here
+    EXIT-CODE:ERROR exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
+macro compile-file:check-null let expect-address expect-length in
+  is-null if
+    LOG:ERR log-stream fputs "malloc failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
+
+    EXIT-CODE:ERROR exit drop
+  end
+end endmacro
+
+
+// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
+macro compile-file:check-null-here let expect-address expect-length in
+  is-null if
+    LOG:ERR log-stream fputs "malloc failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
+
+    token-address log-stream fput-here
+    EXIT-CODE:ERROR exit drop
+  end
+end endmacro
+
+
 macro invalid-usage-of-intrinsic
   LOG:ERR log-stream fputs "Invalid argument types.\n" log-stream fputs
   token-address log-stream fput-here
@@ -1044,6 +1125,72 @@ in
 end end
 
 
+proc collect-memory-like-names
+  // ptr: new-names-list ptr: new-sizes-list int: terminator-keyword
+  ptr ptr int
+  // ptr: source-name file-desc: source-file
+  ptr file-desc
+  // ptr: line-no ptr: char-no
+  ptr ptr
+  // ptr: macro-names ptr: macro-tokens ptr: macros-length
+  ptr ptr ptr
+  // ptr: extended-array ptr: extended-start ptr: extended-end
+  ptr ptr ptr
+  // file-desc: log-stream
+  file-desc ->
+  // Fills new-names-list and new-sizes-list until a terminator keyword is found.
+in let
+  new-names-list new-sizes-list terminator-keyword
+  source-name source-file
+  line-no char-no
+  macro-names macro-tokens macros-length
+  extended-array extended-start extended-end
+  log-stream
+in
+  while
+    // Get the variable name.
+    "a variable name" false compile-file:get-next-token
+
+    let memory-name-type memory-name-address memory-name-arg in
+      memory-name-type memory-name-address "" TOKEN-TYPE:NAME compile-file:check-type-here
+
+      // Get the variable size.
+      "a variable size" true compile-file:get-next-token
+
+      let memory-size-type memory-size-address memory-size-arg in
+        // The token after variable name should be an 'integer'.
+        memory-size-type memory-size-address "" TOKEN-TYPE:INTEGER compile-file:check-type-here
+
+        "an 'end'" true compile-file:get-next-token
+
+        let memory-end-type memory-end-address memory-end-arg in
+          // The token after variable size should be a 'keyword'.
+          memory-end-type memory-end-address "" TOKEN-TYPE:KEYWORD compile-file:check-type-here
+
+          memory-name-arg new-names-list list64:append
+          memory-size-arg new-sizes-list list64:append
+
+          // Check if the keyword is not the terminator keyword.
+          memory-end-arg terminator-keyword != dup
+
+          // If keyword is not the terminator, check if it is 'and'.
+          if memory-end-arg memory-end-address "after 'memory'" KEYWORD:AND compile-file:check-keyword-here end
+
+          // Deallocate 'memory-end-address'.
+          memory-end-address mfree drop
+        end
+
+        // Deallocate 'memory-size-address'.
+        memory-size-address mfree drop
+      end
+
+      // Deallocate 'memory-name-address'.
+      memory-name-address mfree drop
+    end
+  do end
+end end
+
+
 proc compile-unreachable
   // ptr: source-name file-desc: source-file file-desc: output-file
   ptr ptr file-desc
@@ -1647,9 +1794,6 @@ in
 
   else token-arg KEYWORD:MEMORY = if
     // -------- Keyword 'memory' -------
-    // memory <name> <size> in <any> end
-
-    // TODO: These are not implemented yet.
     // memory <name> <size> (and <name> <size>)* in <any> end
 
     // Level structure:
@@ -1659,70 +1803,45 @@ in
     // 24-31 -> Old local-memory-end
 
     // New names are stored in new-names and new-names-length stack. When the 'end' of 'memory' is reached, new names are deleted from the namespace.
-    memory new-names-list sizeof(ptr) in
+    memory new-names-list sizeof(ptr) and
+           new-sizes-list sizeof(ptr) in
       16 list64:init let dynamic in
         dynamic "creating list dynamic object for 'memory'" compile-procedure:check-null-here
 
         dynamic new-names-list !64
       end
 
-      // TODO: Add 'and' keyword.
+      16 list64:init let dynamic in
+        dynamic "creating list dynamic object for 'memory'" compile-procedure:check-null-here
+
+        dynamic new-sizes-list !64
+      end
+
       // TODO: Add proper pre-compilation for memory size.
 
-      // Get the variable name.
-      "a local variable name after 'memory'" false compile-procedure:get-next-token
+      new-names-list new-sizes-list KEYWORD:IN
+      source-name source-file
+      line-no char-no
+      macro-names macro-tokens macros-length
+      extended-array extended-start extended-end
+      log-stream
+      collect-memory-like-names
 
-      let memory-name-type memory-name-address memory-name-arg in
-        // The token after 'memory' should be a 'name'.
-        memory-name-type memory-name-address "after 'memory' for local variable name" TOKEN-TYPE:NAME compile-procedure:check-type-here
+      0 while dup new-names-list list64:length < do peek i in
+        i new-names-list list64:get let name in
+          INT-TYPE:INT STACK-MODE:LOCAL stack-item:create let replace-item in
+            local-memory-end @64 dup
+            replace-item stack-item:set-arg1
+            i new-sizes-list list64:get + local-memory-end !64
 
-        // Get the variable size.
-        "a local variable size after 'memory'" true compile-procedure:get-next-token
-
-        let memory-size-type memory-size-address memory-size-arg in
-          // The token after variable name should be an 'integer'.
-          memory-size-type memory-size-address "after 'memory' for local variable size" TOKEN-TYPE:INTEGER compile-procedure:check-type-here
-
-          "an 'end' after 'memory'" true compile-procedure:get-next-token
-
-          let memory-end-type memory-end-address memory-end-arg in
-            // The token after variable size should be a 'keyword'.
-            memory-end-type memory-end-address "after 'memory'" TOKEN-TYPE:KEYWORD compile-procedure:check-type-here
-
-            memory-end-arg KEYWORD:AND = if
-              LOG:TODO log-stream fputs "'and' after 'memory' for local variable allocation is not implemented yet.\n" log-stream fputs
-              memory-end-address compile-procedure:show-here
+            name replace-item let-names let-addresses let-vars-length str-map64:set-dstr if
+              LOG:ERR log-stream fputs "Local variable '" log-stream fputs name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+              token-address compile-procedure:show-here
               EXIT-CODE:ERROR exit drop
             end
-
-            // Check if the keyword is 'in'.
-            memory-end-arg memory-end-address "after 'memory'" KEYWORD:IN compile-procedure:check-keyword-here
-
-            memory-name-arg new-names-list list64:append
-
-            INT-TYPE:INT STACK-MODE:LOCAL stack-item:create let replace-item in
-              local-memory-end @64 replace-item stack-item:set-arg1
-
-              memory-name-arg replace-item let-names let-addresses let-vars-length str-map64:set-dstr if
-                LOG:ERR log-stream fputs "Local variable '" log-stream fputs memory-name-arg memory-name-arg mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-                memory-name-address compile-procedure:show-here
-                EXIT-CODE:ERROR exit drop
-              end
-
-              local-memory-end @64 memory-size-arg + local-memory-end !64
-            end
-
-            // Deallocate 'memory-end-address'.
-            memory-end-address mfree drop
           end
-
-          // Deallocate 'memory-size-address'.
-          memory-size-address mfree drop
         end
-
-        // Deallocate 'memory-name-address'.
-        memory-name-address mfree drop
-      end
+      end inc end drop
 
       local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
 
@@ -1737,8 +1856,9 @@ in
         new-level levels-list list64:append
       end
 
-      // Deallocate 'new-names-list' but keep the 'memory' variable names.
+      // Deallocate 'new-names-list' and 'new-sizes-list' but keep the 'memory' variable names.
       new-names-list list64:mfree drop
+      new-sizes-list list64:mfree drop
     end
 
   else token-arg KEYWORD:LET = if
@@ -2053,21 +2173,17 @@ in
 
   "proc_" output-file fputs procedure-name output-file nasm:fput-alpha ":\n" output-file fputs
 
-  memory levels-list      sizeof(ptr)      in
-
   // level-id-counter allows to create unique IDs for level labels.
-  memory level-id-counter sizeof(int)      in
-
   // let-names, let-addresses and let-vars-length create a str_map64:
-  memory let-names        LET-MAX-COUNT    in
-  memory let-addresses    LET-MAX-COUNT    in
-  memory let-vars-length  sizeof(int)      in
-
   // local-memory-end keeps track of the first available-dstr position on the local memory.
-  memory local-memory-end sizeof(int)      in
-
   // local-memory-max keeps track of the maximum length of the local memory, to later allocate enough space.
-  memory local-memory-max sizeof(int)      in
+  memory levels-list      sizeof(ptr)      and
+         level-id-counter sizeof(int)      and
+         let-names        LET-MAX-COUNT    and
+         let-addresses    LET-MAX-COUNT    and
+         let-vars-length  sizeof(int)      and
+         local-memory-end sizeof(int)      and
+         local-memory-max sizeof(int)      in
 
     16 list64:init let dynamic in
       dynamic "creating a list dynamic object" compile-procedure:check-null
@@ -2215,89 +2331,8 @@ in
 
     // Deallocate 'levels-list'.
     levels-list list64:mfree-deep drop
-  end end end end end end end
+  end
 end 0 end // dummy return
-
-
-// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
-macro compile-file:get-next-token let
-  expect-address expect-length extend-macros
-in
-  // str: expect-message bool: extend-macros ->
-  // int: token-type ptr: address [int|ptr]: arg
-
-  source-name source-file
-  line-no char-no
-  extended-array extended-start extended-end
-  macro-names macro-tokens macros-length
-  log-stream extend-macros get-next-token ! if
-    LOG:ERR log-stream fputs "Reached EOF while expecting " log-stream fputs expect-address expect-length log-stream fputs log-stream fputnl
-    EXIT-CODE:ERROR exit drop
-  end
-end endmacro
-
-
-// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
-macro compile-file:check-type let _token_type_ expect-address expect-length expected-token-type in
-  expected-token-type _token_type_ != if
-    LOG:ERR log-stream fputs "Expected a '" log-stream fputs expected-token-type log-stream fput-type  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_type_ log-stream fput-type "'.\n" log-stream fputs
-
-    EXIT-CODE:ERROR exit drop
-  end
-end endmacro
-
-
-// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
-macro compile-file:check-type-here let _token_type_ _token_addr_ expect-address expect-length expected-token-type in
-  expected-token-type _token_type_ != if
-    LOG:ERR log-stream fputs "Expected a '" log-stream fputs expected-token-type log-stream fput-type  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_type_ log-stream fput-type "'.\n" log-stream fputs
-
-    _token_addr_ log-stream fput-here
-    EXIT-CODE:ERROR exit drop
-  end
-end endmacro
-
-
-// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
-macro compile-file:check-keyword let _token_arg_ expect-address expect-length expected-token-arg in
-  expected-token-arg _token_arg_ != if
-    LOG:ERR log-stream fputs "Expected a '" log-stream fputs expected-token-arg log-stream fput-keyword  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_arg_ log-stream fput-keyword "'.\n" log-stream fputs
-
-    EXIT-CODE:ERROR exit drop
-  end
-end endmacro
-
-
-// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
-macro compile-file:check-keyword-here let _token_arg_ _token_addr_ expect-address expect-length expected-token-arg in
-  expected-token-arg _token_arg_ != if
-    LOG:ERR log-stream fputs "Expected a '" log-stream fputs expected-token-arg log-stream fput-keyword  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_arg_ log-stream fput-keyword "'.\n" log-stream fputs
-
-    _token_addr_ log-stream fput-here
-    EXIT-CODE:ERROR exit drop
-  end
-end endmacro
-
-
-// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
-macro compile-file:check-null let expect-address expect-length in
-  is-null if
-    LOG:ERR log-stream fputs "malloc failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
-
-    EXIT-CODE:ERROR exit drop
-  end
-end endmacro
-
-
-// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
-macro compile-file:check-null-here let expect-address expect-length in
-  is-null if
-    LOG:ERR log-stream fputs "malloc failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
-
-    token-address log-stream fput-here
-    EXIT-CODE:ERROR exit drop
-  end
-end endmacro
 
 
 proc compile-file
@@ -2344,14 +2379,12 @@ in
       EXIT-CODE:ERROR exit drop
     end
 
-    memory extended-array  EXTENDED-MAX-LENGTH in
-    memory extended-start  sizeof(int)         in
-    memory extended-end    sizeof(int)         in
-
-    memory line-no         sizeof(int)         in
-    memory char-no         sizeof(int)         in
-
-    memory namespace-name  sizeof(ptr)         in
+    memory extended-array  EXTENDED-MAX-LENGTH and
+           extended-start  sizeof(int)         and
+           extended-end    sizeof(int)         and
+           line-no         sizeof(int)         and
+           char-no         sizeof(int)         and
+           namespace-name  sizeof(ptr)         in
 
       // Reset extended-tokens.
       0 extended-start !64
@@ -2442,56 +2475,49 @@ in
           else token-arg KEYWORD:MEMORY = if
             // -------- Keyword 'memory' --------
 
-            // Get the next token, which sould be the include path:
-            "a 'name' after 'memory' while defining a global varible" false compile-file:get-next-token
+            memory new-names-list sizeof(ptr) and
+                   new-sizes-list sizeof(ptr) in
+              16 list64:init let dynamic in
+                dynamic "creating list dynamic object for 'memory'" compile-file:check-null-here
 
-            let memory-name-type memory-name-address memory-name-arg in
-              memory-name-type memory-name-address "as global variable name after 'memory'" TOKEN-TYPE:NAME compile-file:check-type-here
-
-              // TODO: Implement size calculation.
-              "size after 'memory' while defining a global varible" true compile-file:get-next-token
-
-              let memory-size-type memory-size-address memory-size-arg in
-                memory-size-type memory-size-address "as global variable size after 'memory'" TOKEN-TYPE:INTEGER compile-file:check-type-here
-
-                // Get the next keyword, which should be an 'end' keyword.
-                "an 'end' after 'memory' while defining a global varible" true compile-file:get-next-token
-
-                // Check the token type and keyword.
-                // Add 'and' keyword.
-                let end-token-type end-token-address end-token-arg in
-                  end-token-type end-token-address "after 'memory' while defining a global variable" TOKEN-TYPE:KEYWORD compile-file:check-type-here
-
-                  end-token-arg KEYWORD:AND = if
-                    LOG:TODO log-stream fputs "'and' after 'memory' for global variable allocation is not implemented yet.\n" log-stream fputs
-                    end-token-address log-stream fput-here
-                    EXIT-CODE:ERROR exit drop
-                  end
-
-                  end-token-arg end-token-address "after 'memory' while defining a global variable" KEYWORD:END compile-file:check-keyword-here
-
-                  // Deallocate 'end-token-address'.
-                  end-token-address mfree drop
-                end
-
-                // TODO: Check if the global variable stack was filled.
-
-                // Get the full name of the variable.
-                namespace-name @64 is-null if
-                  memory-name-arg
-                else
-                  namespace-name @64 memory-name-arg djoin
-                end
-
-                // Store the variable.
-                memory-size-arg global-names-array global-sizes-array globals-length str-map64:set-dstr drop
-
-                // Deallocate 'memory-size-address'.
-                memory-size-address mfree drop
+                dynamic new-names-list !64
               end
 
-              // Deallocate 'memory-name-address'.
-              memory-name-address mfree drop
+              16 list64:init let dynamic in
+                dynamic "creating list dynamic object for 'memory'" compile-file:check-null-here
+
+                dynamic new-sizes-list !64
+              end
+
+              new-names-list new-sizes-list KEYWORD:END
+              source-name source-file
+              line-no char-no
+              macro-names macro-tokens macros-length
+              extended-array extended-start extended-end
+              log-stream
+              collect-memory-like-names
+
+              0 while dup new-names-list list64:length < do peek i in
+                // Get the full name of the variable.
+                namespace-name @64 is-null if
+                  i new-names-list list64:get
+                else
+                  namespace-name @64 i new-names-list list64:get djoin
+                end
+
+                let name in
+                  // Store the variable.
+                  name i new-sizes-list list64:get global-names-array global-sizes-array globals-length str-map64:set-dstr if
+                    LOG:ERR log-stream fputs "Global variable '" log-stream fputs name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+                    token-address log-stream fput-here
+                    EXIT-CODE:ERROR exit drop
+                  end
+                end
+              end inc end drop
+
+              // Deallocate 'new-names-list' and 'new-sizes-list' but keep the 'memory' variable names.
+              new-names-list list64:mfree drop
+              new-sizes-list list64:mfree drop
             end
 
           else token-arg KEYWORD:MACRO = if
@@ -2556,8 +2582,8 @@ in
             let proc-name-token-type proc-name-token-address proc-name-token-arg in
               proc-name-token-type proc-name-token-address "as procedure name after 'procedure'" TOKEN-TYPE:NAME compile-file:check-type-here
 
-              memory input-list sizeof(ptr) in
-              memory output-list sizeof(ptr) in
+              memory input-list  sizeof(ptr) and
+                     output-list sizeof(ptr) in
 
                 // TODO: Check if the dynamic object is NULLPTR or not.
                 16 list64:init input-list !64
@@ -2653,9 +2679,9 @@ in
                   end
 
                   // Create the stack for the procedure.
-                  memory local-stack        STACK-MAX-ITEMS in
-                  memory local-stack-length sizeof(int)     in
-                  memory peeked-item        sizeof(int)     in
+                  memory local-stack        STACK-MAX-ITEMS and
+                         local-stack-length sizeof(int)     and
+                         peeked-item        sizeof(int)     in
 
                     0 local-stack-length !64
                     0 peeked-item        !64
@@ -2686,13 +2712,13 @@ in
                     "    pop     rax\n"                 output-file fputs
                     "    xchg    rsp, [call_ptr]\n"     output-file fputs
                     "    jmp     rax\n"                 output-file fputs
-                  end end end
+                  end
                 end
 
                 // Deallocate input-list and output-list.
                 input-list  list64:mfree drop
                 output-list list64:mfree drop
-              end end
+              end
             end
 
           else token-arg KEYWORD:NAMESPACE = if
@@ -2727,7 +2753,7 @@ in
           end end end end end end
         end
       end drop drop drop
-    end end end end end end
+    end
 
     source-file fclose drop
   end
@@ -2780,22 +2806,22 @@ in let source-name output-name include-paths-set log-stream in
     "    pop     rdi\n"                                 output-file fputs
     "    syscall\n"                                     output-file fputs
 
-    memory global-names-array     GLOBALS-MAX-COUNT in
-    memory global-sizes-array     GLOBALS-MAX-COUNT in
-    memory globals-length         sizeof(int)       in
+    memory global-names-array     GLOBALS-MAX-COUNT and
+           global-sizes-array     GLOBALS-MAX-COUNT and
+           globals-length         sizeof(int)       and
 
-    memory proc-names-array       PROCS-MAX-COUNT   in
-    memory proc-inputs-array      PROCS-MAX-COUNT   in
-    memory proc-outputs-array     PROCS-MAX-COUNT   in
-    memory procs-length           sizeof(int)       in
+           proc-names-array       PROCS-MAX-COUNT   and
+           proc-inputs-array      PROCS-MAX-COUNT   and
+           proc-outputs-array     PROCS-MAX-COUNT   and
+           procs-length           sizeof(int)       and
 
-    memory macro-names            MACROS-MAX-COUNT  in
-    memory macro-tokens           MACROS-MAX-COUNT  in
-    memory macros-length          sizeof(int)       in
+           macro-names            MACROS-MAX-COUNT  and
+           macro-tokens           MACROS-MAX-COUNT  and
+           macros-length          sizeof(int)       and
 
-    memory data-definitions-list  sizeof(ptr)       in
+           data-definitions-list  sizeof(ptr)       and
 
-    memory libraries-set          sizeof(ptr)       in
+           libraries-set          sizeof(ptr)       in
 
       0 globals-length   !64
       0 procs-length     !64
@@ -2887,7 +2913,7 @@ in let source-name output-name include-paths-set log-stream in
           variable-name mfree drop
         end
       end inc end drop
-    end end end end end end end end end end end end
+    end
 
     output-file fclose drop
   end
