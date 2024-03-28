@@ -111,17 +111,6 @@ endmacro
 
 // FIXED -> FIXED macro and procedures
 // a, b and c denotes the bit representations; x, y and z are the real values.
-macro uinv-f
-  // fixed64: x -> fixed64: 1/x
-  // Performs unsigned invert.
-  // z = cW = 1/x = 1/a / W
-  // c = W^2/a
-  // W^2 is 2^64, which can not be represented with 64 bits. But 2^64 - 1 can be, and the result is very good.
-  // W^2 ~ 2^64-1
-  // c = (2^64-1)/a
-  0xffffffffffffffff swp u/
-endmacro
-
 macro inv-f
   // fixed64: x -> fixed64: 1/x
   // Performs signed invert.
@@ -135,14 +124,6 @@ endmacro
 
 
 // FIXED FIXED -> FIXED macro and procedures
-macro umul-ff let _x_ _y_ in
-  // fixed64: a fixed64: b -> fixed64: a*b
-  // Performs unsigned multiplication.
-  // z = cW = xy = abW^2
-  // c = ab * W
-  _x_ _y_ u*2 int-to-fixed64 _x_ _y_ u* fixed64-to-int +
-end endmacro
-
 macro mul-ff let _x_ _y_ in
   // fixed64: a fixed64: b -> fixed64: a*b
   // Performs signed multiplication.
@@ -150,13 +131,6 @@ macro mul-ff let _x_ _y_ in
   // c = ab * W
   _x_ _y_ *2 int-to-fixed64 _x_ _y_ * fixed64-to-int +
 end endmacro
-
-macro udiv-ff
-  // fixed64: a fixed64: b -> fixed64: a/b
-  // Performs unsigned division.
-  // z = cW = x/y = xy^-1
-  uinv-f umul-ff
-endmacro
 
 macro div-ff
   // fixed64: a fixed64: b -> fixed64: a/b
@@ -207,7 +181,7 @@ proc sqrt-f
   // (sqrt(x))^2 = x
   // x' = 1/2 (x + E/x)
 in let epsilon in
-  epsilon FONE-HALF umul-ff let h-epsilon in
+  epsilon FONE-HALF mul-ff let h-epsilon in
     memory x sizeof(fixed64) in
     memory i sizeof(int)     in
 
@@ -215,7 +189,7 @@ in let epsilon in
       FONE x !64
 
       while x @64 sqr-f epsilon - abs SQRT.TOLERANCE > do
-        x @64 FONE-HALF umul-ff h-epsilon x @64 udiv-ff + x !64
+        x @64 FONE-HALF mul-ff h-epsilon x @64 div-ff + x !64
         i @inc64
         i @64 SQRT.DEPTH >= if break end
       end

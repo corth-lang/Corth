@@ -504,21 +504,21 @@ end end
 
 
 proc get-log2
-  uint -> int
+  int -> int
   // Returns 0-63 for whole powers of 2, <0 otherwise.
 in let x in
        x           1 = if 0
   else x       is-zero if MIN-INT
-  else x 2 u% isn-zero if MIN-INT
-  else                    x 2 u/ get-log2 inc
+  else x 2  % isn-zero if MIN-INT
+  else                    x 2 / get-log2 inc
   end end end
 end end
 
 
 proc multiply-immediate-any
-  // bool: signed bool: upper int: immediate ptr: item ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file ->
-  bool bool int ptr ptr ptr ptr file-desc ->
-in let signed upper immediate item local-stack local-stack-length peeked-item output-file in
+  // bool: upper int: immediate ptr: item ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file ->
+  bool int ptr ptr ptr ptr file-desc ->
+in let upper immediate item local-stack local-stack-length peeked-item output-file in
   immediate get-log2 let log2 in
     INT-TYPE:INT push-real
 
@@ -527,14 +527,14 @@ in let signed upper immediate item local-stack local-stack-length peeked-item ou
       item      "rax" output-file nasm:mov-reg-item
       immediate "rbx" output-file nasm:mov-reg-immediate
 
-      signed if "    imul    rbx\n" else "    mul     rbx\n" end output-file fputs
+      "    imul    rbx\n" output-file fputs
       upper  if "    push    rdx\n" else "    push    rax\n" end output-file fputs
 
     else
       upper if
         item output-file nasm:push-int
 
-        signed if "    sar     qword [rsp], " else "    shr     qword [rsp], " end output-file fputs 64 log2 - output-file fputu output-file fputnl
+        "    sar     qword [rsp], " output-file fputs 64 log2 - output-file fputu output-file fputnl
 
       else
         item output-file nasm:push-int
@@ -547,9 +547,9 @@ end end
 
 
 proc multiply-intrinsic
-  // ptr: token-address bool: signed bool: upper ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file file-desc: log-stream ->
-  ptr bool bool ptr ptr ptr file-desc file-desc ->
-in let token-address signed upper local-stack local-stack-length peeked-item output-file log-stream in
+  // ptr: token-address bool: upper ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file file-desc: log-stream ->
+  ptr bool ptr ptr ptr file-desc file-desc ->
+in let token-address upper local-stack local-stack-length peeked-item output-file log-stream in
   2 is-items-available ! if invalid-usage-of-intrinsic end
 
   pop-item pop-item let item2 item1 in
@@ -560,24 +560,23 @@ in let token-address signed upper local-stack local-stack-length peeked-item out
       item2 stack-item:get-mode STACK-MODE:IMM = if
         item1 stack-item:get-arg1 item2 stack-item:get-arg1
 
-        upper if signed if *2 else u*2 end
-            else signed if *  else u*  end end
+        upper if *2 else * end
 
         push-int-immediate
       else
-        signed upper item1 stack-item:get-arg1 item2 local-stack local-stack-length peeked-item output-file multiply-immediate-any
+        upper item1 stack-item:get-arg1 item2 local-stack local-stack-length peeked-item output-file multiply-immediate-any
       end
 
     else
       item2 stack-item:get-mode STACK-MODE:IMM = if
-        signed upper item2 stack-item:get-arg1 item1 local-stack local-stack-length peeked-item output-file multiply-immediate-any
+        upper item2 stack-item:get-arg1 item1 local-stack local-stack-length peeked-item output-file multiply-immediate-any
       else
         INT-TYPE:INT push-real
 
         item2 "rbx" output-file nasm:mov-reg-item
         item1 "rax" output-file nasm:mov-reg-item
 
-        signed if "    imul    rbx\n" else "    mul     rbx\n" end output-file fputs
+        "    imul    rbx\n" output-file fputs
         upper  if "    push    rdx\n" else "    push    rax\n" end output-file fputs
       end
     end
@@ -599,9 +598,9 @@ end end
 
 
 proc divide-intrinsic
-  // ptr: token-address bool: signed bool: modulo ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file file-desc: log-stream ->
-  ptr bool bool ptr ptr ptr file-desc file-desc ->
-in let token-address signed modulo local-stack local-stack-length peeked-item output-file log-stream in
+  // ptr: token-address bool: modulo ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file file-desc: log-stream ->
+  ptr bool ptr ptr ptr file-desc file-desc ->
+in let token-address modulo local-stack local-stack-length peeked-item output-file log-stream in
   2 is-items-available ! if invalid-usage-of-intrinsic end
 
   pop-item pop-item let item2 item1 in
@@ -621,7 +620,7 @@ in let token-address signed modulo local-stack local-stack-length peeked-item ou
           item1 "rax" output-file nasm:mov-reg-item
                 "rdx" output-file nasm:mov-reg-zero
 
-          signed if "    idiv    rbx\n" else "    div     rbx\n" end output-file fputs
+          "    idiv    rbx\n" output-file fputs
           modulo if "    push    rdx\n" else "    push    rax\n" end output-file fputs
         end
       end
@@ -633,7 +632,7 @@ in let token-address signed modulo local-stack local-stack-length peeked-item ou
       item1 "rax" output-file nasm:mov-reg-item
             "rdx" output-file nasm:mov-reg-zero
 
-      signed if "    idiv    rbx\n" else "    div     rbx\n" end output-file fputs
+      "    idiv    rbx\n" output-file fputs
       modulo if "    push    rdx\n" else "    push    rax\n" end output-file fputs
     end
 
@@ -776,15 +775,10 @@ in
       item stack-item:mfree
     end
 
-  else token-arg INTRINSIC:MUL     = if token-address true false local-stack local-stack-length peeked-item output-file log-stream multiply-intrinsic
-  else token-arg INTRINSIC:MUL2    = if token-address true true  local-stack local-stack-length peeked-item output-file log-stream multiply-intrinsic
-  else token-arg INTRINSIC:DIV     = if token-address true false local-stack local-stack-length peeked-item output-file log-stream divide-intrinsic
-  else token-arg INTRINSIC:MOD     = if token-address true true  local-stack local-stack-length peeked-item output-file log-stream divide-intrinsic
-
-  else token-arg INTRINSIC:UMUL    = if token-address false false local-stack local-stack-length peeked-item output-file log-stream multiply-intrinsic
-  else token-arg INTRINSIC:UMUL2   = if token-address false true  local-stack local-stack-length peeked-item output-file log-stream multiply-intrinsic
-  else token-arg INTRINSIC:UDIV    = if token-address false false local-stack local-stack-length peeked-item output-file log-stream divide-intrinsic
-  else token-arg INTRINSIC:UMOD    = if token-address false true  local-stack local-stack-length peeked-item output-file log-stream divide-intrinsic
+  else token-arg INTRINSIC:MUL     = if token-address false local-stack local-stack-length peeked-item output-file log-stream multiply-intrinsic
+  else token-arg INTRINSIC:MUL2    = if token-address true  local-stack local-stack-length peeked-item output-file log-stream multiply-intrinsic
+  else token-arg INTRINSIC:DIV     = if token-address false local-stack local-stack-length peeked-item output-file log-stream divide-intrinsic
+  else token-arg INTRINSIC:MOD     = if token-address true  local-stack local-stack-length peeked-item output-file log-stream divide-intrinsic
 
   else token-arg INTRINSIC:LOAD8   = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream load-intrinsic
   else token-arg INTRINSIC:LOAD16  = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream load-intrinsic
@@ -990,7 +984,7 @@ in
     token-address log-stream fput-here
     procedure-name procedure-address log-stream fput-inside-procedure
     EXIT-CODE:ERROR exit drop
-  end end end end end end end end end end end end end end end end end end end end end end end end end end end end end
+  end end end end end end end end end end end end end end end end end end end end end end end end end
 end end
 
 

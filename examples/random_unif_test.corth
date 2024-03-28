@@ -13,7 +13,7 @@ proc main
 in let argc argv in
   NULLPTR time rng-seed !64
 
-  "Generating " puts numbers tries u* putu " random numbers between 0 and " puts numbers putu "...\n" puts
+  "Generating " puts numbers tries * putu " random numbers between 0 and " puts numbers putu "...\n" puts
   memory array 240 in
     0 while dup numbers < do
       let i in
@@ -21,7 +21,7 @@ in let argc argv in
       i end
     inc end drop
 
-    numbers tries u* while dup isn-zero do
+    numbers tries * while dup isn-zero do
       numbers rand-unif 8 * array + let address in
         address @64 inc address !64
       end

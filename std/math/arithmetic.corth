@@ -84,7 +84,7 @@ endmacro
 
 proc ipow
   // int: x uint: c -> int: x^c
-  int uint -> int
+  int int -> int
   // Calculates integer exponents.
 in
   memory result sizeof(int) in
@@ -101,34 +101,7 @@ in
       end
 
       frag @64 sqr frag !64
-      exp @64 2 u/ exp !64
-    end
-
-    result @64
-  end end end
-end
-
-
-proc upow
-  // uint: x uint: c -> uint: x^c
-  uint uint -> int
-  // Calculates unsigned integer exponents.
-in
-  memory result sizeof(int) in
-  memory frag   sizeof(int) in
-  memory exp    sizeof(int) in
-
-    exp      !64
-    frag     !64
-    1 result !64
-
-    while exp @64 isn-zero do
-      exp @64 is-odd if
-        result @64 frag @64 u* result !64
-      end
-
-      frag @64 usqr frag !64
-      exp @64 2 u/ exp !64
+      exp @64 2 / exp !64
     end
 
     result @64

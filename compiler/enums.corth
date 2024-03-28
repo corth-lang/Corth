@@ -107,10 +107,6 @@ macro MUL      3  endmacro
 macro MUL2     4  endmacro
 macro DIV      5  endmacro
 macro MOD      6  endmacro
-macro UMUL     7  endmacro
-macro UMUL2    8  endmacro
-macro UDIV     9  endmacro
-macro UMOD     10 endmacro
 macro BOR      14 endmacro
 macro BAND     15 endmacro
 macro BXOR     16 endmacro
@@ -141,10 +137,6 @@ macro MUL      "*"         endmacro
 macro MUL2     "*2"        endmacro
 macro DIV      "/"         endmacro
 macro MOD      "%"         endmacro
-macro UMUL     "u*"        endmacro
-macro UMUL2    "u*2"       endmacro
-macro UDIV     "u/"        endmacro
-macro UMOD     "u%"        endmacro
 macro BOR      "||"        endmacro
 macro BAND     "&&"        endmacro
 macro BXOR     "^^"        endmacro

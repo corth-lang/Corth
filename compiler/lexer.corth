@@ -318,17 +318,13 @@ in let
     else buffer buffer-size KEYWORD-NAME:CAST          memcmp8-wl is-zero if TOKEN-TYPE:KEYWORD KEYWORD:CAST
     else buffer buffer-size KEYWORD-NAME:SIZEOF        memcmp8-wl is-zero if TOKEN-TYPE:KEYWORD KEYWORD:SIZEOF
 
-    // I still hate my life.    
+    // I still hate my life.
     else buffer buffer-size INTRINSIC-NAME:ADD         memcmp8-wl is-zero if TOKEN-TYPE:INTRINSIC INTRINSIC:ADD
     else buffer buffer-size INTRINSIC-NAME:SUB         memcmp8-wl is-zero if TOKEN-TYPE:INTRINSIC INTRINSIC:SUB
     else buffer buffer-size INTRINSIC-NAME:MUL         memcmp8-wl is-zero if TOKEN-TYPE:INTRINSIC INTRINSIC:MUL
     else buffer buffer-size INTRINSIC-NAME:MUL2        memcmp8-wl is-zero if TOKEN-TYPE:INTRINSIC INTRINSIC:MUL2
     else buffer buffer-size INTRINSIC-NAME:DIV         memcmp8-wl is-zero if TOKEN-TYPE:INTRINSIC INTRINSIC:DIV
     else buffer buffer-size INTRINSIC-NAME:MOD         memcmp8-wl is-zero if TOKEN-TYPE:INTRINSIC INTRINSIC:MOD
-    else buffer buffer-size INTRINSIC-NAME:UMUL        memcmp8-wl is-zero if TOKEN-TYPE:INTRINSIC INTRINSIC:UMUL
-    else buffer buffer-size INTRINSIC-NAME:UMUL2       memcmp8-wl is-zero if TOKEN-TYPE:INTRINSIC INTRINSIC:UMUL2
-    else buffer buffer-size INTRINSIC-NAME:UDIV        memcmp8-wl is-zero if TOKEN-TYPE:INTRINSIC INTRINSIC:UDIV
-    else buffer buffer-size INTRINSIC-NAME:UMOD        memcmp8-wl is-zero if TOKEN-TYPE:INTRINSIC INTRINSIC:UMOD
     else buffer buffer-size INTRINSIC-NAME:BOR         memcmp8-wl is-zero if TOKEN-TYPE:INTRINSIC INTRINSIC:BOR
     else buffer buffer-size INTRINSIC-NAME:BAND        memcmp8-wl is-zero if TOKEN-TYPE:INTRINSIC INTRINSIC:BAND
     else buffer buffer-size INTRINSIC-NAME:BXOR        memcmp8-wl is-zero if TOKEN-TYPE:INTRINSIC INTRINSIC:BXOR
@@ -357,8 +353,8 @@ in let
       TOKEN-TYPE:NAME buffer buffer-size to-dynamic8
 
     // This is nightmare fuel.
-    end end end end end end end end end end end end end end end end end end end end end end end end end end
-    end end end end end end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end end end end
 
     let token-type token-arg in
       // Generate the address and return.
@@ -513,7 +509,7 @@ in let
               LOG:ERR log-stream fputs "Reached EOF while expecting character after dash (-).\n" log-stream fputs
               EXIT-CODE:ERROR exit drop
             end
-            
+
             char-no @inc64
 
             buffer-end @inc64
