@@ -357,8 +357,8 @@ proc command.bootstrap -> in
 
     executable-file-name @64 executable !64
 
-    0 once !8
-    0 ignore-examples !8
+    once !reset
+    ignore-examples !reset
 
     while true do
       getopts.parse let type arg1 arg1-length arg2 arg2-length error in
@@ -380,20 +380,20 @@ proc command.bootstrap -> in
             EXIT-SUCCESS exit drop
 
           else arg1 arg1-length "once" memcmp8-wl is-zero if
-            once @8 isn-zero if
+            once @bool if
               "error: '--once' can not be used more than once\n" puts
               EXIT-ERROR exit drop
             end
 
-            0xff once !8
+            once !set
 
           else arg1 arg1-length "ignore-examples" memcmp8-wl is-zero if
-            ignore-examples @8 isn-zero if
+            ignore-examples @bool if
               "error: '--ignore-examples' can not be used more than once\n" puts
               EXIT-ERROR exit drop
             end
 
-            0xff ignore-examples !8
+            ignore-examples !set
 
           else EXIT-ERROR exit drop end end end // impossible
 
@@ -467,7 +467,7 @@ proc command.bootstrap -> in
 
         "info: reached stability in " puts putu " tries\n" puts
         
-        ignore-examples @8 is-zero if
+        ignore-examples @bool ! if
           "info: starting tests...\n" puts
 
           memory quick-test-infop sizeof(siginfo_t) in
@@ -510,10 +510,10 @@ proc command.compile -> in
     EXIT-ERROR exit drop
   end
 
-  memory source-file       sizeof(ptr) in
-  memory output-file       sizeof(ptr) in
-  memory include-paths-set sizeof(ptr) in
-  memory asm-only          sizeof(int) in
+  memory source-file       sizeof(ptr)  in
+  memory output-file       sizeof(ptr)  in
+  memory include-paths-set sizeof(ptr)  in
+  memory asm-only          sizeof(bool) in
 
     NULLPTR       source-file !64
     "output" drop output-file !64
@@ -525,7 +525,7 @@ proc command.compile -> in
       EXIT-ERROR exit drop
     end
 
-    0 asm-only !64
+    asm-only !reset
 
     while true do
       getopts.parse let type arg1 arg1-length arg2 arg2-length error in
@@ -547,12 +547,12 @@ proc command.compile -> in
             EXIT-SUCCESS exit drop
 
           else arg1 arg1-length "asm" memcmp8-wl is-zero if
-            asm-only @64 isn-zero if
+            asm-only @bool if
               "error: '--asm' can not be used more than once\n" puts
               EXIT-ERROR exit drop
             end
 
-            1 asm-only !64
+            asm-only !set
 
           else EXIT-ERROR exit drop end end // impossible
 
@@ -579,7 +579,7 @@ proc command.compile -> in
     source-file @64
     output-file @64
     include-paths-set
-    asm-only @64 is-zero
+    asm-only @bool !
     compile ! if EXIT-ERROR exit drop end
 
     // Deallocate 'include-paths-set'.

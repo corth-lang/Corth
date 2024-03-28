@@ -8,3 +8,9 @@ macro ! if false else true end endmacro
 macro | if drop true else end endmacro
 macro & if else drop false end endmacro
 macro ^ if ! else end endmacro
+
+macro @bool @8 isn-zero endmacro
+macro !bool swp cast int swp !8 endmacro
+
+macro !set   1 swp !8 endmacro
+macro !reset 0 swp !8 endmacro
