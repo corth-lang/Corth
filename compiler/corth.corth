@@ -127,6 +127,15 @@ in let path in
 end end
 
 
+// ptr: message int: message-length
+macro compile:info-time
+  timeit:_break let seconds nanoseconds in
+    "info: " STDOUT fputs STDOUT fputs " took " STDOUT fputs
+    seconds STDOUT fputu " seconds " STDOUT fputs
+    nanoseconds 1000000 / STDOUT fputu " milliseconds.\n" STDOUT fputs
+  end  
+endmacro
+
 
 proc compile
   // ptr: source-name ptr: output-name ptr: include-paths-set bool: full-compilation -> bool: successful
@@ -142,11 +151,8 @@ in let source-name output-name include-paths-set full-compilation in
     STDERR
     compile-nasm
 
-    timeit:_break let seconds nanoseconds in
-      "info: compiling to asm took " STDOUT fputs
-      seconds STDOUT fputu " seconds " STDOUT fputs
-      nanoseconds 1000000 / STDOUT fputu " milliseconds.\n" STDOUT fputs
-    end
+    // Show compilation time information.
+    "compiling to asm" compile:info-time
 
     // Keep going if we are in full-compilation mode.
     full-compilation ! if true return end
@@ -163,11 +169,8 @@ in let source-name output-name include-paths-set full-compilation in
         "output.o"   drop subprocess:add-option
       nasm-infop subprocess:_end
 
-      timeit:_break let seconds nanoseconds in
-        "info: nasm took " STDOUT fputs
-        seconds STDOUT fputu " seconds " STDOUT fputs
-        nanoseconds 1000000 / STDOUT fputu " milliseconds.\n" STDOUT fputs
-      end
+      // Show nasm time information.
+      "nasm" compile:info-time
 
       nasm-infop 8 + @32 CLD_EXITED != nasm-infop 24 + @32 isn-zero | if
         "error: NASM failed\n" eputs
@@ -182,11 +185,8 @@ in let source-name output-name include-paths-set full-compilation in
         output-name      subprocess:add-option
       ld-infop subprocess:_end
 
-      timeit:_break let seconds nanoseconds in
-        "info: ld took " STDOUT fputs
-        seconds STDOUT fputu " seconds " STDOUT fputs
-        nanoseconds 1000000 / STDOUT fputu " milliseconds.\n" STDOUT fputs
-      end
+      // Show ld time information.
+      "ld" compile:info-time
 
       ld-infop 8 + @32 CLD_EXITED != ld-infop 24 + @32 isn-zero | if
         "error: linker failed\n" eputs
