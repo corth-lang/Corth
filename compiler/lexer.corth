@@ -79,7 +79,7 @@ in let file file-name line-no char-no buffer buffer-end log-stream in
 
     buffer-end @64 buffer - TOKEN-MAX-LENGTH >= if   // Reached the end of the buffer.
       LOG:ERR log-stream fputs "Found a token longer than TOKEN-MAX-LENGTH, stopping execution.\n" log-stream fputs
-      line-no @64 char-no @64 generate-position file-name log-stream fput-here-position
+      line-no @64 char-no @64 file-name log-stream fput-here-position
       EXIT-CODE:ERROR exit drop
     else                                                  // There is still space in the buffer.
       file 1 SEEK-WHENCE:CUR lseek drop
@@ -99,7 +99,7 @@ in let file file-name line-no char-no log-stream in
     // Check if we reached EOF before an escape sequence.
     buffer 1 file fgets is-zero if
       LOG:ERR log-stream fputs "Reached EOF while expecting escape sequence.\n" log-stream fputs
-      line-no @64 char-no @64 generate-position file-name log-stream fput-here-position
+      line-no @64 char-no @64 file-name log-stream fput-here-position
       EXIT-CODE:ERROR exit drop
     end
 
@@ -117,7 +117,7 @@ in let file file-name line-no char-no log-stream in
       // Check if we reached EOF before the escape sequence ends.
       buffer 2 file fgets 2 < if
         LOG:ERR log-stream fputs "Reached EOF while expecting 2 characters after escape sequence '\\x'.\n" log-stream fputs
-        line-no @64 char-no @64 generate-position file-name log-stream fput-here-position
+        line-no @64 char-no @64 file-name log-stream fput-here-position
         EXIT-CODE:ERROR exit drop
       end
 
@@ -127,7 +127,7 @@ in let file file-name line-no char-no log-stream in
       memory number sizeof(int) in
         buffer 2 number convx ! if
           LOG:ERR log-stream fputs "Expected 2 hexadecimal digits after '\\x', however the characters were not digits.\n" log-stream fputs
-          line-no @64 char-no @64 generate-position file-name log-stream fput-here-position
+          line-no @64 char-no @64 file-name log-stream fput-here-position
           EXIT-CODE:ERROR exit drop
         end
 
@@ -136,7 +136,7 @@ in let file file-name line-no char-no log-stream in
       end
     else
       LOG:ERR log-stream fputs "Invalid escape sequence.\n" log-stream fputs
-      line-no @64 char-no @64 generate-position file-name log-stream fput-here-position
+      line-no @64 char-no @64 file-name log-stream fput-here-position
       EXIT-CODE:ERROR exit drop
     0 end end end end end end end
   end
@@ -156,7 +156,7 @@ in let file file-name line-no char-no buffer buffer-end log-stream in
     // Check if we reached EOF before an end of string.
     char-addr 1 file fgets is-zero if
       LOG:ERR log-stream fputs "Reached EOF before finding any '\"'.\n" log-stream fputs
-      line-no @64 char-no @64 generate-position file-name log-stream fput-here-position
+      line-no @64 char-no @64 file-name log-stream fput-here-position
       EXIT-CODE:ERROR exit drop
     end
 
@@ -171,7 +171,7 @@ in let file file-name line-no char-no buffer buffer-end log-stream in
     // Reached the end of the buffer.
     char-addr buffer - TOKEN-MAX-LENGTH dec >= if
       LOG:ERR log-stream fputs "Found a string longer than TOKEN-MAX-LENGTH, stopping execution.\n" log-stream fputs
-      line-no @64 char-no @64 generate-position file-name log-stream fput-here-position
+      line-no @64 char-no @64 file-name log-stream fput-here-position
       EXIT-CODE:ERROR exit drop
     end
 
@@ -224,14 +224,14 @@ in let file file-name line-no char-no log-stream in
     while true do
       char 1 file fgets is-zero if                          // Reached EOF while expecting a block comment end.
         LOG:WARN log-stream fputs "Reached EOF while expecting a block comment end.\n" log-stream fputs
-        line-no @64 char-no @64 generate-position file-name log-stream fput-here-position
+        line-no @64 char-no @64 file-name log-stream fput-here-position
         return
       end
 
       char @8 '*' = if                       // Reached asterisk.
         char 1 file fgets is-zero if                        // Reached EOF while expecting a block comment end.
           LOG:WARN log-stream fputs "Reached EOF while expecting a block comment end.\n" log-stream fputs
-          line-no @64 char-no @64 generate-position file-name log-stream fput-here-position
+          line-no @64 char-no @64 file-name log-stream fput-here-position
           return
         end
 
@@ -480,7 +480,7 @@ in let
               buffer @8 '\'' != if
                 // Was expecting a single quote, but found another character.
                 LOG:ERR log-stream fputs "Expected a single quote, found '" log-stream fputs buffer 1 log-stream fputs "'.\n" log-stream fputs
-                line-no @64 char-no @64 generate-position file-name log-stream fput-here-position
+                line-no @64 char-no @64 file-name log-stream fput-here-position
                 EXIT-CODE:ERROR exit drop
               end
 

@@ -43,26 +43,6 @@ proc debug-init -> in
 end
 
 
-proc generate-position
-  // int: line-no int: char-no -> ptr: position
-  int int -> ptr
-in
-  sizeof(position) malloc let position in
-    position isn-null if
-      // Store the arguments.
-      position POS.CHAR + !64
-      position POS.LINE + !64
-    else
-      // Remove the unused arguments.
-      drop drop
-    end
-
-    // Return the position.
-    position
-  end
-end
-
-
 proc generate-address
   // ptr: file-name ptr: previous int: start-line int: start-char int: end-line int: end-char -> ptr: address
   ptr ptr int int int int -> ptr
@@ -89,11 +69,11 @@ end
 
 
 proc fput-position
-  // ptr: position file-desc: file-desc
-  ptr file-desc ->
+  // int: line-no int: char-no file-desc: file-desc
+  int int file-desc ->
   // Prints a position.
-in let position file in
-  position POS.LINE + @64 file fputu ":" file fputs position POS.CHAR + @64 file fputu
+in let line-no char-no file in
+  line-no file fputu ":" file fputs char-no file fputu
 end end
 
 
@@ -154,7 +134,12 @@ proc fput-address
   // Prints the formatted address of a token.
 in let address log-stream in
   address ADDR.FILE + @64 let file-name in
-    "file '" log-stream fputs file-name file-name mlength log-stream fputs "' [" log-stream fputs address ADDR.START + log-stream fput-position "]-[" log-stream fputs address ADDR.END + log-stream fput-position "]" log-stream fputs
+    "file '" log-stream fputs file-name file-name mlength log-stream fputs
+    "' [" log-stream fputs
+    address ADDR.START + POS.LINE + @64 address ADDR.START + POS.CHAR + @64 log-stream fput-position
+    "]-[" log-stream fputs
+    address ADDR.END + POS.LINE + @64 address ADDR.END + POS.CHAR + @64 log-stream fput-position
+    "]" log-stream fputs
   end
 end end
 
@@ -207,10 +192,10 @@ end end
 
 
 proc fput-lines-position
-  // ptr: position ptr: file-name file-desc: log-stream
-  ptr ptr file-desc ->
+  // int: line-no int: char-no ptr: file-name file-desc: log-stream
+  int int ptr file-desc ->
   // Prints the formatted linees of a token.
-in let position file-name log-stream in
+in let line-no char-no file-name log-stream in
   // Add a null character for fopen.
   file-name null-term8 fopen-r let file in
     // Check if the file could be opened.
@@ -219,13 +204,11 @@ in let position file-name log-stream in
       return
     end
 
-    position POS.LINE + @64 position POS.CHAR + @64 let line-no char-no in
-      // Move the file pointer to the start,
-      file 0 SEEK-WHENCE:SET lseek drop line-no dec file seek-line
+    // Move the file pointer to the start,
+    file 0 SEEK-WHENCE:SET lseek drop line-no dec file seek-line
 
-      line-no log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
-        "                      " log-stream fputs space-buffer char-no log-stream fputs tilde-buffer 1 log-stream fputs log-stream fputnl
-      end
+    line-no log-stream fputu-full ": " log-stream fputs file log-stream fput-line log-stream fputnl let length in
+      "                      " log-stream fputs space-buffer char-no log-stream fputs tilde-buffer 1 log-stream fputs log-stream fputnl
     end
 
     // Close the file.
@@ -249,10 +232,10 @@ in let address log-stream in
 end end
 
 
-macro fput-here-position let _position_ _file_name_ _log_stream_ in
+macro fput-here-position let _line_no_ _char_no_ _file_name_ _log_stream_ in
   // ptr: position file-desc: log-stream ->
-  LOG:HERE _log_stream_ fputs "At " _log_stream_ fputs _position_ _log_stream_ fput-position " in '" _log_stream_ fputs _file_name_ _file_name_ mlength _log_stream_ fputs "':\n" _log_stream_ fputs
-  _position_ _file_name_ _log_stream_ fput-lines-position
+  LOG:HERE _log_stream_ fputs "At " _log_stream_ fputs _line_no_ _char_no_ _log_stream_ fput-position " in '" _log_stream_ fputs _file_name_ _file_name_ mlength _log_stream_ fputs "':\n" _log_stream_ fputs
+  _line_no_ _char_no_ _file_name_ _log_stream_ fput-lines-position
 end endmacro
 
 
