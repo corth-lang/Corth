@@ -2,17 +2,16 @@ include "dynamic/utils.corth"
 include "linux_x86/io/output.corth"
 include "core/stack.corth"
 
-macro sizeof(position) 24 endmacro
-macro sizeof(address)  64 endmacro
+macro sizeof(position) 16 endmacro
+macro sizeof(address)  48 endmacro
 
 macro ADDR.FILE  0  endmacro
 macro ADDR.PREV  8  endmacro
 macro ADDR.START 16 endmacro
-macro ADDR.END   40 endmacro
+macro ADDR.END   32 endmacro
 
 macro POS.LINE   0  endmacro
 macro POS.CHAR   8  endmacro
-macro POS.AT     16 endmacro
 
 namespace LOG
 macro INFO  "\x1b[1;97m[INFO]\x1b[0;97m "    endmacro
@@ -45,18 +44,17 @@ end
 
 
 proc generate-position
-  // int: line-no int: char-no int: at -> ptr: position
-  int int int -> ptr
+  // int: line-no int: char-no -> ptr: position
+  int int -> ptr
 in
   sizeof(position) malloc let position in
     position isn-null if
       // Store the arguments.
-      position POS.AT   + !64
       position POS.CHAR + !64
       position POS.LINE + !64
     else
       // Remove the unused arguments.
-      drop drop drop
+      drop drop
     end
 
     // Return the position.
@@ -66,24 +64,22 @@ end
 
 
 proc generate-address
-  // ptr: file-name ptr: previous int: start-line int: start-char int: start-at int: end-line int: end-char int: end-at -> ptr: address
-  ptr ptr int int int int int int -> ptr
+  // ptr: file-name ptr: previous int: start-line int: start-char int: end-line int: end-char -> ptr: address
+  ptr ptr int int int int -> ptr
   // Returns a dynamicly-placed object to store the address of token.
 in
   sizeof(address) malloc let address in
     address isn-null if
       // Store the arguments.
-      address ADDR.END   + POS.AT   + !64
       address ADDR.END   + POS.CHAR + !64
       address ADDR.END   + POS.LINE + !64
-      address ADDR.START + POS.AT   + !64
       address ADDR.START + POS.CHAR + !64
       address ADDR.START + POS.LINE + !64
       address ADDR.PREV  + !64
       address ADDR.FILE  + !64
     else
       // Remove the unused arguments.
-      drop drop drop drop drop drop drop drop
+      drop drop drop drop drop drop
     end
 
     // Return the address.
@@ -97,7 +93,7 @@ proc fput-position
   ptr file-desc ->
   // Prints a position.
 in let position file in
-  position POS.LINE + @64 file fputu ":" file fputs position POS.CHAR + @64 file fputu " (" file fputs position POS.AT + @64 file fputu ")" file fputs
+  position POS.LINE + @64 file fputu ":" file fputs position POS.CHAR + @64 file fputu
 end end
 
 
@@ -223,7 +219,7 @@ in let position file-name log-stream in
       return
     end
 
-    position POS.LINE + @64 position POS.CHAR + @64 position POS.AT + @64 let line-no char-no at in
+    position POS.LINE + @64 position POS.CHAR + @64 let line-no char-no in
       // Move the file pointer to the start,
       file 0 SEEK-WHENCE:SET lseek drop line-no dec file seek-line
 
