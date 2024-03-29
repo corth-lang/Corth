@@ -404,7 +404,7 @@ proc command.bootstrap -> in
             arg2 arg2-length inc to-dynamic8 executable !64
 
           else arg1 arg1-length "std" memcmp8-wl is-zero if
-             arg2 arg2-length inc to-dynamic8 std !64
+            arg2 arg2-length inc to-dynamic8 std !64
 
           else EXIT-ERROR exit drop end end // impossible
 
