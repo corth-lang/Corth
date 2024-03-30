@@ -1,0 +1,120 @@
+include "linux_x86/io/input.corth"
+include "linux_x86/io/output.corth"
+
+/*
+
+stream buffer structure:
+
+ 0- 7: file descriptor
+ 8-15: end pointer
+16-23: handle-pointer
+24-xx: buffer
+
+*/
+
+namespace strbuf
+
+// Macros that start with _ assume that _buffer_ is defined and are supposed not to be used outside this file.
+macro _fd     _buffer_      endmacro
+macro _end    _buffer_  8 + endmacro
+macro _handle _buffer_ 16 + endmacro
+macro _buffer _buffer_ 24 + endmacro
+
+macro _get-fd      strbuf:_fd     @64 endmacro
+macro _get-end     strbuf:_end    @64 endmacro
+macro _get-handle  strbuf:_handle @64 endmacro
+
+macro _set-fd      strbuf:_fd     !64 endmacro
+macro _set-end     strbuf:_end    !64 endmacro
+macro _set-handle  strbuf:_handle !64 endmacro
+
+macro _reset       strbuf:_buffer strbuf:_set-handle endmacro
+
+macro _capacity
+  strbuf:_get-end strbuf:_buffer -
+endmacro
+
+macro _size
+  strbuf:_get-handle strbuf:_buffer -
+endmacro
+
+macro _remain
+  strbuf:_get-end strbuf:_get-handle -
+endmacro
+
+macro _puts
+  strbuf:_get-fd fputs
+endmacro
+
+macro _flush
+  strbuf:_size is-pos if
+    strbuf:_buffer strbuf:_size strbuf:_puts
+    strbuf:_reset
+  end
+endmacro
+
+
+// file-desc: file-desc int: allocated-size ptr: buffer
+// Initializes an output stream buffer.
+macro init let _buffer_ in
+  _buffer_ + strbuf:_set-end
+  strbuf:_set-fd
+  strbuf:_reset
+end endmacro
+
+// Flushes the contents of the buffer to the file descriptor.
+macro flush let _buffer_ in strbuf:_flush end endmacro
+
+macro putc let char in peek _buffer_ in
+  strbuf:_remain is-zero if strbuf:_flush end
+
+  char strbuf:_get-handle !8
+  strbuf:_handle @inc64
+end end endmacro
+
+macro putnl
+  '\n' strbuf:putc
+endmacro
+
+proc puts
+  // ptr: stream-buffer ptr: string-address int: string-length -> ptr: stream-buffer
+  ptr ptr int -> ptr
+in let address length in peek _buffer_ in
+  strbuf:_remain let remain in
+    length remain min2 let write-length in
+      address strbuf:_get-handle write-length memcpy8
+      strbuf:_get-handle write-length + strbuf:_set-handle
+    end
+
+    length remain > if
+      strbuf:_flush
+      _buffer_ address remain + length remain - strbuf:puts drop
+    end
+  end
+end end end
+
+proc putu
+  // ptr: stream-buffer int: integer -> ptr: stream-buffer
+  ptr int -> ptr
+in let number in
+  // TODO: This could be optimized by rewriting a completely new integer to string converter.
+  memory buffer 20 in
+    buffer number intconvud let buffer-start in
+      buffer-start buffer 20 + buffer-start - strbuf:puts
+    end
+  end
+end end
+
+proc puti
+  // ptr: stream-buffer int: integer -> ptr: stream-buffer
+  ptr int -> ptr
+in let number in
+  // TODO: This could be optimized by rewriting a completely new integer to string converter.
+  memory buffer 20 in
+    buffer number intconvd let buffer-start in
+      buffer-start buffer 20 + buffer-start - strbuf:puts
+    end
+  end
+end end
+
+endnamespace

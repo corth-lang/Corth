@@ -1,0 +1,74 @@
+include "linux_x86/io/strbuf.corth"
+include "linux_x86/stdio.corth"
+include "linux_x86/timeit.corth"
+
+
+macro test-number 1000000 endmacro
+macro buffer-size 0x10000 endmacro
+
+
+proc writing-test-without-buffer file-desc -> in let file in
+  timeit:init
+    0 while dup test-number < do peek i in
+      15                     file fputu
+      " is a number"         file fputs
+      ','                    file fputc
+      ' '                    file fputc
+      "so is "               file fputs
+      -24                    file fputi
+                             file fputnl
+    end inc end drop
+
+    timeit:_break let sec nano in
+      "writing test without buffer took " puts sec putu " sec " puts nano 1000000 / putu " milliseconds.\n" puts
+    end
+  timeit:_end
+end end
+
+
+proc writing-test-with-buffer file-desc -> in let file in
+  timeit:init
+    memory buffer buffer-size in
+      file buffer-size buffer strbuf:init
+
+      0 while dup test-number < do peek i in
+        buffer
+        15                     strbuf:putu
+        " is a number"         strbuf:puts
+        ','                    strbuf:putc
+        ' '                    strbuf:putc
+        "so is "               strbuf:puts
+        -24                    strbuf:puti
+                               strbuf:putnl
+        drop
+      end inc end drop
+
+      buffer strbuf:flush
+    end
+
+    timeit:_break let sec nano in
+      "writing test with buffer took " puts sec putu " sec " puts nano 1000000 / putu " milliseconds.\n" puts
+    end
+  timeit:_end
+end end
+
+
+proc main
+  int int -> int
+in let argc argv in
+  // Open two files for both tests.
+  "without_buffer.txt" drop 0o777 creat
+  "with_buffer.txt"    drop 0o777 creat let file-without-buffer file-with-buffer in
+    file-without-buffer is-neg
+    file-with-buffer    is-neg | if
+      "could not open a test file.\n" puts
+      1 return
+    end
+
+    file-without-buffer writing-test-without-buffer
+    file-with-buffer writing-test-with-buffer
+
+    file-without-buffer fclose drop
+    file-with-buffer fclose drop
+  end
+end 0 end
