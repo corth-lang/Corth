@@ -131,23 +131,7 @@ macro @swp64
 endmacro
 
 
-proc memcpy8
-  // ptr: src ptr: dst int: len
-  // Copies a part of memory to another location.
-  // Bytes are read one-by-one.
-  ptr ptr int ->
-in
-  let src dst len in
-    0 while dup len < do peek i in
-      src i + @8
-      dst i + !8
-    end inc end drop
-  end
-end
 
-
-// memcpy64 only works a bit faster, no other functionality is changed.
-// If the length is known to be divisible by 8, it is recommended to use memcpy64.
 proc memcpy64
   // ptr: src ptr: dst int: len
   // Copies a part of memory to another location.
@@ -163,18 +147,21 @@ in
 end
 
 
-proc memcpy8i
+proc memcpy8
   // ptr: src ptr: dst int: len
   // Copies a part of memory to another location.
   // Bytes are read one-by-one.
-  // The copying is done in reverse order, aka from last item to first item.
   ptr ptr int ->
 in
   let src dst len in
-    len while dup isn-zero do dec let i in
+    0 while dup len 8 % < do peek i in
       src i + @8
       dst i + !8
-    i end end drop
+    end inc end drop
+
+    src len 8 % +
+    dst len 8 % +
+    len 8 / memcpy64
   end
 end
 
@@ -191,6 +178,24 @@ in
       src i + @64
       dst i + !64
     i end end drop
+  end
+end
+
+
+proc memcpy8i
+  // ptr: src ptr: dst int: len
+  // Copies a part of memory to another location.
+  // Bytes are read one-by-one.
+  // The copying is done in reverse order, aka from last item to first item.
+  ptr ptr int ->
+in
+  let src dst len in
+    len while dup len 8 lower-base < do dec let i in
+      src i + @8
+      dst i + !8
+    i end end drop
+
+    src dst len 8 / memcpy64i
   end
 end
 
