@@ -63,243 +63,329 @@ end end
 
 
 proc fput-alpha
-  ptr file-desc ->
-in let file in
-  nasm:convert-alpha let object in
-    object object mlength file fputs
-
-    object mfree drop
-  end
+  // ptr: output-stream ptr: name -> ptr: output-stream
+  ptr ptr -> ptr
+in nasm:convert-alpha let object in
+  object object mlength strbuf:puts
+  object mfree drop
 end end
 
 
 proc level
-  // int: id file-desc: output-file
-  int file-desc ->
-in let output-file in
-  ".level_" output-file fputs output-file fputu ":\n" output-file fputs
+  // int: id ptr: output-stream
+  int ptr ->
+in let level output-stream in
+  output-stream
+  ".level_" strbuf:puts
+  level     strbuf:putu
+  ":\n"     strbuf:puts
+  drop
 end end
 
 
 proc jump-level
-  // int: id file-desc: output-file
-  int file-desc ->
-in let output-file in
-  "    jmp     .level_" output-file fputs output-file fputu output-file fputnl
+  // int: id ptr: output-stream
+  int ptr ->
+in let level output-stream in
+  output-stream
+  "    jmp     .level_" strbuf:puts
+  level                 strbuf:putu
+  '\n'                  strbuf:putc
+  drop
 end end
 
 
 proc jump-zero-level
-  // int: id file-desc: output-file
-  int file-desc ->
-in let output-file in
-  "    jz      .level_" output-file fputs output-file fputu output-file fputnl
+  // int: id ptr: output-stream
+  int ptr ->
+in let level output-stream in
+  output-stream
+  "    jz      .level_" strbuf:puts
+  level                 strbuf:putu
+  '\n'                  strbuf:putc
+  drop
 end end
 
 
 proc mov-reg-zero
-  // ptr: register-name int: register-name-length file-desc: output-file
-  ptr int file-desc ->
-in let register-name register-name-length output-file in
-  "    xor     " output-file fputs register-name register-name-length output-file fputs
-  ", " output-file fputs register-name register-name-length output-file fputs output-file fputnl
+  // ptr: register-name int: register-name-length ptr: output-stream
+  ptr int ptr ->
+in let register-name register-name-length output-stream in
+  output-stream
+  "    xor     "                     strbuf:puts
+  register-name register-name-length strbuf:puts
+  ", "                               strbuf:puts
+  register-name register-name-length strbuf:puts
+                                     strbuf:putnl
+  drop
 end end
 
 
 proc mov-reg-immediate
-  // int: immediate ptr: register-name int: register-name-length file-desc: output-file
-  int ptr int file-desc ->
-in let immediate register-name register-name-length output-file in
+  // int: immediate ptr: register-name int: register-name-length ptr: output-stream
+  int ptr int ptr ->
+in let immediate register-name register-name-length output-stream in
+  output-stream
   immediate is-zero if
-    register-name register-name-length output-file nasm:mov-reg-zero
+    register-name register-name-length output-stream nasm:mov-reg-zero
   else
-    "    mov     " output-file fputs register-name register-name-length output-file fputs
-    ", " output-file fputs immediate output-file fputi output-file fputnl
+    "    mov     "                     strbuf:puts
+    register-name register-name-length strbuf:puts
+    ", "                               strbuf:puts
+    immediate                          strbuf:puti
+                                       strbuf:putnl
   end
+  drop
 end end
 
 
 proc mov-reg-global-address
-  // ptr: global-name ptr: register-name int: register-name-length file-desc: output-file
-  ptr ptr int file-desc ->
-in let global-name register-name register-name-length output-file in
-  "    mov     " output-file fputs register-name register-name-length output-file fputs
-  ", global_" output-file fputs global-name output-file nasm:fput-alpha output-file fputnl
+  // ptr: global-name ptr: register-name int: register-name-length ptr: output-stream
+  ptr ptr int ptr ->
+in let global-name register-name register-name-length output-stream in
+  output-stream
+  "    mov     "                     strbuf:puts
+  register-name register-name-length strbuf:puts
+  ", global_"                        strbuf:puts
+  global-name                        nasm:fput-alpha
+                                     strbuf:putnl
+  drop
 end end
 
 
 proc mov-reg-local
-  // int: offset ptr: register-name int: register-name-length file-desc: output-file
-  int ptr int file-desc ->
-in let offset register-name register-name-length output-file in
-  "    mov     " output-file fputs register-name register-name-length output-file fputs ", [local_ptr]\n" output-file fputs
+  // int: offset ptr: register-name int: register-name-length ptr: output-stream
+  int ptr int ptr ->
+in let offset register-name register-name-length output-stream in
+  output-stream
+  "    mov     "                       strbuf:puts
+  register-name register-name-length   strbuf:puts
+  ", [local_ptr]\n"                    strbuf:puts
 
   offset isn-zero if
-    "    add     " output-file fputs register-name register-name-length output-file fputs ", " output-file fputs offset output-file fputu output-file fputnl
+    "    add     "                     strbuf:puts
+    register-name register-name-length strbuf:puts
+    ", "                               strbuf:puts
+    offset                             strbuf:putu
+                                       strbuf:putnl
   end
+  drop
 end end
 
 
 proc mov-reg-@64local
-  // int: offset ptr: register-name int: register-name-length file-desc: output-file
-  int ptr int file-desc ->
-in let offset register-name register-name-length output-file in
-  "    mov     " output-file fputs register-name register-name-length output-file fputs ", [local_ptr]\n" output-file fputs
-  "    mov     " output-file fputs register-name register-name-length output-file fputs
-  ", [" output-file fputs register-name register-name-length output-file fputs
+  // int: offset ptr: register-name int: register-name-length ptr: output-stream
+  int ptr int ptr ->
+in let offset register-name register-name-length output-stream in
+  output-stream
+  "    mov     "                     strbuf:puts
+  register-name register-name-length strbuf:puts
+  ", [local_ptr]\n"                  strbuf:puts
+
+  "    mov     "                     strbuf:puts
+  register-name register-name-length strbuf:puts
+  ", ["                              strbuf:puts
+  register-name register-name-length strbuf:puts
 
   offset isn-zero if
-    " + " output-file fputs offset output-file fputu
+    " + "                            strbuf:puts
+    offset                           strbuf:putu
   end
-
-  "]\n" output-file fputs
+  "]\n"                              strbuf:puts
+  drop
 end end
 
 
 proc mov-reg-@64global
-  // ptr: global ptr: register-name int: register-name-length file-desc: output-file
-  ptr ptr int file-desc ->
-in let global register-name register-name-length output-file in
-  "    mov     " output-file fputs register-name register-name-length output-file fputs
-  ", [global_" output-file fputs global output-file nasm:fput-alpha "]\n" output-file fputs
+  // ptr: global ptr: register-name int: register-name-length ptr: output-stream
+  ptr ptr int ptr ->
+in let global register-name register-name-length output-stream in
+  output-stream
+  "    mov     "                     strbuf:puts
+  register-name register-name-length strbuf:puts
+  ", [global_"                       strbuf:puts
+  global                             nasm:fput-alpha
+  "]\n"                              strbuf:puts
+  drop
 end end
 
 
 proc mov-reg-data
-  // int: index ptr: register-name int: register-name-length file-desc: output-file
-  int ptr int file-desc ->
-in let index register-name register-name-length output-file in
-  "    mov     " output-file fputs register-name register-name-length output-file fputs
-  ", data_" output-file fputs index output-file fputu output-file fputnl
+  // int: index ptr: register-name int: register-name-length ptr: output-stream
+  int ptr int ptr ->
+in let index register-name register-name-length output-stream in
+  output-stream
+  "    mov     "                     strbuf:puts
+  register-name register-name-length strbuf:puts
+  ", data_"                          strbuf:puts
+  index                              strbuf:putu
+                                     strbuf:putnl
+  drop
 end end
 
 
 proc mov-reg-item
-  // ptr: item ptr: register-name int: register-name-length file-desc: output-file
-  ptr ptr int file-desc ->
-in let item register-name register-name-length output-file in
+  // ptr: item ptr: register-name int: register-name-length ptr: output-stream
+  ptr ptr int ptr ->
+in let item register-name register-name-length output-stream in
+  output-stream
   item stack-item:get-mode STACK-MODE:REAL = if
-    "    pop     " output-file fputs register-name register-name-length output-file fputs output-file fputnl
+    "    pop     "                     strbuf:puts
+    register-name register-name-length strbuf:puts
+                                       strbuf:putnl
 
-  else item stack-item:get-mode STACK-MODE:IMM         = if item stack-item:get-arg1 register-name register-name-length output-file nasm:mov-reg-immediate
-  else item stack-item:get-mode STACK-MODE:GLOBAL      = if item stack-item:get-arg1 register-name register-name-length output-file nasm:mov-reg-global-address
-  else item stack-item:get-mode STACK-MODE:@LOCALCONST = if item stack-item:get-arg1 register-name register-name-length output-file nasm:mov-reg-@64local
-  else item stack-item:get-mode STACK-MODE:LOCAL       = if item stack-item:get-arg1 register-name register-name-length output-file nasm:mov-reg-local
-  else item stack-item:get-mode STACK-MODE:@64LOCAL    = if item stack-item:get-arg1 register-name register-name-length output-file nasm:mov-reg-@64local
-  else item stack-item:get-mode STACK-MODE:@64GLOBAL   = if item stack-item:get-arg1 register-name register-name-length output-file nasm:mov-reg-@64global
-  else item stack-item:get-mode STACK-MODE:DATA        = if item stack-item:get-arg1 register-name register-name-length output-file nasm:mov-reg-data
+  else item stack-item:get-mode STACK-MODE:IMM         = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-immediate
+  else item stack-item:get-mode STACK-MODE:GLOBAL      = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-global-address
+  else item stack-item:get-mode STACK-MODE:@LOCALCONST = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-@64local
+  else item stack-item:get-mode STACK-MODE:LOCAL       = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-local
+  else item stack-item:get-mode STACK-MODE:@64LOCAL    = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-@64local
+  else item stack-item:get-mode STACK-MODE:@64GLOBAL   = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-@64global
+  else item stack-item:get-mode STACK-MODE:DATA        = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-data
   else
     LOG:ERR STDERR fputs "Unknown integer mode while trying to move integer to register.\n" STDERR fputs
     STDERR report-bug
     EXIT-CODE:ERROR exit drop
   end end end end end end end end
+  drop
 end end
 
 
 proc push-int-immediate
-  // int: immediate file-desc: output-file
-  int file-desc ->
+  // int: immediate ptr: output-stream
+  int ptr ->
   // NOTE: Uses R15.
-in let immediate output-file in
+in let immediate output-stream in
+  output-stream
   immediate nasm:is-signed-dword if
-    "    push    qword " output-file fputs immediate output-file fputi output-file fputnl
+    "    push    qword " strbuf:puts
+    immediate            strbuf:puti
+                         strbuf:putnl
   else
-    "    mov     r15, " output-file fputs immediate output-file fputi output-file fputnl
-    "    push    r15\n" output-file fputs
+    "    mov     r15, "  strbuf:puts
+    immediate            strbuf:puti
+                         strbuf:putnl
+    "    push    r15\n"  strbuf:puts
   end
+  drop
 end end
 
 
 proc push-global-address
-  // ptr: global-name file-desc: output-file
-  ptr file-desc ->
-in let global output-file in
-  "    push    global_" output-file fputs global output-file nasm:fput-alpha output-file fputnl
+  // ptr: global-name ptr: output-stream
+  ptr ptr ->
+in let global output-stream in
+  output-stream
+  "    push    global_" strbuf:puts
+  global                nasm:fput-alpha
+                        strbuf:putnl
+  drop
 end end
 
 
 proc push-@64local
-  // int: offset file-desc: output-file
-  int file-desc ->
-in let offset output-file in
-  "    mov     r15, [local_ptr]\n" output-file fputs
-  "    push    qword [r15" output-file fputs
+  // int: offset ptr: output-stream
+  int ptr ->
+in let offset output-stream in
+  output-stream
+  "    mov     r15, [local_ptr]\n" strbuf:puts
+  "    push    qword [r15"         strbuf:puts
 
   offset isn-zero if
-    " + " output-file fputs offset output-file fputu
+    " + "                          strbuf:puts
+    offset                         strbuf:putu
   end
 
-  "]\n" output-file fputs
+  "]\n"                            strbuf:puts
+  drop
 end end
 
 
 proc push-@8local
-  // int: offset file-desc: output-file
-  int file-desc ->
-in let offset output-file in
-  "rax" output-file nasm:mov-reg-zero
-  "    mov     r15, [local_ptr]\n" output-file fputs
-  "    mov     al, [r15" output-file fputs
+  // int: offset ptr: output-stream
+  int ptr ->
+in let offset output-stream in
+  output-stream
+  "rax" output-stream nasm:mov-reg-zero
+  "    mov     r15, [local_ptr]\n" strbuf:puts
+  "    mov     al, [r15"           strbuf:puts
 
   offset isn-zero if
-    " + " output-file fputs offset output-file fputu
+    " + "                          strbuf:puts
+    offset                         strbuf:putu
   end
 
-  "]\n" output-file fputs
-  "    push     rax\n" output-file fputs
+  "]\n" strbuf:puts
+  "    push     rax\n"             strbuf:puts
+  drop
 end end
 
 
 proc push-@64global
-  // ptr: global-name file-desc: output-file
-  ptr file-desc ->
-in let global output-file in
-  "    push    qword [global_" output-file fputs global output-file nasm:fput-alpha "]\n" output-file fputs
+  // ptr: global-name ptr: output-stream
+  ptr ptr ->
+in let global output-stream in
+  output-stream
+  "    push    qword [global_" strbuf:puts
+  global                       nasm:fput-alpha
+  "]\n"                        strbuf:puts
+  drop
 end end
 
 
 proc push-@8global
-  // ptr: global-name file-desc: output-file
-  ptr file-desc ->
-in let global output-file in
-  "rax" output-file nasm:mov-reg-zero
-  "    mov    al, byte [global_" output-file fputs global output-file nasm:fput-alpha "]\n" output-file fputs
-  "    push   rax\n" output-file fputs
+  // ptr: global-name ptr: output-stream
+  ptr ptr ->
+in let global output-stream in
+  output-stream
+  "rax" output-stream nasm:mov-reg-zero
+  "    mov    al, byte [global_" strbuf:puts
+  global                         nasm:fput-alpha
+  "]\n"                          strbuf:puts
+  "    push   rax\n"             strbuf:puts
+  drop
 end end
 
 
 proc push-local
-  // int: offset file-desc: output-file
-  int file-desc ->
-in let offset output-file in
-  "    push    qword [local_ptr]\n" output-file fputs
+  // int: offset ptr: output-stream
+  int ptr ->
+in let offset output-stream in
+  output-stream
+  "    push    qword [local_ptr]\n" strbuf:puts
 
   offset isn-zero if
-    "    add     qword [rsp], " output-file fputs offset output-file fputu output-file fputnl
+    "    add     qword [rsp], "     strbuf:puts
+    offset                          strbuf:putu
+                                    strbuf:putnl
   end
+  drop
 end end
 
 
 proc push-data
-  // int: index file-desc: output-file
-  int file-desc ->
-in let index output-file in
-  "    push    qword data_" output-file fputs index output-file fputu output-file fputnl
+  // int: index ptr: output-stream
+  int ptr ->
+in let index output-stream in
+  output-stream
+  "    push    qword data_" strbuf:puts
+  index                     strbuf:putu
+                            strbuf:putnl
+  drop
 end end
 
 
 proc push-int
-  // ptr: item file-desc: output-file
-  ptr file-desc ->
-in let item output-file in
-  item stack-item:get-mode STACK-MODE:IMM              = if item stack-item:get-arg1 output-file nasm:push-int-immediate
-  else item stack-item:get-mode STACK-MODE:GLOBAL      = if item stack-item:get-arg1 output-file nasm:push-global-address
-  else item stack-item:get-mode STACK-MODE:@64GLOBAL   = if item stack-item:get-arg1 output-file nasm:push-@64global
-  else item stack-item:get-mode STACK-MODE:@LOCALCONST = if item stack-item:get-arg1 output-file nasm:push-@64local
-  else item stack-item:get-mode STACK-MODE:LOCAL       = if item stack-item:get-arg1 output-file nasm:push-local
-  else item stack-item:get-mode STACK-MODE:@64LOCAL    = if item stack-item:get-arg1 output-file nasm:push-@64local
-  else item stack-item:get-mode STACK-MODE:@8LOCAL     = if item stack-item:get-arg1 output-file nasm:push-@8local
-  else item stack-item:get-mode STACK-MODE:DATA        = if item stack-item:get-arg1 output-file nasm:push-data
+  // ptr: item ptr: output-stream
+  ptr ptr ->
+in let item output-stream in
+  item stack-item:get-mode STACK-MODE:IMM              = if item stack-item:get-arg1 output-stream nasm:push-int-immediate
+  else item stack-item:get-mode STACK-MODE:GLOBAL      = if item stack-item:get-arg1 output-stream nasm:push-global-address
+  else item stack-item:get-mode STACK-MODE:@64GLOBAL   = if item stack-item:get-arg1 output-stream nasm:push-@64global
+  else item stack-item:get-mode STACK-MODE:@LOCALCONST = if item stack-item:get-arg1 output-stream nasm:push-@64local
+  else item stack-item:get-mode STACK-MODE:LOCAL       = if item stack-item:get-arg1 output-stream nasm:push-local
+  else item stack-item:get-mode STACK-MODE:@64LOCAL    = if item stack-item:get-arg1 output-stream nasm:push-@64local
+  else item stack-item:get-mode STACK-MODE:@8LOCAL     = if item stack-item:get-arg1 output-stream nasm:push-@8local
+  else item stack-item:get-mode STACK-MODE:DATA        = if item stack-item:get-arg1 output-stream nasm:push-data
   else item stack-item:get-mode STACK-MODE:REAL       != if
     LOG:ERR STDERR fputs "Unknown integer mode while trying to push an integer item.\n" STDERR fputs
     STDERR report-bug
@@ -309,11 +395,11 @@ end end
 
 
 proc push-bool
-  // ptr: item file-desc: output-file
-  ptr file-desc ->
-in let item output-file in
+  // ptr: item ptr: output-stream
+  ptr ptr ->
+in let item output-stream in
   item stack-item:get-mode STACK-MODE:@LOCALCONST = if
-    item stack-item:get-arg1 output-file nasm:push-@64local
+    item stack-item:get-arg1 output-stream nasm:push-@64local
 
   else item stack-item:get-mode STACK-MODE:REAL != if
     LOG:ERR STDERR fputs "Unknown bool mode while trying to push a boolean item.\n" STDERR fputs
@@ -324,10 +410,10 @@ end end
 
 
 proc push
-  // ptr: item file-desc: output-file
-  ptr file-desc ->
-in let item output-file in
-  item output-file
+  // ptr: item ptr: output-stream
+  ptr ptr ->
+in let item output-stream in
+  item output-stream
        item stack-item:get-type INT-TYPE:INT  = if nasm:push-int
   else item stack-item:get-type INT-TYPE:BOOL = if nasm:push-bool
   else drop drop
@@ -339,33 +425,30 @@ end end
 
 
 proc convert-int-to-real
-  // ptr: item file-desc: output-file
-  ptr file-desc ->
-in let item output-file in
-  item output-file nasm:push-int
-
+  // ptr: item ptr: output-stream
+  ptr ptr ->
+in let item output-stream in
+  item output-stream nasm:push-int
   STACK-MODE:REAL item stack-item:set-mode
 end end
 
 
 proc convert-bool-to-real
-  // ptr: item file-desc: output-file
-  ptr file-desc ->
-in let item output-file in
-  item output-file nasm:push-bool
-
+  // ptr: item ptr: output-stream
+  ptr ptr ->
+in let item output-stream in
+  item output-stream nasm:push-bool
   STACK-MODE:REAL item stack-item:set-mode
 end end
 
 
 proc convert-item-to-real
-  // ptr: item file-desc: output-file
-  ptr file-desc ->
-in let item output-file in
-  item output-file
-       item stack-item:get-type INT-TYPE:INT  = if nasm:convert-int-to-real
-  else item stack-item:get-type INT-TYPE:BOOL = if nasm:convert-bool-to-real
-  else drop drop
+  // ptr: item ptr: output-stream
+  ptr ptr ->
+in let item output-stream in
+       item stack-item:get-type INT-TYPE:INT  = if item output-stream nasm:convert-int-to-real
+  else item stack-item:get-type INT-TYPE:BOOL = if item output-stream nasm:convert-bool-to-real
+  else
     LOG:ERR STDERR fputs "Unknown intrinsic type to convert to real.\n" STDERR fputs
     STDERR report-bug
     EXIT-CODE:ERROR exit drop
@@ -374,31 +457,41 @@ end end
 
 
 proc add-int-immediate
-  // int: immediate file-desc: output-file
-  int file-desc ->
-in let immediate output-file in
+  // int: immediate ptr: output-stream
+  int ptr ->
+in let immediate output-stream in
   immediate is-zero if return end
 
+  output-stream
   immediate 1 = if
-    "    inc     qword [rsp]\n" output-file fputs
+    "    inc     qword [rsp]\n"        strbuf:puts
   else immediate 1 neg = if
-    "    dec     qword [rsp]\n" output-file fputs
+    "    dec     qword [rsp]\n"        strbuf:puts
   else immediate is-neg if
     immediate nasm:is-signed-dword if
-      "    sub     qword [rsp], " output-file fputs immediate neg output-file fputu output-file fputnl
+      "    sub     qword [rsp], "      strbuf:puts
+      immediate neg                    strbuf:putu
+                                       strbuf:putnl
     else
-      "    mov     r15, " output-file fputs immediate neg output-file fputu output-file fputnl
-      "    sub     qword [rsp], rax\n" output-file fputs
+      "    mov     r15, "              strbuf:puts
+      immediate neg                    strbuf:putu
+                                       strbuf:putnl
+      "    sub     qword [rsp], rax\n" strbuf:puts
     end
 
   else
     immediate nasm:is-signed-dword if
-      "    add     qword [rsp], " output-file fputs immediate output-file fputu output-file fputnl
+      "    add     qword [rsp], "      strbuf:puts
+      immediate                        strbuf:putu
+                                       strbuf:putnl
     else
-      "    mov     r15, " output-file fputs immediate output-file fputu output-file fputnl
-      "    add     qword [rsp], rax\n" output-file fputs
+      "    mov     r15, "              strbuf:puts
+      immediate                        strbuf:putu
+                                       strbuf:putnl
+      "    add     qword [rsp], rax\n" strbuf:puts
     end
   end end end
+  drop
 end end
 
 endnamespace

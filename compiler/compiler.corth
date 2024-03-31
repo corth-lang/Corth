@@ -1,6 +1,8 @@
 include "linux_x86/sys.corth"
 include "linux_x86/io/output.corth"
 include "linux_x86/io/input.corth"
+include "linux_x86/io/strbuf.corth"
+
 include "core/stack.corth"
 include "core/arithmetic.corth"
 include "core/memory.corth"
@@ -374,9 +376,9 @@ end end
 
 
 proc add-intrinsic
-  // ptr: token-address ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file file-desc: log-stream ->
-  ptr ptr ptr ptr file-desc file-desc ->
-in let token-address local-stack local-stack-length peeked-item output-file log-stream in
+  // ptr: token-address ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream file-desc: log-stream ->
+  ptr ptr ptr ptr ptr file-desc ->
+in let token-address local-stack local-stack-length peeked-item output-stream log-stream in
   2 is-items-available ! if invalid-usage-of-intrinsic end
 
   pop-item pop-item let item2 item1 in
@@ -393,8 +395,8 @@ in let token-address local-stack local-stack-length peeked-item output-file log-
       else
         INT-TYPE:INT push-real
 
-        item2          output-file nasm:push-int
-        item1 stack-item:get-arg1 output-file nasm:add-int-immediate
+        item2 output-stream nasm:push-int
+        item1 stack-item:get-arg1 output-stream nasm:add-int-immediate
       end end
 
     else item2 stack-item:get-mode STACK-MODE:IMM = if
@@ -404,17 +406,19 @@ in let token-address local-stack local-stack-length peeked-item output-file log-
       else
         INT-TYPE:INT push-real
 
-        item1          output-file nasm:push-int
-        item2 stack-item:get-arg1 output-file nasm:add-int-immediate
+        item1 output-stream nasm:push-int
+        item2 stack-item:get-arg1 output-stream nasm:add-int-immediate
       end
 
     else
       INT-TYPE:INT push-real
 
-      item2 "rax" output-file nasm:mov-reg-item
-      item1       output-file nasm:push-int
+      item2 "rax" output-stream nasm:mov-reg-item
+      item1       output-stream nasm:push-int
 
-      "    add     [rsp], rax\n" output-file fputs
+      output-stream
+      "    add     [rsp], rax\n" strbuf:puts
+      drop
     end end
 
     item1 stack-item:mfree
@@ -444,10 +448,10 @@ end end
 
 
 proc load-intrinsic
-  // ptr: token-address int: intrinsic ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file file-desc: log-stream ->
-  ptr int ptr ptr ptr file-desc file-desc ->
+  // ptr: token-address int: intrinsic ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream file-desc: log-stream ->
+  ptr int ptr ptr ptr ptr file-desc ->
   // NOTE: Register is one of 'al', 'ax', 'eax', 'rax'.
-in let token-address intrinsic local-stack local-stack-length peeked-item output-file log-stream in
+in let token-address intrinsic local-stack local-stack-length peeked-item output-stream log-stream in
   1 is-items-available ! if invalid-usage-of-intrinsic end
 
   pop-item let item in
@@ -466,28 +470,39 @@ in let token-address intrinsic local-stack local-stack-length peeked-item output
     INT-TYPE:INT push-real
 
     intrinsic INTRINSIC:LOAD64 = if
-      item "rbx" output-file nasm:mov-reg-item
+      item "rbx" output-stream nasm:mov-reg-item
 
-      "    push    qword [rbx]\n" output-file fputs
+      output-stream
+      "    push    qword [rbx]\n" strbuf:puts
+      drop
 
     else
-      item "rbx" output-file nasm:mov-reg-item
-           "rax" output-file nasm:mov-reg-zero
+      item "rbx" output-stream nasm:mov-reg-item
+           "rax" output-stream nasm:mov-reg-zero
 
-      "    mov     " output-file fputs intrinsic get-register-name output-file fputs ", [rbx]\n" output-file fputs
-      "    push    rax\n" output-file fputs
+      output-stream
+      "    mov     "              strbuf:puts
+      intrinsic get-register-name strbuf:puts
+      ", [rbx]\n"                 strbuf:puts
+      "    push    rax\n"         strbuf:puts
+      drop
     end
   end
 end end
 
 
 proc store-intrinsic-sub
-  // ptr: value-item ptr: address-item int: address-item-length ptr: token-address int: intrinsic file-desc: output-file file-desc: log-stream ->
-  ptr ptr int ptr int file-desc file-desc ->
-in let value-item address-item address-item-length token-address intrinsic output-file log-stream in
+  // ptr: value-item ptr: address-item int: address-item-length ptr: token-address int: intrinsic ptr: output-stream file-desc: log-stream ->
+  ptr ptr int ptr int ptr file-desc ->
+in let value-item address-item address-item-length token-address intrinsic output-stream log-stream in
+  output-stream
+
   value-item stack-item:get-mode STACK-MODE:REAL = if
     intrinsic INTRINSIC:STORE64 = if
-      "    pop     qword [" output-file fputs address-item address-item-length output-file fputs "]\n" output-file fputs
+      "    pop     qword ["            strbuf:puts
+      address-item address-item-length strbuf:puts
+      "]\n"                            strbuf:puts
+      drop
       return
     end
   end
@@ -495,13 +510,24 @@ in let value-item address-item address-item-length token-address intrinsic outpu
   value-item stack-item:get-mode STACK-MODE:IMM = if
     intrinsic INTRINSIC:STORE64 = if
       value-item stack-item:get-arg1 nasm:is-signed-dword if
-        "    mov     qword [" output-file fputs address-item address-item-length output-file fputs
-        "], " output-file fputs value-item stack-item:get-arg1 output-file fputi output-file fputnl
+        "    mov     qword ["            strbuf:puts
+        address-item address-item-length strbuf:puts
+        "], "                            strbuf:puts
+        value-item stack-item:get-arg1   strbuf:puti
+                                         strbuf:putnl
+
+        drop
         return
       end
+
     else intrinsic INTRINSIC:STORE8 = if
-      "    mov     byte [" output-file fputs address-item address-item-length output-file fputs
-      "], " output-file fputs value-item stack-item:get-arg1 output-file fputi output-file fputnl
+      "    mov     byte ["             strbuf:puts
+      address-item address-item-length strbuf:puts
+      "], "                            strbuf:puts
+      value-item stack-item:get-arg1   strbuf:puti
+                                       strbuf:putnl
+
+      drop
       return
     end end
   end
@@ -513,8 +539,14 @@ in let value-item address-item address-item-length token-address intrinsic outpu
       1 exit drop
     end
 
-    "    mov     qword [" output-file fputs address-item address-item-length output-file fputs
-    "], global_" output-file fputs value-item stack-item:get-arg1 output-file nasm:fput-alpha output-file fputnl
+    "    mov     qword ["            strbuf:puts
+    address-item address-item-length strbuf:puts
+    "], global_"                     strbuf:puts
+
+    value-item stack-item:get-arg1 nasm:fput-alpha
+
+    strbuf:putnl
+    drop
     return
   end
 
@@ -525,30 +557,40 @@ in let value-item address-item address-item-length token-address intrinsic outpu
       1 exit drop
     end
 
-    "    mov     qword [" output-file fputs address-item address-item-length output-file fputs
-      "], data_" output-file fputs value-item stack-item:get-arg1 output-file fputu output-file fputnl
+    "    mov     qword [" strbuf:puts
+    address-item address-item-length strbuf:puts
+    "], data_" strbuf:puts
+    value-item stack-item:get-arg1 strbuf:putu
+    strbuf:putnl
+    drop
     return
   end
 
-  value-item   "rax" output-file nasm:mov-reg-item
-  "    mov     [" output-file fputs address-item address-item-length output-file fputs
-  "], " output-file fputs intrinsic get-register-name output-file fputs output-file fputnl
+  value-item "rax" output-stream nasm:mov-reg-item
+  "    mov     [" strbuf:puts
+  address-item address-item-length strbuf:puts
+  "], " strbuf:puts
+  intrinsic get-register-name strbuf:puts
+  strbuf:putnl
+
+  drop
 end end
 
 
 
 proc store-intrinsic
-  // ptr: token-address int: intrinsic ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file file-desc: log-stream ->
-  ptr int ptr ptr ptr file-desc file-desc ->
+  // ptr: token-address int: intrinsic ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream file-desc: log-stream ->
+  ptr int ptr ptr ptr ptr file-desc ->
   // NOTE: Register is one of 'bl', 'bx', 'ebx', 'rbx'.
-in let token-address intrinsic local-stack local-stack-length peeked-item output-file log-stream in
+in let token-address intrinsic local-stack local-stack-length peeked-item output-stream log-stream in
   2 is-items-available ! if invalid-usage-of-intrinsic end
 
+  output-stream
   pop-item pop-item let address-item value-item in
     value-item   stack-item:get-type INT-TYPE:INT != if invalid-usage-of-intrinsic end
     address-item stack-item:get-type INT-TYPE:INT != if invalid-usage-of-intrinsic end
 
-    local-stack local-stack-length output-file local-stack.convert-@local-real
+    local-stack local-stack-length output-stream local-stack.convert-@local-real
 
     address-item stack-item:get-mode STACK-MODE:IMM = if
       LOG:ERR log-stream fputs "Store intrinsics do not take immediate value as address argument.\n" log-stream fputs
@@ -557,7 +599,7 @@ in let token-address intrinsic local-stack local-stack-length peeked-item output
 
     else address-item stack-item:get-mode STACK-MODE:LOCAL = if
       // TODO: Fix this disgusting hack.
-      "    mov     rbx, [local_ptr]\n" output-file fputs
+      "    mov     rbx, [local_ptr]\n" strbuf:puts
 
       memory buffer 20 in
         buffer address-item stack-item:get-arg1 intconvud let buffer-start in
@@ -566,21 +608,22 @@ in let token-address intrinsic local-stack local-stack-length peeked-item output
       end
 
       let object in
-        value-item object object mlength token-address intrinsic output-file log-stream store-intrinsic-sub
+        value-item object object mlength token-address intrinsic output-stream log-stream store-intrinsic-sub
         object mfree drop
       end
 
     else address-item stack-item:get-mode STACK-MODE:GLOBAL = if
       address-item stack-item:get-arg1 nasm:global-label let label in
-        value-item label label mlength token-address intrinsic output-file log-stream store-intrinsic-sub
+        value-item label label mlength token-address intrinsic output-stream log-stream store-intrinsic-sub
         label mfree drop
       end
 
     else
-      address-item "rbx" output-file nasm:mov-reg-item
-      value-item "rbx" token-address intrinsic output-file log-stream store-intrinsic-sub
+      address-item "rbx" output-stream nasm:mov-reg-item
+      value-item "rbx" token-address intrinsic output-stream log-stream store-intrinsic-sub
     end end end
   end
+  drop
 end end
 
 
@@ -597,40 +640,47 @@ end end
 
 
 proc multiply-immediate-any
-  // bool: upper int: immediate ptr: item ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file ->
-  bool int ptr ptr ptr ptr file-desc ->
-in let upper immediate item local-stack local-stack-length peeked-item output-file in
+  // bool: upper int: immediate ptr: item ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream ->
+  bool int ptr ptr ptr ptr ptr ->
+in let upper immediate item local-stack local-stack-length peeked-item output-stream in
   immediate get-log2 let log2 in
     INT-TYPE:INT push-real
 
     // TODO: Multiplication by numbers that are not whole powers of 2 without using the 'mul' instruction is possible.
+    output-stream
     log2 is-neg if
-      item      "rax" output-file nasm:mov-reg-item
-      immediate "rbx" output-file nasm:mov-reg-immediate
+      item      "rax" output-stream nasm:mov-reg-item
+      immediate "rbx" output-stream nasm:mov-reg-immediate
 
-      "    imul    rbx\n" output-file fputs
-      upper  if "    push    rdx\n" else "    push    rax\n" end output-file fputs
+      "    imul    rbx\n" strbuf:puts
+
+      upper if
+        "    push    rdx\n"
+      else
+        "    push    rax\n"
+      end strbuf:puts
 
     else
-      upper if
-        item output-file nasm:push-int
+      item output-stream nasm:push-int
 
-        "    sar     qword [rsp], " output-file fputs 64 log2 - output-file fputu output-file fputnl
+      upper if
+        "    sar     qword [rsp], " strbuf:puts
+        64 log2 -                   strbuf:putu
 
       else
-        item output-file nasm:push-int
-
-        "    sal    qword [rsp], " output-file fputs log2 output-file fputu output-file fputnl
-      end
+        "    sal     qword [rsp], " strbuf:puts
+        log2                        strbuf:putu
+      end strbuf:putnl
     end
+    drop
   end
 end end
 
 
 proc multiply-intrinsic
-  // ptr: token-address bool: upper ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file file-desc: log-stream ->
-  ptr bool ptr ptr ptr file-desc file-desc ->
-in let token-address upper local-stack local-stack-length peeked-item output-file log-stream in
+  // ptr: token-address bool: upper ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream file-desc: log-stream ->
+  ptr bool ptr ptr ptr ptr file-desc ->
+in let token-address upper local-stack local-stack-length peeked-item output-stream log-stream in
   2 is-items-available ! if invalid-usage-of-intrinsic end
 
   pop-item pop-item let item2 item1 in
@@ -645,20 +695,26 @@ in let token-address upper local-stack local-stack-length peeked-item output-fil
 
         push-int-immediate
       else
-        upper item1 stack-item:get-arg1 item2 local-stack local-stack-length peeked-item output-file multiply-immediate-any
+        upper item1 stack-item:get-arg1 item2 local-stack local-stack-length peeked-item output-stream multiply-immediate-any
       end
 
     else
       item2 stack-item:get-mode STACK-MODE:IMM = if
-        upper item2 stack-item:get-arg1 item1 local-stack local-stack-length peeked-item output-file multiply-immediate-any
+        upper item2 stack-item:get-arg1 item1 local-stack local-stack-length peeked-item output-stream multiply-immediate-any
       else
         INT-TYPE:INT push-real
 
-        item2 "rbx" output-file nasm:mov-reg-item
-        item1 "rax" output-file nasm:mov-reg-item
+        item2 "rbx" output-stream nasm:mov-reg-item
+        item1 "rax" output-stream nasm:mov-reg-item
 
-        "    imul    rbx\n" output-file fputs
-        upper  if "    push    rdx\n" else "    push    rax\n" end output-file fputs
+        output-stream
+        "    imul    rbx\n" strbuf:puts
+        upper  if
+          "    push    rdx\n"
+        else
+          "    push    rax\n"
+        end strbuf:puts
+        drop
       end
     end
 
@@ -669,20 +725,26 @@ end end
 
 
 proc bitwise-and-any-immediate
-  // ptr: item int: immediate ptr: local-stack ptr: local-stack-length file-desc: output-file ->
-  ptr int ptr ptr file-desc ->
-in let item immediate local-stack local-stack-length output-file in
-  item output-file nasm:push-int
+  // ptr: item int: immediate ptr: local-stack ptr: local-stack-length ptr: output-stream ->
+  ptr int ptr ptr ptr ->
+in let item immediate local-stack local-stack-length output-stream in
+  item output-stream nasm:push-int
 
-  "    and     qword [rsp], " output-file fputs immediate output-file fputu output-file fputnl
+  output-stream
+  "    and     qword [rsp], " strbuf:puts
+  immediate                   strbuf:putu
+  '\n'                        strbuf:putc
+  drop
 end end
 
 
 proc divide-intrinsic
-  // ptr: token-address bool: modulo ptr: local-stack ptr: local-stack-length ptr: peeked-item file-desc: output-file file-desc: log-stream ->
-  ptr bool ptr ptr ptr file-desc file-desc ->
-in let token-address modulo local-stack local-stack-length peeked-item output-file log-stream in
+  // ptr: token-address bool: modulo ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream file-desc: log-stream ->
+  ptr bool ptr ptr ptr ptr file-desc ->
+in let token-address modulo local-stack local-stack-length peeked-item output-stream log-stream in
   2 is-items-available ! if invalid-usage-of-intrinsic end
+
+  output-stream
 
   pop-item pop-item let item2 item1 in
     item1 stack-item:get-type INT-TYPE:INT != if invalid-usage-of-intrinsic end
@@ -694,38 +756,42 @@ in let token-address modulo local-stack local-stack-length peeked-item output-fi
 
         // TODO: Division/modulo by numbers that are not whole powers of 2 without using the 'div' instruction is possible.
         log2 isn-neg modulo & if
-          item1 item2 stack-item:get-arg1 dec local-stack local-stack-length output-file bitwise-and-any-immediate
+          item1 item2 stack-item:get-arg1 dec local-stack local-stack-length output-stream bitwise-and-any-immediate
 
         else
-          item2 "rbx" output-file nasm:mov-reg-item
-          item1 "rax" output-file nasm:mov-reg-item
-                "rdx" output-file nasm:mov-reg-zero
+          item2 "rbx" output-stream nasm:mov-reg-item
+          item1 "rax" output-stream nasm:mov-reg-item
+                "rdx" output-stream nasm:mov-reg-zero
 
-          "    idiv    rbx\n" output-file fputs
-          modulo if "    push    rdx\n" else "    push    rax\n" end output-file fputs
+          "    idiv    rbx\n" strbuf:puts
+          modulo if   "    push    rdx\n"
+                 else "    push    rax\n" end strbuf:puts
         end
       end
 
     else
       INT-TYPE:INT push-real
 
-      item2 "rbx" output-file nasm:mov-reg-item
-      item1 "rax" output-file nasm:mov-reg-item
-            "rdx" output-file nasm:mov-reg-zero
+      item2 "rbx" output-stream nasm:mov-reg-item
+      item1 "rax" output-stream nasm:mov-reg-item
+            "rdx" output-stream nasm:mov-reg-zero
 
-      "    idiv    rbx\n" output-file fputs
-      modulo if "    push    rdx\n" else "    push    rax\n" end output-file fputs
+      "    idiv    rbx\n" strbuf:puts
+      modulo if   "    push    rdx\n"
+             else "    push    rax\n" end strbuf:puts
     end
 
     item1 stack-item:mfree
     item2 stack-item:mfree
   end
+
+  drop
 end end
 
 
 proc compile-intrinsic
-  // ptr: source-name file-desc: source-file file-desc: output-file
-  ptr file-desc file-desc
+  // ptr: source-name file-desc: source-file ptr: output-stream
+  ptr file-desc ptr
   // ptr: line-no ptr: char-no
   ptr ptr
   // ptr: procedure-name ptr: procedure-address
@@ -742,7 +808,7 @@ proc compile-intrinsic
   // Compiles an intrinsic in a Corth procedure.
   // Compilation warning and errors are dumped to log-stream.
 in let
-  source-name source-file output-file
+  source-name source-file output-stream
   line-no char-no
   procedure-name procedure-address
   local-stack local-stack-length
@@ -750,7 +816,7 @@ in let
   token-type token-address token-arg
   log-stream
 in
-       token-arg INTRINSIC:ADD = if token-address local-stack local-stack-length peeked-item output-file log-stream add-intrinsic
+       token-arg INTRINSIC:ADD = if token-address local-stack local-stack-length peeked-item output-stream log-stream add-intrinsic
   else token-arg INTRINSIC:SUB = if
     // -------- Intrinsic '-' --------
     2 is-items-available ! if invalid-usage-of-intrinsic end
@@ -762,16 +828,18 @@ in
       item2 stack-item:get-mode STACK-MODE:IMM = if
         INT-TYPE:INT push-real
 
-        item1              output-file nasm:push-int
-        item2 stack-item:get-arg1 neg output-file nasm:add-int-immediate
+        item1              output-stream nasm:push-int
+        item2 stack-item:get-arg1 neg output-stream nasm:add-int-immediate
 
       else
         INT-TYPE:INT push-real
 
-        item2 "rax" output-file nasm:mov-reg-item
-        item1       output-file nasm:push-int
+        item2 "rax" output-stream nasm:mov-reg-item
+        item1       output-stream nasm:push-int
 
-        "    sub     [rsp], rax\n" output-file fputs
+        output-stream
+        "    sub     [rsp], rax\n" strbuf:puts
+        drop
       end
 
       item1 stack-item:mfree
@@ -788,10 +856,12 @@ in
 
       INT-TYPE:INT push-real
 
-      item2 "rax" output-file nasm:mov-reg-item
-      item1       output-file nasm:push-int
+      item2 "rax" output-stream nasm:mov-reg-item
+      item1       output-stream nasm:push-int
 
-      "    or      [rsp], rax\n" output-file fputs
+      output-stream
+      "    or      [rsp], rax\n" strbuf:puts
+      drop
 
       item1 stack-item:mfree
       item2 stack-item:mfree
@@ -807,10 +877,12 @@ in
 
       INT-TYPE:INT push-real
 
-      item2 "rax" output-file nasm:mov-reg-item
-      item1       output-file nasm:push-int
+      item2 "rax" output-stream nasm:mov-reg-item
+      item1       output-stream nasm:push-int
 
-      "    and     [rsp], rax\n" output-file fputs
+      output-stream
+      "    and     [rsp], rax\n" strbuf:puts
+      drop
 
       item1 stack-item:mfree
       item2 stack-item:mfree
@@ -826,10 +898,12 @@ in
 
       INT-TYPE:INT push-real
 
-      item2 "rax" output-file nasm:mov-reg-item
-      item1       output-file nasm:push-int
+      item2 "rax" output-stream nasm:mov-reg-item
+      item1       output-stream nasm:push-int
 
-      "    xor     [rsp], rax\n" output-file fputs
+      output-stream
+      "    xor     [rsp], rax\n" strbuf:puts
+      drop
 
       item1 stack-item:mfree
       item2 stack-item:mfree
@@ -849,27 +923,30 @@ in
       else
         INT-TYPE:INT push-real
 
-        item output-file nasm:push-int
-        "    not     qword [rsp]\n" output-file fputs
+        item output-stream nasm:push-int
+
+        output-stream
+        "    not     qword [rsp]\n" strbuf:puts
+        drop
       end
 
       item stack-item:mfree
     end
 
-  else token-arg INTRINSIC:MUL     = if token-address false local-stack local-stack-length peeked-item output-file log-stream multiply-intrinsic
-  else token-arg INTRINSIC:MUL2    = if token-address true  local-stack local-stack-length peeked-item output-file log-stream multiply-intrinsic
-  else token-arg INTRINSIC:DIV     = if token-address false local-stack local-stack-length peeked-item output-file log-stream divide-intrinsic
-  else token-arg INTRINSIC:MOD     = if token-address true  local-stack local-stack-length peeked-item output-file log-stream divide-intrinsic
+  else token-arg INTRINSIC:MUL     = if token-address false local-stack local-stack-length peeked-item output-stream log-stream multiply-intrinsic
+  else token-arg INTRINSIC:MUL2    = if token-address true  local-stack local-stack-length peeked-item output-stream log-stream multiply-intrinsic
+  else token-arg INTRINSIC:DIV     = if token-address false local-stack local-stack-length peeked-item output-stream log-stream divide-intrinsic
+  else token-arg INTRINSIC:MOD     = if token-address true  local-stack local-stack-length peeked-item output-stream log-stream divide-intrinsic
 
-  else token-arg INTRINSIC:LOAD8   = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream load-intrinsic
-  else token-arg INTRINSIC:LOAD16  = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream load-intrinsic
-  else token-arg INTRINSIC:LOAD32  = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream load-intrinsic
-  else token-arg INTRINSIC:LOAD64  = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream load-intrinsic
+  else token-arg INTRINSIC:LOAD8   = if token-address token-arg local-stack local-stack-length peeked-item output-stream log-stream load-intrinsic
+  else token-arg INTRINSIC:LOAD16  = if token-address token-arg local-stack local-stack-length peeked-item output-stream log-stream load-intrinsic
+  else token-arg INTRINSIC:LOAD32  = if token-address token-arg local-stack local-stack-length peeked-item output-stream log-stream load-intrinsic
+  else token-arg INTRINSIC:LOAD64  = if token-address token-arg local-stack local-stack-length peeked-item output-stream log-stream load-intrinsic
 
-  else token-arg INTRINSIC:STORE8  = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream store-intrinsic
-  else token-arg INTRINSIC:STORE16 = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream store-intrinsic
-  else token-arg INTRINSIC:STORE32 = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream store-intrinsic
-  else token-arg INTRINSIC:STORE64 = if token-address token-arg local-stack local-stack-length peeked-item output-file log-stream store-intrinsic
+  else token-arg INTRINSIC:STORE8  = if token-address token-arg local-stack local-stack-length peeked-item output-stream log-stream store-intrinsic
+  else token-arg INTRINSIC:STORE16 = if token-address token-arg local-stack local-stack-length peeked-item output-stream log-stream store-intrinsic
+  else token-arg INTRINSIC:STORE32 = if token-address token-arg local-stack local-stack-length peeked-item output-stream log-stream store-intrinsic
+  else token-arg INTRINSIC:STORE64 = if token-address token-arg local-stack local-stack-length peeked-item output-stream log-stream store-intrinsic
 
   else token-arg INTRINSIC:SYSCALL0 = if
     // -------- Intrinsic 'syscall0' --------
@@ -881,10 +958,12 @@ in
 
       INT-TYPE:INT push-real
 
-      op-item   "rax" output-file nasm:mov-reg-item
+      op-item   "rax" output-stream nasm:mov-reg-item
 
-      "    syscall\n"     output-file fputs
-      "    push    rax\n" output-file fputs
+      output-stream
+      "    syscall\n"     strbuf:puts
+      "    push    rax\n" strbuf:puts
+      drop
 
       op-item   stack-item:mfree
     end
@@ -900,11 +979,13 @@ in
 
       INT-TYPE:INT push-real
 
-      op-item   "rax" output-file nasm:mov-reg-item
-      arg-item1 "rdi" output-file nasm:mov-reg-item
+      op-item   "rax" output-stream nasm:mov-reg-item
+      arg-item1 "rdi" output-stream nasm:mov-reg-item
 
-      "    syscall\n"     output-file fputs
-      "    push    rax\n" output-file fputs
+      output-stream
+      "    syscall\n"     strbuf:puts
+      "    push    rax\n" strbuf:puts
+      drop
 
       arg-item1 stack-item:mfree
       op-item   stack-item:mfree
@@ -922,12 +1003,14 @@ in
 
       INT-TYPE:INT push-real
 
-      op-item   "rax" output-file nasm:mov-reg-item
-      arg-item2 "rsi" output-file nasm:mov-reg-item
-      arg-item1 "rdi" output-file nasm:mov-reg-item
+      op-item   "rax" output-stream nasm:mov-reg-item
+      arg-item2 "rsi" output-stream nasm:mov-reg-item
+      arg-item1 "rdi" output-stream nasm:mov-reg-item
 
-      "    syscall\n"     output-file fputs
-      "    push    rax\n" output-file fputs
+      output-stream
+      "    syscall\n"     strbuf:puts
+      "    push    rax\n" strbuf:puts
+      drop
 
       arg-item1 stack-item:mfree
       arg-item2 stack-item:mfree
@@ -947,13 +1030,15 @@ in
 
       INT-TYPE:INT push-real
 
-      op-item   "rax" output-file nasm:mov-reg-item
-      arg-item3 "rdx" output-file nasm:mov-reg-item
-      arg-item2 "rsi" output-file nasm:mov-reg-item
-      arg-item1 "rdi" output-file nasm:mov-reg-item
+      op-item   "rax" output-stream nasm:mov-reg-item
+      arg-item3 "rdx" output-stream nasm:mov-reg-item
+      arg-item2 "rsi" output-stream nasm:mov-reg-item
+      arg-item1 "rdi" output-stream nasm:mov-reg-item
 
-      "    syscall\n"     output-file fputs
-      "    push    rax\n" output-file fputs
+      output-stream
+      "    syscall\n"     strbuf:puts
+      "    push    rax\n" strbuf:puts
+      drop
 
       arg-item1 stack-item:mfree
       arg-item2 stack-item:mfree
@@ -975,14 +1060,16 @@ in
 
       INT-TYPE:INT push-real
 
-      op-item   "rax" output-file nasm:mov-reg-item
-      arg-item4 "r10" output-file nasm:mov-reg-item
-      arg-item3 "rdx" output-file nasm:mov-reg-item
-      arg-item2 "rsi" output-file nasm:mov-reg-item
-      arg-item1 "rdi" output-file nasm:mov-reg-item
+      op-item   "rax" output-stream nasm:mov-reg-item
+      arg-item4 "r10" output-stream nasm:mov-reg-item
+      arg-item3 "rdx" output-stream nasm:mov-reg-item
+      arg-item2 "rsi" output-stream nasm:mov-reg-item
+      arg-item1 "rdi" output-stream nasm:mov-reg-item
 
-      "    syscall\n"     output-file fputs
-      "    push    rax\n" output-file fputs
+      output-stream
+      "    syscall\n"     strbuf:puts
+      "    push    rax\n" strbuf:puts
+      drop
 
       arg-item1 stack-item:mfree
       arg-item2 stack-item:mfree
@@ -1006,15 +1093,17 @@ in
 
       INT-TYPE:INT push-real
 
-      op-item   "rax" output-file nasm:mov-reg-item
-      arg-item5 "r8"  output-file nasm:mov-reg-item
-      arg-item4 "r10" output-file nasm:mov-reg-item
-      arg-item3 "rdx" output-file nasm:mov-reg-item
-      arg-item2 "rsi" output-file nasm:mov-reg-item
-      arg-item1 "rdi" output-file nasm:mov-reg-item
+      op-item   "rax" output-stream nasm:mov-reg-item
+      arg-item5 "r8"  output-stream nasm:mov-reg-item
+      arg-item4 "r10" output-stream nasm:mov-reg-item
+      arg-item3 "rdx" output-stream nasm:mov-reg-item
+      arg-item2 "rsi" output-stream nasm:mov-reg-item
+      arg-item1 "rdi" output-stream nasm:mov-reg-item
 
-      "    syscall\n"     output-file fputs
-      "    push    rax\n" output-file fputs
+      output-stream
+      "    syscall\n"     strbuf:puts
+      "    push    rax\n" strbuf:puts
+      drop
 
       arg-item1 stack-item:mfree
       arg-item2 stack-item:mfree
@@ -1040,16 +1129,18 @@ in
 
       INT-TYPE:INT push-real
 
-      op-item   "rax" output-file nasm:mov-reg-item
-      arg-item6 "r9"  output-file nasm:mov-reg-item
-      arg-item5 "r8"  output-file nasm:mov-reg-item
-      arg-item4 "r10" output-file nasm:mov-reg-item
-      arg-item3 "rdx" output-file nasm:mov-reg-item
-      arg-item2 "rsi" output-file nasm:mov-reg-item
-      arg-item1 "rdi" output-file nasm:mov-reg-item
+      op-item   "rax" output-stream nasm:mov-reg-item
+      arg-item6 "r9"  output-stream nasm:mov-reg-item
+      arg-item5 "r8"  output-stream nasm:mov-reg-item
+      arg-item4 "r10" output-stream nasm:mov-reg-item
+      arg-item3 "rdx" output-stream nasm:mov-reg-item
+      arg-item2 "rsi" output-stream nasm:mov-reg-item
+      arg-item1 "rdi" output-stream nasm:mov-reg-item
 
-      "    syscall\n"     output-file fputs
-      "    push    rax\n" output-file fputs
+      output-stream
+      "    syscall\n"     strbuf:puts
+      "    push    rax\n" strbuf:puts
+      drop
 
       arg-item1 stack-item:mfree
       arg-item2 stack-item:mfree
@@ -1192,8 +1283,8 @@ end end
 
 
 proc compile-unreachable
-  // ptr: source-name file-desc: source-file file-desc: output-file
-  ptr ptr file-desc
+  // ptr: source-name file-desc: source-file ptr: output-stream
+  ptr file-desc ptr
   // ptr: line-no ptr: char-no
   ptr ptr
   // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
@@ -1222,7 +1313,7 @@ proc compile-unreachable
   // Consume tokens until an reachable code is received.
   // All of the tokens must be keywords as intrinsics can not allow branches.
 in let
-  source-name source-file output-file
+  source-name source-file output-stream
   line-no char-no
   macro-names macro-tokens macros-length
   procedure-name procedure-address
@@ -1256,7 +1347,7 @@ in
               // Overwrite the contents of the local-stack with the old contents.
               start-stack local-stack local-stack-length local-stack.overwrite
 
-              start-id output-file nasm:level
+              start-id output-stream nasm:level
 
               // Deallocate 'start-stack'.
               start-stack _local-stack.mfree
@@ -1278,7 +1369,7 @@ in
                 end
               end end inc end drop
 
-              old-local-memory-end local-stack local-stack-length output-file local-stack.convert-deleted-real
+              old-local-memory-end local-stack local-stack-length output-stream local-stack.convert-deleted-real
 
               old-local-memory-end local-memory-end !64
 
@@ -1316,7 +1407,7 @@ in
                 end
               end end inc end drop
 
-              old-local-memory-end local-stack local-stack-length output-file local-stack.convert-deleted-real
+              old-local-memory-end local-stack local-stack-length output-stream local-stack.convert-deleted-real
 
               old-local-memory-end local-memory-end !64
 
@@ -1337,8 +1428,8 @@ end end
 
 
 proc compile-keyword
-  // ptr: source-name file-desc: source-file file-desc: output-file
-  ptr ptr file-desc
+  // ptr: source-name file-desc: source-file ptr: output-stream
+  ptr file-desc ptr
   // ptr: line-no ptr: char-no
   ptr ptr
   // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
@@ -1369,7 +1460,7 @@ proc compile-keyword
   // bool: end-of-procedure
   bool
 in let
-  source-name source-file output-file
+  source-name source-file output-stream
   line-no char-no
   macro-names macro-tokens macros-length
   procedure-name procedure-address
@@ -1390,7 +1481,7 @@ in
     levels-list list64:length is-zero if
       // -------- End of 'proc' --------
 
-      local-stack local-stack-length output-file local-stack.convert-last-items-real
+      local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
       // Check if the stack is correct.
       output-array output-length
@@ -1407,12 +1498,12 @@ in
         start-keyword KEYWORD:IF = if
           // -------- End of 'if' --------
           level 16 + @64 level 24 + @64 let start-id start-stack in
-            local-stack local-stack-length output-file local-stack.convert-last-items-real
+            local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
             // Check for the stack changes.
             start-stack start-address local-stack local-stack-length token-address log-stream check-stack-types
 
-            start-id output-file nasm:level
+            start-id output-stream nasm:level
 
             // Deallocate 'start-stack'.
             start-stack _local-stack.mfree
@@ -1422,12 +1513,12 @@ in
           // -------- End of 'else' --------
 
           level 16 + @64 level 24 + @64 level 32 + @64 let else-address start-id start-stack in
-            local-stack local-stack-length output-file local-stack.convert-last-items-real
+            local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
             // Check for the stack changes.
             start-stack else-address local-stack local-stack-length token-address log-stream check-stack-types
 
-            start-id output-file nasm:level
+            start-id output-stream nasm:level
 
             // Deallocate 'else-address' and 'start-stack'.
             else-address mfree drop
@@ -1457,9 +1548,9 @@ in
             // Overwrite the contents of the local-stack.
             do-stack local-stack local-stack-length local-stack.overwrite
 
-            while-level-id  output-file nasm:jump-level
-            unbroken-end-id output-file nasm:level
-            broken-end-id   output-file nasm:level
+            while-level-id  output-stream nasm:jump-level
+            unbroken-end-id output-stream nasm:level
+            broken-end-id   output-stream nasm:level
 
             // Deallocate 'do-address', 'while-stack' and 'do-stack'.
             do-address mfree drop
@@ -1482,7 +1573,7 @@ in
               end
             end end inc end drop
 
-            old-local-memory-end local-stack local-stack-length output-file local-stack.convert-deleted-real
+            old-local-memory-end local-stack local-stack-length output-stream local-stack.convert-deleted-real
 
             old-local-memory-end local-memory-end !64
 
@@ -1524,7 +1615,7 @@ in
               end
             end end inc end drop
 
-            old-local-memory-end local-stack local-stack-length output-file local-stack.convert-deleted-real
+            old-local-memory-end local-stack local-stack-length output-stream local-stack.convert-deleted-real
 
             old-local-memory-end local-memory-end !64
 
@@ -1574,7 +1665,7 @@ in
         EXIT-CODE:ERROR exit drop
       end
 
-      item output-file nasm:convert-bool-to-real
+      item output-stream nasm:convert-bool-to-real
 
       item stack-item:mfree
     end
@@ -1591,9 +1682,11 @@ in
 
           obj levels-list list64:append
 
-          "    pop     rax\n"      output-file fputs
-          "    test    rax, rax\n" output-file fputs
-          level-id output-file nasm:jump-zero-level
+          output-stream
+          "    pop     rax\n"      strbuf:puts
+          "    test    rax, rax\n" strbuf:puts
+          drop
+          level-id output-stream nasm:jump-zero-level
         end
       end
     end
@@ -1615,7 +1708,7 @@ in
       EXIT-CODE:ERROR exit drop
     end
 
-    local-stack local-stack-length output-file local-stack.convert-last-items-real
+    local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
     levels-list list64:pop-last let level in
       level @64 level 8 + @64 let old-keyword old-address in
@@ -1627,8 +1720,8 @@ in
             start-stack local-stack local-stack-length local-stack.overwrite
 
             compile-procedure:new-level-id let level-id in
-              level-id output-file nasm:jump-level
-              start-id output-file nasm:level
+              level-id output-stream nasm:jump-level
+              start-id output-stream nasm:level
 
               40 malloc let new-level in
                 new-level "creating a level object for 'else'" compile-procedure:check-null-here
@@ -1667,9 +1760,9 @@ in
       copy-stack "creating a level object for 'while'" compile-procedure:check-null-here
 
       compile-procedure:new-level-id let level-id in
-        local-stack local-stack-length output-file local-stack.convert-last-items-real
+        local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
-        level-id output-file nasm:level
+        level-id output-stream nasm:level
 
         32 malloc let new-level in
           new-level "creating a level object for 'while'" compile-procedure:check-null-here
@@ -1708,7 +1801,7 @@ in
       EXIT-CODE:ERROR exit drop
     end
 
-    local-stack local-stack-length output-file local-stack.convert-last-items-real
+    local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
     // Remove the bool value from the local-stack.
     pop-item let item in
@@ -1730,9 +1823,11 @@ in
         old-level 16 + @64 old-level 24 + @64 let old-level-id old-stack in
           compile-procedure:new-level-id compile-procedure:new-level-id let unbroken-end-level-id broken-end-level-id in
             compile-procedure:new-level-id compile-procedure:new-level-id let unbroken-end-id broken-end-id in
-              "    pop     rax\n"      output-file fputs
-              "    test    rax, rax\n" output-file fputs
-              unbroken-end-id output-file nasm:jump-zero-level
+              output-stream
+              "    pop     rax\n"      strbuf:puts
+              "    test    rax, rax\n" strbuf:puts
+              drop
+              unbroken-end-id output-stream nasm:jump-zero-level
 
               local-stack local-stack-length local-stack.copy let copy-stack in
                 copy-stack "copying the stack for 'do'" compile-procedure:check-null-here
@@ -1768,12 +1863,12 @@ in
             // Check for the stack contents.
             do-stack do-address local-stack local-stack-length token-address log-stream check-stack-types
 
-            local-stack local-stack-length output-file local-stack.convert-last-items-real
+            local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
-            broken-end-id output-file nasm:jump-level
+            broken-end-id output-stream nasm:jump-level
           end
 
-          source-name source-file output-file
+          source-name source-file output-stream
           line-no char-no
           macro-names macro-tokens macros-length
           procedure-name procedure-address
@@ -1900,7 +1995,9 @@ in
           pop-item i new-names-list list64:get let item variable-name in
             variable-name mlength 1 = if variable-name @8 '_' = else false end if
               item stack-item:get-mode STACK-MODE:REAL = if
-                "    pop     r15\n" output-file fputs
+                output-stream
+                "    pop     r15\n" strbuf:puts
+                drop
               end
 
             else
@@ -1913,15 +2010,19 @@ in
                 item stack-item:copy
 
               else
-                local-stack local-stack-length output-file local-stack.convert-last-items-real
-                item output-file nasm:convert-item-to-real
+                local-stack local-stack-length output-stream local-stack.convert-last-items-real
+                item output-stream nasm:convert-item-to-real
 
-                "    mov     r15, [local_ptr]\n" output-file fputs
+                output-stream
+                "    mov     r15, [local_ptr]\n" strbuf:puts
                 local-memory-end @64 is-zero if
-                  "    pop     qword [r15]\n" output-file fputs
+                  "    pop     qword [r15]\n" strbuf:puts
                 else
-                  "    pop     qword [r15 + " output-file fputs local-memory-end @64 output-file fputu "]\n" output-file fputs
+                  "    pop     qword [r15 + " strbuf:puts
+                  local-memory-end @64 strbuf:putu
+                  "]\n" strbuf:puts
                 end
+                drop
 
                 item stack-item:get-type STACK-MODE:@LOCALCONST stack-item:create let replace-item in
                   local-memory-end @64 replace-item stack-item:set-arg1
@@ -2053,7 +2154,7 @@ in
   else token-arg KEYWORD:RETURN = if
     // -------- Keyword 'return' --------
 
-    local-stack local-stack-length output-file local-stack.convert-last-items-real
+    local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
     output-array output-length
     token-address
@@ -2061,9 +2162,11 @@ in
     log-stream
     check-stack-types-types
 
-    "    jmp     .return\n" output-file fputs
+    output-stream
+    "    jmp     .return\n" strbuf:puts
+    drop
 
-    source-name source-file output-file
+    source-name source-file output-stream
     line-no char-no
     macro-names macro-tokens macros-length
     procedure-name procedure-address
@@ -2088,7 +2191,7 @@ in
       // The token after 'cast' should be an 'intrinsic type'.
       type-type type-address "after 'cast'" TOKEN-TYPE:INT-TYPE compile-procedure:check-type-here
 
-      local-stack local-stack-length output-file local-stack.convert-last-items-real
+      local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
       // Change the type of the last item.
       local-stack-length @64 dec local-stack array64:get let item in
@@ -2127,8 +2230,8 @@ end false end
 
 
 proc compile-procedure
-  // ptr: source-name file-desc: source-file file-desc: output-file
-  ptr file-desc file-desc
+  // ptr: source-name file-desc: source-file ptr: output-stream
+  ptr file-desc ptr
   // ptr: line-no ptr: char-no
   ptr ptr
   // ptr: data-definitions-list
@@ -2157,7 +2260,7 @@ proc compile-procedure
   // Compiles a Corth procedure.
   // Compilation warning and errors are dumped to log-stream.
 in let
-  source-name source-file output-file
+  source-name source-file output-stream
   line-no char-no
   data-definitions-list
   global-names-array global-sizes-array globals-length
@@ -2171,7 +2274,11 @@ in let
   log-stream
 in
 
-  "proc_" output-file fputs procedure-name output-file nasm:fput-alpha ":\n" output-file fputs
+  output-stream
+  "proc_"        strbuf:puts
+  procedure-name nasm:fput-alpha
+  ":\n"          strbuf:puts
+  drop
 
   // level-id-counter allows to create unique IDs for level labels.
   // let-names, let-addresses and let-vars-length create a str_map64:
@@ -2203,7 +2310,6 @@ in
         // -- debug --
         // LOG:INFO log-stream fputs token-type token-arg log-stream fput-token log-stream fputnl
         // token-address log-stream fput-here
-        // ";; " output-file fputs token-type token-arg output-file fput-token output-file fputnl
 
         token-type TOKEN-TYPE:INTEGER = if
           // -------- Constant integer --------
@@ -2230,7 +2336,11 @@ in
               replace-item stack-item:get-mode STACK-MODE:PEEKED = if
                 replace-item stack-item:get-type push-real
 
-                "    push    qword [rsp + " output-file fputs local-stack-length @64 replace-item stack-item:get-arg1 - 2 - 8 * output-file fputi "]\n" output-file fputs
+                output-stream
+                "    push    qword [rsp + " strbuf:puts
+                local-stack-length @64 replace-item stack-item:get-arg1 - 2 - 8 * strbuf:puti
+                "]\n" strbuf:puts
+                drop
               else
 
                 replace-item stack-item:copy push-item
@@ -2253,7 +2363,7 @@ in
 
             let name-address in name-address proc-names-array - let delta in
               delta proc-inputs-array + delta proc-outputs-array + let input-address output-address in
-                local-stack local-stack-length output-file local-stack.convert-last-items-real
+                local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
                 input-address @64 input-address @64 mlength 8 /
                 token-address
@@ -2268,13 +2378,21 @@ in
                 end inc end drop
 
                 compile-procedure:new-level-id let level-id in
-                  "    xchg    rsp, [call_ptr]\n"              output-file fputs
-                  "    push    .level_"                        output-file fputs level-id output-file fputu output-file fputnl
-                  "    push    qword [local_ptr]\n"            output-file fputs
-                  "    add     qword [local_ptr], "            output-file fputs local-memory-end @64 output-file fputu output-file fputnl
-                  "    xchg    rsp, [call_ptr]\n"              output-file fputs
-                  "    jmp     proc_"                          output-file fputs token-arg output-file nasm:fput-alpha output-file fputnl
-                  level-id output-file nasm:level
+                  output-stream
+                  "    xchg    rsp, [call_ptr]\n"              strbuf:puts
+                  "    push    .level_"                        strbuf:puts
+                  level-id                                     strbuf:putu
+                                                               strbuf:putnl
+                  "    push    qword [local_ptr]\n"            strbuf:puts
+                  "    add     qword [local_ptr], "            strbuf:puts
+                  local-memory-end @64                         strbuf:putu
+                                                               strbuf:putnl
+                  "    xchg    rsp, [call_ptr]\n"              strbuf:puts
+                  "    jmp     proc_"                          strbuf:puts
+                  token-arg                                    nasm:fput-alpha
+                                                               strbuf:putnl
+                  level-id output-stream nasm:level
+                  drop
                 end
               end
             end end
@@ -2290,7 +2408,7 @@ in
         else token-type TOKEN-TYPE:INTRINSIC = if
           // -------- Intrinsics --------
 
-          source-name source-file output-file
+          source-name source-file output-stream
           line-no char-no
           procedure-name procedure-address
           local-stack local-stack-length
@@ -2302,7 +2420,7 @@ in
         else token-type TOKEN-TYPE:KEYWORD = if
           // -------- Keywords --------
 
-          source-name source-file output-file
+          source-name source-file output-stream
           line-no char-no
           macro-names macro-tokens macros-length
           procedure-name procedure-address
@@ -2336,8 +2454,8 @@ end 0 end // dummy return
 
 
 proc compile-file
-  // ptr: source-name file-desc: output-file
-  ptr file-desc
+  // ptr: source-name ptr: output-stream
+  ptr ptr
   // ptr: data-definitions-list
   ptr
   // ptr: global-names-array ptr: global-sizes-array ptr: globals-length
@@ -2359,7 +2477,7 @@ proc compile-file
   // TODO: Add called-from to improve debugging.
   // TODO: Add called-from to improve debugging.
 in let
-  source-name output-file
+  source-name output-stream
   data-definitions-list
   global-names-array global-sizes-array globals-length
   proc-names-array proc-inputs-array proc-outputs-array procs-length
@@ -2400,6 +2518,10 @@ in
       // Get next token and check if there is one available-dstr.
       while source-name source-file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length log-stream true get-next-token do
         let token-type token-address token-arg in
+          // -- debug --
+          // LOG:INFO log-stream fputs token-type token-arg log-stream fput-token log-stream fputnl
+          // token-address log-stream fput-here
+
           token-type token-address "" TOKEN-TYPE:KEYWORD compile-file:check-type-here
 
           // -------- Global keywords --------
@@ -2431,7 +2553,7 @@ in
                           stats 24 + @64 S_IFMT && let masked in
                             masked S_IFREG = if
                               // File including, call compile-file on the file.
-                              include-path output-file
+                              include-path output-stream
                               data-definitions-list
                               global-names-array global-sizes-array globals-length
                               proc-names-array proc-inputs-array proc-outputs-array procs-length
@@ -2692,7 +2814,7 @@ in
                       end
                     end inc end drop
 
-                    source-name source-file output-file
+                    source-name source-file output-stream
                     line-no char-no
                     data-definitions-list
                     global-names-array global-sizes-array globals-length
@@ -2706,12 +2828,14 @@ in
                     log-stream
                     compile-procedure drop
 
-                    ".return:\n"                        output-file fputs
-                    "    xchg    rsp, [call_ptr]\n"     output-file fputs
-                    "    pop     qword [local_ptr]\n"   output-file fputs
-                    "    pop     rax\n"                 output-file fputs
-                    "    xchg    rsp, [call_ptr]\n"     output-file fputs
-                    "    jmp     rax\n"                 output-file fputs
+                    output-stream
+                    ".return:\n"                        strbuf:puts
+                    "    xchg    rsp, [call_ptr]\n"     strbuf:puts
+                    "    pop     qword [local_ptr]\n"   strbuf:puts
+                    "    pop     rax\n"                 strbuf:puts
+                    "    xchg    rsp, [call_ptr]\n"     strbuf:puts
+                    "    jmp     rax\n"                 strbuf:puts
+                    drop
                   end
                 end
 
@@ -2777,142 +2901,155 @@ in let source-name output-name include-paths-set log-stream in
       EXIT-CODE:ERROR exit drop
     end
 
-    "segment .text\n"                                   output-file fputs
-    "global _start\n"                                   output-file fputs
+    memory output-stream OUTPUT-STREAM-SIZE in
+      output-file OUTPUT-STREAM-SIZE output-stream strbuf:init
 
-    "_start:\n"                                         output-file fputs
-    "    mov     qword [call_ptr], call_stack\n"        output-file fputs
-    "    add     qword [call_ptr], 0x4000\n"            output-file fputs
-    "    mov     qword [local_ptr], local_memory\n"     output-file fputs
+      output-stream
+      "segment .text\n"                                   strbuf:puts
+      "global _start\n"                                   strbuf:puts
+      "_start:\n"                                         strbuf:puts
+      "    mov     qword [call_ptr], call_stack\n"        strbuf:puts
+      "    add     qword [call_ptr], 0x4000\n"            strbuf:puts
+      "    mov     qword [local_ptr], local_memory\n"     strbuf:puts
+      "    xchg    rsp, [call_ptr]\n"                     strbuf:puts
+      "    push    corth_endofprogram\n"                  strbuf:puts
+      "    push    qword [local_ptr]\n"                   strbuf:puts
+      "    xchg    rsp, [call_ptr]\n"                     strbuf:puts
+      "    mov     rax, [rsp]\n"                          strbuf:puts
+      "    mov     rbx, rsp\n"                            strbuf:puts
+      "    add     rbx, 8\n"                              strbuf:puts
+      "    mov     rdx, rax\n"                            strbuf:puts
+      "    shl     rdx, 3\n"                              strbuf:puts
+      "    sub     rsp, rdx\n"                            strbuf:puts
+      "    push    rax\n"                                 strbuf:puts
+      "    push    rbx\n"                                 strbuf:puts
+      "    jmp     proc_main\n"                           strbuf:puts
+      "corth_endofprogram:\n"                             strbuf:puts
+      "    mov     rax, 60\n"                             strbuf:puts
+      "    pop     rdi\n"                                 strbuf:puts
+      "    syscall\n"                                     strbuf:puts
+      drop
 
-    "    xchg    rsp, [call_ptr]\n"                     output-file fputs
-    "    push    corth_endofprogram\n"                  output-file fputs
-    "    push    qword [local_ptr]\n"                   output-file fputs
-    "    xchg    rsp, [call_ptr]\n"                     output-file fputs
+      memory global-names-array     GLOBALS-MAX-COUNT and
+             global-sizes-array     GLOBALS-MAX-COUNT and
+             globals-length         sizeof(int)       and
 
-    "    mov     rax, [rsp]\n"                          output-file fputs
-    "    mov     rbx, rsp\n"                            output-file fputs
-    "    add     rbx, 8\n"                              output-file fputs
-    "    mov     rdx, rax\n"                            output-file fputs
-    "    shl     rdx, 3\n"                              output-file fputs
-    "    sub     rsp, rdx\n"                            output-file fputs
-    "    push    rax\n"                                 output-file fputs
-    "    push    rbx\n"                                 output-file fputs
+             proc-names-array       PROCS-MAX-COUNT   and
+             proc-inputs-array      PROCS-MAX-COUNT   and
+             proc-outputs-array     PROCS-MAX-COUNT   and
+             procs-length           sizeof(int)       and
 
-    "    jmp     proc_main\n"                           output-file fputs
+             macro-names            MACROS-MAX-COUNT  and
+             macro-tokens           MACROS-MAX-COUNT  and
+             macros-length          sizeof(int)       and
 
-    "corth_endofprogram:\n"                             output-file fputs
-    "    mov     rax, 60\n"                             output-file fputs
-    "    pop     rdi\n"                                 output-file fputs
-    "    syscall\n"                                     output-file fputs
+             data-definitions-list  sizeof(ptr)       and
 
-    memory global-names-array     GLOBALS-MAX-COUNT and
-           global-sizes-array     GLOBALS-MAX-COUNT and
-           globals-length         sizeof(int)       and
+             libraries-set          sizeof(ptr)       in
 
-           proc-names-array       PROCS-MAX-COUNT   and
-           proc-inputs-array      PROCS-MAX-COUNT   and
-           proc-outputs-array     PROCS-MAX-COUNT   and
-           procs-length           sizeof(int)       and
+        0 globals-length   !64
+        0 procs-length     !64
+        0 macros-length    !64
 
-           macro-names            MACROS-MAX-COUNT  and
-           macro-tokens           MACROS-MAX-COUNT  and
-           macros-length          sizeof(int)       and
+        16 list64:init let dynamic in
+          dynamic "creating a list dynamic object for data-definitions-list" compile-file:check-null
 
-           data-definitions-list  sizeof(ptr)       and
+          dynamic data-definitions-list !64
+        end
 
-           libraries-set          sizeof(ptr)       in
+        16 list64:init let dynamic in
+          dynamic "creating a list dynamic object for libraries-set.\n" compile-file:check-null
 
-      0 globals-length   !64
-      0 procs-length     !64
-      0 macros-length    !64
+          dynamic libraries-set !64
+        end
 
-      16 list64:init let dynamic in
-        dynamic "creating a list dynamic object for data-definitions-list" compile-file:check-null
+        source-name output-stream
+        data-definitions-list
+        global-names-array global-sizes-array globals-length
+        proc-names-array proc-inputs-array proc-outputs-array procs-length
+        macro-names macro-tokens macros-length
+        include-paths-set
+        libraries-set
+        log-stream
+        compile-file
 
-        dynamic data-definitions-list !64
-      end
+        // Print the data labels.
+        output-stream
+        "segment .data\n"       strbuf:puts
+        0 while dup data-definitions-list list64:length < do let i in
+          "    data_"           strbuf:puts
+          i                     strbuf:putu
+          ": db "               strbuf:puts
 
-      16 list64:init let dynamic in
-        dynamic "creating a list dynamic object for libraries-set.\n" compile-file:check-null
+          i data-definitions-list list64:get let data in
+            0 while dup data mlength < do let j in
+              j data + @8       strbuf:putu
+              ", "              strbuf:puts
+            j end inc end drop
+          end
 
-        dynamic libraries-set !64
-      end
+                                strbuf:putnl
+        i end inc end drop
 
-      source-name output-file
-      data-definitions-list
-      global-names-array global-sizes-array globals-length
-      proc-names-array proc-inputs-array proc-outputs-array procs-length
-      macro-names macro-tokens macros-length
-      include-paths-set
-      libraries-set
-      log-stream
-      compile-file
+        // Print the global memory labels.
+        "segment .bss\n"                                    strbuf:puts
+        "    local_memory:   resb 67108864\n"               strbuf:puts
+        "    local_ptr:      resq 1\n"                      strbuf:puts
+        "    call_stack:     resb 67108864\n"               strbuf:puts
+        "    call_ptr:       resq 1\n"                      strbuf:puts
 
-      // Deallocate space allocated for procedures.
-      0 while dup procs-length @64 < do peek i in
-        i proc-names-array   array64:get mfree drop
-        i proc-inputs-array  array64:get mfree drop
-        i proc-outputs-array array64:get mfree drop
-      end inc end drop
+        0 while dup globals-length @64 < do let i in
+          i global-names-array array64:get i global-sizes-array array64:get let variable-name variable-size in
+            "    global_"                    strbuf:puts
+            i global-names-array array64:get nasm:fput-alpha
+            ": resb "                        strbuf:puts
+            variable-size                    strbuf:putu
+                                             strbuf:putnl
 
-      // Deallocate space allocated for macros.
-      0 while dup macros-length @64 < do peek i in
-        i macro-names array64:get mfree drop
+            // Deallocate the name of the variable.
+            variable-name mfree drop
+          end
+        i end inc end drop
 
-        i macro-tokens array64:get let tokens in
-          0 while dup tokens mlength 24 / < do peek j in
-            j tokens array64:get j inc tokens array64:get j 2 + tokens array64:get let token-type token-address token-arg in
-              // Deallocate 'token-address'.
-              token-address mfree drop
+        // Flush the remaining in the output-stream.
+        output-stream strbuf:flush
+        drop
 
-              // Deallocate 'token-arg' if the token is either a 'name' or a 'string'.
-              token-type TOKEN-TYPE:NAME = token-type TOKEN-TYPE:STRING = | if
-                token-arg mfree drop
+        // Deallocate space allocated for procedures.
+        0 while dup procs-length @64 < do peek i in
+          i proc-names-array   array64:get mfree drop
+          i proc-inputs-array  array64:get mfree drop
+          i proc-outputs-array array64:get mfree drop
+        end inc end drop
+
+        // Deallocate space allocated for macros.
+        0 while dup macros-length @64 < do peek i in
+          i macro-names array64:get mfree drop
+
+          i macro-tokens array64:get let tokens in
+            0 while dup tokens mlength 24 / < do peek j in
+              j tokens array64:get j inc tokens array64:get j 2 + tokens array64:get let token-type token-address token-arg in
+                // Deallocate 'token-address'.
+                token-address mfree drop
+
+                // Deallocate 'token-arg' if the token is either a 'name' or a 'string'.
+                token-type TOKEN-TYPE:NAME = token-type TOKEN-TYPE:STRING = | if
+                  token-arg mfree drop
+                end
               end
-            end
-          end 3 + end drop
+            end 3 + end drop
 
-          // Deallocate 'tokens'.
-          tokens mfree drop
-        end
-      end inc end drop
+            // Deallocate 'tokens'.
+            tokens mfree drop
+          end
+        end inc end drop
 
-      // Deallocate the space allocated for libraries-set.
-      libraries-set list64:mfree-deep drop
+        // Deallocate the space allocated for libraries-set.
+        libraries-set list64:mfree-deep drop
 
-      "segment .data\n" output-file fputs
-      0 while dup data-definitions-list list64:length < do peek i in
-        "    data_" output-file fputs i output-file fputu ": db " output-file fputs
-        i data-definitions-list list64:get let data in
-          0 while dup data mlength < do peek j in
-            j data + @8 output-file fputu ", " output-file fputs
-          end inc end drop
-        end
-        output-file fputnl
-      end inc end drop
-
-      // Deallocate the space allocated for data-definitions-list
-      data-definitions-list list64:mfree-deep drop
-
-      "segment .bss\n"                                    output-file fputs
-      "    local_memory:   resb 67108864\n"               output-file fputs
-      "    local_ptr:      resq 1\n"                      output-file fputs
-      "    call_stack:     resb 67108864\n"               output-file fputs
-      "    call_ptr:       resq 1\n"                      output-file fputs
-
-      0 while dup globals-length @64 < do peek i in
-        i global-names-array array64:get i global-sizes-array array64:get let variable-name variable-size in
-          "    global_"  output-file fputs
-          i global-names-array array64:get output-file nasm:fput-alpha
-          ": resb " output-file fputs
-          variable-size output-file fputu
-          output-file fputnl
-
-          // Deallocate the name of the variable.
-          variable-name mfree drop
-        end
-      end inc end drop
+        // Deallocate the space allocated for data-definitions-list
+        data-definitions-list list64:mfree-deep drop
+      end
     end
 
     output-file fclose drop

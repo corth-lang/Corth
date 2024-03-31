@@ -81,11 +81,11 @@ end endmacro
 
 
 proc local-stack.convert-items-real
-  // int: start-index int: end-index ptr: local-stack ptr: local-stack-length file-desc: output-file ->
-  int int ptr ptr file-desc ->
-in let start-index end-index local-stack local-stack-length output-file in
+  // int: start-index int: end-index ptr: local-stack ptr: local-stack-length ptr: output-stream ->
+  int int ptr ptr ptr ->
+in let start-index end-index local-stack local-stack-length output-stream in
   start-index while dup end-index < do dup
-    local-stack array64:get output-file nasm:convert-item-to-real
+    local-stack array64:get output-stream nasm:convert-item-to-real
   inc end drop
 end end
 
@@ -132,38 +132,38 @@ end end
 
 
 proc local-stack.convert-last-items-real
-  // ptr: local-stack ptr: local-stack-length file-desc: output-file ->
-  ptr ptr file-desc ->
-in let local-stack local-stack-length output-file in
+  // ptr: local-stack ptr: local-stack-length ptr: output-stream ->
+  ptr ptr ptr ->
+in let local-stack local-stack-length output-stream in
   local-stack local-stack-length local-stack.find-first-non-real // Start index
   local-stack-length @64                                         // End index
-  local-stack local-stack-length output-file local-stack.convert-items-real
+  local-stack local-stack-length output-stream local-stack.convert-items-real
 end end
 
 
 proc local-stack.convert-deleted-real
-  // int: local-memory-end ptr: local-stack ptr: local-stack-length file-desc: output-file ->
-  int ptr ptr file-desc ->
-in let local-memory-end local-stack local-stack-length output-file in
+  // int: local-memory-end ptr: local-stack ptr: local-stack-length ptr: output-stream ->
+  int ptr ptr ptr ->
+in let local-memory-end local-stack local-stack-length output-stream in
   local-stack local-stack-length local-stack.find-first-non-real                // Start index
   local-memory-end local-stack local-stack-length local-stack.find-last-deleted // End index
-  local-stack local-stack-length output-file local-stack.convert-items-real
+  local-stack local-stack-length output-stream local-stack.convert-items-real
 end end
 
 
 proc local-stack.convert-@local-real
-  // ptr: local-stack ptr: local-stack-length file-desc: output-file ->
-  ptr ptr file-desc ->
-in let local-stack local-stack-length output-file in
+  // ptr: local-stack ptr: local-stack-length ptr: output-stream ->
+  ptr ptr ptr ->
+in let local-stack local-stack-length output-stream in
   local-stack local-stack-length local-stack.find-first-non-real // Start index
   local-stack local-stack-length local-stack.find-last-@local    // End index
-  local-stack local-stack-length output-file local-stack.convert-items-real
+  local-stack local-stack-length output-stream local-stack.convert-items-real
 end end
 
 
 // int: int-type ->
 macro push-real let _int-type_ in
-  local-stack local-stack-length output-file local-stack.convert-last-items-real
+  local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
   _int-type_ STACK-MODE:REAL stack-item:create push-item
 end endmacro
