@@ -166,4 +166,33 @@ in let list in
   list list64:get-new
 end end
 
+proc extend-left
+  // ptr: array int: length ptr: list64 ->
+  ptr int ptr ->
+in let array length list in
+  length list list64:check-capacity
+
+  list list64:array-addr length list list64:get-addr list list64:length memcpy64i
+
+  array list list64:array-addr length memcpy64
+end end
+
+proc extend-right
+  // ptr: array int: length ptr: list64 ->
+  ptr int ptr ->
+in let array length list in
+  length list list64:check-capacity
+
+  array list list64:new-addr length memcpy64
+end end
+
+// ptr: list64 ->
+proc trim ptr -> in let list in
+  list list list64:length dresize-down
+
+  list list64:mfree drop
+
+  list list64:set-dynamic
+end end
+
 endnamespace
