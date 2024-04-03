@@ -11,15 +11,15 @@ include "dynamic/utils.corth"
 include "collections/list64.corth"
 
 
-// ptr: _list ->
-proc putl ptr -> in let _list in
+// ptr: list ->
+proc putl ptr -> in let list in
   "list(" puts
-  list64:_length putu
+  list list64:length putu
   ":" puts
-  list64:_capacity putu
+  list list64:capacity putu
   ")[" puts
-  0 while dup list64:_length < do peek i in
-    i list64:_get putu ", " puts
+  0 while dup list list64:length < do peek i in
+    i list list64:get putu ", " puts
   end inc end drop
   "]" puts
 end end
