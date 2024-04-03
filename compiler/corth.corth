@@ -270,8 +270,8 @@ proc command.quick-test -> in
          include-paths-set sizeof(ptr) and
          full-compilation  sizeof(int) in
 
-    16 list64:init test-paths !64
-    16 list64:init include-paths-set !64
+    list64:init test-paths !64
+    list64:init include-paths-set !64
 
     test-paths @64 is-null if
       "error: 'list64:init' failed\n" eputs
@@ -520,7 +520,7 @@ proc command.compile -> in
     NULLPTR       source-file !64
     "output" drop output-file !64
 
-    16 list64:init include-paths-set !64
+    list64:init include-paths-set !64
 
     include-paths-set @64 is-null if
       "'list64:init' failed\n" puts

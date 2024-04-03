@@ -11,17 +11,15 @@ include "dynamic/utils.corth"
 include "collections/list64.corth"
 
 
-proc putl
-  // ptr: list ->
-  ptr ->
-in let list in
+// ptr: _list ->
+proc putl ptr -> in let _list in
   "list(" puts
-  list list64:length putu
+  list64:_length putu
   ":" puts
-  list list64:capacity putu
+  list64:_capacity putu
   ")[" puts
-  0 while dup list list64:length < do peek i in
-    i list list64:get putu ", " puts
+  0 while dup list64:_length < do peek i in
+    i list64:_get putu ", " puts
   end inc end drop
   "]" puts
 end end
@@ -34,7 +32,7 @@ in let argc argv in
     malloc:init
     NULLPTR time rng-seed !64
 
-    0 list64:init dup is-null if drop
+    list64:init dup is-null if drop
       "malloc failed!\n" puts
       1 return
     end list !64

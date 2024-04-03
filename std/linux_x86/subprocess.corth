@@ -11,8 +11,8 @@ macro init
          _subprocess.argv_      sizeof(ptr) and
          _subprocess.envp_      sizeof(ptr) in
 
-    8 list64:init _subprocess.argv_ !64
-    8 list64:init _subprocess.envp_ !64
+    list64:init _subprocess.argv_ !64
+    list64:init _subprocess.envp_ !64
 endmacro
 
 macro success

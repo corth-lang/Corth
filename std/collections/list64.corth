@@ -3,140 +3,114 @@ include "collections/array64.corth"
 
 namespace list64
 
-macro RESIZING 16 endmacro
+// ptr: list64 -> ptr: dynamic
+macro get-dynamic @64 endmacro
 
-macro init
-  // int: start-size -> ptr: dynamic-object
-  // Start size is the capacity the dynamic object has when the object is created.
-  // Save the dynamic object to a variable and use that variable address as the list object.
-  inc 8 * malloc let _dynamic_ in
-    _dynamic_ isn-null if
-      0 _dynamic_ !64
-    end
+// ptr: dynamic ptr: list64 ->
+macro set-dynamic !64 endmacro
+
+// ptr: list64 -> ptr: length
+macro length-addr list64:get-dynamic endmacro
+
+// ptr: list64 -> ptr: array
+macro array-addr list64:get-dynamic 8 + endmacro
+
+// ptr: list64 -> ptr: array int: length
+macro to-array let _list_ in
+  _list_ list64:array-addr _list_ list64:length
+end endmacro
+
+// ptr: list64 -> ptr: array
+macro copy-array list64:to-array to-dynamic64 endmacro
+
+// ptr: list64 -> int: length
+macro length list64:length-addr @64 endmacro
+
+// ptr: list64 -> ptr: end-addr
+// Returns the address of array.length()th item of array.
+macro end-addr let _list_ in
+  _list_ list64:length _list_ list64:array-addr array64:get-addr
+end endmacro
+
+// ptr: list64 -> int: capacity
+// Capacity is the total amount of indexes available.
+macro capacity list64:get-dynamic mlength 8 / dec endmacro
+
+// ptr: list64 -> int: avail
+// Returns the number of indexes available on the list without any resizing.
+macro avail let _list_ in
+  _list_ list64:get-dynamic mlength 8 / _list_ list64:length - dec
+end endmacro
+
+// int: index ptr: list64 -> ptr: address
+macro get-addr list64:array-addr array64:get-addr endmacro
+
+// int: index ptr: list64 -> int: value
+// NOTE: This macro assumes that the index is valid.
+macro get list64:get-addr @64 endmacro
+
+// int: value int: index ptr: list64 ->
+// NOTE: This macro assumes that the index is valid.
+macro set list64:get-addr !64 endmacro
+
+// ptr: list64 ->
+macro inc-length list64:length-addr @inc64 endmacro
+
+// ptr: list64 ->
+macro dec-length list64:length-addr @dec64 endmacro
+
+// ptr: list64 -> ptr: new-addr
+macro new-addr let _list_ in
+  _list_ list64:length _list_ list64:get-addr
+end endmacro
+
+// ptr: list64 -> int: last
+macro get-new list64:new-addr @64 endmacro
+
+// int: value ptr: list64 ->
+macro set-new list64:new-addr !64 endmacro
+
+
+// -> ptr: dynamic-object
+// Initial capacity is 16 items. (8 * 16 + 8 = 136 bytes)
+// Save the dynamic object to a variable and use that variable address as the list object.
+proc init -> ptr in
+  136 malloc let _dynamic_ in
+    _dynamic_ isn-null if 0 _dynamic_ !64 end
   _dynamic_ end
-endmacro
+end
 
-macro mfree
+proc mfree
   // ptr: list64 -> bool: successful
-  list64:get-dynamic mfree
-endmacro
+  ptr -> bool
+in let list in
+  list list64:get-dynamic mfree
+end end
 
-macro mfree-deep let _list_ in
-  // ptr: list64 -> bool: successful
+// ptr: list64 -> bool: successful
+proc mfree-deep ptr -> bool in let _list_ in
   0 while dup _list_ list64:length < do peek i in
     i _list_ list64:get mfree drop
   end inc end drop
 
   _list_ list64:mfree
-end endmacro
-
-macro get-dynamic
-  // ptr: list64 -> ptr: dynamic
-  @64
-endmacro
-
-macro length-addr
-  // ptr: list64 -> ptr: length
-  list64:get-dynamic
-endmacro
-
-macro array-addr
-  // ptr: list64 -> ptr: array
-  list64:get-dynamic 8 +
-endmacro
-
-macro to-array let _list_ in
-  // ptr: list64 -> ptr: array int: length
-  _list_ list64:array-addr _list_ list64:length
-end endmacro
-
-macro copy-array
-  // ptr: list64 -> ptr: array
-  list64:to-array to-dynamic64
-endmacro
-
-macro length
-  // ptr: list64 -> int: length
-  list64:length-addr @64
-endmacro
-
-macro end-addr let _list_ in
-  // ptr: list64 -> ptr: end-addr
-
-  // Return the address of array.length()th item of array.
-  _list_ list64:length _list_ list64:array-addr array64:get-addr
-end endmacro
-
-macro capacity
-  // ptr: list64 -> int: capacity
-  // Capacity is the total amount of indexes available.
-  list64:get-dynamic mlength 8 / dec
-endmacro
-
-macro avail
-  // ptr: list64 -> int: avail
-  // Returns the number of indexes available on the list without any resizing.
-
-  let _list_ in
-    _list_ list64:get-dynamic mlength 8 / _list_ list64:length - dec
-  end
-endmacro
-
-macro get-addr
-  // int: index ptr: list64 -> ptr: address
-  list64:array-addr array64:get-addr
-endmacro
-
-macro get
-  // int: index ptr: list64 -> int: value
-  // NOTE: This macro assumes that the index is valid.
-  list64:get-addr @64
-endmacro
-
-macro set
-  // int: value int: index ptr: list64 ->
-  // NOTE: This macro assumes that the index is valid.
-  list64:get-addr !64
-endmacro
-
-macro inc-length
-  // ptr: list64 ->
-  list64:length-addr @inc64
-endmacro
-
-macro dec-length
-  // ptr: list64 ->
-  list64:length-addr @dec64
-endmacro
-
-proc inc-capacity
-  // int: extend ptr: list64 ->
-  int ptr ->
-  // NOTE: If a problem with mfree occurs, it is ignored. This behavior should be changed in the future.
-in let extend list in
-  list list64:get-dynamic let old_dynamic in
-    // Resize and save the dynamic object.
-    old_dynamic old_dynamic mlength extend 8 * + dresize-up list !64
-
-    // Free the old dynamic resources.
-    old_dynamic mfree drop
-  end
 end end
 
-macro check-capacity
-  // int: length ptr: list ->
-  // Length is the expected available length.
-  let _length_ _list_ in
-    _length_ _list_ list64:get-dynamic mlength 8 / _list_ list64:length - dec - let _avail_ in
-      _avail_ is-pos if
-        _avail_ list64:RESIZING upper-base _list_ list64:inc-capacity
-      end
-    end
-  end
-endmacro
+// int: length ptr: list64 ->
+// Length is the expected available length.
+proc check-capacity int ptr -> in let length list in
+  length list list64:avail < if return end
+
+  // Get the correct next size in bytes and create a new dynamic object.
+  list list64:get-dynamic list list64:capacity while 2 * dup length list list64:length + < do end 8 * 8 + dresize-up
+
+  list list64:mfree drop
+
+  list list64:set-dynamic
+end end
 
 proc insert
-  // int: value int: index ptr: list ->
+  // int: value int: index ptr: list64 ->
   int int ptr ->
 in let value index list in
   // Check if the list has enough capacity.
@@ -153,7 +127,7 @@ in let value index list in
 end end
 
 proc pop
-  // int: index ptr: list -> int: value
+  // int: index ptr: list64 -> int: value
   int ptr -> int
 in let index list in
   index list list64:get-addr let page-addr in
@@ -168,28 +142,28 @@ in let index list in
 end end
 
 proc append
-  // int: value ptr: list ->
+  // int: value ptr: list64 ->
   int ptr ->
 in let value list in
   // Check if the list has enough capacity.
   1 list list64:check-capacity
 
   // Set value.
-  value list list64:length list list64:set
+  value list list64:set-new
 
   // Increase the length of the list.
   list list64:inc-length
 end end
 
 proc pop-last
-  // ptr: list -> int: value
+  // ptr: list64 -> int: value
   ptr -> int
 in let list in
   // Decrease the length of the list.
   list list64:dec-length
 
   // Return the last item.
-  list list64:length list list64:get
+  list list64:get-new
 end end
 
 endnamespace

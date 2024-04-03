@@ -63,7 +63,7 @@ in let set1 set2 in
       set1 list64:array-addr hand1 !64
       set2 list64:array-addr hand2 !64
 
-      16 list64:init let dynamic in
+      list64:init let dynamic in
         // If malloc fails, return NULLPTR.
         dynamic is-null if
           NULLPTR return
@@ -131,7 +131,7 @@ in let set1 set2 in
       set1 list64:array-addr hand1 !64
       set2 list64:array-addr hand2 !64
 
-      16 list64:init let dynamic in
+      list64:init let dynamic in
         // If malloc fails, return NULLPTR.
         dynamic is-null if
           NULLPTR return

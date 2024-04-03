@@ -1900,13 +1900,13 @@ in
     // New names are stored in new-names and new-names-length stack. When the 'end' of 'memory' is reached, new names are deleted from the namespace.
     memory new-names-list sizeof(ptr) and
            new-sizes-list sizeof(ptr) in
-      16 list64:init let dynamic in
+      list64:init let dynamic in
         dynamic "creating list dynamic object for 'memory'" compile-procedure:check-null-here
 
         dynamic new-names-list !64
       end
 
-      16 list64:init let dynamic in
+      list64:init let dynamic in
         dynamic "creating list dynamic object for 'memory'" compile-procedure:check-null-here
 
         dynamic new-sizes-list !64
@@ -1968,7 +1968,7 @@ in
 
     // New names are stored in new-names and new-names-length stack. When the 'end' of 'let' is reached, new names are deleted from the namespace.
     memory new-names-list sizeof(ptr) in
-      16 list64:init let dynamic in
+      list64:init let dynamic in
         dynamic "creating list dynamic object for 'let'" compile-procedure:check-null-here
 
         dynamic new-names-list !64
@@ -2078,7 +2078,7 @@ in
 
     // New names are stored in new-names and new-names-length stack. When the 'end' of 'peek' is reached, new names are deleted from the namespace.
     memory new-names-list sizeof(ptr) in
-      16 list64:init let dynamic in
+      list64:init let dynamic in
         dynamic "creating list dynamic object for 'peek'" compile-procedure:check-null-here
 
         dynamic new-names-list !64
@@ -2292,7 +2292,7 @@ in
          local-memory-end sizeof(int)      and
          local-memory-max sizeof(int)      in
 
-    16 list64:init let dynamic in
+    list64:init let dynamic in
       dynamic "creating a list dynamic object" compile-procedure:check-null
 
       dynamic levels-list !64
@@ -2599,13 +2599,13 @@ in
 
             memory new-names-list sizeof(ptr) and
                    new-sizes-list sizeof(ptr) in
-              16 list64:init let dynamic in
+              list64:init let dynamic in
                 dynamic "creating list dynamic object for 'memory'" compile-file:check-null-here
 
                 dynamic new-names-list !64
               end
 
-              16 list64:init let dynamic in
+              list64:init let dynamic in
                 dynamic "creating list dynamic object for 'memory'" compile-file:check-null-here
 
                 dynamic new-sizes-list !64
@@ -2653,7 +2653,7 @@ in
 
               // macro-tokens and macro-tokens-length are used to create a STACK for macro tokens.
               memory macro-tokens-list sizeof(ptr) in
-                16 list64:init let dynamic in
+                list64:init let dynamic in
                   dynamic "creating list dynamic object for 'macro'" compile-file:check-null-here
 
                   dynamic macro-tokens-list !64
@@ -2708,8 +2708,8 @@ in
                      output-list sizeof(ptr) in
 
                 // TODO: Check if the dynamic object is NULLPTR or not.
-                16 list64:init input-list !64
-                16 list64:init output-list !64
+                list64:init input-list !64
+                list64:init output-list !64
 
                 // Get the input types.
                 while true do
@@ -2951,13 +2951,13 @@ in let source-name output-name include-paths-set log-stream in
         0 procs-length     !64
         0 macros-length    !64
 
-        16 list64:init let dynamic in
+        list64:init let dynamic in
           dynamic "creating a list dynamic object for data-definitions-list" compile-file:check-null
 
           dynamic data-definitions-list !64
         end
 
-        16 list64:init let dynamic in
+        list64:init let dynamic in
           dynamic "creating a list dynamic object for libraries-set.\n" compile-file:check-null
 
           dynamic libraries-set !64
