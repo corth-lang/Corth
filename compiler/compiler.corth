@@ -2683,9 +2683,13 @@ in
                   macro-name-token-arg
                 else
                   namespace-name @64 macro-name-token-arg djoin
+                end let name in
+                  name macro-tokens-list list64:copy-array macro-names macro-tokens macros-length str-map64:set-dstr if
+                    LOG:ERR log-stream fputs "Macro '" log-stream fputs name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
+                    token-address log-stream fput-here
+                    EXIT-CODE:ERROR exit drop
+                  end
                 end
-
-                macro-tokens-list list64:copy-array macro-names macro-tokens macros-length str-map64:set-dstr drop
 
                 // Deallocate 'macro-tokens-list'.
                 macro-tokens-list list64:mfree drop
