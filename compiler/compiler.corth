@@ -1,7 +1,7 @@
 include "linux_x86/sys.corth"
 include "linux_x86/io/output.corth"
 include "linux_x86/io/input.corth"
-include "linux_x86/io/strbuf.corth"
+include "linux_x86/io/ostrbuf.corth"
 
 include "core/stack.corth"
 include "core/arithmetic.corth"
@@ -417,7 +417,7 @@ in let token-address local-stack local-stack-length peeked-item output-stream lo
       item1       output-stream nasm:push-int
 
       output-stream
-      "    add     [rsp], rax\n" strbuf:puts
+      "    add     [rsp], rax\n" ostrbuf:puts
       drop
     end end
 
@@ -473,7 +473,7 @@ in let token-address intrinsic local-stack local-stack-length peeked-item output
       item "rbx" output-stream nasm:mov-reg-item
 
       output-stream
-      "    push    qword [rbx]\n" strbuf:puts
+      "    push    qword [rbx]\n" ostrbuf:puts
       drop
 
     else
@@ -481,10 +481,10 @@ in let token-address intrinsic local-stack local-stack-length peeked-item output
            "rax" output-stream nasm:mov-reg-zero
 
       output-stream
-      "    mov     "              strbuf:puts
-      intrinsic get-register-name strbuf:puts
-      ", [rbx]\n"                 strbuf:puts
-      "    push    rax\n"         strbuf:puts
+      "    mov     "              ostrbuf:puts
+      intrinsic get-register-name ostrbuf:puts
+      ", [rbx]\n"                 ostrbuf:puts
+      "    push    rax\n"         ostrbuf:puts
       drop
     end
   end
@@ -499,9 +499,9 @@ in let value-item address-item address-item-length token-address intrinsic outpu
 
   value-item stack-item:get-mode STACK-MODE:REAL = if
     intrinsic INTRINSIC:STORE64 = if
-      "    pop     qword ["            strbuf:puts
-      address-item address-item-length strbuf:puts
-      "]\n"                            strbuf:puts
+      "    pop     qword ["            ostrbuf:puts
+      address-item address-item-length ostrbuf:puts
+      "]\n"                            ostrbuf:puts
       drop
       return
     end
@@ -510,22 +510,22 @@ in let value-item address-item address-item-length token-address intrinsic outpu
   value-item stack-item:get-mode STACK-MODE:IMM = if
     intrinsic INTRINSIC:STORE64 = if
       value-item stack-item:get-arg1 nasm:is-signed-dword if
-        "    mov     qword ["            strbuf:puts
-        address-item address-item-length strbuf:puts
-        "], "                            strbuf:puts
-        value-item stack-item:get-arg1   strbuf:puti
-                                         strbuf:putnl
+        "    mov     qword ["            ostrbuf:puts
+        address-item address-item-length ostrbuf:puts
+        "], "                            ostrbuf:puts
+        value-item stack-item:get-arg1   ostrbuf:puti
+                                         ostrbuf:putnl
 
         drop
         return
       end
 
     else intrinsic INTRINSIC:STORE8 = if
-      "    mov     byte ["             strbuf:puts
-      address-item address-item-length strbuf:puts
-      "], "                            strbuf:puts
-      value-item stack-item:get-arg1   strbuf:puti
-                                       strbuf:putnl
+      "    mov     byte ["             ostrbuf:puts
+      address-item address-item-length ostrbuf:puts
+      "], "                            ostrbuf:puts
+      value-item stack-item:get-arg1   ostrbuf:puti
+                                       ostrbuf:putnl
 
       drop
       return
@@ -539,13 +539,13 @@ in let value-item address-item address-item-length token-address intrinsic outpu
       1 exit drop
     end
 
-    "    mov     qword ["            strbuf:puts
-    address-item address-item-length strbuf:puts
-    "], global_"                     strbuf:puts
+    "    mov     qword ["            ostrbuf:puts
+    address-item address-item-length ostrbuf:puts
+    "], global_"                     ostrbuf:puts
 
     value-item stack-item:get-arg1 nasm:fput-alpha
 
-    strbuf:putnl
+    ostrbuf:putnl
     drop
     return
   end
@@ -557,21 +557,21 @@ in let value-item address-item address-item-length token-address intrinsic outpu
       1 exit drop
     end
 
-    "    mov     qword [" strbuf:puts
-    address-item address-item-length strbuf:puts
-    "], data_" strbuf:puts
-    value-item stack-item:get-arg1 strbuf:putu
-    strbuf:putnl
+    "    mov     qword [" ostrbuf:puts
+    address-item address-item-length ostrbuf:puts
+    "], data_" ostrbuf:puts
+    value-item stack-item:get-arg1 ostrbuf:putu
+    ostrbuf:putnl
     drop
     return
   end
 
   value-item "rax" output-stream nasm:mov-reg-item
-  "    mov     [" strbuf:puts
-  address-item address-item-length strbuf:puts
-  "], " strbuf:puts
-  intrinsic get-register-name strbuf:puts
-  strbuf:putnl
+  "    mov     [" ostrbuf:puts
+  address-item address-item-length ostrbuf:puts
+  "], " ostrbuf:puts
+  intrinsic get-register-name ostrbuf:puts
+  ostrbuf:putnl
 
   drop
 end end
@@ -599,7 +599,7 @@ in let token-address intrinsic local-stack local-stack-length peeked-item output
 
     else address-item stack-item:get-mode STACK-MODE:LOCAL = if
       // TODO: Fix this disgusting hack.
-      "    mov     rbx, [local_ptr]\n" strbuf:puts
+      "    mov     rbx, [local_ptr]\n" ostrbuf:puts
 
       memory buffer 20 in
         buffer address-item stack-item:get-arg1 intconvud let buffer-start in
@@ -652,25 +652,25 @@ in let upper immediate item local-stack local-stack-length peeked-item output-st
       item      "rax" output-stream nasm:mov-reg-item
       immediate "rbx" output-stream nasm:mov-reg-immediate
 
-      "    imul    rbx\n" strbuf:puts
+      "    imul    rbx\n" ostrbuf:puts
 
       upper if
         "    push    rdx\n"
       else
         "    push    rax\n"
-      end strbuf:puts
+      end ostrbuf:puts
 
     else
       item output-stream nasm:push-int
 
       upper if
-        "    sar     qword [rsp], " strbuf:puts
-        64 log2 -                   strbuf:putu
+        "    sar     qword [rsp], " ostrbuf:puts
+        64 log2 -                   ostrbuf:putu
 
       else
-        "    sal     qword [rsp], " strbuf:puts
-        log2                        strbuf:putu
-      end strbuf:putnl
+        "    sal     qword [rsp], " ostrbuf:puts
+        log2                        ostrbuf:putu
+      end ostrbuf:putnl
     end
     drop
   end
@@ -708,12 +708,12 @@ in let token-address upper local-stack local-stack-length peeked-item output-str
         item1 "rax" output-stream nasm:mov-reg-item
 
         output-stream
-        "    imul    rbx\n" strbuf:puts
+        "    imul    rbx\n" ostrbuf:puts
         upper  if
           "    push    rdx\n"
         else
           "    push    rax\n"
-        end strbuf:puts
+        end ostrbuf:puts
         drop
       end
     end
@@ -731,9 +731,9 @@ in let item immediate local-stack local-stack-length output-stream in
   item output-stream nasm:push-int
 
   output-stream
-  "    and     qword [rsp], " strbuf:puts
-  immediate                   strbuf:putu
-  '\n'                        strbuf:putc
+  "    and     qword [rsp], " ostrbuf:puts
+  immediate                   ostrbuf:putu
+  '\n'                        ostrbuf:putc
   drop
 end end
 
@@ -763,9 +763,9 @@ in let token-address modulo local-stack local-stack-length peeked-item output-st
           item1 "rax" output-stream nasm:mov-reg-item
                 "rdx" output-stream nasm:mov-reg-zero
 
-          "    idiv    rbx\n" strbuf:puts
+          "    idiv    rbx\n" ostrbuf:puts
           modulo if   "    push    rdx\n"
-                 else "    push    rax\n" end strbuf:puts
+                 else "    push    rax\n" end ostrbuf:puts
         end
       end
 
@@ -776,9 +776,9 @@ in let token-address modulo local-stack local-stack-length peeked-item output-st
       item1 "rax" output-stream nasm:mov-reg-item
             "rdx" output-stream nasm:mov-reg-zero
 
-      "    idiv    rbx\n" strbuf:puts
+      "    idiv    rbx\n" ostrbuf:puts
       modulo if   "    push    rdx\n"
-             else "    push    rax\n" end strbuf:puts
+             else "    push    rax\n" end ostrbuf:puts
     end
 
     item1 stack-item:mfree
@@ -838,7 +838,7 @@ in
         item1       output-stream nasm:push-int
 
         output-stream
-        "    sub     [rsp], rax\n" strbuf:puts
+        "    sub     [rsp], rax\n" ostrbuf:puts
         drop
       end
 
@@ -860,7 +860,7 @@ in
       item1       output-stream nasm:push-int
 
       output-stream
-      "    or      [rsp], rax\n" strbuf:puts
+      "    or      [rsp], rax\n" ostrbuf:puts
       drop
 
       item1 stack-item:mfree
@@ -881,7 +881,7 @@ in
       item1       output-stream nasm:push-int
 
       output-stream
-      "    and     [rsp], rax\n" strbuf:puts
+      "    and     [rsp], rax\n" ostrbuf:puts
       drop
 
       item1 stack-item:mfree
@@ -902,7 +902,7 @@ in
       item1       output-stream nasm:push-int
 
       output-stream
-      "    xor     [rsp], rax\n" strbuf:puts
+      "    xor     [rsp], rax\n" ostrbuf:puts
       drop
 
       item1 stack-item:mfree
@@ -926,7 +926,7 @@ in
         item output-stream nasm:push-int
 
         output-stream
-        "    not     qword [rsp]\n" strbuf:puts
+        "    not     qword [rsp]\n" ostrbuf:puts
         drop
       end
 
@@ -961,8 +961,8 @@ in
       op-item   "rax" output-stream nasm:mov-reg-item
 
       output-stream
-      "    syscall\n"     strbuf:puts
-      "    push    rax\n" strbuf:puts
+      "    syscall\n"     ostrbuf:puts
+      "    push    rax\n" ostrbuf:puts
       drop
 
       op-item   stack-item:mfree
@@ -983,8 +983,8 @@ in
       arg-item1 "rdi" output-stream nasm:mov-reg-item
 
       output-stream
-      "    syscall\n"     strbuf:puts
-      "    push    rax\n" strbuf:puts
+      "    syscall\n"     ostrbuf:puts
+      "    push    rax\n" ostrbuf:puts
       drop
 
       arg-item1 stack-item:mfree
@@ -1008,8 +1008,8 @@ in
       arg-item1 "rdi" output-stream nasm:mov-reg-item
 
       output-stream
-      "    syscall\n"     strbuf:puts
-      "    push    rax\n" strbuf:puts
+      "    syscall\n"     ostrbuf:puts
+      "    push    rax\n" ostrbuf:puts
       drop
 
       arg-item1 stack-item:mfree
@@ -1036,8 +1036,8 @@ in
       arg-item1 "rdi" output-stream nasm:mov-reg-item
 
       output-stream
-      "    syscall\n"     strbuf:puts
-      "    push    rax\n" strbuf:puts
+      "    syscall\n"     ostrbuf:puts
+      "    push    rax\n" ostrbuf:puts
       drop
 
       arg-item1 stack-item:mfree
@@ -1067,8 +1067,8 @@ in
       arg-item1 "rdi" output-stream nasm:mov-reg-item
 
       output-stream
-      "    syscall\n"     strbuf:puts
-      "    push    rax\n" strbuf:puts
+      "    syscall\n"     ostrbuf:puts
+      "    push    rax\n" ostrbuf:puts
       drop
 
       arg-item1 stack-item:mfree
@@ -1101,8 +1101,8 @@ in
       arg-item1 "rdi" output-stream nasm:mov-reg-item
 
       output-stream
-      "    syscall\n"     strbuf:puts
-      "    push    rax\n" strbuf:puts
+      "    syscall\n"     ostrbuf:puts
+      "    push    rax\n" ostrbuf:puts
       drop
 
       arg-item1 stack-item:mfree
@@ -1138,8 +1138,8 @@ in
       arg-item1 "rdi" output-stream nasm:mov-reg-item
 
       output-stream
-      "    syscall\n"     strbuf:puts
-      "    push    rax\n" strbuf:puts
+      "    syscall\n"     ostrbuf:puts
+      "    push    rax\n" ostrbuf:puts
       drop
 
       arg-item1 stack-item:mfree
@@ -1683,8 +1683,8 @@ in
           obj levels-list list64:append
 
           output-stream
-          "    pop     rax\n"      strbuf:puts
-          "    test    rax, rax\n" strbuf:puts
+          "    pop     rax\n"      ostrbuf:puts
+          "    test    rax, rax\n" ostrbuf:puts
           drop
           level-id output-stream nasm:jump-zero-level
         end
@@ -1824,8 +1824,8 @@ in
           compile-procedure:new-level-id compile-procedure:new-level-id let unbroken-end-level-id broken-end-level-id in
             compile-procedure:new-level-id compile-procedure:new-level-id let unbroken-end-id broken-end-id in
               output-stream
-              "    pop     rax\n"      strbuf:puts
-              "    test    rax, rax\n" strbuf:puts
+              "    pop     rax\n"      ostrbuf:puts
+              "    test    rax, rax\n" ostrbuf:puts
               drop
               unbroken-end-id output-stream nasm:jump-zero-level
 
@@ -1996,7 +1996,7 @@ in
             variable-name mlength 1 = if variable-name @8 '_' = else false end if
               item stack-item:get-mode STACK-MODE:REAL = if
                 output-stream
-                "    pop     r15\n" strbuf:puts
+                "    pop     r15\n" ostrbuf:puts
                 drop
               end
 
@@ -2014,13 +2014,13 @@ in
                 item output-stream nasm:convert-item-to-real
 
                 output-stream
-                "    mov     r15, [local_ptr]\n" strbuf:puts
+                "    mov     r15, [local_ptr]\n" ostrbuf:puts
                 local-memory-end @64 is-zero if
-                  "    pop     qword [r15]\n" strbuf:puts
+                  "    pop     qword [r15]\n" ostrbuf:puts
                 else
-                  "    pop     qword [r15 + " strbuf:puts
-                  local-memory-end @64 strbuf:putu
-                  "]\n" strbuf:puts
+                  "    pop     qword [r15 + " ostrbuf:puts
+                  local-memory-end @64 ostrbuf:putu
+                  "]\n" ostrbuf:puts
                 end
                 drop
 
@@ -2163,7 +2163,7 @@ in
     check-stack-types-types
 
     output-stream
-    "    jmp     .return\n" strbuf:puts
+    "    jmp     .return\n" ostrbuf:puts
     drop
 
     source-name source-file output-stream
@@ -2275,9 +2275,9 @@ in let
 in
 
   output-stream
-  "proc_"        strbuf:puts
+  "proc_"        ostrbuf:puts
   procedure-name nasm:fput-alpha
-  ":\n"          strbuf:puts
+  ":\n"          ostrbuf:puts
   drop
 
   // level-id-counter allows to create unique IDs for level labels.
@@ -2337,9 +2337,9 @@ in
                 replace-item stack-item:get-type push-real
 
                 output-stream
-                "    push    qword [rsp + " strbuf:puts
-                local-stack-length @64 replace-item stack-item:get-arg1 - 2 - 8 * strbuf:puti
-                "]\n" strbuf:puts
+                "    push    qword [rsp + " ostrbuf:puts
+                local-stack-length @64 replace-item stack-item:get-arg1 - 2 - 8 * ostrbuf:puti
+                "]\n" ostrbuf:puts
                 drop
               else
 
@@ -2379,18 +2379,18 @@ in
 
                 compile-procedure:new-level-id let level-id in
                   output-stream
-                  "    xchg    rsp, [call_ptr]\n"              strbuf:puts
-                  "    push    .level_"                        strbuf:puts
-                  level-id                                     strbuf:putu
-                                                               strbuf:putnl
-                  "    push    qword [local_ptr]\n"            strbuf:puts
-                  "    add     qword [local_ptr], "            strbuf:puts
-                  local-memory-end @64                         strbuf:putu
-                                                               strbuf:putnl
-                  "    xchg    rsp, [call_ptr]\n"              strbuf:puts
-                  "    jmp     proc_"                          strbuf:puts
+                  "    xchg    rsp, [call_ptr]\n"              ostrbuf:puts
+                  "    push    .level_"                        ostrbuf:puts
+                  level-id                                     ostrbuf:putu
+                                                               ostrbuf:putnl
+                  "    push    qword [local_ptr]\n"            ostrbuf:puts
+                  "    add     qword [local_ptr], "            ostrbuf:puts
+                  local-memory-end @64                         ostrbuf:putu
+                                                               ostrbuf:putnl
+                  "    xchg    rsp, [call_ptr]\n"              ostrbuf:puts
+                  "    jmp     proc_"                          ostrbuf:puts
                   token-arg                                    nasm:fput-alpha
-                                                               strbuf:putnl
+                                                               ostrbuf:putnl
                   level-id output-stream nasm:level
                   drop
                 end
@@ -2833,12 +2833,12 @@ in
                     compile-procedure drop
 
                     output-stream
-                    ".return:\n"                        strbuf:puts
-                    "    xchg    rsp, [call_ptr]\n"     strbuf:puts
-                    "    pop     qword [local_ptr]\n"   strbuf:puts
-                    "    pop     rax\n"                 strbuf:puts
-                    "    xchg    rsp, [call_ptr]\n"     strbuf:puts
-                    "    jmp     rax\n"                 strbuf:puts
+                    ".return:\n"                        ostrbuf:puts
+                    "    xchg    rsp, [call_ptr]\n"     ostrbuf:puts
+                    "    pop     qword [local_ptr]\n"   ostrbuf:puts
+                    "    pop     rax\n"                 ostrbuf:puts
+                    "    xchg    rsp, [call_ptr]\n"     ostrbuf:puts
+                    "    jmp     rax\n"                 ostrbuf:puts
                     drop
                   end
                 end
@@ -2906,32 +2906,32 @@ in let source-name output-name include-paths-set log-stream in
     end
 
     memory output-stream OUTPUT-STREAM-SIZE in
-      output-file OUTPUT-STREAM-SIZE output-stream strbuf:init
+      output-file OUTPUT-STREAM-SIZE output-stream ostrbuf:init
 
       output-stream
-      "segment .text\n"                                   strbuf:puts
-      "global _start\n"                                   strbuf:puts
-      "_start:\n"                                         strbuf:puts
-      "    mov     qword [call_ptr], call_stack\n"        strbuf:puts
-      "    add     qword [call_ptr], 0x4000\n"            strbuf:puts
-      "    mov     qword [local_ptr], local_memory\n"     strbuf:puts
-      "    xchg    rsp, [call_ptr]\n"                     strbuf:puts
-      "    push    corth_endofprogram\n"                  strbuf:puts
-      "    push    qword [local_ptr]\n"                   strbuf:puts
-      "    xchg    rsp, [call_ptr]\n"                     strbuf:puts
-      "    mov     rax, [rsp]\n"                          strbuf:puts
-      "    mov     rbx, rsp\n"                            strbuf:puts
-      "    add     rbx, 8\n"                              strbuf:puts
-      "    mov     rdx, rax\n"                            strbuf:puts
-      "    shl     rdx, 3\n"                              strbuf:puts
-      "    sub     rsp, rdx\n"                            strbuf:puts
-      "    push    rax\n"                                 strbuf:puts
-      "    push    rbx\n"                                 strbuf:puts
-      "    jmp     proc_main\n"                           strbuf:puts
-      "corth_endofprogram:\n"                             strbuf:puts
-      "    mov     rax, 60\n"                             strbuf:puts
-      "    pop     rdi\n"                                 strbuf:puts
-      "    syscall\n"                                     strbuf:puts
+      "segment .text\n"                                   ostrbuf:puts
+      "global _start\n"                                   ostrbuf:puts
+      "_start:\n"                                         ostrbuf:puts
+      "    mov     qword [call_ptr], call_stack\n"        ostrbuf:puts
+      "    add     qword [call_ptr], 0x4000\n"            ostrbuf:puts
+      "    mov     qword [local_ptr], local_memory\n"     ostrbuf:puts
+      "    xchg    rsp, [call_ptr]\n"                     ostrbuf:puts
+      "    push    corth_endofprogram\n"                  ostrbuf:puts
+      "    push    qword [local_ptr]\n"                   ostrbuf:puts
+      "    xchg    rsp, [call_ptr]\n"                     ostrbuf:puts
+      "    mov     rax, [rsp]\n"                          ostrbuf:puts
+      "    mov     rbx, rsp\n"                            ostrbuf:puts
+      "    add     rbx, 8\n"                              ostrbuf:puts
+      "    mov     rdx, rax\n"                            ostrbuf:puts
+      "    shl     rdx, 3\n"                              ostrbuf:puts
+      "    sub     rsp, rdx\n"                            ostrbuf:puts
+      "    push    rax\n"                                 ostrbuf:puts
+      "    push    rbx\n"                                 ostrbuf:puts
+      "    jmp     proc_main\n"                           ostrbuf:puts
+      "corth_endofprogram:\n"                             ostrbuf:puts
+      "    mov     rax, 60\n"                             ostrbuf:puts
+      "    pop     rdi\n"                                 ostrbuf:puts
+      "    syscall\n"                                     ostrbuf:puts
       drop
 
       memory global-names-array     GLOBALS-MAX-COUNT and
@@ -2979,36 +2979,36 @@ in let source-name output-name include-paths-set log-stream in
 
         // Print the data labels.
         output-stream
-        "segment .data\n"       strbuf:puts
+        "segment .data\n"       ostrbuf:puts
         0 while dup data-definitions-list list64:length < do let i in
-          "    data_"           strbuf:puts
-          i                     strbuf:putu
-          ": db "               strbuf:puts
+          "    data_"           ostrbuf:puts
+          i                     ostrbuf:putu
+          ": db "               ostrbuf:puts
 
           i data-definitions-list list64:get let data in
             0 while dup data mlength < do let j in
-              j data + @8       strbuf:putu
-              ", "              strbuf:puts
+              j data + @8       ostrbuf:putu
+              ", "              ostrbuf:puts
             j end inc end drop
           end
 
-                                strbuf:putnl
+                                ostrbuf:putnl
         i end inc end drop
 
         // Print the global memory labels.
-        "segment .bss\n"                                    strbuf:puts
-        "    local_memory:   resb 67108864\n"               strbuf:puts
-        "    local_ptr:      resq 1\n"                      strbuf:puts
-        "    call_stack:     resb 67108864\n"               strbuf:puts
-        "    call_ptr:       resq 1\n"                      strbuf:puts
+        "segment .bss\n"                                    ostrbuf:puts
+        "    local_memory:   resb 67108864\n"               ostrbuf:puts
+        "    local_ptr:      resq 1\n"                      ostrbuf:puts
+        "    call_stack:     resb 67108864\n"               ostrbuf:puts
+        "    call_ptr:       resq 1\n"                      ostrbuf:puts
 
         0 while dup globals-length @64 < do let i in
           i global-names-array array64:get i global-sizes-array array64:get let variable-name variable-size in
-            "    global_"                    strbuf:puts
+            "    global_"                    ostrbuf:puts
             i global-names-array array64:get nasm:fput-alpha
-            ": resb "                        strbuf:puts
-            variable-size                    strbuf:putu
-                                             strbuf:putnl
+            ": resb "                        ostrbuf:puts
+            variable-size                    ostrbuf:putu
+                                             ostrbuf:putnl
 
             // Deallocate the name of the variable.
             variable-name mfree drop
@@ -3016,7 +3016,7 @@ in let source-name output-name include-paths-set log-stream in
         i end inc end drop
 
         // Flush the remaining in the output-stream.
-        output-stream strbuf:flush
+        output-stream ostrbuf:flush
         drop
 
         // Deallocate space allocated for procedures.

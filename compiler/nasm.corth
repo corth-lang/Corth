@@ -66,7 +66,7 @@ proc fput-alpha
   // ptr: output-stream ptr: name -> ptr: output-stream
   ptr ptr -> ptr
 in nasm:convert-alpha let object in
-  object object mlength strbuf:puts
+  object object mlength ostrbuf:puts
   object mfree drop
 end end
 
@@ -76,9 +76,9 @@ proc level
   int ptr ->
 in let level output-stream in
   output-stream
-  ".level_" strbuf:puts
-  level     strbuf:putu
-  ":\n"     strbuf:puts
+  ".level_" ostrbuf:puts
+  level     ostrbuf:putu
+  ":\n"     ostrbuf:puts
   drop
 end end
 
@@ -88,9 +88,9 @@ proc jump-level
   int ptr ->
 in let level output-stream in
   output-stream
-  "    jmp     .level_" strbuf:puts
-  level                 strbuf:putu
-  '\n'                  strbuf:putc
+  "    jmp     .level_" ostrbuf:puts
+  level                 ostrbuf:putu
+  '\n'                  ostrbuf:putc
   drop
 end end
 
@@ -100,9 +100,9 @@ proc jump-zero-level
   int ptr ->
 in let level output-stream in
   output-stream
-  "    jz      .level_" strbuf:puts
-  level                 strbuf:putu
-  '\n'                  strbuf:putc
+  "    jz      .level_" ostrbuf:puts
+  level                 ostrbuf:putu
+  '\n'                  ostrbuf:putc
   drop
 end end
 
@@ -112,11 +112,11 @@ proc mov-reg-zero
   ptr int ptr ->
 in let register-name register-name-length output-stream in
   output-stream
-  "    xor     "                     strbuf:puts
-  register-name register-name-length strbuf:puts
-  ", "                               strbuf:puts
-  register-name register-name-length strbuf:puts
-                                     strbuf:putnl
+  "    xor     "                     ostrbuf:puts
+  register-name register-name-length ostrbuf:puts
+  ", "                               ostrbuf:puts
+  register-name register-name-length ostrbuf:puts
+                                     ostrbuf:putnl
   drop
 end end
 
@@ -129,11 +129,11 @@ in let immediate register-name register-name-length output-stream in
   immediate is-zero if
     register-name register-name-length output-stream nasm:mov-reg-zero
   else
-    "    mov     "                     strbuf:puts
-    register-name register-name-length strbuf:puts
-    ", "                               strbuf:puts
-    immediate                          strbuf:puti
-                                       strbuf:putnl
+    "    mov     "                     ostrbuf:puts
+    register-name register-name-length ostrbuf:puts
+    ", "                               ostrbuf:puts
+    immediate                          ostrbuf:puti
+                                       ostrbuf:putnl
   end
   drop
 end end
@@ -144,11 +144,11 @@ proc mov-reg-global-address
   ptr ptr int ptr ->
 in let global-name register-name register-name-length output-stream in
   output-stream
-  "    mov     "                     strbuf:puts
-  register-name register-name-length strbuf:puts
-  ", global_"                        strbuf:puts
+  "    mov     "                     ostrbuf:puts
+  register-name register-name-length ostrbuf:puts
+  ", global_"                        ostrbuf:puts
   global-name                        nasm:fput-alpha
-                                     strbuf:putnl
+                                     ostrbuf:putnl
   drop
 end end
 
@@ -158,16 +158,16 @@ proc mov-reg-local
   int ptr int ptr ->
 in let offset register-name register-name-length output-stream in
   output-stream
-  "    mov     "                       strbuf:puts
-  register-name register-name-length   strbuf:puts
-  ", [local_ptr]\n"                    strbuf:puts
+  "    mov     "                       ostrbuf:puts
+  register-name register-name-length   ostrbuf:puts
+  ", [local_ptr]\n"                    ostrbuf:puts
 
   offset isn-zero if
-    "    add     "                     strbuf:puts
-    register-name register-name-length strbuf:puts
-    ", "                               strbuf:puts
-    offset                             strbuf:putu
-                                       strbuf:putnl
+    "    add     "                     ostrbuf:puts
+    register-name register-name-length ostrbuf:puts
+    ", "                               ostrbuf:puts
+    offset                             ostrbuf:putu
+                                       ostrbuf:putnl
   end
   drop
 end end
@@ -178,20 +178,20 @@ proc mov-reg-@64local
   int ptr int ptr ->
 in let offset register-name register-name-length output-stream in
   output-stream
-  "    mov     "                     strbuf:puts
-  register-name register-name-length strbuf:puts
-  ", [local_ptr]\n"                  strbuf:puts
+  "    mov     "                     ostrbuf:puts
+  register-name register-name-length ostrbuf:puts
+  ", [local_ptr]\n"                  ostrbuf:puts
 
-  "    mov     "                     strbuf:puts
-  register-name register-name-length strbuf:puts
-  ", ["                              strbuf:puts
-  register-name register-name-length strbuf:puts
+  "    mov     "                     ostrbuf:puts
+  register-name register-name-length ostrbuf:puts
+  ", ["                              ostrbuf:puts
+  register-name register-name-length ostrbuf:puts
 
   offset isn-zero if
-    " + "                            strbuf:puts
-    offset                           strbuf:putu
+    " + "                            ostrbuf:puts
+    offset                           ostrbuf:putu
   end
-  "]\n"                              strbuf:puts
+  "]\n"                              ostrbuf:puts
   drop
 end end
 
@@ -201,11 +201,11 @@ proc mov-reg-@64global
   ptr ptr int ptr ->
 in let global register-name register-name-length output-stream in
   output-stream
-  "    mov     "                     strbuf:puts
-  register-name register-name-length strbuf:puts
-  ", [global_"                       strbuf:puts
+  "    mov     "                     ostrbuf:puts
+  register-name register-name-length ostrbuf:puts
+  ", [global_"                       ostrbuf:puts
   global                             nasm:fput-alpha
-  "]\n"                              strbuf:puts
+  "]\n"                              ostrbuf:puts
   drop
 end end
 
@@ -215,11 +215,11 @@ proc mov-reg-data
   int ptr int ptr ->
 in let index register-name register-name-length output-stream in
   output-stream
-  "    mov     "                     strbuf:puts
-  register-name register-name-length strbuf:puts
-  ", data_"                          strbuf:puts
-  index                              strbuf:putu
-                                     strbuf:putnl
+  "    mov     "                     ostrbuf:puts
+  register-name register-name-length ostrbuf:puts
+  ", data_"                          ostrbuf:puts
+  index                              ostrbuf:putu
+                                     ostrbuf:putnl
   drop
 end end
 
@@ -230,9 +230,9 @@ proc mov-reg-item
 in let item register-name register-name-length output-stream in
   output-stream
   item stack-item:get-mode STACK-MODE:REAL = if
-    "    pop     "                     strbuf:puts
-    register-name register-name-length strbuf:puts
-                                       strbuf:putnl
+    "    pop     "                     ostrbuf:puts
+    register-name register-name-length ostrbuf:puts
+                                       ostrbuf:putnl
 
   else item stack-item:get-mode STACK-MODE:IMM         = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-immediate
   else item stack-item:get-mode STACK-MODE:GLOBAL      = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-global-address
@@ -257,14 +257,14 @@ proc push-int-immediate
 in let immediate output-stream in
   output-stream
   immediate nasm:is-signed-dword if
-    "    push    qword " strbuf:puts
-    immediate            strbuf:puti
-                         strbuf:putnl
+    "    push    qword " ostrbuf:puts
+    immediate            ostrbuf:puti
+                         ostrbuf:putnl
   else
-    "    mov     r15, "  strbuf:puts
-    immediate            strbuf:puti
-                         strbuf:putnl
-    "    push    r15\n"  strbuf:puts
+    "    mov     r15, "  ostrbuf:puts
+    immediate            ostrbuf:puti
+                         ostrbuf:putnl
+    "    push    r15\n"  ostrbuf:puts
   end
   drop
 end end
@@ -275,9 +275,9 @@ proc push-global-address
   ptr ptr ->
 in let global output-stream in
   output-stream
-  "    push    global_" strbuf:puts
+  "    push    global_" ostrbuf:puts
   global                nasm:fput-alpha
-                        strbuf:putnl
+                        ostrbuf:putnl
   drop
 end end
 
@@ -287,15 +287,15 @@ proc push-@64local
   int ptr ->
 in let offset output-stream in
   output-stream
-  "    mov     r15, [local_ptr]\n" strbuf:puts
-  "    push    qword [r15"         strbuf:puts
+  "    mov     r15, [local_ptr]\n" ostrbuf:puts
+  "    push    qword [r15"         ostrbuf:puts
 
   offset isn-zero if
-    " + "                          strbuf:puts
-    offset                         strbuf:putu
+    " + "                          ostrbuf:puts
+    offset                         ostrbuf:putu
   end
 
-  "]\n"                            strbuf:puts
+  "]\n"                            ostrbuf:puts
   drop
 end end
 
@@ -306,16 +306,16 @@ proc push-@8local
 in let offset output-stream in
   output-stream
   "rax" output-stream nasm:mov-reg-zero
-  "    mov     r15, [local_ptr]\n" strbuf:puts
-  "    mov     al, [r15"           strbuf:puts
+  "    mov     r15, [local_ptr]\n" ostrbuf:puts
+  "    mov     al, [r15"           ostrbuf:puts
 
   offset isn-zero if
-    " + "                          strbuf:puts
-    offset                         strbuf:putu
+    " + "                          ostrbuf:puts
+    offset                         ostrbuf:putu
   end
 
-  "]\n" strbuf:puts
-  "    push     rax\n"             strbuf:puts
+  "]\n" ostrbuf:puts
+  "    push     rax\n"             ostrbuf:puts
   drop
 end end
 
@@ -325,9 +325,9 @@ proc push-@64global
   ptr ptr ->
 in let global output-stream in
   output-stream
-  "    push    qword [global_" strbuf:puts
+  "    push    qword [global_" ostrbuf:puts
   global                       nasm:fput-alpha
-  "]\n"                        strbuf:puts
+  "]\n"                        ostrbuf:puts
   drop
 end end
 
@@ -338,10 +338,10 @@ proc push-@8global
 in let global output-stream in
   output-stream
   "rax" output-stream nasm:mov-reg-zero
-  "    mov    al, byte [global_" strbuf:puts
+  "    mov    al, byte [global_" ostrbuf:puts
   global                         nasm:fput-alpha
-  "]\n"                          strbuf:puts
-  "    push   rax\n"             strbuf:puts
+  "]\n"                          ostrbuf:puts
+  "    push   rax\n"             ostrbuf:puts
   drop
 end end
 
@@ -351,12 +351,12 @@ proc push-local
   int ptr ->
 in let offset output-stream in
   output-stream
-  "    push    qword [local_ptr]\n" strbuf:puts
+  "    push    qword [local_ptr]\n" ostrbuf:puts
 
   offset isn-zero if
-    "    add     qword [rsp], "     strbuf:puts
-    offset                          strbuf:putu
-                                    strbuf:putnl
+    "    add     qword [rsp], "     ostrbuf:puts
+    offset                          ostrbuf:putu
+                                    ostrbuf:putnl
   end
   drop
 end end
@@ -367,9 +367,9 @@ proc push-data
   int ptr ->
 in let index output-stream in
   output-stream
-  "    push    qword data_" strbuf:puts
-  index                     strbuf:putu
-                            strbuf:putnl
+  "    push    qword data_" ostrbuf:puts
+  index                     ostrbuf:putu
+                            ostrbuf:putnl
   drop
 end end
 
@@ -464,31 +464,31 @@ in let immediate output-stream in
 
   output-stream
   immediate 1 = if
-    "    inc     qword [rsp]\n"        strbuf:puts
+    "    inc     qword [rsp]\n"        ostrbuf:puts
   else immediate 1 neg = if
-    "    dec     qword [rsp]\n"        strbuf:puts
+    "    dec     qword [rsp]\n"        ostrbuf:puts
   else immediate is-neg if
     immediate nasm:is-signed-dword if
-      "    sub     qword [rsp], "      strbuf:puts
-      immediate neg                    strbuf:putu
-                                       strbuf:putnl
+      "    sub     qword [rsp], "      ostrbuf:puts
+      immediate neg                    ostrbuf:putu
+                                       ostrbuf:putnl
     else
-      "    mov     r15, "              strbuf:puts
-      immediate neg                    strbuf:putu
-                                       strbuf:putnl
-      "    sub     qword [rsp], rax\n" strbuf:puts
+      "    mov     r15, "              ostrbuf:puts
+      immediate neg                    ostrbuf:putu
+                                       ostrbuf:putnl
+      "    sub     qword [rsp], rax\n" ostrbuf:puts
     end
 
   else
     immediate nasm:is-signed-dword if
-      "    add     qword [rsp], "      strbuf:puts
-      immediate                        strbuf:putu
-                                       strbuf:putnl
+      "    add     qword [rsp], "      ostrbuf:puts
+      immediate                        ostrbuf:putu
+                                       ostrbuf:putnl
     else
-      "    mov     r15, "              strbuf:puts
-      immediate                        strbuf:putu
-                                       strbuf:putnl
-      "    add     qword [rsp], rax\n" strbuf:puts
+      "    mov     r15, "              ostrbuf:puts
+      immediate                        ostrbuf:putu
+                                       ostrbuf:putnl
+      "    add     qword [rsp], rax\n" ostrbuf:puts
     end
   end end end
   drop

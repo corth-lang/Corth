@@ -1,4 +1,4 @@
-include "linux_x86/io/strbuf.corth"
+include "linux_x86/io/ostrbuf.corth"
 include "linux_x86/stdio.corth"
 include "linux_x86/timeit.corth"
 
@@ -29,21 +29,21 @@ end end
 proc writing-test-with-buffer file-desc -> in let file in
   timeit:init
     memory buffer buffer-size in
-      file buffer-size buffer strbuf:init
+      file buffer-size buffer ostrbuf:init
 
       0 while dup test-number < do peek i in
         buffer
-        15                     strbuf:putu
-        " is a number"         strbuf:puts
-        ','                    strbuf:putc
-        ' '                    strbuf:putc
-        "so is "               strbuf:puts
-        -24                    strbuf:puti
-                               strbuf:putnl
+        15                     ostrbuf:putu
+        " is a number"         ostrbuf:puts
+        ','                    ostrbuf:putc
+        ' '                    ostrbuf:putc
+        "so is "               ostrbuf:puts
+        -24                    ostrbuf:puti
+                               ostrbuf:putnl
         drop
       end inc end drop
 
-      buffer strbuf:flush
+      buffer ostrbuf:flush
     end
 
     timeit:_break let sec nano in

@@ -12,7 +12,7 @@ stream buffer structure:
 
 */
 
-namespace strbuf
+namespace ostrbuf
 
 // Macros that start with _ assume that _buffer_ is defined and are supposed not to be used outside this file.
 macro _fd     _buffer_      endmacro
@@ -20,75 +20,78 @@ macro _end    _buffer_  8 + endmacro
 macro _handle _buffer_ 16 + endmacro
 macro _buffer _buffer_ 24 + endmacro
 
-macro _get-fd      strbuf:_fd     @64 endmacro
-macro _get-end     strbuf:_end    @64 endmacro
-macro _get-handle  strbuf:_handle @64 endmacro
+macro _get-fd      ostrbuf:_fd     @64 endmacro
+macro _get-end     ostrbuf:_end    @64 endmacro
+macro _get-handle  ostrbuf:_handle @64 endmacro
 
-macro _set-fd      strbuf:_fd     !64 endmacro
-macro _set-end     strbuf:_end    !64 endmacro
-macro _set-handle  strbuf:_handle !64 endmacro
+macro _set-fd      ostrbuf:_fd     !64 endmacro
+macro _set-end     ostrbuf:_end    !64 endmacro
+macro _set-handle  ostrbuf:_handle !64 endmacro
 
-macro _reset       strbuf:_buffer strbuf:_set-handle endmacro
+macro _reset       ostrbuf:_buffer ostrbuf:_set-handle endmacro
 
 macro _capacity
-  strbuf:_get-end strbuf:_buffer -
+  ostrbuf:_get-end ostrbuf:_buffer -
 endmacro
 
 macro _size
-  strbuf:_get-handle strbuf:_buffer -
+  ostrbuf:_get-handle ostrbuf:_buffer -
 endmacro
 
 macro _remain
-  strbuf:_get-end strbuf:_get-handle -
+  ostrbuf:_get-end ostrbuf:_get-handle -
 endmacro
 
 macro _puts
-  strbuf:_get-fd fputs
+  ostrbuf:_get-fd fputs
 endmacro
 
 macro _flush
-  strbuf:_size is-pos if
-    strbuf:_buffer strbuf:_size strbuf:_puts
-    strbuf:_reset
+  ostrbuf:_size is-pos if
+    ostrbuf:_buffer ostrbuf:_size ostrbuf:_puts
+    ostrbuf:_reset
   end
 endmacro
 
+macro _tell
+  ostrbuf:_get-fd ftell ostrbuf:_size +
+endmacro
 
 // file-desc: file-desc int: allocated-size ptr: buffer
 // Initializes an output stream buffer.
 macro init let _buffer_ in
-  _buffer_ + strbuf:_set-end
-  strbuf:_set-fd
-  strbuf:_reset
+  _buffer_ + ostrbuf:_set-end
+  ostrbuf:_set-fd
+  ostrbuf:_reset
 end endmacro
 
 // Flushes the contents of the buffer to the file descriptor.
-macro flush let _buffer_ in strbuf:_flush end endmacro
+macro flush let _buffer_ in ostrbuf:_flush end endmacro
 
 macro putc let char in peek _buffer_ in
-  strbuf:_remain is-zero if strbuf:_flush end
+  ostrbuf:_remain is-zero if ostrbuf:_flush end
 
-  char strbuf:_get-handle !8
-  strbuf:_handle @inc64
+  char ostrbuf:_get-handle !8
+  ostrbuf:_handle @inc64
 end end endmacro
 
 macro putnl
-  '\n' strbuf:putc
+  '\n' ostrbuf:putc
 endmacro
 
 proc puts
   // ptr: stream-buffer ptr: string-address int: string-length -> ptr: stream-buffer
   ptr ptr int -> ptr
 in let address length in peek _buffer_ in
-  strbuf:_remain let remain in
+  ostrbuf:_remain let remain in
     length remain min2 let write-length in
-      address strbuf:_get-handle write-length memcpy8
-      strbuf:_get-handle write-length + strbuf:_set-handle
+      address ostrbuf:_get-handle write-length memcpy8
+      ostrbuf:_get-handle write-length + ostrbuf:_set-handle
     end
 
     length remain > if
-      strbuf:_flush
-      _buffer_ address remain + length remain - strbuf:puts drop
+      ostrbuf:_flush
+      _buffer_ address remain + length remain - ostrbuf:puts drop
     end
   end
 end end end
@@ -100,7 +103,7 @@ in let number in
   // TODO: This could be optimized by rewriting a completely new integer to string converter.
   memory buffer 20 in
     buffer number intconvud let buffer-start in
-      buffer-start buffer 20 + buffer-start - strbuf:puts
+      buffer-start buffer 20 + buffer-start - ostrbuf:puts
     end
   end
 end end
@@ -112,7 +115,7 @@ in let number in
   // TODO: This could be optimized by rewriting a completely new integer to string converter.
   memory buffer 20 in
     buffer number intconvd let buffer-start in
-      buffer-start buffer 20 + buffer-start - strbuf:puts
+      buffer-start buffer 20 + buffer-start - ostrbuf:puts
     end
   end
 end end
