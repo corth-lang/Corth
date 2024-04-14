@@ -2534,8 +2534,8 @@ in
 
             let path-token-type path-token-address path-token-arg in
               path-token-type path-token-address "as path after 'include'" TOKEN-TYPE:STRING compile-file:check-type-here
-              memory found 1 in
-                0 found !8
+              memory found sizeof(bool) in
+                found !reset
 
                 0 while dup include-paths-set list64:length < do peek i in
                   i include-paths-set list64:get let directory in
@@ -2547,7 +2547,7 @@ in
                         // Check if user has access to the path:
                         include-path ACCESS-MODE:R_OK access is-zero if
                           // Mark as found.
-                          0xff found !8
+                          found !set
 
                           stats 24 + @64 S_IFMT && let masked in
                             masked S_IFREG = if
@@ -2585,7 +2585,7 @@ in
                 end inc end drop
 
                 // Check if any library is found.
-                found @8 is-zero if
+                found @bool ! if
                   LOG:ERR log-stream fputs "Could not find library '" log-stream fputs path-token-arg dup mlength log-stream fputs "'.\n" log-stream fputs
                   path-token-address log-stream fput-here
                   EXIT-CODE:ERROR exit drop

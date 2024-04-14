@@ -266,9 +266,9 @@ proc command.quick-test -> in
     EXIT-ERROR exit drop
   end
 
-  memory test-paths        sizeof(ptr) and
-         include-paths-set sizeof(ptr) and
-         full-compilation  sizeof(int) in
+  memory test-paths        sizeof(ptr)  and
+         include-paths-set sizeof(ptr)  and
+         full-compilation  sizeof(bool) in
 
     list64:init test-paths !64
     list64:init include-paths-set !64
@@ -283,7 +283,7 @@ proc command.quick-test -> in
       EXIT-ERROR exit drop
     end
 
-    0 full-compilation !64
+    full-compilation !reset
 
     while true do
       getopts.parse let type arg1 arg1-length arg2 arg2-length error in
@@ -300,12 +300,12 @@ proc command.quick-test -> in
               EXIT-SUCCESS exit drop
 
             else arg1 arg1-length "full" memcmp8-wl is-zero if
-              full-compilation @64 isn-zero if
+              full-compilation @bool if
                 "error: '--full' can not be used more than once\n" puts
                 EXIT-ERROR exit drop
               end
 
-              1 full-compilation !64
+              full-compilation !set
 
             else EXIT-ERROR exit drop end end
 
@@ -324,7 +324,7 @@ proc command.quick-test -> in
       test-file
       "/dev/null" drop
       include-paths-set
-      full-compilation @64 isn-zero
+      full-compilation @bool
       compile-recursive ! if EXIT-ERROR exit drop end
     end inc end drop
 
