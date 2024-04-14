@@ -2475,7 +2475,6 @@ proc compile-file
   // Compilation warning and errors are dumped to log-stream.
 
   // TODO: Add called-from to improve debugging.
-  // TODO: Add called-from to improve debugging.
 in let
   source-name output-stream
   data-definitions-list
