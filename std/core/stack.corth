@@ -1,28 +1,9 @@
-// The naming convention:
-// - Add 'd' to the end to indicate 'perform 2 times'.
-// - Add 't' to the end to indicate 'perform 3 times'.
-// - Add 'i' to the end to indicate 'skip last and perform'.
+macro dup  peek _a_             in _a_             end endmacro
 
 macro drop  let _               in                 end endmacro
 macro dropi let _   _b_         in _b_             end endmacro
-
-/*
-macro dropd let _   _           in                 end endmacro
-macro dropt let _   _   _       in                 end endmacro
-*/
-
-macro dup  peek _a_             in _a_             end endmacro
-macro dupd peek _a_ _b_         in _a_ _b_         end endmacro
-
-macro dupi  let _a_ _b_         in _b_ _a_ _b_     end endmacro
 macro swp   let _a_ _b_         in _b_ _a_         end endmacro
-macro swpi  let _a_ _b_ _c_     in _b_ _a_ _c_     end endmacro
-macro swpd  let _a_ _b_ _c_ _d_ in _c_ _d_ _a_ _b_ end endmacro
 macro rot   let _a_ _b_ _c_     in _b_ _c_ _a_     end endmacro
 macro roti  let _a_ _b_ _c_ _d_ in _b_ _c_ _a_ _d_ end endmacro
 macro arot  let _a_ _b_ _c_     in _c_ _a_ _b_     end endmacro
 macro aroti let _a_ _b_ _c_ _d_ in _c_ _a_ _b_ _d_ end endmacro
-macro rot4  let _a_ _b_ _c_ _d_ in _b_ _c_ _d_ _a_ end endmacro
-macro arot4 let _a_ _b_ _c_ _d_ in _d_ _a_ _b_ _c_ end endmacro
-macro mirr  let _a_ _b_ _c_     in _c_ _b_ _a_     end endmacro
-macro mirri let _a_ _b_ _c_ _d_ in _c_ _b_ _a_ _d_ end endmacro

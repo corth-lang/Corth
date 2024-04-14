@@ -2,12 +2,12 @@ include "core/arithmetic.corth"
 
 
 // Because of the integer limit, can return wrong results for big numbers.
-macro perm
+macro perm let _x_ _y_ in
   // int: x int: y -> int: P(x, y)
   // P(a, b) = a! / (a-b)! = (a-b) * (a-b+1) * (a-b+2) * ... * (a-1) * a = mul-bet(a-b, a)
   // NOTE: x >= y must be satisfied.
-  dupi - inc mul-bet
-endmacro
+  _y_ _x_ _y_ - inc mul-bet
+end endmacro
 
 
 // Because of the integer limit, can return wrong results for big numbers.
