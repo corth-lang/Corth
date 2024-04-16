@@ -338,10 +338,10 @@ proc push-@8global
 in let global output-stream in
   output-stream
   "rax" output-stream nasm:mov-reg-zero
-  "    mov    al, byte [global_" ostrbuf:puts
-  global                         nasm:fput-alpha
-  "]\n"                          ostrbuf:puts
-  "    push   rax\n"             ostrbuf:puts
+  "    mov     al, [global_" ostrbuf:puts
+  global                     nasm:fput-alpha
+  "]\n"                      ostrbuf:puts
+  "    push    rax\n"        ostrbuf:puts
   drop
 end end
 
