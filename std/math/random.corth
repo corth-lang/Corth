@@ -44,7 +44,7 @@ macro rand-unif-range
 
   // uniform-range(a, b) = a + uniform(b - a)
   let _start_ _end_ in
-    rand64 _start_ _end_ - % _end_ +
+    rand64 _end_ _start_ - % _start_ +
   end
 endmacro
 
