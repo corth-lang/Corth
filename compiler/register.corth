@@ -1,0 +1,247 @@
+namespace register
+// 3-bits for the subsection modification
+// 0: 8-bits low
+// 1: 8-bits high
+// 2: 16-bits
+// 3: 32-bits
+// 4: 64-bits
+macro mod-8l 1 endmacro
+macro mod-8h 2 endmacro
+macro mod-16 3 endmacro
+macro mod-32 4 endmacro
+macro mod-64 5 endmacro
+
+// 4-bits for the register modification
+macro mod-ax   0  endmacro
+macro mod-bx   1  endmacro
+macro mod-cx   2  endmacro
+macro mod-sp   3  endmacro
+macro mod-bp   4  endmacro
+macro mod-di   5  endmacro
+macro mod-si   6  endmacro
+macro mod-dx   7  endmacro
+macro mod-r8w  8  endmacro
+macro mod-r9w  9  endmacro
+macro mod-r10w 10 endmacro
+macro mod-r11w 11 endmacro
+macro mod-r12w 12 endmacro
+macro mod-r13w 13 endmacro
+macro mod-r14w 14 endmacro
+macro mod-r15w 15 endmacro
+
+// int: subsection int: register -> int: register-id
+macro register     16 * + endmacro
+macro get-size-mod 16 %   endmacro
+macro get-reg-mod  16 /   endmacro
+
+macro AL   register:mod-8l register:mod-ax register:register endmacro
+macro AH   register:mod-8h register:mod-ax register:register endmacro
+macro AX   register:mod-16 register:mod-ax register:register endmacro
+macro EAX  register:mod-32 register:mod-ax register:register endmacro
+macro RAX  register:mod-64 register:mod-ax register:register endmacro
+
+macro BL   register:mod-8l register:mod-bx register:register endmacro
+macro BH   register:mod-8h register:mod-bx register:register endmacro
+macro BX   register:mod-16 register:mod-bx register:register endmacro
+macro EBX  register:mod-32 register:mod-bx register:register endmacro
+macro RBX  register:mod-64 register:mod-bx register:register endmacro
+
+macro CL   register:mod-8l register:mod-cx register:register endmacro
+macro CH   register:mod-8h register:mod-cx register:register endmacro
+macro CX   register:mod-16 register:mod-cx register:register endmacro
+macro ECX  register:mod-32 register:mod-cx register:register endmacro
+macro RCX  register:mod-64 register:mod-cx register:register endmacro
+
+macro SPL  register:mod-8l register:mod-sp register:register endmacro
+macro SP   register:mod-16 register:mod-sp register:register endmacro
+macro ESP  register:mod-32 register:mod-sp register:register endmacro
+macro RSP  register:mod-64 register:mod-sp register:register endmacro
+
+macro BPL  register:mod-8l register:mod-bp register:register endmacro
+macro BP   register:mod-16 register:mod-bp register:register endmacro
+macro EBP  register:mod-32 register:mod-bp register:register endmacro
+macro RBP  register:mod-64 register:mod-bp register:register endmacro
+
+macro DIL  register:mod-8l register:mod-di register:register endmacro
+macro DI   register:mod-16 register:mod-di register:register endmacro
+macro EDI  register:mod-32 register:mod-di register:register endmacro
+macro RDI  register:mod-64 register:mod-di register:register endmacro
+
+macro SIL  register:mod-8l register:mod-si register:register endmacro
+macro SI   register:mod-16 register:mod-si register:register endmacro
+macro ESI  register:mod-32 register:mod-si register:register endmacro
+macro RSI  register:mod-64 register:mod-si register:register endmacro
+
+macro DL   register:mod-8l register:mod-dx register:register endmacro
+macro DH   register:mod-8h register:mod-dx register:register endmacro
+macro DX   register:mod-16 register:mod-dx register:register endmacro
+macro EDX  register:mod-32 register:mod-dx register:register endmacro
+macro RDX  register:mod-64 register:mod-dx register:register endmacro
+
+// 64-bit exclusive registers
+macro R8B  register:mod-8l register:mod-r8w  register:register endmacro
+macro R8W  register:mod-16 register:mod-r8w  register:register endmacro
+macro R8D  register:mod-32 register:mod-r8w  register:register endmacro
+macro R8   register:mod-64 register:mod-r8w  register:register endmacro
+
+macro R9B  register:mod-8l register:mod-r9w  register:register endmacro
+macro R9W  register:mod-16 register:mod-r9w  register:register endmacro
+macro R9D  register:mod-32 register:mod-r9w  register:register endmacro
+macro R9   register:mod-64 register:mod-r9w  register:register endmacro
+
+macro R10B register:mod-8l register:mod-r10w register:register endmacro
+macro R10W register:mod-16 register:mod-r10w register:register endmacro
+macro R10D register:mod-32 register:mod-r10w register:register endmacro
+macro R10  register:mod-64 register:mod-r10w register:register endmacro
+
+macro R11B register:mod-8l register:mod-r11w register:register endmacro
+macro R11W register:mod-16 register:mod-r11w register:register endmacro
+macro R11D register:mod-32 register:mod-r11w register:register endmacro
+macro R11  register:mod-64 register:mod-r11w register:register endmacro
+
+macro R12B register:mod-8l register:mod-r12w register:register endmacro
+macro R12W register:mod-16 register:mod-r12w register:register endmacro
+macro R12D register:mod-32 register:mod-r12w register:register endmacro
+macro R12  register:mod-64 register:mod-r12w register:register endmacro
+
+macro R13B register:mod-8l register:mod-r13w register:register endmacro
+macro R13W register:mod-16 register:mod-r13w register:register endmacro
+macro R13D register:mod-32 register:mod-r13w register:register endmacro
+macro R13  register:mod-64 register:mod-r13w register:register endmacro
+
+macro R14B register:mod-8l register:mod-r14w register:register endmacro
+macro R14W register:mod-16 register:mod-r14w register:register endmacro
+macro R14D register:mod-32 register:mod-r14w register:register endmacro
+macro R14  register:mod-64 register:mod-r14w register:register endmacro
+
+macro R15B register:mod-8l register:mod-r15w register:register endmacro
+macro R15W register:mod-16 register:mod-r15w register:register endmacro
+macro R15D register:mod-32 register:mod-r15w register:register endmacro
+macro R15  register:mod-64 register:mod-r15w register:register endmacro
+
+proc get-register-name
+  // int: id -> ptr: register-name int: register-name-length
+  int -> ptr int
+in let id in
+  id register:get-size-mod id register:get-reg-mod let size type in
+    type register:mod-ax = if
+      size register:mod-8l = if "al"
+      else size register:mod-8h = if "ah"
+      else size register:mod-16 = if "ax"
+      else size register:mod-32 = if "eax"
+      else size register:mod-64 = if "rax"
+      else "?" end end end end end
+
+    else type register:mod-bx = if
+      size register:mod-8l = if "bl"
+      else size register:mod-8h = if "bh"
+      else size register:mod-16 = if "bx"
+      else size register:mod-32 = if "ebx"
+      else size register:mod-64 = if "rbx"
+      else "?" end end end end end
+
+    else type register:mod-cx = if
+      size register:mod-8l = if "cl"
+      else size register:mod-8h = if "ch"
+      else size register:mod-16 = if "cx"
+      else size register:mod-32 = if "ecx"
+      else size register:mod-64 = if "rcx"
+      else "?" end end end end end
+
+    else type register:mod-sp = if
+      size register:mod-8l = if "spl"
+      else size register:mod-16 = if "sp"
+      else size register:mod-32 = if "esp"
+      else size register:mod-64 = if "rsp"
+      else "?" end end end end
+
+    else type register:mod-bp = if
+      size register:mod-8l = if "bpl"
+      else size register:mod-16 = if "bp"
+      else size register:mod-32 = if "ebp"
+      else size register:mod-64 = if "rbp"
+      else "?" end end end end
+
+    else type register:mod-di = if
+      size register:mod-8l = if "dil"
+      else size register:mod-16 = if "di"
+      else size register:mod-32 = if "edi"
+      else size register:mod-64 = if "rdi"
+      else "?" end end end end
+
+    else type register:mod-si   = if
+      size register:mod-8l = if "sil"
+      else size register:mod-16 = if "si"
+      else size register:mod-32 = if "esi"
+      else size register:mod-64 = if "rsi"
+      else "?" end end end end
+
+    else type register:mod-dx   = if
+      size register:mod-8l = if "dl"
+      else size register:mod-8h = if "dh"
+      else size register:mod-16 = if "dx"
+      else size register:mod-32 = if "edx"
+      else size register:mod-64 = if "rdx"
+      else "?" end end end end end
+
+    else type register:mod-r8w = if
+      size register:mod-8l = if "r8b"
+      else size register:mod-16 = if "r8w"
+      else size register:mod-32 = if "r8d"
+      else size register:mod-64 = if "r8"
+      else "?" end end end end
+
+    else type register:mod-r9w = if
+      size register:mod-8l = if "r9b"
+      else size register:mod-16 = if "r9w"
+      else size register:mod-32 = if "r9d"
+      else size register:mod-64 = if "r9"
+      else "?" end end end end
+
+    else type register:mod-r10w = if
+      size register:mod-8l = if "r10b"
+      else size register:mod-16 = if "r10w"
+      else size register:mod-32 = if "r10d"
+      else size register:mod-64 = if "r10"
+      else "?" end end end end
+
+    else type register:mod-r11w  = if
+      size register:mod-8l = if "r11b"
+      else size register:mod-16 = if "r11w"
+      else size register:mod-32 = if "r11d"
+      else size register:mod-64 = if "r11"
+      else "?" end end end end
+
+    else type register:mod-r12w  = if
+      size register:mod-8l = if "r12b"
+      else size register:mod-16 = if "r12w"
+      else size register:mod-32 = if "r12d"
+      else size register:mod-64 = if "r12"
+      else "?" end end end end
+
+    else type register:mod-r13w  = if
+      size register:mod-8l = if "r13b"
+      else size register:mod-16 = if "r13w"
+      else size register:mod-32 = if "r13d"
+      else size register:mod-64 = if "r13"
+      else "?" end end end end
+
+    else type register:mod-r14w  = if
+      size register:mod-8l = if "r14b"
+      else size register:mod-16 = if "r14w"
+      else size register:mod-32 = if "r14d"
+      else size register:mod-64 = if "r14"
+      else "?" end end end end
+
+    else type register:mod-r15w  = if
+      size register:mod-8l = if "r15b"
+      else size register:mod-16 = if "r15w"
+      else size register:mod-32 = if "r15d"
+      else size register:mod-64 = if "r15"
+      else "?" end end end end
+
+    else "?" end end end end end end end end end end end end end end end end
+  end
+end end
+
+endnamespace

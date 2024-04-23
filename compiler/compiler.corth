@@ -395,8 +395,10 @@ in let token-address local-stack local-stack-length peeked-item output-stream lo
       else
         INT-TYPE:INT push-real
 
-        item2 output-stream nasm:push-int
-        item1 stack-item:get-arg1 output-stream nasm:add-int-immediate
+        output-stream
+        item2                     nasm:push
+        item1 stack-item:get-arg1 nasm:add-immediate
+        drop
       end end
 
     else item2 stack-item:get-mode STACK-MODE:IMM = if
@@ -406,17 +408,18 @@ in let token-address local-stack local-stack-length peeked-item output-stream lo
       else
         INT-TYPE:INT push-real
 
-        item1 output-stream nasm:push-int
-        item2 stack-item:get-arg1 output-stream nasm:add-int-immediate
+        output-stream
+        item1                     nasm:push
+        item2 stack-item:get-arg1 nasm:add-immediate
+        drop
       end
 
     else
       INT-TYPE:INT push-real
 
-      item2 "rax" output-stream nasm:mov-reg-item
-      item1       output-stream nasm:push-int
-
       output-stream
+      item2 register:RAX         nasm:mov-reg-item
+      item1                      nasm:push
       "    add     [rsp], rax\n" ostrbuf:puts
       drop
     end end
@@ -428,21 +431,21 @@ end end
 
 
 proc get-register-name
-  // int: intrinsic -> ptr: register-name int: register-name-length
-  int -> ptr int
+  // int: intrinsic -> int: register-id
+  int -> ptr
 in let intrinsic in
-       intrinsic INTRINSIC:STORE8  = if "al"
-  else intrinsic INTRINSIC:STORE16 = if "ax"
-  else intrinsic INTRINSIC:STORE32 = if "eax"
-  else intrinsic INTRINSIC:STORE64 = if "rax"
-  else intrinsic INTRINSIC:LOAD8   = if "al"
-  else intrinsic INTRINSIC:LOAD16  = if "ax"
-  else intrinsic INTRINSIC:LOAD32  = if "eax"
-  else intrinsic INTRINSIC:LOAD64  = if "rax"
+       intrinsic INTRINSIC:STORE8  = if register:AL
+  else intrinsic INTRINSIC:STORE16 = if register:AX
+  else intrinsic INTRINSIC:STORE32 = if register:EAX
+  else intrinsic INTRINSIC:STORE64 = if register:RAX
+  else intrinsic INTRINSIC:LOAD8   = if register:AL
+  else intrinsic INTRINSIC:LOAD16  = if register:AX
+  else intrinsic INTRINSIC:LOAD32  = if register:EAX
+  else intrinsic INTRINSIC:LOAD64  = if register:RAX
   else
     LOG:ERR STDERR fputs "Not a 'load' or 'store' intrinsic.\n" STDERR fputs
     1 exit drop
-    NULLPTR 0 // dummy
+    0 // dummy
   end end end end end end end end
 end end
 
@@ -469,24 +472,20 @@ in let token-address intrinsic local-stack local-stack-length peeked-item output
 
     INT-TYPE:INT push-real
 
-    intrinsic INTRINSIC:LOAD64 = if
-      item "rbx" output-stream nasm:mov-reg-item
+    output-stream
+    item register:RBX             nasm:mov-reg-item
 
-      output-stream
+    intrinsic INTRINSIC:LOAD64 = if
       "    push    qword [rbx]\n" ostrbuf:puts
-      drop
 
     else
-      item "rbx" output-stream nasm:mov-reg-item
-           "rax" output-stream nasm:mov-reg-zero
-
-      output-stream
+      register:RAX                nasm:mov-reg-zero
       "    mov     "              ostrbuf:puts
-      intrinsic get-register-name ostrbuf:puts
+      intrinsic get-register-name nasm:put-register
       ", [rbx]\n"                 ostrbuf:puts
-      "    push    rax\n"         ostrbuf:puts
-      drop
+      register:RAX                nasm:push-register
     end
+    drop
   end
 end end
 
@@ -566,12 +565,12 @@ in let value-item address-item address-item-length token-address intrinsic outpu
     return
   end
 
-  value-item "rax" output-stream nasm:mov-reg-item
-  "    mov     [" ostrbuf:puts
+  value-item register:RAX          nasm:mov-reg-item
+  "    mov     ["                  ostrbuf:puts
   address-item address-item-length ostrbuf:puts
-  "], " ostrbuf:puts
-  intrinsic get-register-name ostrbuf:puts
-  ostrbuf:putnl
+  "], "                            ostrbuf:puts
+  intrinsic get-register-name      nasm:put-register
+                                   ostrbuf:putnl
 
   drop
 end end
@@ -619,8 +618,8 @@ in let token-address intrinsic local-stack local-stack-length peeked-item output
       end
 
     else
-      address-item "rbx" output-stream nasm:mov-reg-item
-      value-item "rbx" token-address intrinsic output-stream log-stream store-intrinsic-sub
+      address-item register:RBX nasm:mov-reg-item
+      value-item register:RBX register:get-register-name token-address intrinsic output-stream log-stream store-intrinsic-sub
     end end end
   end
   drop
@@ -649,19 +648,15 @@ in let upper immediate item local-stack local-stack-length peeked-item output-st
     // TODO: Multiplication by numbers that are not whole powers of 2 without using the 'mul' instruction is possible.
     output-stream
     log2 is-neg if
-      item      "rax" output-stream nasm:mov-reg-item
-      immediate "rbx" output-stream nasm:mov-reg-immediate
+      item      register:RAX        nasm:mov-reg-item
+      immediate register:RBX        nasm:mov-reg-immediate
 
-      "    imul    rbx\n" ostrbuf:puts
+      "    imul    rbx\n"           ostrbuf:puts
 
-      upper if
-        "    push    rdx\n"
-      else
-        "    push    rax\n"
-      end ostrbuf:puts
+      upper if register:RDX else register:RAX end nasm:push-register
 
     else
-      item output-stream nasm:push-int
+      item                          nasm:push
 
       upper if
         "    sar     qword [rsp], " ostrbuf:puts
@@ -670,7 +665,9 @@ in let upper immediate item local-stack local-stack-length peeked-item output-st
       else
         "    sal     qword [rsp], " ostrbuf:puts
         log2                        ostrbuf:putu
-      end ostrbuf:putnl
+      end
+
+                                    ostrbuf:putnl
     end
     drop
   end
@@ -704,16 +701,11 @@ in let token-address upper local-stack local-stack-length peeked-item output-str
       else
         INT-TYPE:INT push-real
 
-        item2 "rbx" output-stream nasm:mov-reg-item
-        item1 "rax" output-stream nasm:mov-reg-item
-
         output-stream
+        item2 register:RBX  nasm:mov-reg-item
+        item1 register:RAX  nasm:mov-reg-item
         "    imul    rbx\n" ostrbuf:puts
-        upper  if
-          "    push    rdx\n"
-        else
-          "    push    rax\n"
-        end ostrbuf:puts
+        upper if register:RDX else register:RAX end nasm:push-register
         drop
       end
     end
@@ -728,12 +720,11 @@ proc bitwise-and-any-immediate
   // ptr: item int: immediate ptr: local-stack ptr: local-stack-length ptr: output-stream ->
   ptr int ptr ptr ptr ->
 in let item immediate local-stack local-stack-length output-stream in
-  item output-stream nasm:push-int
-
   output-stream
+  item                        nasm:push
   "    and     qword [rsp], " ostrbuf:puts
   immediate                   ostrbuf:putu
-  '\n'                        ostrbuf:putc
+                              ostrbuf:putnl
   drop
 end end
 
@@ -759,26 +750,22 @@ in let token-address modulo local-stack local-stack-length peeked-item output-st
           item1 item2 stack-item:get-arg1 dec local-stack local-stack-length output-stream bitwise-and-any-immediate
 
         else
-          item2 "rbx" output-stream nasm:mov-reg-item
-          item1 "rax" output-stream nasm:mov-reg-item
-                "rdx" output-stream nasm:mov-reg-zero
-
+          item2 register:RBX  nasm:mov-reg-item
+          item1 register:RAX  nasm:mov-reg-item
+                register:RDX  nasm:mov-reg-zero
           "    idiv    rbx\n" ostrbuf:puts
-          modulo if   "    push    rdx\n"
-                 else "    push    rax\n" end ostrbuf:puts
+          modulo if register:RDX else register:RAX end nasm:push-register
         end
       end
 
     else
       INT-TYPE:INT push-real
 
-      item2 "rbx" output-stream nasm:mov-reg-item
-      item1 "rax" output-stream nasm:mov-reg-item
-            "rdx" output-stream nasm:mov-reg-zero
-
+      item2 register:RBX  nasm:mov-reg-item
+      item1 register:RAX  nasm:mov-reg-item
+            register:RDX  nasm:mov-reg-zero
       "    idiv    rbx\n" ostrbuf:puts
-      modulo if   "    push    rdx\n"
-             else "    push    rax\n" end ostrbuf:puts
+      modulo if register:RDX else register:RAX end nasm:push-register
     end
 
     item1 stack-item:mfree
@@ -825,22 +812,19 @@ in
       item1 stack-item:get-type INT-TYPE:INT != if invalid-usage-of-intrinsic end
       item2 stack-item:get-type INT-TYPE:INT != if invalid-usage-of-intrinsic end
 
-      item2 stack-item:get-mode STACK-MODE:IMM = if
-        INT-TYPE:INT push-real
+      INT-TYPE:INT push-real
 
-        item1              output-stream nasm:push-int
-        item2 stack-item:get-arg1 neg output-stream nasm:add-int-immediate
+      output-stream
+      item2 stack-item:get-mode STACK-MODE:IMM = if
+        item1                     nasm:push
+        item2 stack-item:get-arg1 neg nasm:add-immediate
 
       else
-        INT-TYPE:INT push-real
-
-        item2 "rax" output-stream nasm:mov-reg-item
-        item1       output-stream nasm:push-int
-
-        output-stream
+        item2 register:RAX         nasm:mov-reg-item
+        item1                      nasm:push
         "    sub     [rsp], rax\n" ostrbuf:puts
-        drop
       end
+      drop
 
       item1 stack-item:mfree
       item2 stack-item:mfree
@@ -856,10 +840,9 @@ in
 
       INT-TYPE:INT push-real
 
-      item2 "rax" output-stream nasm:mov-reg-item
-      item1       output-stream nasm:push-int
-
       output-stream
+      item2 register:RAX         nasm:mov-reg-item
+      item1                      nasm:push
       "    or      [rsp], rax\n" ostrbuf:puts
       drop
 
@@ -877,10 +860,9 @@ in
 
       INT-TYPE:INT push-real
 
-      item2 "rax" output-stream nasm:mov-reg-item
-      item1       output-stream nasm:push-int
-
       output-stream
+      item2 register:RAX         nasm:mov-reg-item
+      item1                      nasm:push
       "    and     [rsp], rax\n" ostrbuf:puts
       drop
 
@@ -898,10 +880,9 @@ in
 
       INT-TYPE:INT push-real
 
-      item2 "rax" output-stream nasm:mov-reg-item
-      item1       output-stream nasm:push-int
-
       output-stream
+      item2 register:RAX         nasm:mov-reg-item
+      item1                      nasm:push
       "    xor     [rsp], rax\n" ostrbuf:puts
       drop
 
@@ -923,9 +904,8 @@ in
       else
         INT-TYPE:INT push-real
 
-        item output-stream nasm:push-int
-
         output-stream
+        item                        nasm:push
         "    not     qword [rsp]\n" ostrbuf:puts
         drop
       end
@@ -958,11 +938,10 @@ in
 
       INT-TYPE:INT push-real
 
-      op-item   "rax" output-stream nasm:mov-reg-item
-
       output-stream
-      "    syscall\n"     ostrbuf:puts
-      "    push    rax\n" ostrbuf:puts
+      op-item   register:RAX nasm:mov-reg-item
+                             nasm:syscall
+      register:RAX           nasm:push-register
       drop
 
       op-item   stack-item:mfree
@@ -979,12 +958,11 @@ in
 
       INT-TYPE:INT push-real
 
-      op-item   "rax" output-stream nasm:mov-reg-item
-      arg-item1 "rdi" output-stream nasm:mov-reg-item
-
       output-stream
-      "    syscall\n"     ostrbuf:puts
-      "    push    rax\n" ostrbuf:puts
+      op-item   register:RAX nasm:mov-reg-item
+      arg-item1 register:RDI nasm:mov-reg-item
+                             nasm:syscall
+      register:RAX           nasm:push-register
       drop
 
       arg-item1 stack-item:mfree
@@ -1003,13 +981,12 @@ in
 
       INT-TYPE:INT push-real
 
-      op-item   "rax" output-stream nasm:mov-reg-item
-      arg-item2 "rsi" output-stream nasm:mov-reg-item
-      arg-item1 "rdi" output-stream nasm:mov-reg-item
-
       output-stream
-      "    syscall\n"     ostrbuf:puts
-      "    push    rax\n" ostrbuf:puts
+      op-item   register:RAX nasm:mov-reg-item
+      arg-item2 register:RSI nasm:mov-reg-item
+      arg-item1 register:RDI nasm:mov-reg-item
+                             nasm:syscall
+      register:RAX           nasm:push-register
       drop
 
       arg-item1 stack-item:mfree
@@ -1030,14 +1007,13 @@ in
 
       INT-TYPE:INT push-real
 
-      op-item   "rax" output-stream nasm:mov-reg-item
-      arg-item3 "rdx" output-stream nasm:mov-reg-item
-      arg-item2 "rsi" output-stream nasm:mov-reg-item
-      arg-item1 "rdi" output-stream nasm:mov-reg-item
-
       output-stream
-      "    syscall\n"     ostrbuf:puts
-      "    push    rax\n" ostrbuf:puts
+      op-item   register:RAX nasm:mov-reg-item
+      arg-item3 register:RDX nasm:mov-reg-item
+      arg-item2 register:RSI nasm:mov-reg-item
+      arg-item1 register:RDI nasm:mov-reg-item
+                             nasm:syscall
+      register:RAX           nasm:push-register
       drop
 
       arg-item1 stack-item:mfree
@@ -1060,15 +1036,14 @@ in
 
       INT-TYPE:INT push-real
 
-      op-item   "rax" output-stream nasm:mov-reg-item
-      arg-item4 "r10" output-stream nasm:mov-reg-item
-      arg-item3 "rdx" output-stream nasm:mov-reg-item
-      arg-item2 "rsi" output-stream nasm:mov-reg-item
-      arg-item1 "rdi" output-stream nasm:mov-reg-item
-
       output-stream
-      "    syscall\n"     ostrbuf:puts
-      "    push    rax\n" ostrbuf:puts
+      op-item   register:RAX nasm:mov-reg-item
+      arg-item4 register:R10 nasm:mov-reg-item
+      arg-item3 register:RDX nasm:mov-reg-item
+      arg-item2 register:RSI nasm:mov-reg-item
+      arg-item1 register:RDI nasm:mov-reg-item
+                             nasm:syscall
+      register:RAX           nasm:push-register
       drop
 
       arg-item1 stack-item:mfree
@@ -1093,16 +1068,15 @@ in
 
       INT-TYPE:INT push-real
 
-      op-item   "rax" output-stream nasm:mov-reg-item
-      arg-item5 "r8"  output-stream nasm:mov-reg-item
-      arg-item4 "r10" output-stream nasm:mov-reg-item
-      arg-item3 "rdx" output-stream nasm:mov-reg-item
-      arg-item2 "rsi" output-stream nasm:mov-reg-item
-      arg-item1 "rdi" output-stream nasm:mov-reg-item
-
       output-stream
-      "    syscall\n"     ostrbuf:puts
-      "    push    rax\n" ostrbuf:puts
+      op-item   register:RAX nasm:mov-reg-item
+      arg-item5 register:R8  nasm:mov-reg-item
+      arg-item4 register:R10 nasm:mov-reg-item
+      arg-item3 register:RDX nasm:mov-reg-item
+      arg-item2 register:RSI nasm:mov-reg-item
+      arg-item1 register:RDI nasm:mov-reg-item
+                             nasm:syscall
+      register:RAX           nasm:push-register
       drop
 
       arg-item1 stack-item:mfree
@@ -1129,17 +1103,16 @@ in
 
       INT-TYPE:INT push-real
 
-      op-item   "rax" output-stream nasm:mov-reg-item
-      arg-item6 "r9"  output-stream nasm:mov-reg-item
-      arg-item5 "r8"  output-stream nasm:mov-reg-item
-      arg-item4 "r10" output-stream nasm:mov-reg-item
-      arg-item3 "rdx" output-stream nasm:mov-reg-item
-      arg-item2 "rsi" output-stream nasm:mov-reg-item
-      arg-item1 "rdi" output-stream nasm:mov-reg-item
-
       output-stream
-      "    syscall\n"     ostrbuf:puts
-      "    push    rax\n" ostrbuf:puts
+      op-item   register:RAX nasm:mov-reg-item
+      arg-item6 register:R9  nasm:mov-reg-item
+      arg-item5 register:R8  nasm:mov-reg-item
+      arg-item4 register:R10 nasm:mov-reg-item
+      arg-item3 register:RDX nasm:mov-reg-item
+      arg-item2 register:RSI nasm:mov-reg-item
+      arg-item1 register:RDI nasm:mov-reg-item
+                             nasm:syscall
+      register:RAX           nasm:push-register
       drop
 
       arg-item1 stack-item:mfree
@@ -1347,7 +1320,9 @@ in
               // Overwrite the contents of the local-stack with the old contents.
               start-stack local-stack local-stack-length local-stack.overwrite
 
-              start-id output-stream nasm:level
+              output-stream
+              start-id nasm:level
+              drop
 
               // Deallocate 'start-stack'.
               start-stack _local-stack.mfree
@@ -1503,7 +1478,9 @@ in
             // Check for the stack changes.
             start-stack start-address local-stack local-stack-length token-address log-stream check-stack-types
 
-            start-id output-stream nasm:level
+            output-stream
+            start-id nasm:level
+            drop
 
             // Deallocate 'start-stack'.
             start-stack _local-stack.mfree
@@ -1518,7 +1495,9 @@ in
             // Check for the stack changes.
             start-stack else-address local-stack local-stack-length token-address log-stream check-stack-types
 
-            start-id output-stream nasm:level
+            output-stream
+            start-id nasm:level
+            drop
 
             // Deallocate 'else-address' and 'start-stack'.
             else-address mfree drop
@@ -1548,9 +1527,11 @@ in
             // Overwrite the contents of the local-stack.
             do-stack local-stack local-stack-length local-stack.overwrite
 
-            while-level-id  output-stream nasm:jump-level
-            unbroken-end-id output-stream nasm:level
-            broken-end-id   output-stream nasm:level
+            output-stream
+            while-level-id  nasm:jump-level
+            unbroken-end-id nasm:level
+            broken-end-id   nasm:level
+            drop
 
             // Deallocate 'do-address', 'while-stack' and 'do-stack'.
             do-address mfree drop
@@ -1665,7 +1646,9 @@ in
         EXIT-CODE:ERROR exit drop
       end
 
-      item output-stream nasm:convert-bool-to-real
+      output-stream
+      item nasm:convert-real
+      drop
 
       item stack-item:mfree
     end
@@ -1685,8 +1668,8 @@ in
           output-stream
           "    pop     rax\n"      ostrbuf:puts
           "    test    rax, rax\n" ostrbuf:puts
+          level-id                 nasm:jump-zero-level
           drop
-          level-id output-stream nasm:jump-zero-level
         end
       end
     end
@@ -1720,8 +1703,10 @@ in
             start-stack local-stack local-stack-length local-stack.overwrite
 
             compile-procedure:new-level-id let level-id in
-              level-id output-stream nasm:jump-level
-              start-id output-stream nasm:level
+              output-stream
+              level-id nasm:jump-level
+              start-id nasm:level
+              drop
 
               40 malloc let new-level in
                 new-level "creating a level object for 'else'" compile-procedure:check-null-here
@@ -1762,7 +1747,9 @@ in
       compile-procedure:new-level-id let level-id in
         local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
-        level-id output-stream nasm:level
+        output-stream
+        level-id nasm:level
+        drop
 
         32 malloc let new-level in
           new-level "creating a level object for 'while'" compile-procedure:check-null-here
@@ -1826,8 +1813,8 @@ in
               output-stream
               "    pop     rax\n"      ostrbuf:puts
               "    test    rax, rax\n" ostrbuf:puts
+              unbroken-end-id          nasm:jump-zero-level
               drop
-              unbroken-end-id output-stream nasm:jump-zero-level
 
               local-stack local-stack-length local-stack.copy let copy-stack in
                 copy-stack "copying the stack for 'do'" compile-procedure:check-null-here
@@ -1865,7 +1852,9 @@ in
 
             local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
-            broken-end-id output-stream nasm:jump-level
+            output-stream
+            broken-end-id nasm:jump-level
+            drop
           end
 
           source-name source-file output-stream
@@ -2011,17 +2000,16 @@ in
 
               else
                 local-stack local-stack-length output-stream local-stack.convert-last-items-real
-                item output-stream nasm:convert-item-to-real
 
                 output-stream
+                item                             nasm:convert-real
                 "    mov     r15, [local_ptr]\n" ostrbuf:puts
-                local-memory-end @64 is-zero if
-                  "    pop     qword [r15]\n" ostrbuf:puts
-                else
-                  "    pop     qword [r15 + " ostrbuf:puts
-                  local-memory-end @64 ostrbuf:putu
-                  "]\n" ostrbuf:puts
+                "    pop     qword [r15"         ostrbuf:puts
+                local-memory-end @64 isn-zero if
+                  " + "                          ostrbuf:puts
+                  local-memory-end @64           ostrbuf:putu
                 end
+                "]\n"                            ostrbuf:puts
                 drop
 
                 item stack-item:get-type STACK-MODE:@LOCALCONST stack-item:create let replace-item in
@@ -2391,7 +2379,7 @@ in
                   "    jmp     proc_"                          ostrbuf:puts
                   token-arg                                    nasm:fput-alpha
                                                                ostrbuf:putnl
-                  level-id output-stream nasm:level
+                  level-id                                     nasm:level
                   drop
                 end
               end

@@ -84,9 +84,11 @@ proc local-stack.convert-items-real
   // int: start-index int: end-index ptr: local-stack ptr: local-stack-length ptr: output-stream ->
   int int ptr ptr ptr ->
 in let start-index end-index local-stack local-stack-length output-stream in
-  start-index while dup end-index < do dup
-    local-stack array64:get output-stream nasm:convert-item-to-real
-  inc end drop
+  start-index while dup end-index < do peek i in
+    output-stream
+    i local-stack array64:get nasm:convert-real
+    drop
+  end inc end drop
 end end
 
 

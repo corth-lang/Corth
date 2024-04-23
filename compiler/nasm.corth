@@ -1,5 +1,5 @@
 include "stack_item.corth"
-
+include "register.corth"
 
 namespace nasm
 
@@ -72,401 +72,63 @@ end end
 
 
 proc level
-  // int: id ptr: output-stream
-  int ptr ->
-in let level output-stream in
-  output-stream
+  // ptr: output-stream int: id -> ptr: output-stream
+  ptr int -> ptr
+in let level in
   ".level_" ostrbuf:puts
   level     ostrbuf:putu
   ":\n"     ostrbuf:puts
-  drop
 end end
 
 
 proc jump-level
-  // int: id ptr: output-stream
-  int ptr ->
-in let level output-stream in
-  output-stream
+  // ptr: output-stream int: id -> ptr: output-stream
+  ptr int -> ptr
+in let level in
   "    jmp     .level_" ostrbuf:puts
   level                 ostrbuf:putu
   '\n'                  ostrbuf:putc
-  drop
 end end
 
 
 proc jump-zero-level
-  // int: id ptr: output-stream
-  int ptr ->
-in let level output-stream in
-  output-stream
+  // ptr: output-stream int: id -> ptr: output-stream
+  ptr int -> ptr
+in let level in
   "    jz      .level_" ostrbuf:puts
   level                 ostrbuf:putu
   '\n'                  ostrbuf:putc
-  drop
 end end
 
 
-proc mov-reg-zero
-  // ptr: register-name int: register-name-length ptr: output-stream
-  ptr int ptr ->
-in let register-name register-name-length output-stream in
-  output-stream
-  "    xor     "                     ostrbuf:puts
-  register-name register-name-length ostrbuf:puts
-  ", "                               ostrbuf:puts
-  register-name register-name-length ostrbuf:puts
-                                     ostrbuf:putnl
-  drop
+proc put-register
+  // ptr: output-stream int: id -> ptr: output-stream
+  ptr int -> ptr
+in let register-id in
+  register-id register:get-register-name ostrbuf:puts
 end end
 
 
-proc mov-reg-immediate
-  // int: immediate ptr: register-name int: register-name-length ptr: output-stream
-  int ptr int ptr ->
-in let immediate register-name register-name-length output-stream in
-  output-stream
-  immediate is-zero if
-    register-name register-name-length output-stream nasm:mov-reg-zero
-  else
-    "    mov     "                     ostrbuf:puts
-    register-name register-name-length ostrbuf:puts
-    ", "                               ostrbuf:puts
-    immediate                          ostrbuf:puti
-                                       ostrbuf:putnl
-  end
-  drop
+proc push-register
+  // ptr: output-stream int: register-id -> ptr: output-stream
+  ptr int -> ptr
+in let register-id in
+  "    push    " ostrbuf:puts
+  register-id    nasm:put-register
+                 ostrbuf:putnl
 end end
 
 
-proc mov-reg-global-address
-  // ptr: global-name ptr: register-name int: register-name-length ptr: output-stream
-  ptr ptr int ptr ->
-in let global-name register-name register-name-length output-stream in
-  output-stream
-  "    mov     "                     ostrbuf:puts
-  register-name register-name-length ostrbuf:puts
-  ", global_"                        ostrbuf:puts
-  global-name                        nasm:fput-alpha
-                                     ostrbuf:putnl
-  drop
-end end
-
-
-proc mov-reg-local
-  // int: offset ptr: register-name int: register-name-length ptr: output-stream
-  int ptr int ptr ->
-in let offset register-name register-name-length output-stream in
-  output-stream
-  "    mov     "                       ostrbuf:puts
-  register-name register-name-length   ostrbuf:puts
-  ", [local_ptr]\n"                    ostrbuf:puts
-
-  offset isn-zero if
-    "    add     "                     ostrbuf:puts
-    register-name register-name-length ostrbuf:puts
-    ", "                               ostrbuf:puts
-    offset                             ostrbuf:putu
-                                       ostrbuf:putnl
-  end
-  drop
-end end
-
-
-proc mov-reg-@64local
-  // int: offset ptr: register-name int: register-name-length ptr: output-stream
-  int ptr int ptr ->
-in let offset register-name register-name-length output-stream in
-  output-stream
-  "    mov     "                     ostrbuf:puts
-  register-name register-name-length ostrbuf:puts
-  ", [local_ptr]\n"                  ostrbuf:puts
-
-  "    mov     "                     ostrbuf:puts
-  register-name register-name-length ostrbuf:puts
-  ", ["                              ostrbuf:puts
-  register-name register-name-length ostrbuf:puts
-
-  offset isn-zero if
-    " + "                            ostrbuf:puts
-    offset                           ostrbuf:putu
-  end
-  "]\n"                              ostrbuf:puts
-  drop
-end end
-
-
-proc mov-reg-@64global
-  // ptr: global ptr: register-name int: register-name-length ptr: output-stream
-  ptr ptr int ptr ->
-in let global register-name register-name-length output-stream in
-  output-stream
-  "    mov     "                     ostrbuf:puts
-  register-name register-name-length ostrbuf:puts
-  ", [global_"                       ostrbuf:puts
-  global                             nasm:fput-alpha
-  "]\n"                              ostrbuf:puts
-  drop
-end end
-
-
-proc mov-reg-data
-  // int: index ptr: register-name int: register-name-length ptr: output-stream
-  int ptr int ptr ->
-in let index register-name register-name-length output-stream in
-  output-stream
-  "    mov     "                     ostrbuf:puts
-  register-name register-name-length ostrbuf:puts
-  ", data_"                          ostrbuf:puts
-  index                              ostrbuf:putu
-                                     ostrbuf:putnl
-  drop
-end end
-
-
-proc mov-reg-item
-  // ptr: item ptr: register-name int: register-name-length ptr: output-stream
-  ptr ptr int ptr ->
-in let item register-name register-name-length output-stream in
-  output-stream
-  item stack-item:get-mode STACK-MODE:REAL = if
-    "    pop     "                     ostrbuf:puts
-    register-name register-name-length ostrbuf:puts
-                                       ostrbuf:putnl
-
-  else item stack-item:get-mode STACK-MODE:IMM         = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-immediate
-  else item stack-item:get-mode STACK-MODE:GLOBAL      = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-global-address
-  else item stack-item:get-mode STACK-MODE:@LOCALCONST = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-@64local
-  else item stack-item:get-mode STACK-MODE:LOCAL       = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-local
-  else item stack-item:get-mode STACK-MODE:@64LOCAL    = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-@64local
-  else item stack-item:get-mode STACK-MODE:@64GLOBAL   = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-@64global
-  else item stack-item:get-mode STACK-MODE:DATA        = if item stack-item:get-arg1 register-name register-name-length output-stream nasm:mov-reg-data
-  else
-    LOG:ERR STDERR fputs "Unknown integer mode while trying to move integer to register.\n" STDERR fputs
-    STDERR report-bug
-    EXIT-CODE:ERROR exit drop
-  end end end end end end end end
-  drop
-end end
-
-
-proc push-int-immediate
-  // int: immediate ptr: output-stream
-  int ptr ->
-  // NOTE: Uses R15.
-in let immediate output-stream in
-  output-stream
-  immediate nasm:is-signed-dword if
-    "    push    qword " ostrbuf:puts
-    immediate            ostrbuf:puti
-                         ostrbuf:putnl
-  else
-    "    mov     r15, "  ostrbuf:puts
-    immediate            ostrbuf:puti
-                         ostrbuf:putnl
-    "    push    r15\n"  ostrbuf:puts
-  end
-  drop
-end end
-
-
-proc push-global-address
-  // ptr: global-name ptr: output-stream
-  ptr ptr ->
-in let global output-stream in
-  output-stream
-  "    push    global_" ostrbuf:puts
-  global                nasm:fput-alpha
-                        ostrbuf:putnl
-  drop
-end end
-
-
-proc push-@64local
-  // int: offset ptr: output-stream
-  int ptr ->
-in let offset output-stream in
-  output-stream
-  "    mov     r15, [local_ptr]\n" ostrbuf:puts
-  "    push    qword [r15"         ostrbuf:puts
-
-  offset isn-zero if
-    " + "                          ostrbuf:puts
-    offset                         ostrbuf:putu
-  end
-
-  "]\n"                            ostrbuf:puts
-  drop
-end end
-
-
-proc push-@8local
-  // int: offset ptr: output-stream
-  int ptr ->
-in let offset output-stream in
-  output-stream
-  "rax" output-stream nasm:mov-reg-zero
-  "    mov     r15, [local_ptr]\n" ostrbuf:puts
-  "    mov     al, [r15"           ostrbuf:puts
-
-  offset isn-zero if
-    " + "                          ostrbuf:puts
-    offset                         ostrbuf:putu
-  end
-
-  "]\n" ostrbuf:puts
-  "    push     rax\n"             ostrbuf:puts
-  drop
-end end
-
-
-proc push-@64global
-  // ptr: global-name ptr: output-stream
-  ptr ptr ->
-in let global output-stream in
-  output-stream
-  "    push    qword [global_" ostrbuf:puts
-  global                       nasm:fput-alpha
-  "]\n"                        ostrbuf:puts
-  drop
-end end
-
-
-proc push-@8global
-  // ptr: global-name ptr: output-stream
-  ptr ptr ->
-in let global output-stream in
-  output-stream
-  "rax" output-stream nasm:mov-reg-zero
-  "    mov     al, [global_" ostrbuf:puts
-  global                     nasm:fput-alpha
-  "]\n"                      ostrbuf:puts
-  "    push    rax\n"        ostrbuf:puts
-  drop
-end end
-
-
-proc push-local
-  // int: offset ptr: output-stream
-  int ptr ->
-in let offset output-stream in
-  output-stream
-  "    push    qword [local_ptr]\n" ostrbuf:puts
-
-  offset isn-zero if
-    "    add     qword [rsp], "     ostrbuf:puts
-    offset                          ostrbuf:putu
-                                    ostrbuf:putnl
-  end
-  drop
-end end
-
-
-proc push-data
-  // int: index ptr: output-stream
-  int ptr ->
-in let index output-stream in
-  output-stream
-  "    push    qword data_" ostrbuf:puts
-  index                     ostrbuf:putu
-                            ostrbuf:putnl
-  drop
-end end
-
-
-proc push-int
-  // ptr: item ptr: output-stream
-  ptr ptr ->
-in let item output-stream in
-  item stack-item:get-mode STACK-MODE:IMM              = if item stack-item:get-arg1 output-stream nasm:push-int-immediate
-  else item stack-item:get-mode STACK-MODE:GLOBAL      = if item stack-item:get-arg1 output-stream nasm:push-global-address
-  else item stack-item:get-mode STACK-MODE:@64GLOBAL   = if item stack-item:get-arg1 output-stream nasm:push-@64global
-  else item stack-item:get-mode STACK-MODE:@LOCALCONST = if item stack-item:get-arg1 output-stream nasm:push-@64local
-  else item stack-item:get-mode STACK-MODE:LOCAL       = if item stack-item:get-arg1 output-stream nasm:push-local
-  else item stack-item:get-mode STACK-MODE:@64LOCAL    = if item stack-item:get-arg1 output-stream nasm:push-@64local
-  else item stack-item:get-mode STACK-MODE:@8LOCAL     = if item stack-item:get-arg1 output-stream nasm:push-@8local
-  else item stack-item:get-mode STACK-MODE:DATA        = if item stack-item:get-arg1 output-stream nasm:push-data
-  else item stack-item:get-mode STACK-MODE:REAL       != if
-    LOG:ERR STDERR fputs "Unknown integer mode while trying to push an integer item.\n" STDERR fputs
-    STDERR report-bug
-    EXIT-CODE:ERROR exit drop
-  end end end end end end end end end
-end end
-
-
-proc push-bool
-  // ptr: item ptr: output-stream
-  ptr ptr ->
-in let item output-stream in
-  item stack-item:get-mode STACK-MODE:@LOCALCONST = if
-    item stack-item:get-arg1 output-stream nasm:push-@64local
-
-  else item stack-item:get-mode STACK-MODE:REAL != if
-    LOG:ERR STDERR fputs "Unknown bool mode while trying to push a boolean item.\n" STDERR fputs
-    STDERR report-bug
-    EXIT-CODE:ERROR exit drop
-  end end
-end end
-
-
-proc push
-  // ptr: item ptr: output-stream
-  ptr ptr ->
-in let item output-stream in
-  item output-stream
-       item stack-item:get-type INT-TYPE:INT  = if nasm:push-int
-  else item stack-item:get-type INT-TYPE:BOOL = if nasm:push-bool
-  else drop drop
-    LOG:ERR STDERR fputs "Unknown intrinsic type to push\n" STDERR fputs
-    STDERR report-bug
-    EXIT-CODE:ERROR exit drop
-  end end
-end end
-
-
-proc convert-int-to-real
-  // ptr: item ptr: output-stream
-  ptr ptr ->
-in let item output-stream in
-  item output-stream nasm:push-int
-  STACK-MODE:REAL item stack-item:set-mode
-end end
-
-
-proc convert-bool-to-real
-  // ptr: item ptr: output-stream
-  ptr ptr ->
-in let item output-stream in
-  item output-stream nasm:push-bool
-  STACK-MODE:REAL item stack-item:set-mode
-end end
-
-
-proc convert-item-to-real
-  // ptr: item ptr: output-stream
-  ptr ptr ->
-in let item output-stream in
-       item stack-item:get-type INT-TYPE:INT  = if item output-stream nasm:convert-int-to-real
-  else item stack-item:get-type INT-TYPE:BOOL = if item output-stream nasm:convert-bool-to-real
-  else
-    LOG:ERR STDERR fputs "Unknown intrinsic type to convert to real.\n" STDERR fputs
-    STDERR report-bug
-    EXIT-CODE:ERROR exit drop
-  end end
-end end
-
-
-proc add-int-immediate
-  // int: immediate ptr: output-stream
-  int ptr ->
-in let immediate output-stream in
+proc add-immediate
+  // ptr: output-stream int: immediate -> ptr: output-stream
+  ptr int -> ptr
+  // NOTE: MAY use R15.
+in let immediate in
   immediate is-zero if return end
 
-  output-stream
-  immediate 1 = if
-    "    inc     qword [rsp]\n"        ostrbuf:puts
-  else immediate 1 neg = if
-    "    dec     qword [rsp]\n"        ostrbuf:puts
+       immediate 1  = if "    inc     qword [rsp]\n"        ostrbuf:puts
+  else immediate -1 = if "    dec     qword [rsp]\n"        ostrbuf:puts
+
   else immediate is-neg if
     immediate nasm:is-signed-dword if
       "    sub     qword [rsp], "      ostrbuf:puts
@@ -491,7 +153,279 @@ in let immediate output-stream in
       "    add     qword [rsp], rax\n" ostrbuf:puts
     end
   end end end
-  drop
 end end
+
+
+proc mov-reg-zero
+  // ptr: output-stream int: register-id -> ptr: output-stream
+  ptr int -> ptr
+in let register-id in
+  "    xor     " ostrbuf:puts
+  register-id    nasm:put-register
+  ", "           ostrbuf:puts
+  register-id    nasm:put-register
+                 ostrbuf:putnl
+end end
+
+
+proc mov-reg-immediate
+  // ptr: output-stream int: immediate int: register-id -> ptr: output-stream
+  ptr int int -> ptr
+in let immediate register-id in
+  immediate is-zero if
+     register-id nasm:mov-reg-zero
+  else
+    "    mov     " ostrbuf:puts
+    register-id    nasm:put-register
+    ", "           ostrbuf:puts
+    immediate      ostrbuf:puti
+                   ostrbuf:putnl
+  end
+end end
+
+
+proc mov-reg-global-address
+  // ptr: output-stream ptr: global-name int: register-id -> ptr: output-stream
+  ptr ptr int -> ptr
+in let global-name register-id in
+  "    mov     " ostrbuf:puts
+  register-id    nasm:put-register
+  ", global_"    ostrbuf:puts
+  global-name    nasm:fput-alpha
+                 ostrbuf:putnl
+end end
+
+
+proc mov-reg-local
+  // ptr: output-stream int: offset int: register-id -> ptr: output-stream
+  ptr int int -> ptr
+in let offset register-id in
+  "    mov     "    ostrbuf:puts
+  register-id       nasm:put-register
+  ", [local_ptr]\n" ostrbuf:puts
+
+  offset isn-zero if
+    "    add     "  ostrbuf:puts
+    register-id     nasm:put-register
+    ", "            ostrbuf:puts
+    offset          ostrbuf:putu
+                    ostrbuf:putnl
+  end
+end end
+
+
+proc mov-reg-@64local
+  // ptr: output-stream int: offset int: register-id -> ptr: output-stream
+  ptr int int -> ptr
+in let offset register-id in
+  "    mov     "    ostrbuf:puts
+  register-id       nasm:put-register
+  ", [local_ptr]\n" ostrbuf:puts
+
+  "    mov     "    ostrbuf:puts
+  register-id       nasm:put-register
+  ", ["             ostrbuf:puts
+  register-id       nasm:put-register
+
+  offset isn-zero if
+    " + "           ostrbuf:puts
+    offset          ostrbuf:putu
+  end
+  "]\n"             ostrbuf:puts
+end end
+
+
+proc mov-reg-@64global
+  // ptr: output-stream ptr: global int: register-id -> ptr: output-stream
+  ptr ptr int -> ptr
+in let global register-id in
+  "    mov     " ostrbuf:puts
+  register-id    nasm:put-register
+  ", [global_"   ostrbuf:puts
+  global         nasm:fput-alpha
+  "]\n"          ostrbuf:puts
+end end
+
+
+proc mov-reg-data
+  // ptr: output-stream int: index int: register-id -> ptr: output-stream
+  ptr int int -> ptr
+in let index register-id in
+  "    mov     " ostrbuf:puts
+  register-id    nasm:put-register
+  ", data_"      ostrbuf:puts
+  index          ostrbuf:putu
+                 ostrbuf:putnl
+end end
+
+
+proc mov-reg-item
+  // ptr: output-stream ptr: item int: register-id -> ptr: output-stream
+  ptr ptr int -> ptr
+in let item register-id in
+  item stack-item:get-mode item stack-item:get-arg1 let mode arg1 in
+    item stack-item:get-mode STACK-MODE:REAL = if
+      "    pop     " ostrbuf:puts
+      register-id    nasm:put-register
+                     ostrbuf:putnl
+
+    else mode STACK-MODE:IMM         = if arg1 register-id nasm:mov-reg-immediate
+    else mode STACK-MODE:GLOBAL      = if arg1 register-id nasm:mov-reg-global-address
+    else mode STACK-MODE:@LOCALCONST = if arg1 register-id nasm:mov-reg-@64local
+    else mode STACK-MODE:LOCAL       = if arg1 register-id nasm:mov-reg-local
+    else mode STACK-MODE:@64LOCAL    = if arg1 register-id nasm:mov-reg-@64local
+    else mode STACK-MODE:@64GLOBAL   = if arg1 register-id nasm:mov-reg-@64global
+    else mode STACK-MODE:DATA        = if arg1 register-id nasm:mov-reg-data
+    else
+      LOG:ERR STDERR fputs "Unknown integer mode while trying to move integer to register.\n" STDERR fputs
+      STDERR report-bug
+      EXIT-CODE:ERROR exit drop
+    end end end end end end end end
+  end
+end end
+
+
+proc push-immediate
+  // ptr: output-stream int: immediate -> ptr: output-stream
+  ptr int -> ptr
+  // NOTE: Uses R15.
+in let immediate in
+  immediate nasm:is-signed-dword if
+    "    push    qword " ostrbuf:puts
+    immediate            ostrbuf:puti
+                         ostrbuf:putnl
+  else
+    "    mov     r15, "  ostrbuf:puts
+    immediate            ostrbuf:puti
+                         ostrbuf:putnl
+    register:R15         nasm:push-register
+  end
+end end
+
+
+proc push-global-address
+  // ptr: output-stream ptr: global-name -> ptr: output-stream
+  ptr ptr -> ptr
+in let global in
+  "    push    global_" ostrbuf:puts
+  global                nasm:fput-alpha
+                        ostrbuf:putnl
+end end
+
+
+proc push-@64local
+  // ptr: output-stream int: offset -> ptr: output-stream
+  ptr int -> ptr
+  // NOTE: Uses R15.
+in let offset in
+  "    mov     r15, [local_ptr]\n" ostrbuf:puts
+  "    push    qword [r15"         ostrbuf:puts
+
+  offset isn-zero if
+    " + "                          ostrbuf:puts
+    offset                         ostrbuf:putu
+  end
+
+  "]\n"                            ostrbuf:puts
+end end
+
+
+proc push-@8local
+  // ptr: output-stream int: offset -> ptr: output-stream
+  ptr int -> ptr
+  // NOTE: Uses R15.
+in let offset in
+  register:R15                     nasm:mov-reg-zero
+  "    mov     r15, [local_ptr]\n" ostrbuf:puts
+  "    mov     al, [r15"           ostrbuf:puts
+  " + "                            ostrbuf:puts
+  offset                           ostrbuf:putu
+  "]\n"                            ostrbuf:puts
+  register:RAX                     nasm:push-register
+end end
+
+
+proc push-@64global
+  // ptr: output-stream ptr: global-name -> ptr: output-stream
+  ptr ptr -> ptr
+in let global in
+  "    push    qword [global_" ostrbuf:puts
+  global                       nasm:fput-alpha
+  "]\n"                        ostrbuf:puts
+end end
+
+
+proc push-@8global
+  // ptr: output-stream ptr: global-name -> ptr: output-stream
+  ptr ptr -> ptr
+in let global in
+  register:RAX               nasm:mov-reg-zero
+  "    mov     al, [global_" ostrbuf:puts
+  global                     nasm:fput-alpha
+  "]\n"                      ostrbuf:puts
+  register:RAX               nasm:push-register
+end end
+
+
+proc push-local
+  // ptr: output-stream int: offset -> ptr: output-stream
+  ptr int -> ptr
+in let offset in
+  "    push    qword [local_ptr]\n" ostrbuf:puts
+  offset isn-zero if
+    "    add     qword [rsp], "     ostrbuf:puts
+    offset                          ostrbuf:putu
+                                    ostrbuf:putnl
+  end
+end end
+
+
+proc push-data
+  // ptr: output-stream int: index -> ptr: output-stream
+  ptr int -> ptr
+in let index in
+  "    push    qword data_" ostrbuf:puts
+  index                     ostrbuf:putu
+                            ostrbuf:putnl
+end end
+
+
+proc push
+  // ptr: output-stream ptr: item -> ptr: output-stream
+  ptr ptr -> ptr
+in let item in
+  item stack-item:get-mode item stack-item:get-arg1 let mode arg1 in
+         mode STACK-MODE:IMM         = if arg1 nasm:push-immediate
+    else mode STACK-MODE:GLOBAL      = if arg1 nasm:push-global-address
+    else mode STACK-MODE:@64GLOBAL   = if arg1 nasm:push-@64global
+    else mode STACK-MODE:@LOCALCONST = if arg1 nasm:push-@64local
+    else mode STACK-MODE:LOCAL       = if arg1 nasm:push-local
+    else mode STACK-MODE:@64LOCAL    = if arg1 nasm:push-@64local
+    else mode STACK-MODE:@8LOCAL     = if arg1 nasm:push-@8local
+    else mode STACK-MODE:DATA        = if arg1 nasm:push-data
+    else mode STACK-MODE:REAL       != if
+      LOG:ERR STDERR fputs "Unknown mode while trying to push an item.\n" STDERR fputs
+      STDERR report-bug
+      EXIT-CODE:ERROR exit drop
+    end end end end end end end end end
+  end
+end end
+
+
+proc convert-real
+  // ptr: output-stream ptr: item -> ptr: output-stream
+  ptr ptr -> ptr
+in let item in
+  item nasm:push
+  STACK-MODE:REAL item stack-item:set-mode
+end end
+
+
+proc syscall
+  // ptr: output-stream -> ptr: output-stream
+  ptr -> ptr
+in
+  "    syscall\n" ostrbuf:puts
+end
 
 endnamespace
