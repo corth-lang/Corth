@@ -71,32 +71,32 @@ in nasm:convert-alpha let object in
 end end
 
 
-proc level
+proc label
   // ptr: output-stream int: id -> ptr: output-stream
   ptr int -> ptr
-in let level in
-  ".level_" ostrbuf:puts
-  level     ostrbuf:putu
+in let label in
+  ".label_" ostrbuf:puts
+  label     ostrbuf:putu
   ":\n"     ostrbuf:puts
 end end
 
 
-proc jump-level
+proc jump-label
   // ptr: output-stream int: id -> ptr: output-stream
   ptr int -> ptr
-in let level in
-  "    jmp     .level_" ostrbuf:puts
-  level                 ostrbuf:putu
+in let label in
+  "    jmp     .label_" ostrbuf:puts
+  label                 ostrbuf:putu
   '\n'                  ostrbuf:putc
 end end
 
 
-proc jump-zero-level
+proc jump-zero-label
   // ptr: output-stream int: id -> ptr: output-stream
   ptr int -> ptr
-in let level in
-  "    jz      .level_" ostrbuf:puts
-  level                 ostrbuf:putu
+in let label in
+  "    jz      .label_" ostrbuf:puts
+  label                 ostrbuf:putu
   '\n'                  ostrbuf:putc
 end end
 
