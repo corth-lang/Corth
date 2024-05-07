@@ -17,7 +17,7 @@ macro STACK-MAX-ITEMS     0x8000     endmacro
 macro LOCAL-MEMORY-SIZE   0x80000    endmacro
 macro CALL-STACK-SIZE     0x80000    endmacro
 
-macro OUTPUT-STREAM-SIZE  0x100000   endmacro
+macro OUTPUT-STREAM-SIZE  25   endmacro
 
 // Exit codes
 namespace EXIT-CODE
