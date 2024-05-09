@@ -316,12 +316,25 @@ object end end
 
 
 namespace LOG-TYPE
-macro REACHED-EOF       0 endmacro  //
-macro NO-TOKEN          1 endmacro  // log-item: reason
-macro TOKEN-TOO-LONG    2 endmacro  //
-macro INVALID-ESCAPE    3 endmacro  // log-item: reason
-macro NOT-HEX-DIGIT     4 endmacro  //
-macro NOT-ESCAPE-CHAR   5 endmacro  //
+// Info messages (prefix: 0x0)
+
+// Warnings (prefix: 0x1)
+
+// Error messages (prefix: 0x2)
+macro REACHED-EOF       0x20000 endmacro  //
+macro REACHED-EOL       0x20001 endmacro  //
+macro NO-TOKEN          0x20002 endmacro  // log-item: reason
+macro TOKEN-TOO-LONG    0x20003 endmacro  //
+macro INVALID-ESCAPE    0x20004 endmacro  // log-item: reason
+macro NOT-HEX-DIGIT     0x20005 endmacro  //
+macro NOT-ESCAPE-CHAR   0x20006 endmacro  //
+macro INV-STR-LIT       0x20007 endmacro  // log-item: reason
+macro INV-INT-LIT       0x20008 endmacro  //
+macro INV-CHAR-LIT      0x20009 endmacro  //
+
+// Assertions (prefix: 0x3)
+macro MALLOC-FAILED     0x30000 endmacro  //
+macro EXT-LEN-INVALID   0X30001 endmacro  //
 endnamespace
 
 
@@ -333,28 +346,51 @@ in let log-item log-stream in
   log-item log:arg1 @64
   log-item log:arg2 @64
   let type arg1 arg2 in
+    "(#" log-stream fputs type log-stream fputx ") " log-stream fputs
+
+    // Errors
     type LOG-TYPE:REACHED-EOF = if
-      "reached EOF\n" puts
+      "reached EOF\n" log-stream fputs
+
+    else type LOG-TYPE:REACHED-EOL = if
+      "reached EOL\n" log-stream fputs
 
     else type LOG-TYPE:NO-TOKEN = if
-      "no token available because:\n" puts
+      "no token available because:\n" log-stream fputs
       arg1 log-stream fput-log-item
 
     else type LOG-TYPE:TOKEN-TOO-LONG = if
-      "token is too long\n" puts
+      "token is too long\n" log-stream fputs
 
     else type LOG-TYPE:INVALID-ESCAPE = if
-      "escape code is invalid because:\n" puts
+      "escape code is invalid because:\n" log-stream fputs
       arg1 log-stream fput-log-item
 
     else type LOG-TYPE:NOT-HEX-DIGIT = if
-      "not an hexadecimal digit\n" puts
+      "not an hexadecimal digit\n" log-stream fputs
 
     else type LOG-TYPE:NOT-ESCAPE-CHAR = if
-      "invalid escape character\n" puts
+      "invalid escape character\n" log-stream fputs
+
+    else type LOG-TYPE:INV-STR-LIT = if
+      "could not parse string literal because:\n" log-stream fputs
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:INV-INT-LIT = if
+      "could not parse string literal\n" log-stream fputs
+
+    else type LOG-TYPE:INV-CHAR-LIT = if
+      "could not parse string literal\n" log-stream fputs
+
+    // Assertions
+    else type LOG-TYPE:MALLOC-FAILED = if
+      "malloc failed\n" log-stream fputs
+
+    else type LOG-TYPE:EXT-LEN-INVALID = if
+      "extended array length is not a multiple of 3\n" log-stream fputs
 
     else
-      "unknown\n" puts
-    end end end end end end
+      "unknown\n" log-stream fputs
+    end end end end end end end end end end end end
   end
 end end

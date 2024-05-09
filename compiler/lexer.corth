@@ -151,9 +151,7 @@ in let file file-name line-no char-no buffer buffer-end log-stream in
 
     // Check if we reached EOF before an end of string.
     char-addr 1 file fgets is-zero if
-      LOG:ERR log-stream fputs "Reached EOF before finding any '\"'.\n" log-stream fputs
-      line-no @64 char-no @64 file-name log-stream fput-here-position
-      EXIT-CODE:ERROR exit drop
+      LOG-TYPE:REACHED-EOF generate-log0 LOG-TYPE:INV-STR-LIT generate-log1 return
     end
 
     // Check if we reached the end of the string.
@@ -166,9 +164,7 @@ in let file file-name line-no char-no buffer buffer-end log-stream in
 
     // Reached the end of the buffer.
     char-addr buffer - TOKEN-MAX-LENGTH dec >= if
-      LOG:ERR log-stream fputs "Found a string longer than TOKEN-MAX-LENGTH, stopping execution.\n" log-stream fputs
-      line-no @64 char-no @64 file-name log-stream fput-here-position
-      EXIT-CODE:ERROR exit drop
+      LOG-TYPE:TOKEN-TOO-LONG generate-log0 LOG-TYPE:INV-STR-LIT generate-log1 return
     end
 
     char-addr @8 '\n' = if
@@ -252,15 +248,6 @@ in let file file-name line-no char-no log-stream in
     end
   end
 end end
-
-
-// NOTE: Designed to be used inside 'get-next-token'. Variable names used inside this macro should not be changed as they come from 'get-next-token'.
-macro get-next-token.generate-address
-  file-name NULLPTR start-line start-char line-no @64 char-no @64 generate-address dup is-null if
-    "'malloc' failed while generating an address.\n" STDERR fputs
-    EXIT-CODE:ERROR exit drop
-  end
-endmacro
 
 
 proc create-name-token
@@ -356,8 +343,15 @@ in let
     end end end end end end end end end end end end end end end end end end end end end end end end
 
     let token-type token-arg in
-      // Generate the address and return.
-      token-type get-next-token.generate-address token-arg NULLPTR
+      // Return token type, address and argument.
+      file-name NULLPTR start-line start-char line-no @64 char-no @64 generate-address let address in
+        address is-null if
+          TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:MALLOC-FAILED generate-log0 return
+        end
+
+        token-type address token-arg NULLPTR
+      end
+
     end
   end
 end end
@@ -381,20 +375,17 @@ proc get-next-token
   // If reaches EOF, does not return a log-item, but sets the is-available to false.
   // NOTE: If there is no token available, every other parameter is either NULLPTR or invalid.
 in let
-    file-name file
-    line-no char-no
-    extended-array extended-start extended-end
-    macro-names macro-tokens macros-length
-    log-stream extend-macros
-  in
-
+  file-name file
+  line-no char-no
+  extended-array extended-start extended-end
+  macro-names macro-tokens macros-length
+  log-stream extend-macros
+in
   extended-end @64 extended-start @64 - let extended-length in
     // If there are remaining tokens in the extended queue, return the remaining item.
     extended-length isn-zero if
       extended-length 3 % isn-zero if
-        LOG:ERR  log-stream fputs "Extended array length is not a multiple of 3.\n" log-stream fputs
-        log-stream report-bug
-        EXIT-CODE:ERROR exit drop
+        TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:EXT-LEN-INVALID generate-log0 false return
       end
 
       extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64:pop-first
@@ -423,12 +414,12 @@ in let
               let log-item in TOKEN-TYPE:UNKNOWN NULLPTR 0 log-item false end return
             end drop
 
-            get-next-token.generate-address let address in
+            file-name NULLPTR start-line start-char line-no @64 char-no @64 generate-address let address in
+              address is-null if TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:MALLOC-FAILED generate-log0 false return end
+
               memory number sizeof(int) in
                 buffer buffer-end @64 buffer - number convint ! if
-                  LOG:ERR log-stream fputs "Could not convert integer.\n" log-stream fputs
-                  address log-stream fput-here
-                  EXIT-CODE:ERROR exit drop
+
                 end
 
                 TOKEN-TYPE:INTEGER address number @64
@@ -443,23 +434,15 @@ in let
 
             buffer inc 1 file fgets is-zero if
               // Reached EOF while expecting a character.
-              LOG:ERR log-stream fputs "Reached EOF before finding a character after single quote.\n" log-stream fputs
-              EXIT-CODE:ERROR exit drop
+              TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:REACHED-EOF generate-log0 false return
             end
 
             char-no @inc64
 
             // Get the character
             buffer inc @8 let character in
-              character '\n' = if
-                LOG:ERR log-stream fputs "Reached EOL before finding a character after single quote.\n" log-stream fputs
-                EXIT-CODE:ERROR exit drop
-              end
-
-              character '\'' = if
-                LOG:ERR log-stream fputs "Single quote character must be escaped.\n" log-stream fputs
-                EXIT-CODE:ERROR exit drop
-              end
+              character '\n' = if TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:REACHED-EOL generate-log0 false return end
+              character '\'' = if TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:INV-CHAR-LIT generate-log0 false return end
 
               character '\\' = if
                 // Return the escape sequence character.
@@ -475,21 +458,24 @@ in let
             let character in
               buffer 1 file fgets is-zero if
                 // Reached EOF while expecting a single quote.
-                LOG:ERR log-stream fputs "Reached EOF before finding a single quote after single quote and character.\n" log-stream fputs
-                EXIT-CODE:ERROR exit drop
+                TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:REACHED-EOF generate-log0 false return
               end
 
               char-no @inc64
 
               buffer @8 '\'' != if
                 // Was expecting a single quote, but found another character.
-                LOG:ERR log-stream fputs "Expected a single quote, found '" log-stream fputs buffer 1 log-stream fputs "'.\n" log-stream fputs
-                line-no @64 char-no @64 file-name log-stream fput-here-position
-                EXIT-CODE:ERROR exit drop
+                TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:INV-CHAR-LIT generate-log0 false return
               end
 
               // Return token type, address and argument.
-              TOKEN-TYPE:INTEGER get-next-token.generate-address character
+              file-name NULLPTR start-line start-char line-no @64 char-no @64 generate-address let address in
+                address is-null if
+                  TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:MALLOC-FAILED generate-log0 false return
+                end
+
+                TOKEN-TYPE:INTEGER address character
+              end
             end
 
           else buffer @8 '"' = if
@@ -506,14 +492,19 @@ in let
             end drop
 
             // Return token type, address and argument.
-            TOKEN-TYPE:STRING get-next-token.generate-address buffer buffer-end @64 buffer - to-dynamic8
+            file-name NULLPTR start-line start-char line-no @64 char-no @64 generate-address let address in
+              address is-null if
+                TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:MALLOC-FAILED generate-log0 false return
+              end
+
+              TOKEN-TYPE:STRING address buffer buffer-end @64 buffer - to-dynamic8
+            end
 
           else buffer @8 '-' = if
             // -------- Dash (Integers and names) --------
 
             buffer inc 1 file fgets is-zero if
-              LOG:ERR log-stream fputs "Reached EOF while expecting character after dash (-).\n" log-stream fputs
-              EXIT-CODE:ERROR exit drop
+              TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:REACHED-EOF generate-log0 false return
             end
 
             char-no @inc64
@@ -526,12 +517,15 @@ in let
                 let log-item in TOKEN-TYPE:UNKNOWN NULLPTR 0 log-item false end return
               end drop
 
-              get-next-token.generate-address let address in
+              // Return token type, address and argument.
+              file-name NULLPTR start-line start-char line-no @64 char-no @64 generate-address let address in
+                address is-null if
+                  TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:MALLOC-FAILED generate-log0 false return
+                end
+
                 memory number sizeof(int) in
                   buffer buffer-end @64 buffer - number convint ! if
-                    LOG:ERR log-stream fputs "Could not convert integer.\n" log-stream fputs
-                    address log-stream fput-here
-                    EXIT-CODE:ERROR exit drop
+                    TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:INV-INT-LIT generate-log0 false return
                   end
 
                   TOKEN-TYPE:INTEGER address number @64
@@ -550,8 +544,7 @@ in let
             // -------- Slash (Name and comments) --------
 
             buffer inc 1 file fgets is-zero if
-              LOG:ERR log-stream fputs "Reached EOF while expecting character after slash (/).\n" log-stream fputs
-              EXIT-CODE:ERROR exit drop
+              TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:REACHED-EOF generate-log0 false return
             end
 
             buffer inc @8 '/' = if
