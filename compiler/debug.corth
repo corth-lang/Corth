@@ -34,6 +34,18 @@ macro  TILDE-BUFFER-SIZE 256               endmacro
 memory tilde-buffer      TILDE-BUFFER-SIZE end
 
 
+macro sizeof(position_) 24 endmacro
+macro position:file   0 + endmacro
+macro position:pos    8 + endmacro
+macro position:prev  16 + endmacro
+
+
+macro sizeof(log)  24 endmacro
+macro log:type    0 + endmacro
+macro log:arg1    8 + endmacro
+macro log:arg2   16 + endmacro
+
+
 proc debug-init -> in
   // Set up the space-buffer.
   space-buffer SPACE-BUFFER-SIZE ' ' memset8
@@ -254,4 +266,95 @@ proc report-bug
 in let log-stream in
   LOG:ERR log-stream fputs "This should have been impossible to reach.\n" log-stream fputs
   LOG:INFO log-stream fputs "This is probably caused by a bug in the compiler.\n" log-stream fputs
+end end
+
+
+proc generate-position
+  // ptr: file int: pos -> ptr: pos
+  ptr int -> ptr
+in sizeof(position_) malloc let object in
+  object isn-null if
+    object position:pos  !64
+    object position:file !64
+
+    NULLPTR object position:prev !64
+  else drop drop end
+object end end
+
+
+proc generate-log0
+  // int: type -> ptr: log-item
+  int -> ptr
+in sizeof(log) malloc let object in
+  object isn-null if
+    object log:type !64
+  else drop end
+object end end
+
+
+proc generate-log1
+  // int: arg1 int: type -> ptr: log-item
+  int int -> ptr
+in sizeof(log) malloc let object in
+  object isn-null if
+    object log:type !64
+    object log:arg1 !64
+  else drop drop end
+object end end
+
+
+proc generate-log2
+  // int: arg1 int: arg2 int: type -> ptr: log-item
+  int int int -> ptr
+in sizeof(log) malloc let object in
+  object isn-null if
+    object log:type !64
+    object log:arg2 !64
+    object log:arg1 !64
+  else drop drop drop end
+object end end
+
+
+namespace LOG-TYPE
+macro REACHED-EOF       0 endmacro  //
+macro NO-TOKEN          1 endmacro  // log-item: reason
+macro TOKEN-TOO-LONG    2 endmacro  //
+macro INVALID-ESCAPE    3 endmacro  // log-item: reason
+macro NOT-HEX-DIGIT     4 endmacro  //
+macro NOT-ESCAPE-CHAR   5 endmacro  //
+endnamespace
+
+
+proc fput-log-item
+  // ptr: log-item file-desc: log-stream ->
+  ptr file-desc ->
+in let log-item log-stream in
+  log-item log:type @64
+  log-item log:arg1 @64
+  log-item log:arg2 @64
+  let type arg1 arg2 in
+    type LOG-TYPE:REACHED-EOF = if
+      "reached EOF\n" puts
+
+    else type LOG-TYPE:NO-TOKEN = if
+      "no token available because:\n" puts
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:TOKEN-TOO-LONG = if
+      "token is too long\n" puts
+
+    else type LOG-TYPE:INVALID-ESCAPE = if
+      "escape code is invalid because:\n" puts
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:NOT-HEX-DIGIT = if
+      "not an hexadecimal digit\n" puts
+
+    else type LOG-TYPE:NOT-ESCAPE-CHAR = if
+      "invalid escape character\n" puts
+
+    else
+      "unknown\n" puts
+    end end end end end end
+  end
 end end
