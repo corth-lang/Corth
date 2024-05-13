@@ -5,11 +5,12 @@ namespace register
 // 2: 16-bits
 // 3: 32-bits
 // 4: 64-bits
-macro mod-8l 1 endmacro
-macro mod-8h 2 endmacro
-macro mod-16 3 endmacro
-macro mod-32 4 endmacro
-macro mod-64 5 endmacro
+macro mod-unknown 0 endmacro
+macro mod-8l      1 endmacro
+macro mod-8h      2 endmacro
+macro mod-16      3 endmacro
+macro mod-32      4 endmacro
+macro mod-64      5 endmacro
 
 // 4-bits for the register modification
 macro mod-ax   0  endmacro
@@ -33,6 +34,8 @@ macro mod-r15w 15 endmacro
 macro register     16 * + endmacro
 macro get-size-mod 16 %   endmacro
 macro get-reg-mod  16 /   endmacro
+
+macro UNKNOWN 0 endmacro
 
 macro AL   register:mod-8l register:mod-ax register:register endmacro
 macro AH   register:mod-8h register:mod-ax register:register endmacro

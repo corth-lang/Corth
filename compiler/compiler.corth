@@ -44,7 +44,7 @@ macro compiler:get-next-token let extend-macros in
   line-no char-no
   extended-array extended-start extended-end
   macro-names macro-tokens macros-length
-  log-stream extend-macros get-next-token
+  extend-macros get-next-token
 end endmacro
 
 
@@ -56,7 +56,7 @@ macro compiler:expect-next-token let extend-macros in
   line-no char-no
   extended-array extended-start extended-end
   macro-names macro-tokens macros-length
-  log-stream extend-macros expect-next-token
+  extend-macros expect-next-token
 end endmacro
 
 
@@ -451,10 +451,7 @@ in let intrinsic in
   else intrinsic INTRINSIC:LOAD16  = if register:AX
   else intrinsic INTRINSIC:LOAD32  = if register:EAX
   else intrinsic INTRINSIC:LOAD64  = if register:RAX
-  else
-    LOG:ERR STDERR fputs "Not a 'load' or 'store' intrinsic.\n" STDERR fputs
-    1 exit drop
-    0 // dummy
+  else                                  register:UNKNOWN
   end end end end end end end end
 end end
 
@@ -1158,6 +1155,8 @@ proc collect-let-like-names
   // file-desc: log-stream
   file-desc
   ->
+  // ptr: log-item
+  ptr
   // Fills new-names-list until an 'in' keyword is found.
 in let
   new-names-list
@@ -1171,12 +1170,9 @@ in
   // Get the names of the 'let' variables.
   while true do
     // Get the name of the variable.
-    false compiler:expect-next-token dup isn-null if
-       log-stream fput-log-item
-       1 exit drop
-    else drop end
+    false compiler:expect-next-token let new-token-type new-token-address new-token-arg log-item in
+      log-item isn-null if log-item return end
 
-    let new-token-type new-token-address new-token-arg in
       new-token-type TOKEN-TYPE:KEYWORD = if
         // If token is a keyword, it must be a 'in' keyword.
         new-token-arg new-token-address "after 'let'" KEYWORD:IN compile-procedure:check-keyword-here
@@ -1198,7 +1194,7 @@ in
       new-token-address mfree drop
     end
   end
-end end
+NULLPTR end end
 
 
 proc collect-memory-like-names
@@ -1213,7 +1209,10 @@ proc collect-memory-like-names
   // ptr: extended-array ptr: extended-start ptr: extended-end
   ptr ptr ptr
   // file-desc: log-stream
-  file-desc ->
+  file-desc
+  ->
+  // ptr: log-item
+  ptr
   // Fills new-names-list and new-sizes-list until a terminator keyword is found.
 in let
   new-names-list new-sizes-list terminator-keyword
@@ -1226,12 +1225,9 @@ in
   while
     // Get the variable name.
 
-    false compiler:expect-next-token dup isn-null if
-       log-stream fput-log-item
-       1 exit drop
-    else drop end
+    false compiler:expect-next-token let memory-name-type memory-name-address memory-name-arg log-item in
+      log-item isn-null if log-item return end
 
-    let memory-name-type memory-name-address memory-name-arg in
       memory-name-type memory-name-address "" TOKEN-TYPE:NAME compile-file:check-type-here
 
       // Get the variable size.
@@ -1274,7 +1270,7 @@ in
       memory-name-address mfree drop
     end
   do end
-end end
+NULLPTR end end
 
 
 proc compile-unreachable
@@ -1919,7 +1915,10 @@ in
       macro-names macro-tokens macros-length
       extended-array extended-start extended-end
       log-stream
-      collect-memory-like-names
+      collect-memory-like-names dup isn-null if
+        log-stream fput-log-item
+        1 exit drop
+      else drop end
 
       0 while dup new-names-list list64:length < do peek i in
         i new-names-list list64:get let name in
@@ -1980,7 +1979,10 @@ in
       procedure-name procedure-address
       extended-array extended-start extended-end
       log-stream
-      collect-let-like-names
+      collect-let-like-names dup isn-null if
+       log-stream fput-log-item
+       1 exit drop
+    else drop end
 
       local-memory-end @64 let old-local-memory-end in
         // This loop is separated from the one above, since this loop must run in the reverse order.
@@ -2089,7 +2091,10 @@ in
       procedure-name procedure-address
       extended-array extended-start extended-end
       log-stream
-      collect-let-like-names
+      collect-let-like-names dup isn-null if
+       log-stream fput-log-item
+       1 exit drop
+    else drop end
 
       new-names-list list64:length is-items-available ! if
         LOG:ERR log-stream fputs "Stack does not contain enough items for 'peek'.\n" log-stream fputs
@@ -2629,7 +2634,10 @@ in
               macro-names macro-tokens macros-length
               extended-array extended-start extended-end
               log-stream
-              collect-memory-like-names
+              collect-memory-like-names dup isn-null if
+                 log-stream fput-log-item
+                 1 exit drop
+              else drop end
 
               0 while dup new-names-list list64:length < do peek i in
                 // Get the full name of the variable.

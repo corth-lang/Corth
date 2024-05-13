@@ -316,23 +316,33 @@ object end end
 
 
 namespace LOG-TYPE
-// Info messages (prefix: 0x0)
+// -------- Info messages (prefix: 0xxxx) --------
 
-// Warnings (prefix: 0x1)
+// -------- Warnings (prefix: 1xxxx) --------
 
-// Error messages (prefix: 0x2)
-macro REACHED-EOF       0x20000 endmacro  //
-macro REACHED-EOL       0x20001 endmacro  //
-macro NO-TOKEN          0x20002 endmacro  // log-item: reason
-macro TOKEN-TOO-LONG    0x20003 endmacro  //
-macro INVALID-ESCAPE    0x20004 endmacro  // log-item: reason
-macro NOT-HEX-DIGIT     0x20005 endmacro  //
-macro NOT-ESCAPE-CHAR   0x20006 endmacro  //
-macro INV-STR-LIT       0x20007 endmacro  // log-item: reason
-macro INV-INT-LIT       0x20008 endmacro  //
-macro INV-CHAR-LIT      0x20009 endmacro  //
+// -------- Error messages (prefix: 2xxxx) --------
 
-// Assertions (prefix: 0x3)
+//// General errors (prefix: 20xxx)
+
+//// Lexer errors (prefix: 21xxx)
+macro REACHED-EOF       0x21000 endmacro  //
+macro REACHED-EOL       0x21001 endmacro  //
+macro TOKEN-TOO-LONG    0x21002 endmacro  //
+macro INVALID-ESCAPE    0x21003 endmacro  // log-item: reason
+macro NOT-HEX-DIGIT     0x21004 endmacro  //
+macro NOT-ESCAPE-CHAR   0x21005 endmacro  //
+macro INV-STR-LIT       0x21006 endmacro  // log-item: reason
+macro INV-INT-LIT       0x21007 endmacro  //
+macro INV-CHAR-LIT      0x21008 endmacro  //
+
+//// Parsing errors (prefix: 22xxx)
+macro NO-TOKEN          0x22000 endmacro  // log-item: reason
+macro UNXPCT-TYPE       0x22001 endmacro
+macro UNXPCT-KEYWORD    0x22002 endmacro
+
+//// Compilation errors (prefix: 23xxx)
+
+// -------- Assertions (prefix: 3xxxx) --------
 macro MALLOC-FAILED     0x30000 endmacro  //
 macro EXT-LEN-INVALID   0X30001 endmacro  //
 endnamespace
@@ -348,16 +358,18 @@ in let log-item log-stream in
   let type arg1 arg2 in
     "(#" log-stream fputs type log-stream fputx ") " log-stream fputs
 
-    // Errors
+    // Information messages
+
+    // Warnings
+
+    // General errors
+
+    // Lexer errors
     type LOG-TYPE:REACHED-EOF = if
       "reached EOF\n" log-stream fputs
 
     else type LOG-TYPE:REACHED-EOL = if
       "reached EOL\n" log-stream fputs
-
-    else type LOG-TYPE:NO-TOKEN = if
-      "no token available because:\n" log-stream fputs
-      arg1 log-stream fput-log-item
 
     else type LOG-TYPE:TOKEN-TOO-LONG = if
       "token is too long\n" log-stream fputs
@@ -382,6 +394,19 @@ in let log-item log-stream in
     else type LOG-TYPE:INV-CHAR-LIT = if
       "could not parse string literal\n" log-stream fputs
 
+    // Parser errors
+    else type LOG-TYPE:NO-TOKEN = if
+      "token expected but none available because:\n" log-stream fputs
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:UNXPCT-TYPE = if
+      "unexpected token type\n" log-stream fputs
+
+    else type LOG-TYPE:UNXPCT-KEYWORD = if
+      "unexpected keyword" log-stream fputs
+
+    // Compilation errors
+
     // Assertions
     else type LOG-TYPE:MALLOC-FAILED = if
       "malloc failed\n" log-stream fputs
@@ -391,6 +416,6 @@ in let log-item log-stream in
 
     else
       "unknown\n" log-stream fputs
-    end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end
   end
-end end
+end
