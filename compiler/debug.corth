@@ -260,15 +260,6 @@ macro fput-inside-procedure let _procedure_name_ _procedure_address_ _log_stream
 end endmacro
 
 
-proc report-bug
-  // file-desc: file-desc ->
-  file-desc ->
-in let log-stream in
-  LOG:ERR log-stream fputs "This should have been impossible to reach.\n" log-stream fputs
-  LOG:INFO log-stream fputs "This is probably caused by a bug in the compiler.\n" log-stream fputs
-end end
-
-
 proc generate-position
   // ptr: file int: pos -> ptr: pos
   ptr int -> ptr
@@ -280,6 +271,10 @@ in sizeof(position_) malloc let object in
     NULLPTR object position:prev !64
   else drop drop end
 object end end
+
+
+// Exits with error code.
+proc unescapable -> in 1 exit drop end
 
 
 proc generate-log0
@@ -345,6 +340,7 @@ macro UNXPCT-KEYWORD    0x22002 endmacro
 // -------- Assertions (prefix: 3xxxx) --------
 macro MALLOC-FAILED     0x30000 endmacro  //
 macro EXT-LEN-INVALID   0X30001 endmacro  //
+macro UNKNOWN-STACK     0x30002 endmacro  //
 endnamespace
 
 

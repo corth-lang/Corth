@@ -548,7 +548,7 @@ in let value-item address-item address-item-length token-address intrinsic outpu
     address-item address-item-length ostrbuf:puts
     "], global_"                     ostrbuf:puts
 
-    value-item stack-item:get-arg1 nasm:fput-alpha
+    value-item stack-item:get-arg1 nasm:put-alpha
 
     ostrbuf:putnl
     drop
@@ -1232,8 +1232,8 @@ in
 
       // Get the variable size.
       true compiler:expect-next-token dup isn-null if
-         log-stream fput-log-item
-         1 exit drop
+        log-stream fput-log-item
+        1 exit drop
       else drop end
 
       let memory-size-type memory-size-address memory-size-arg in
@@ -1241,8 +1241,8 @@ in
         memory-size-type memory-size-address "" TOKEN-TYPE:INTEGER compile-file:check-type-here
 
         true compiler:expect-next-token dup isn-null if
-           log-stream fput-log-item
-           1 exit drop
+          log-stream fput-log-item
+          1 exit drop
         else drop end
 
         let memory-end-type memory-end-address memory-end-arg in
@@ -1320,8 +1320,8 @@ in let
 in
   while true do
     true compiler:expect-next-token dup isn-null if
-       log-stream fput-log-item
-       1 exit drop
+      log-stream fput-log-item
+      1 exit drop
     else drop end
 
     let token-type token-address token-arg in
@@ -2218,8 +2218,8 @@ in
     // sizeof <local-name>
 
     true compiler:expect-next-token dup isn-null if
-       log-stream fput-log-item
-       1 exit drop
+      log-stream fput-log-item
+      1 exit drop
     else drop end
 
     let type-type type-address type-arg in
@@ -2285,7 +2285,7 @@ in
 
   output-stream
   "proc_"        ostrbuf:puts
-  procedure-name nasm:fput-alpha
+  procedure-name nasm:put-alpha
   ":\n"          ostrbuf:puts
   drop
 
@@ -2401,7 +2401,7 @@ in
                                                                ostrbuf:putnl
                   "    xchg    rsp, [call_ptr]\n"              ostrbuf:puts
                   "    jmp     proc_"                          ostrbuf:puts
-                  token-arg                                    nasm:fput-alpha
+                  token-arg                                    nasm:put-alpha
                                                                ostrbuf:putnl
                   label-id                                     nasm:label
                   drop
@@ -2748,8 +2748,8 @@ in
                 while true do
                   // Get the token.
                   true compiler:expect-next-token dup isn-null if
-                     log-stream fput-log-item
-                     1 exit drop
+                    log-stream fput-log-item
+                    1 exit drop
                   else drop end
 
                   let input-token-type input-token-address input-token-arg in
@@ -2778,8 +2778,8 @@ in
                 while true do
                   // Get the token.
                   true compiler:expect-next-token dup isn-null if
-                     log-stream fput-log-item
-                     1 exit drop
+                    log-stream fput-log-item
+                    1 exit drop
                   else drop end
 
                   let output-token-type output-token-address output-token-arg in
@@ -3043,7 +3043,7 @@ in let source-name output-name include-paths-set log-stream in
         0 while dup globals-length @64 < do let i in
           i global-names-array array64:get i global-sizes-array array64:get let variable-name variable-size in
             "    global_"                    ostrbuf:puts
-            i global-names-array array64:get nasm:fput-alpha
+            i global-names-array array64:get nasm:put-alpha
             ": resb "                        ostrbuf:puts
             variable-size                    ostrbuf:putu
                                              ostrbuf:putnl
