@@ -341,10 +341,12 @@ macro NOT-ENOUGH-ITEMS  0x23001 endmacro  //
 macro INV-ITEM-TYPE     0x23002 endmacro  //
 macro INV-ITEM-MODE     0x23003 endmacro  //
 macro ERROR-INTRINSIC   0X23004 endmacro  // log-item: reason address: token-address
-macro MEM-SIZE-MISMATCH 0x23005 endmacro  //
+macro ERROR-KEYWORD     0X23005 endmacro  // log-item: reason address: token-address
 macro ERROR-PROC        0x23006 endmacro  // log-item: reason
-macro UNREACHABLE       0x23007 endmacro  //
-macro REDEF-LOCAL-NAME  0x23008 endmacro  //
+macro MEM-SIZE-MISMATCH 0x23007 endmacro  //
+macro UNREACHABLE       0x23008 endmacro  //
+macro REDEF-LOCAL-NAME  0x23009 endmacro  //
+macro UNDEF-NAME        0x2300a endmacro  //
 
 // -------- Assertions (prefix: 3xxxx) --------
 macro MALLOC-FAILED     0x30000 endmacro  //
@@ -433,15 +435,21 @@ in let log-item log-stream in
       "because\n" log-stream fputs
       arg1 log-stream fput-log-item
 
-    else type LOG-TYPE:MEM-SIZE-MISMATCH = if
-      "load/store size does not match\n" log-stream fputs
-
     else type LOG-TYPE:ERROR-PROC = if
       "could not compile procedure because:\n" log-stream fputs
       arg1 log-stream fput-log-item
 
+    else type LOG-TYPE:MEM-SIZE-MISMATCH = if
+      "load/store size does not match\n" log-stream fputs
+
     else type LOG-TYPE:UNREACHABLE = if
       "end of procedure must be reachable\n" log-stream fputs
+
+    else type LOG-TYPE:REDEF-LOCAL-NAME = if
+      "name redefined\n" log-stream fputs
+
+    else type LOG-TYPE:UNDEF-NAME = if
+      "name not defined locally or globally\n" log-stream fputs
 
     // Assertions
     else type LOG-TYPE:MALLOC-FAILED = if
@@ -453,6 +461,9 @@ in let log-item log-stream in
     else type LOG-TYPE:UNKNOWN-INTRINSIC = if
       "unknown intrinsic id\n" log-stream fputs
 
+    else type LOG-TYPE:UNKNOWN-KEYWORD = if
+      "unknown keyword id\n" log-stream fputs
+
     else type LOG-TYPE:UNKNOWN-MODE = if
       "unknown stack item mode\n" log-stream fputs
 
@@ -461,6 +472,6 @@ in let log-item log-stream in
 
     else
       "unknown\n" log-stream fputs
-    end end end end end end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end end end end end end end end end
   end
 end
