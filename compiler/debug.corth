@@ -336,11 +336,22 @@ macro UNXPCT-TYPE       0x22001 endmacro
 macro UNXPCT-KEYWORD    0x22002 endmacro
 
 //// Compilation errors (prefix: 23xxx)
+macro STACK-NOT-MATCH   0x23000 endmacro  // log-item: reason
+macro NOT-ENOUGH-ITEMS  0x23001 endmacro  //
+macro INV-ITEM-TYPE     0x23002 endmacro  //
+macro INV-ITEM-MODE     0x23003 endmacro  //
+macro ERROR-INTRINSIC   0X23004 endmacro  // log-item: reason address: token-address
+macro MEM-SIZE-MISMATCH 0x23005 endmacro  //
+macro ERROR-PROC        0x23006 endmacro  // log-item: reason
+macro UNREACHABLE       0x23007 endmacro  //
 
 // -------- Assertions (prefix: 3xxxx) --------
 macro MALLOC-FAILED     0x30000 endmacro  //
 macro EXT-LEN-INVALID   0X30001 endmacro  //
-macro UNKNOWN-STACK     0x30002 endmacro  //
+macro UNKNOWN-MODE      0x30002 endmacro  //
+macro UNKNOWN-INTRINSIC 0x30003 endmacro  //
+macro CANNOT-FIND-VAR   0x30004 endmacro  //
+
 endnamespace
 
 
@@ -399,9 +410,37 @@ in let log-item log-stream in
       "unexpected token type\n" log-stream fputs
 
     else type LOG-TYPE:UNXPCT-KEYWORD = if
-      "unexpected keyword" log-stream fputs
+      "unexpected keyword\n" log-stream fputs
 
     // Compilation errors
+    else type LOG-TYPE:STACK-NOT-MATCH = if
+      "stack does not match the expected stack because:\n" log-stream fputs
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:NOT-ENOUGH-ITEMS = if
+      "stack does not have enough items\n" log-stream fputs
+
+    else type LOG-TYPE:INV-ITEM-TYPE = if
+      "invalid item type\n" log-stream fputs
+
+    else type LOG-TYPE:INV-ITEM-MODE = if
+      "invalid item mode\n" log-stream fputs
+
+    else type LOG-TYPE:ERROR-INTRINSIC = if
+      "could not compile intrinsic\n" log-stream fputs
+      arg2 log-stream fput-here
+      "because\n" log-stream fputs
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:MEM-SIZE-MISMATCH = if
+      "load/store size does not match\n" log-stream fputs
+
+    else type LOG-TYPE:ERROR-PROC = if
+      "could not compile procedure because:\n" log-stream fputs
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:UNREACHABLE = if
+      "end of procedure must be reachable\n" log-stream fputs
 
     // Assertions
     else type LOG-TYPE:MALLOC-FAILED = if
@@ -410,8 +449,17 @@ in let log-item log-stream in
     else type LOG-TYPE:EXT-LEN-INVALID = if
       "extended array length is not a multiple of 3\n" log-stream fputs
 
+    else type LOG-TYPE:UNKNOWN-INTRINSIC = if
+      "unknown intrinsic id\n" log-stream fputs
+
+    else type LOG-TYPE:UNKNOWN-MODE = if
+      "unknown stack item mode\n" log-stream fputs
+
+    else type LOG-TYPE:CANNOT-FIND-VAR = if
+      "can not find variable in the name replace list\n" log-stream fputs
+
     else
       "unknown\n" log-stream fputs
-    end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end end end end end end
   end
 end
