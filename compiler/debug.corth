@@ -344,13 +344,15 @@ macro ERROR-INTRINSIC   0X23004 endmacro  // log-item: reason address: token-add
 macro MEM-SIZE-MISMATCH 0x23005 endmacro  //
 macro ERROR-PROC        0x23006 endmacro  // log-item: reason
 macro UNREACHABLE       0x23007 endmacro  //
+macro REDEF-LOCAL-NAME  0x23008 endmacro  //
 
 // -------- Assertions (prefix: 3xxxx) --------
 macro MALLOC-FAILED     0x30000 endmacro  //
 macro EXT-LEN-INVALID   0X30001 endmacro  //
 macro UNKNOWN-MODE      0x30002 endmacro  //
 macro UNKNOWN-INTRINSIC 0x30003 endmacro  //
-macro CANNOT-FIND-VAR   0x30004 endmacro  //
+macro UNKNOWN-KEYWORD   0x30004 endmacro  //
+macro CANNOT-FIND-VAR   0x30005 endmacro  //
 
 endnamespace
 
@@ -414,8 +416,7 @@ in let log-item log-stream in
 
     // Compilation errors
     else type LOG-TYPE:STACK-NOT-MATCH = if
-      "stack does not match the expected stack because:\n" log-stream fputs
-      arg1 log-stream fput-log-item
+      "stack does not match the expected stack\n" log-stream fputs
 
     else type LOG-TYPE:NOT-ENOUGH-ITEMS = if
       "stack does not have enough items\n" log-stream fputs

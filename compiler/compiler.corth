@@ -291,87 +291,19 @@ in let types-array types-length log-stream in
 end end
 
 
-proc check-stack-types
-  // ptr: old-stack ptr: old-address ptr: local-stack ptr: local-stack-length ptr: token-address file-desc: log-stream ->
-  ptr ptr ptr ptr ptr file-desc ->
-in let old-stack old-address local-stack local-stack-length token-address log-stream in
-  old-stack local-stack local-stack-length compare-stack-types ! if
-    LOG:ERR log-stream fputs "Stack contents do not match.\n" log-stream fputs
-    old-address log-stream fput-here
-    LOG:INFO log-stream fputs old-stack old-stack mlength 8 / log-stream fput-stack-contents log-stream fputnl
-    token-address log-stream fput-here
-    LOG:INFO log-stream fputs local-stack local-stack-length @64 log-stream fput-stack-contents log-stream fputnl
-
-    EXIT-CODE:ERROR exit drop
-  end
-end end
-
-
-proc check-stack-types-types
-  // ptr: types-array int: types-length
-  ptr int
-  // ptr: token-address
-  ptr
-  // ptr: local-stack ptr: local-stack-length
-  ptr ptr
-  // file-desc: log-stream
-  file-desc ->
-in let
-  types-array types-length
-  token-address
-  local-stack local-stack-length
-  log-stream
-in
-  types-array types-length local-stack local-stack-length compare-stack-types-types ! if
-    LOG:ERR log-stream fputs "Stack contents do not match.\n" log-stream fputs
-    token-address log-stream fput-here
-    LOG:INFO log-stream fputs "Expected '" log-stream fputs types-array types-length log-stream fput-types "'.\n" log-stream fputs
-    LOG:INFO log-stream fputs "Got '" log-stream fputs local-stack local-stack-length @64 log-stream fput-stack-contents "'.\n" log-stream fputs
-
-    EXIT-CODE:ERROR exit drop
-  end
-end end
-
-
-proc check-sub-stack-types-types
-  // ptr: types-array int: types-length
-  ptr int
-  // ptr: token-address
-  ptr
-  // ptr: local-stack ptr: local-stack-length
-  ptr ptr
-  // file-desc: log-stream
-  file-desc ->
-in let
-  types-array types-length
-  token-address
-  local-stack local-stack-length
-  log-stream
-in
-  types-array types-length local-stack local-stack-length compare-sub-stack-types-types ! if
-    LOG:ERR log-stream fputs "Stack contents do not match.\n" log-stream fputs
-    token-address log-stream fput-here
-    LOG:INFO log-stream fputs "Expected '" log-stream fputs types-array types-length log-stream fput-types "'.\n" log-stream fputs
-    LOG:INFO log-stream fputs "Got '" log-stream fputs local-stack local-stack-length @64 log-stream fput-stack-contents "'.\n" log-stream fputs
-
-    EXIT-CODE:ERROR exit drop
-  end
-end end
-
-
 proc add-intrinsic
   // ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream -> ptr: log-item
   ptr ptr ptr ptr -> ptr
 in let local-stack local-stack-length peeked-item output-stream in
-  2 is-items-available ! if LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 LOG-TYPE:STACK-NOT-MATCH generate-log1 return end
+  2 is-items-available ! if LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return end
 
   pop-item pop-item let item2 item1 in
     item1 stack-item:get-type INT-TYPE:INT != if
-      LOG-TYPE:INV-ITEM-TYPE generate-log0 LOG-TYPE:STACK-NOT-MATCH generate-log1 return
+      LOG-TYPE:INV-ITEM-TYPE generate-log0 return
     end
 
     item2 stack-item:get-type INT-TYPE:INT != if
-      LOG-TYPE:INV-ITEM-TYPE generate-log0 LOG-TYPE:STACK-NOT-MATCH generate-log1 return
+      LOG-TYPE:INV-ITEM-TYPE generate-log0 return
     end
 
     item1 stack-item:get-mode STACK-MODE:IMM = if
@@ -1547,13 +1479,11 @@ proc compile-keyword
   ptr ptr ptr
   // ptr: output-array int: output-length
   ptr int
-  // file-desc: log-stream
-  file-desc
   // ptr: local-memory-max
   ptr
   ->
-  // bool: end-of-procedure
-  bool
+  // bool: end-of-procedure ptr: log-item
+  bool ptr
 in let
   source-name source-file output-stream
   line-no char-no
@@ -1567,7 +1497,6 @@ in let
   local-memory-end
   let-names let-addresses let-vars-length
   output-array output-length
-  log-stream
   local-memory-max
 in
   token-arg KEYWORD:END = if
@@ -1575,17 +1504,14 @@ in
 
     labels-list list64:length is-zero if
       // -------- End of 'proc' --------
-
       local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
       // Check if the stack is correct.
-      output-array output-length
-      token-address
-      local-stack local-stack-length
-      log-stream
-      check-stack-types-types
+      output-array output-length local-stack local-stack-length compare-stack-types-types ! if
+        false LOG-TYPE:STACK-NOT-MATCH generate-log0 return
+      end
 
-      true return
+      true NULLPTR return
     end
 
     labels-list list64:pop-last let label in
@@ -1596,7 +1522,9 @@ in
             local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
             // Check for the stack changes.
-            start-stack start-address local-stack local-stack-length token-address log-stream check-stack-types
+            start-stack local-stack local-stack-length compare-stack-types ! if
+              false LOG-TYPE:STACK-NOT-MATCH generate-log0 return
+            end
 
             output-stream
             start-id nasm:label
@@ -1613,7 +1541,9 @@ in
             local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
             // Check for the stack changes.
-            start-stack else-address local-stack local-stack-length token-address log-stream check-stack-types
+            start-stack local-stack local-stack-length compare-stack-types ! if
+              false LOG-TYPE:STACK-NOT-MATCH generate-log0 return
+            end
 
             output-stream
             start-id nasm:label
@@ -1624,17 +1554,6 @@ in
             start-stack _local-stack.mfree
           end
 
-        else start-keyword KEYWORD:WHILE = if
-          // -------- End of 'while' --------
-
-          LOG:ERR  log-stream fputs "You probably forgot a 'do' after 'while'.\n" log-stream fputs
-          LOG:INFO log-stream fputs "A 'while-do' loop can be created as: 'while <condition> do <code> end'\n" log-stream fputs
-
-          token-address log-stream fput-here
-          start-address compile-procedure:show-here
-
-          EXIT-CODE:ERROR exit drop
-
         else start-keyword KEYWORD:DO = if
           // -------- End of 'do' --------
 
@@ -1642,7 +1561,9 @@ in
             while-label-id do-address unbroken-end-id broken-end-id while-stack do-stack
           in
             // Check for the stack changes.
-            while-stack start-address local-stack local-stack-length token-address log-stream check-stack-types
+            while-stack local-stack local-stack-length compare-stack-types ! if
+              false LOG-TYPE:STACK-NOT-MATCH generate-log0 return
+            end
 
             // Overwrite the contents of the local-stack.
             do-stack local-stack local-stack-length local-stack.overwrite
@@ -1663,14 +1584,13 @@ in
           // -------- End of 'let' --------
 
           label 16 + @64 label 24 + @64 let new-names old-local-memory-end in
-            0 while dup new-names mlength 8 / < do peek i in i 8 * new-names + @64 let name in
+            0 while dup new-names mlength 8 / < do let i in i 8 * new-names + @64 let name in
               name mlength 1 = if name @8 '_' != else true end if
                 name let-names let-addresses let-vars-length str-map64:remove-dstr ! if
-                  LOG:ERR  log-stream fputs "Could not find the 'let' variable name '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
-                  EXIT-CODE:ERROR exit drop
+                  false LOG-TYPE:CANNOT-FIND-VAR generate-log0 return
                 end
               end
-            end end inc end drop
+            end i end inc end drop
 
             old-local-memory-end local-stack local-stack-length output-stream local-stack.convert-deleted-real
 
@@ -1684,12 +1604,11 @@ in
           // -------- End of 'peek' --------
 
           label 16 + @64 label 24 + @64 let new-names old-peeked-item in
-            0 while dup new-names mlength 8 / < do peek i in i 8 * new-names + @64 let name in
+            0 while dup new-names mlength 8 / < do let i in i 8 * new-names + @64 let name in
               name let-names let-addresses let-vars-length str-map64:remove-dstr ! if
-                LOG:ERR  log-stream fputs "Could not find the 'peek' variable name '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
-                EXIT-CODE:ERROR exit drop
+                false LOG-TYPE:CANNOT-FIND-VAR generate-log0 return
               end
-            end end inc end drop
+            end i end inc end drop
 
             old-peeked-item peeked-item !64
 
@@ -1697,16 +1616,19 @@ in
             new-names mfree drop
           end
 
-        else start-keyword KEYWORD:MEMORY = if
+        else
+          start-keyword KEYWORD:MEMORY != if
+            false LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+          end
+
           // -------- End of 'memory' --------
 
           label 16 + @64 label 24 + @64 let new-names old-local-memory-end in
-            0 while dup new-names mlength 8 / < do peek i in i 8 * new-names + @64 let name in
+            0 while dup new-names mlength 8 / < do let i in i 8 * new-names + @64 let name in
               name let-names let-addresses let-vars-length str-map64:remove-dstr ! if
-                LOG:ERR log-stream fputs "Could not find the local variable name '" log-stream fputs name name mlength log-stream fputs "'.\n" log-stream fputs
-                EXIT-CODE:ERROR exit drop
+                false LOG-TYPE:CANNOT-FIND-VAR generate-log0 return
               end
-            end end inc end drop
+            end i end inc end drop
 
             old-local-memory-end local-stack local-stack-length output-stream local-stack.convert-deleted-real
 
@@ -1715,13 +1637,7 @@ in
             // Deallocate 'new-names'.
             new-names mfree drop
           end
-
-        else
-          LOG:TODO log-stream fputs "'end' after keyword '" log-stream fputs start-keyword log-stream fput-keyword "' is not implemented yet.\n" log-stream fputs
-          token-address log-stream fput-here
-          start-address compile-procedure:show-here
-          EXIT-CODE:ERROR exit drop
-        end end end end end end end
+        end end end end end
 
         // Deallocate 'start-address'.
         start-address mfree drop
@@ -1745,17 +1661,11 @@ in
     // 16-23 -> Label ID
     // 24-31 -> Old stack
 
-    1 is-items-available ! if
-      LOG:ERR log-stream fputs "'if' requires a bool, there was no items in the stack.\n" log-stream fputs
-      token-address compile-procedure:show-here
-      EXIT-CODE:ERROR exit drop
-    end
+    1 is-items-available ! if false LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return end
 
     pop-item let item in
       item stack-item:get-type INT-TYPE:BOOL != if
-        LOG:ERR log-stream fputs "'if' requires a bool\n" log-stream fputs
-        token-address compile-procedure:show-here
-        EXIT-CODE:ERROR exit drop
+        false LOG-TYPE:INV-ITEM-TYPE generate-log0 return
       end
 
       output-stream
@@ -1767,7 +1677,7 @@ in
 
     local-stack local-stack-length local-stack.copy let copy-stack in
       32 malloc let obj in
-        obj "creating a label object for 'if'" compile-procedure:check-null-here
+        obj is-null if false LOG-TYPE:MALLOC-FAILED generate-log0 return end
 
         compile-procedure:new-label-id let label-id in
           KEYWORD:IF           obj      !64
@@ -1798,16 +1708,16 @@ in
     // 32-39 -> Old stack
 
     labels-list list64:length is-zero if
-      LOG:ERR log-stream fputs "'else' requires 'if'.\n" log-stream fputs
-      token-address compile-procedure:show-here
-      EXIT-CODE:ERROR exit drop
+      false LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
     end
 
     local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
     labels-list list64:pop-last let label in
       label @64 label 8 + @64 let old-keyword old-address in
-        old-keyword old-address token-address "before 'else'" KEYWORD:IF compile-procedure:check-label-here
+        old-keyword KEYWORD:IF != if
+          false LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+        end
 
         label 16 + @64 label 24 + @64 let start-id start-stack in
           local-stack local-stack-length local-stack.copy let copy-stack in
@@ -1821,7 +1731,9 @@ in
               drop
 
               40 malloc let new-label in
-                new-label "creating a label object for 'else'" compile-procedure:check-null-here
+                new-label is-null if
+                  false LOG-TYPE:MALLOC-FAILED generate-log0 return
+                end
 
                 KEYWORD:ELSE         new-label      !64
                 old-address          new-label 8  + !64
@@ -1854,7 +1766,7 @@ in
     // 24-31 -> Old stack
 
     local-stack local-stack-length local-stack.copy let copy-stack in
-      copy-stack "creating a label object for 'while'" compile-procedure:check-null-here
+      copy-stack is-null if false LOG-TYPE:MALLOC-FAILED generate-log0 return end
 
       compile-procedure:new-label-id let label-id in
         local-stack local-stack-length output-stream local-stack.convert-last-items-real
@@ -1864,7 +1776,9 @@ in
         drop
 
         32 malloc let new-label in
-          new-label "creating a label object for 'while'" compile-procedure:check-null-here
+          new-label is-null if
+            false LOG-TYPE:MALLOC-FAILED generate-log0 return
+          end
 
           KEYWORD:WHILE        new-label      !64
           token-address dcopy  new-label 8  + !64
@@ -1894,20 +1808,14 @@ in
     // 56-63 -> Do stack
 
     // Check if the local stack contains any item.
-    1 is-items-available ! if
-      LOG:ERR log-stream fputs "'do' requires a bool, there was no items in the stack.\n" log-stream fputs
-      token-address compile-procedure:show-here
-      EXIT-CODE:ERROR exit drop
-    end
+    1 is-items-available ! if false LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return end
 
     local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
     // Remove the bool value from the local-stack.
     pop-item let item in
       item stack-item:get-type INT-TYPE:BOOL != if
-        LOG:ERR log-stream fputs "'do' requires a bool.\n" log-stream fputs
-        token-address compile-procedure:show-here
-        EXIT-CODE:ERROR exit drop
+        false LOG-TYPE:INV-ITEM-TYPE generate-log0 return
       end
 
       item stack-item:mfree
@@ -1917,7 +1825,9 @@ in
     labels-list list64:pop-last let old-label in
       old-label @64 old-label 8 + @64 let old-keyword old-address in
         // Check if the label type is 'while'.
-        old-keyword old-address token-address "before 'do'" KEYWORD:WHILE compile-procedure:check-label-here
+        old-keyword KEYWORD:WHILE != if
+          false LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+        end
 
         old-label 16 + @64 old-label 24 + @64 let old-label-id old-stack in
           compile-procedure:new-label-id compile-procedure:new-label-id let unbroken-end-label-id broken-end-label-id in
@@ -1929,10 +1839,14 @@ in
               drop
 
               local-stack local-stack-length local-stack.copy let copy-stack in
-                copy-stack "copying the stack for 'do'" compile-procedure:check-null-here
+                copy-stack is-null if
+                  false LOG-TYPE:MALLOC-FAILED generate-log0 return
+                end
 
                 64 malloc let new-label in
-                  new-label "creating a label object for 'do' after 'while'" compile-procedure:check-null-here
+                  new-label is-null if
+                    false LOG-TYPE:MALLOC-FAILED generate-log0 return
+                  end
 
                   KEYWORD:DO               new-label      !64
                   old-address              new-label 8  + !64
@@ -1960,7 +1874,9 @@ in
         old-keyword KEYWORD:DO = if
           label-addr @64 32 + @64 label-addr @64 24 + @64 label-addr @64 56 + @64 let broken-end-id do-address do-stack in
             // Check for the stack contents.
-            do-stack do-address local-stack local-stack-length token-address log-stream check-stack-types
+            do-stack local-stack local-stack-length compare-stack-types ! if
+              false LOG-TYPE:STACK-NOT-MATCH generate-log0 return
+            end
 
             local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
@@ -1981,10 +1897,7 @@ in
           let-names let-addresses let-vars-length
           output-array output-length
           local-memory-max
-          compile-unreachable dup isn-null if
-            log-stream fput-log-item
-            1 exit drop
-          else drop end
+          compile-unreachable dup isn-null if false swp return end drop
 
           0 break
         end
@@ -2005,13 +1918,17 @@ in
     memory new-names-list sizeof(ptr) and
            new-sizes-list sizeof(ptr) in
       list64:init let dynamic in
-        dynamic "creating list dynamic object for 'memory'" compile-procedure:check-null-here
+        dynamic is-null if
+          false LOG-TYPE:MALLOC-FAILED generate-log0 return
+        end
 
         dynamic new-names-list !64
       end
 
       list64:init let dynamic in
-        dynamic "creating list dynamic object for 'memory'" compile-procedure:check-null-here
+        dynamic is-null if
+          false LOG-TYPE:MALLOC-FAILED generate-log0 return
+        end
 
         dynamic new-sizes-list !64
       end
@@ -2023,12 +1940,9 @@ in
       line-no char-no
       macro-names macro-tokens macros-length
       extended-array extended-start extended-end
-      collect-memory-like-names dup isn-null if
-        log-stream fput-log-item
-        1 exit drop
-      else drop end
+      collect-memory-like-names dup isn-null if false swp return end drop
 
-      0 while dup new-names-list list64:length < do peek i in
+      0 while dup new-names-list list64:length < do let i in
         i new-names-list list64:get let name in
           INT-TYPE:INT STACK-MODE:LOCAL stack-item:create let replace-item in
             local-memory-end @64 dup
@@ -2036,18 +1950,16 @@ in
             i new-sizes-list list64:get + local-memory-end !64
 
             name replace-item let-names let-addresses let-vars-length str-map64:set-dstr if
-              LOG:ERR log-stream fputs "Local variable '" log-stream fputs name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-              token-address compile-procedure:show-here
-              EXIT-CODE:ERROR exit drop
+              false LOG-TYPE:REDEF-LOCAL-NAME generate-log0 return
             end
           end
         end
-      end inc end drop
+      i end inc end drop
 
       local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
 
       32 malloc let new-label in
-        new-label "creating a label object for 'memory'" compile-procedure:check-null-here
+        new-label is-null if false LOG-TYPE:MALLOC-FAILED generate-log0 return end
 
         KEYWORD:MEMORY                   new-label      !64
         token-address dcopy              new-label  8 + !64
@@ -2075,7 +1987,9 @@ in
     // New names are stored in new-names and new-names-length stack. When the 'end' of 'let' is reached, new names are deleted from the namespace.
     memory new-names-list sizeof(ptr) in
       list64:init let dynamic in
-        dynamic "creating list dynamic object for 'let'" compile-procedure:check-null-here
+        dynamic is-null if
+          false LOG-TYPE:MALLOC-FAILED generate-log0 return
+        end
 
         dynamic new-names-list !64
       end
@@ -2086,19 +2000,12 @@ in
       macro-names macro-tokens macros-length
       procedure-name procedure-address
       extended-array extended-start extended-end
-      collect-let-like-names dup isn-null if
-       log-stream fput-log-item
-       1 exit drop
-    else drop end
+      collect-let-like-names dup isn-null if false swp return end drop
 
       local-memory-end @64 let old-local-memory-end in
         // This loop is separated from the one above, since this loop must run in the reverse order.
-        new-names-list list64:length while dup isn-zero do dec peek i in
-          1 is-items-available ! if
-            LOG:ERR log-stream fputs "Expected a data before 'let' variable, but the stack was empty.\n" log-stream fputs
-            token-address compile-procedure:show-here
-            EXIT-CODE:ERROR exit drop
-          end
+        new-names-list list64:length while dup isn-zero do dec let i in
+          1 is-items-available ! if false LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return end
 
           pop-item i new-names-list list64:get let item variable-name in
             variable-name mlength 1 = if variable-name @8 '_' = else false end if
@@ -2142,23 +2049,19 @@ in
 
               let replace-item in
                 variable-name replace-item let-names let-addresses let-vars-length str-map64:set-dstr if
-                  LOG:ERR log-stream fputs "'let' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-
-                  // TODO: This does not show the address of the 'let' variable. This should be changed.
-                  token-address compile-procedure:show-here
-                  EXIT-CODE:ERROR exit drop
+                  false LOG-TYPE:REDEF-LOCAL-NAME generate-log0 return
                 end
               end
 
               local-memory-end @64 8 + local-memory-end !64
             end
           end
-        end end drop
+        i end end drop
 
         local-memory-max @64 local-memory-end @64 max2 local-memory-max !64
 
         32 malloc let new-label in
-          new-label "creating a label object for 'let'" compile-procedure:check-null-here
+          new-label is-null if false LOG-TYPE:MALLOC-FAILED generate-log0 return end
 
           KEYWORD:LET                      new-label      !64
           token-address dcopy              new-label  8 + !64
@@ -2186,7 +2089,9 @@ in
     // New names are stored in new-names and new-names-length stack. When the 'end' of 'peek' is reached, new names are deleted from the namespace.
     memory new-names-list sizeof(ptr) in
       list64:init let dynamic in
-        dynamic "creating list dynamic object for 'peek'" compile-procedure:check-null-here
+        dynamic is-null if
+          false LOG-TYPE:MALLOC-FAILED return
+        end
 
         dynamic new-names-list !64
       end
@@ -2197,22 +2102,15 @@ in
       macro-names macro-tokens macros-length
       procedure-name procedure-address
       extended-array extended-start extended-end
-      collect-let-like-names dup isn-null if
-       log-stream fput-log-item
-       1 exit drop
-    else drop end
+      collect-let-like-names dup isn-null if false swp return end drop
 
-      new-names-list list64:length is-items-available ! if
-        LOG:ERR log-stream fputs "Stack does not contain enough items for 'peek'.\n" log-stream fputs
-        token-address log-stream fput-here
-        EXIT-CODE:ERROR exit drop
-      end
+      new-names-list list64:length is-items-available ! if false LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return end
 
       peeked-item @64 let old-peeked-item in
         local-stack-length @64 peeked-item !64
 
         // This loop is separated from the one above, since this loop must run in the reverse order.
-        new-names-list list64:length while dup isn-zero do dec peek i in
+        new-names-list list64:length while dup isn-zero do dec let i in
           local-stack-length @64 new-names-list list64:length - i + let item-index in
             item-index local-stack array64:get let item in
               i new-names-list list64:get let variable-name in
@@ -2232,20 +2130,16 @@ in
 
                 let replace-item in
                   variable-name replace-item let-names let-addresses let-vars-length str-map64:set-dstr if
-                    LOG:ERR log-stream fputs "'peek' variable '" log-stream fputs variable-name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-
-                    // TODO: This does not show the address of the 'peek' variable. This should be changed.
-                    token-address compile-procedure:show-here
-                    EXIT-CODE:ERROR exit drop
+                    false LOG-TYPE:REDEF-LOCAL-NAME generate-log0 return
                   end
                 end
               end
             end
           end
-        end end drop
+        i end end drop
 
         32 malloc let new-label in
-          new-label "creating a label object for 'peek'" compile-procedure:check-null-here
+          new-label is-null if false LOG-TYPE:MALLOC-FAILED generate-log0 return end
 
           KEYWORD:PEEK                     new-label      !64
           token-address dcopy              new-label  8 + !64
@@ -2265,17 +2159,13 @@ in
 
     local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
-    output-array output-length
-    token-address
-    local-stack local-stack-length
-    log-stream
-    check-stack-types-types
+    output-array output-length local-stack local-stack-length compare-stack-types-types ! if
+      false LOG-TYPE:STACK-NOT-MATCH generate-log0 return
+    end
 
     output-stream
     "    jmp     .return\n" ostrbuf:puts
     drop
-
-    "hmm\n" puts
 
     source-name source-file output-stream
     line-no char-no
@@ -2289,23 +2179,23 @@ in
     let-names let-addresses let-vars-length
     output-array output-length
     local-memory-max
-    compile-unreachable dup isn-null if
-      log-stream fput-log-item
-      1 exit drop
-    else drop end
+    compile-unreachable dup isn-null if false swp return end drop
 
   else token-arg KEYWORD:CAST = if
     // -------- Keyword 'cast' --------
 
+    // TODO: Implement check if the stack contains an item.
+
     // Get the cast intrinsic type.
-    false compiler:expect-next-token dup isn-null if
-       log-stream fput-log-item
-       1 exit drop
-    else drop end
+    false compiler:expect-next-token let log-item in
+      log-item isn-null if drop drop drop false log-item return end
+    end
 
     let type-type type-address type-arg in
       // The token after 'cast' should be an 'intrinsic type'.
-      type-type type-address "after 'cast'" TOKEN-TYPE:INT-TYPE compile-procedure:check-type-here
+      type-type TOKEN-TYPE:INT-TYPE != if
+        false LOG-TYPE:UNXPCT-TYPE generate-log0 return
+      end
 
       local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
@@ -2318,7 +2208,11 @@ in
       type-address mfree drop
     end
 
-  else token-arg KEYWORD:SIZEOF = if
+  else
+    token-arg KEYWORD:SIZEOF != if
+      false LOG-TYPE:UNKNOWN-KEYWORD generate-log0 return
+    end
+
     // -------- Keyword 'sizeof' --------
     // sizeof <type>
 
@@ -2327,25 +2221,21 @@ in
     // sizeof <string-immediate>
     // sizeof <local-name>
 
-    true compiler:expect-next-token dup isn-null if
-      log-stream fput-log-item
-      1 exit drop
-    else drop end
+    true compiler:expect-next-token let log-item in
+      log-item isn-null if drop drop drop false log-item return end
+    end
 
     let type-type type-address type-arg in
       // The token afrer 'sizeof' should be an 'intrinsic type'.
-      type-type type-address "after 'sizeof'" TOKEN-TYPE:INT-TYPE compile-procedure:check-type-here
+      type-type TOKEN-TYPE:INT-TYPE != if
+        false LOG-TYPE:UNXPCT-TYPE generate-log0 return
+      end
 
       // Push the size of the intrinsic type.
       type-arg get-int-type-sizeof push-int-immediate
     end
-
-  else
-    LOG:ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
-    token-address compile-procedure:show-here
-    EXIT-CODE:ERROR exit drop
-  end end end end end end end end end end end end
-end false end
+  end end end end end end end end end end end
+end false NULLPTR end
 
 
 proc compile-procedure
@@ -2488,10 +2378,10 @@ in
                 local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
                 input-address @64 input-address @64 mlength 8 /
-                token-address
                 local-stack local-stack-length
-                log-stream
-                check-sub-stack-types-types
+                compare-sub-stack-types-types ! if
+                  LOG-TYPE:STACK-NOT-MATCH generate-log0 return
+                end
 
                 0 while dup output-address @64 mlength 8 / < do peek i in
                   i output-address @64 array64:get let output in
@@ -2556,9 +2446,14 @@ in
           local-memory-end
           let-names let-addresses let-vars-length
           output-types-array output-types-length
-          log-stream
           local-memory-max
-          compile-keyword if local-memory-max @64 return end
+          compile-keyword let end-of-proc log-item in
+            log-item isn-null if
+              log-item token-address LOG-TYPE:ERROR-INTRINSIC generate-log2 log-stream fput-log-item
+              1 exit drop
+            end
+            end-of-proc if local-memory-max @64 return end
+          end
 
         else
           LOG:ERR log-stream fputs "Unexpected type while expecting a keyword, an intrinsic, a string or an integer, got '" log-stream fputs token-type log-stream fput-type "'.\n" log-stream fputs
