@@ -148,8 +148,10 @@ in let source-name output-name include-paths-set full-compilation in
     source-name
     "output.asm" drop
     include-paths-set
-    STDERR
-    compile-nasm
+    compile-nasm dup isn-null if
+      STDOUT fput-log-item
+      false return
+    end drop
 
     // Show compilation time information.
     "compiling to asm" compile:info-time

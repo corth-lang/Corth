@@ -340,17 +340,24 @@ macro STACK-NOT-MATCH   0x23000 endmacro  // log-item: reason
 macro NOT-ENOUGH-ITEMS  0x23001 endmacro  //
 macro INV-ITEM-TYPE     0x23002 endmacro  //
 macro INV-ITEM-MODE     0x23003 endmacro  //
-macro ERROR-INTRINSIC   0X23004 endmacro  // log-item: reason address: token-address
-macro ERROR-KEYWORD     0X23005 endmacro  // log-item: reason address: token-address
+macro ERROR-INTRINSIC   0x23004 endmacro  // log-item: reason address: token-address
+macro ERROR-KEYWORD     0x23005 endmacro  // log-item: reason address: token-address
 macro ERROR-PROC        0x23006 endmacro  // log-item: reason
 macro MEM-SIZE-MISMATCH 0x23007 endmacro  //
 macro UNREACHABLE       0x23008 endmacro  //
 macro REDEF-LOCAL-NAME  0x23009 endmacro  //
-macro UNDEF-NAME        0x2300a endmacro  //
+macro REDEF-GLOBAL-NAME 0x2300a endmacro  //
+macro UNDEF-NAME        0x2300b endmacro  //
+macro CANNOT-OPEN-SRC   0x2300c endmacro  // ptr: source-path
+macro TODO-DIR-INCLUDE  0x2300d endmacro  // ptr: source-path
+macro UNKNOWN-FILE-TYPE 0x2300e endmacro  // ptr: source-path
+macro CANNOT-FIND-SRC   0x2300f endmacro  // ptr: include-path
+macro CANNOT-OPEN-OUT   0x23010 endmacro  //
+macro CANNOT-CREAT-OUT  0x23011 endmacro  //
 
 // -------- Assertions (prefix: 3xxxx) --------
 macro MALLOC-FAILED     0x30000 endmacro  //
-macro EXT-LEN-INVALID   0X30001 endmacro  //
+macro EXT-LEN-INVALID   0x30001 endmacro  //
 macro UNKNOWN-MODE      0x30002 endmacro  //
 macro UNKNOWN-INTRINSIC 0x30003 endmacro  //
 macro UNKNOWN-KEYWORD   0x30004 endmacro  //
@@ -377,101 +384,120 @@ in let log-item log-stream in
 
     // Lexer errors
     type LOG-TYPE:REACHED-EOF = if
-      "reached EOF\n" log-stream fputs
+      "error: reached EOF\n" log-stream fputs
 
     else type LOG-TYPE:REACHED-EOL = if
-      "reached EOL\n" log-stream fputs
+      "error: reached EOL\n" log-stream fputs
 
     else type LOG-TYPE:TOKEN-TOO-LONG = if
-      "token is too long\n" log-stream fputs
+      "error: token is too long\n" log-stream fputs
 
     else type LOG-TYPE:INVALID-ESCAPE = if
-      "escape code is invalid because:\n" log-stream fputs
+      "error: escape code is invalid because:\n" log-stream fputs
       arg1 log-stream fput-log-item
 
     else type LOG-TYPE:NOT-HEX-DIGIT = if
-      "not an hexadecimal digit\n" log-stream fputs
+      "error: not an hexadecimal digit\n" log-stream fputs
 
     else type LOG-TYPE:NOT-ESCAPE-CHAR = if
-      "invalid escape character\n" log-stream fputs
+      "error: invalid escape character\n" log-stream fputs
 
     else type LOG-TYPE:INV-STR-LIT = if
-      "could not parse string literal because:\n" log-stream fputs
+      "error: could not parse string literal because:\n" log-stream fputs
       arg1 log-stream fput-log-item
 
     else type LOG-TYPE:INV-INT-LIT = if
-      "could not parse string literal\n" log-stream fputs
+      "error: could not parse integer literal\n" log-stream fputs
 
     else type LOG-TYPE:INV-CHAR-LIT = if
-      "could not parse string literal\n" log-stream fputs
+      "error: could not parse character literal\n" log-stream fputs
 
     // Parser errors
     else type LOG-TYPE:NO-TOKEN = if
-      "token expected but none available because:\n" log-stream fputs
+      "error: token expected but none available because:\n" log-stream fputs
       arg1 log-stream fput-log-item
 
     else type LOG-TYPE:UNXPCT-TYPE = if
-      "unexpected token type\n" log-stream fputs
+      "error: unexpected token type\n" log-stream fputs
 
     else type LOG-TYPE:UNXPCT-KEYWORD = if
-      "unexpected keyword\n" log-stream fputs
+      "error: unexpected keyword\n" log-stream fputs
 
     // Compilation errors
     else type LOG-TYPE:STACK-NOT-MATCH = if
-      "stack does not match the expected stack\n" log-stream fputs
+      "error: stack does not match the expected stack\n" log-stream fputs
 
     else type LOG-TYPE:NOT-ENOUGH-ITEMS = if
-      "stack does not have enough items\n" log-stream fputs
+      "error: stack does not have enough items\n" log-stream fputs
 
     else type LOG-TYPE:INV-ITEM-TYPE = if
-      "invalid item type\n" log-stream fputs
+      "error: invalid item type\n" log-stream fputs
 
     else type LOG-TYPE:INV-ITEM-MODE = if
-      "invalid item mode\n" log-stream fputs
+      "error: invalid item mode\n" log-stream fputs
 
     else type LOG-TYPE:ERROR-INTRINSIC = if
-      "could not compile intrinsic\n" log-stream fputs
+      "error: could not compile intrinsic\n" log-stream fputs
       arg2 log-stream fput-here
       "because\n" log-stream fputs
       arg1 log-stream fput-log-item
 
     else type LOG-TYPE:ERROR-PROC = if
-      "could not compile procedure because:\n" log-stream fputs
+      "error: could not compile procedure because:\n" log-stream fputs
       arg1 log-stream fput-log-item
 
     else type LOG-TYPE:MEM-SIZE-MISMATCH = if
-      "load/store size does not match\n" log-stream fputs
+      "error: load/store size does not match\n" log-stream fputs
 
     else type LOG-TYPE:UNREACHABLE = if
-      "end of procedure must be reachable\n" log-stream fputs
+      "error: end of procedure must be reachable\n" log-stream fputs
 
     else type LOG-TYPE:REDEF-LOCAL-NAME = if
-      "name redefined\n" log-stream fputs
+      "error: local name redefined\n" log-stream fputs
+
+    else type LOG-TYPE:REDEF-GLOBAL-NAME = if
+      "error: global name redefined\n" log-stream fputs
 
     else type LOG-TYPE:UNDEF-NAME = if
-      "name not defined locally or globally\n" log-stream fputs
+      "error: name not defined locally or globally\n" log-stream fputs
+
+    else type LOG-TYPE:CANNOT-OPEN-SRC = if
+      "error: can not open source file\n" log-stream fputs
+
+    else type LOG-TYPE:TODO-DIR-INCLUDE = if
+      "error: directory including is currently not implemented\n" log-stream fputs
+
+    else type LOG-TYPE:UNKNOWN-FILE-TYPE = if
+      "error: unknown file type\n" log-stream fputs
+
+    else type LOG-TYPE:CANNOT-CREAT-OUT = if
+      "error: could not create output file\n" log-stream fputs
+
+    else type LOG-TYPE:CANNOT-OPEN-OUT = if
+      "error: could not open output file\n" log-stream fputs
 
     // Assertions
     else type LOG-TYPE:MALLOC-FAILED = if
-      "malloc failed\n" log-stream fputs
+      "assertion: malloc failed\n" log-stream fputs
 
     else type LOG-TYPE:EXT-LEN-INVALID = if
-      "extended array length is not a multiple of 3\n" log-stream fputs
+      "assertion: extended array length is not a multiple of 3\n" log-stream fputs
 
     else type LOG-TYPE:UNKNOWN-INTRINSIC = if
-      "unknown intrinsic id\n" log-stream fputs
+      "assertion: unknown intrinsic id\n" log-stream fputs
 
     else type LOG-TYPE:UNKNOWN-KEYWORD = if
-      "unknown keyword id\n" log-stream fputs
+      "assertion: unknown keyword id\n" log-stream fputs
 
     else type LOG-TYPE:UNKNOWN-MODE = if
-      "unknown stack item mode\n" log-stream fputs
+      "assertion: unknown stack item mode\n" log-stream fputs
 
     else type LOG-TYPE:CANNOT-FIND-VAR = if
-      "can not find variable in the name replace list\n" log-stream fputs
+      "assertion: can not find variable in the name replace list\n" log-stream fputs
 
     else
       "unknown\n" log-stream fputs
-    end end end end end end end end end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end
   end
 end

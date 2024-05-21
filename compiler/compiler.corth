@@ -56,69 +56,6 @@ macro compile-procedure:new-label-id
 endmacro
 
 
-// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
-macro compile-file:check-type let _token_type_ expect-address expect-length expected-token-type in
-  expected-token-type _token_type_ != if
-    LOG:ERR log-stream fputs "Expected a '" log-stream fputs expected-token-type log-stream fput-type  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_type_ log-stream fput-type "'.\n" log-stream fputs
-
-    EXIT-CODE:ERROR exit drop
-  end
-end endmacro
-
-
-// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
-macro compile-file:check-type-here let _token_type_ _token_addr_ expect-address expect-length expected-token-type in
-  expected-token-type _token_type_ != if
-    LOG:ERR log-stream fputs "Expected a '" log-stream fputs expected-token-type log-stream fput-type  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_type_ log-stream fput-type "'.\n" log-stream fputs
-
-    _token_addr_ log-stream fput-here
-    EXIT-CODE:ERROR exit drop
-  end
-end endmacro
-
-
-// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
-macro compile-file:check-keyword let _token_arg_ expect-address expect-length expected-token-arg in
-  expected-token-arg _token_arg_ != if
-    LOG:ERR log-stream fputs "Expected a '" log-stream fputs expected-token-arg log-stream fput-keyword  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_arg_ log-stream fput-keyword "'.\n" log-stream fputs
-
-    EXIT-CODE:ERROR exit drop
-  end
-end endmacro
-
-
-// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
-macro compile-file:check-keyword-here let _token_arg_ _token_addr_ expect-address expect-length expected-token-arg in
-  expected-token-arg _token_arg_ != if
-    LOG:ERR log-stream fputs "Expected a '" log-stream fputs expected-token-arg log-stream fput-keyword  "' " log-stream fputs expect-address expect-length log-stream fputs ", got '" log-stream fputs _token_arg_ log-stream fput-keyword "'.\n" log-stream fputs
-
-    _token_addr_ log-stream fput-here
-    EXIT-CODE:ERROR exit drop
-  end
-end endmacro
-
-
-// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
-macro compile-file:check-null let expect-address expect-length in
-  is-null if
-    LOG:ERR log-stream fputs "malloc failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
-
-    EXIT-CODE:ERROR exit drop
-  end
-end endmacro
-
-
-// NOTE: Designed to be used inside 'compile-file'. Variable names used inside this macro should not be changed as they come from 'compile-file'.
-macro compile-file:check-null-here let expect-address expect-length in
-  is-null if
-    LOG:ERR log-stream fputs "malloc failed while " log-stream fputs expect-address expect-length log-stream fputs ".\n" log-stream fputs
-
-    token-address log-stream fput-here
-    EXIT-CODE:ERROR exit drop
-  end
-end endmacro
-
-
 proc compare-stack-types
   // ptr: old-stack ptr: local-stack ptr: local-stack-length -> bool: is-equal
   ptr ptr ptr -> bool
@@ -629,7 +566,6 @@ proc compile-intrinsic
   ptr
 
   // Compiles an intrinsic in a Corth procedure.
-  // Compilation warning and errors are dumped to log-stream.
 in let
   source-name source-file output-stream
   line-no char-no
@@ -2164,11 +2100,10 @@ proc compile-procedure
   ptr ptr ptr
   // ptr: output-array int: output-length ->
   ptr int ->
-  // local-memory-max: int ptr: log-item
+  // int: local-memory-max ptr: log-item
   int ptr
 
   // Compiles a Corth procedure.
-  // Compilation warning and errors are dumped to log-stream.
 in let
   source-name source-file output-stream
   line-no char-no
@@ -2181,6 +2116,9 @@ in let
   extended-array extended-start extended-end
   output-types-array output-types-length
 in
+
+  // This language is driving me crazy!!!
+  "__" drop drop
 
   output-stream
   "proc_"        ostrbuf:puts
@@ -2217,10 +2155,6 @@ in
       end
 
       let token-type token-address token-arg in
-        // -- debug --
-        // LOG:INFO log-stream fputs token-type token-arg log-stream fput-token log-stream fputnl
-        // token-address log-stream fput-here
-
         token-type TOKEN-TYPE:INTEGER = if
           // -------- Constant integer --------
 
@@ -2377,12 +2311,11 @@ proc compile-file
   // include-paths-set
   ptr
   // libraries-set
+  ptr ->
+  // ptr: log-item
   ptr
-  // file-desc: log-stream
-  file-desc ->
 
   // Compiles a Corth source file.
-  // Compilation warning and errors are dumped to log-stream.
 
   // TODO: Add called-from to improve debugging.
 in let
@@ -2393,18 +2326,14 @@ in let
   macro-names macro-tokens macros-length
   include-paths-set
   libraries-set
-  log-stream
 in
   // Check if the library was included already.
-  source-name libraries-set str-set8:add ! if return end
+  source-name libraries-set str-set8:add ! if NULLPTR return end
 
   // Open the source file.
   source-name fopen-r let source-file in
     // Check if the source is opened.
-    source-file isn-pos if
-      LOG:ERR log-stream fputs "Could not open source file '" log-stream fputs source-name source-name mlength dec log-stream fputs "'\n" log-stream fputs
-      EXIT-CODE:ERROR exit drop
-    end
+    source-file isn-pos if source-file LOG-TYPE:CANNOT-OPEN-SRC generate-log1 return end
 
     memory extended-array  EXTENDED-MAX-LENGTH and
            extended-start  sizeof(int)         and
@@ -2426,14 +2355,11 @@ in
 
       while true do
         // Get next token and check if there is one available-dstr.
-        true compiler:get-next-token ! if let _ _ _ log-item in return end end drop
-
+        true compiler:get-next-token ! if let log-item in
+          drop drop drop log-item return
+        end end drop
         let token-type token-address token-arg in
-          // -- debug --
-          // LOG:INFO log-stream fputs token-type token-arg log-stream fput-token log-stream fputnl
-          // token-address log-stream fput-here
-
-          token-type token-address "" TOKEN-TYPE:KEYWORD compile-file:check-type-here
+          token-type TOKEN-TYPE:KEYWORD != if LOG-TYPE:UNXPCT-TYPE generate-log0 return end
 
           // -------- Global keywords --------
           token-arg KEYWORD:INCLUDE = if
@@ -2443,17 +2369,17 @@ in
 
             // Get the next token, which should be the include path:
 
-            false compiler:expect-next-token dup isn-null if
-               log-stream fput-log-item
-               1 exit drop
-            else drop end
+            false compiler:expect-next-token let log-item in
+              log-item isn-null if drop drop drop log-item return end
+            end
 
             let path-token-type path-token-address path-token-arg in
-              path-token-type path-token-address "as path after 'include'" TOKEN-TYPE:STRING compile-file:check-type-here
+              path-token-type TOKEN-TYPE:STRING != if LOG-TYPE:UNXPCT-TYPE generate-log0 return end
+
               memory found sizeof(bool) in
                 found !reset
 
-                0 while dup include-paths-set list64:length < do peek i in
+                0 while dup include-paths-set list64:length < do let i in
                   i include-paths-set list64:get let directory in
                     directory cstr:str path-token-arg path-token-arg mlength path:merge2-cstr let include-path in
                       // Check if the user has the required permissions.
@@ -2466,30 +2392,25 @@ in
                           found !set
 
                           stats 24 + @64 S_IFMT && let masked in
-                            masked S_IFREG = if
-                              // File including, call compile-file on the file.
-                              include-path output-stream
-                              data-definitions-list
-                              global-names-array global-sizes-array globals-length
-                              proc-names-array proc-inputs-array proc-outputs-array procs-length
-                              macro-names macro-tokens macros-length
-                              include-paths-set
-                              libraries-set
-                              log-stream compile-file
+                            masked S_IFREG != if
+                              masked S_IFDIR = if
+                                // Directory including, should include all sub paths.
+                                include-path LOG-TYPE:TODO-DIR-INCLUDE generate-log1 return
+                              end
 
-                            else masked S_IFDIR = if
-                              // Directory including, should include all sub paths.
-                              LOG:TODO log-stream fputs "Including directories is not implemented yet.\n" log-stream fputs
-                              path-token-address log-stream fput-here
-                              EXIT-CODE:ERROR exit drop
+                              include-path LOG-TYPE:UNKNOWN-FILE-TYPE generate-log1 return
+                            end
 
-                            else
-                              LOG:ERR log-stream fputs "Invalid file type, got " log-stream fputs masked log-stream fputo ".\n" log-stream fputs
-                              path-token-address log-stream fput-here
-                              EXIT-CODE:ERROR exit drop
-                            end end
+                            // File including, call compile-file on the file.
+                            include-path output-stream
+                            data-definitions-list
+                            global-names-array global-sizes-array globals-length
+                            proc-names-array proc-inputs-array proc-outputs-array procs-length
+                            macro-names macro-tokens macros-length
+                            include-paths-set
+                            libraries-set
+                            compile-file
                           end
-
                           break
                         end
                       end
@@ -2498,13 +2419,11 @@ in
                       include-path mfree drop
                     end
                   end
-                end inc end drop
+                i end inc end drop
 
                 // Check if any library is found.
                 found @bool ! if
-                  LOG:ERR log-stream fputs "Could not find library '" log-stream fputs path-token-arg dup mlength log-stream fputs "'.\n" log-stream fputs
-                  path-token-address log-stream fput-here
-                  EXIT-CODE:ERROR exit drop
+                  path-token-arg LOG-TYPE:CANNOT-FIND-SRC generate-log1 return
                 end
               end
             end
@@ -2515,14 +2434,12 @@ in
             memory new-names-list sizeof(ptr) and
                    new-sizes-list sizeof(ptr) in
               list64:init let dynamic in
-                dynamic "creating list dynamic object for 'memory'" compile-file:check-null-here
-
+                dynamic is-null if LOG-TYPE:MALLOC-FAILED generate-log0 return end
                 dynamic new-names-list !64
               end
 
               list64:init let dynamic in
-                dynamic "creating list dynamic object for 'memory'" compile-file:check-null-here
-
+                dynamic is-null if LOG-TYPE:MALLOC-FAILED generate-log0 return end
                 dynamic new-sizes-list !64
               end
 
@@ -2532,11 +2449,10 @@ in
               macro-names macro-tokens macros-length
               extended-array extended-start extended-end
               collect-memory-like-names dup isn-null if
-                 log-stream fput-log-item
-                 1 exit drop
-              else drop end
+                return
+              end drop
 
-              0 while dup new-names-list list64:length < do peek i in
+              0 while dup new-names-list list64:length < do let i in
                 // Get the full name of the variable.
                 namespace-name @64 is-null if
                   i new-names-list list64:get
@@ -2547,12 +2463,10 @@ in
                 let name in
                   // Store the variable.
                   name i new-sizes-list list64:get global-names-array global-sizes-array globals-length str-map64:set-dstr if
-                    LOG:ERR log-stream fputs "Global variable '" log-stream fputs name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-                    token-address log-stream fput-here
-                    EXIT-CODE:ERROR exit drop
+                    LOG-TYPE:REDEF-GLOBAL-NAME generate-log0 return
                   end
                 end
-              end inc end drop
+              i end inc end drop
 
               // Deallocate 'new-names-list' and 'new-sizes-list' but keep the 'memory' variable names.
               new-names-list list64:mfree drop
@@ -2563,28 +2477,25 @@ in
             // -------- Keyword 'macro' --------
 
             // Get the next token, which should be the name of the macro.
-            false compiler:expect-next-token dup isn-null if
-               log-stream fput-log-item
-               1 exit drop
-            else drop end
+            false compiler:expect-next-token let log-item in log-item isn-null if drop drop drop log-item return end end
 
             let macro-name-token-type macro-name-token-address macro-name-token-arg in
-              macro-name-token-type macro-name-token-address "as macro name after 'macro'" TOKEN-TYPE:NAME compile-file:check-type-here
+              macro-name-token-type TOKEN-TYPE:NAME != if
+                LOG-TYPE:UNXPCT-TYPE generate-log0 return
+              end
 
               // macro-tokens and macro-tokens-length are used to create a STACK for macro tokens.
               memory macro-tokens-list sizeof(ptr) in
                 list64:init let dynamic in
-                  dynamic "creating list dynamic object for 'macro'" compile-file:check-null-here
-
+                  dynamic is-null if LOG-TYPE:MALLOC-FAILED generate-log0 return end
                   dynamic macro-tokens-list !64
                 end
 
                 while true do
                   // Get next tokens, until an 'endmacro' is found.
-                  false compiler:expect-next-token dup isn-null if
-                     log-stream fput-log-item
-                     1 exit drop
-                  else drop end
+                  false compiler:expect-next-token let log-item in
+                    log-item isn-null if drop drop drop log-item return end
+                  end
 
                   let macro-new-token-type macro-new-token-address macro-new-token-arg in
                     // If the token is an 'endmacro' keyword, break the loop.
@@ -2608,9 +2519,7 @@ in
                   namespace-name @64 macro-name-token-arg djoin
                 end let name in
                   name macro-tokens-list list64:copy-array macro-names macro-tokens macros-length str-map64:set-dstr if
-                    LOG:ERR log-stream fputs "Macro '" log-stream fputs name dup mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-                    token-address log-stream fput-here
-                    EXIT-CODE:ERROR exit drop
+                    LOG-TYPE:REDEF-GLOBAL-NAME generate-log0 return
                   end
                 end
 
@@ -2626,13 +2535,14 @@ in
             // -------- 'proc' keyword --------
 
             // Get the next token, which should be the name of the procedure.
-            false compiler:expect-next-token dup isn-null if
-               log-stream fput-log-item
-               1 exit drop
-            else drop end
+            false compiler:expect-next-token let log-item in
+              log-item isn-null if drop drop drop log-item return end
+            end
 
             let proc-name-token-type proc-name-token-address proc-name-token-arg in
-              proc-name-token-type proc-name-token-address "as procedure name after 'procedure'" TOKEN-TYPE:NAME compile-file:check-type-here
+              proc-name-token-type TOKEN-TYPE:NAME != if
+                LOG-TYPE:UNXPCT-TYPE generate-log0 return
+              end
 
               memory input-list  sizeof(ptr) and
                      output-list sizeof(ptr) in
@@ -2644,15 +2554,16 @@ in
                 // Get the input types.
                 while true do
                   // Get the token.
-                  true compiler:expect-next-token dup isn-null if
-                    log-stream fput-log-item
-                    1 exit drop
-                  else drop end
+                  true compiler:expect-next-token let log-item in
+                    log-item isn-null if drop drop drop log-item return end
+                  end
 
                   let input-token-type input-token-address input-token-arg in
                     input-token-type TOKEN-TYPE:KEYWORD = if
                       // If the token was a keyword, it must be a 'KEYWORD:RETURN'.
-                      input-token-arg input-token-address "after 'proc' inputs" KEYWORD:RETURNS compile-file:check-keyword-here
+                      input-token-arg KEYWORD:RETURNS != if
+                        LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+                      end
 
                       // Deallocate 'input-token-address'.
                       input-token-address mfree drop
@@ -2662,7 +2573,9 @@ in
                     end
 
                     // Check if the token is of type-type.
-                    input-token-type input-token-address "after 'proc'" TOKEN-TYPE:INT-TYPE compile-file:check-type-here
+                    input-token-type TOKEN-TYPE:INT-TYPE != if
+                      LOG-TYPE:UNXPCT-TYPE generate-log0 return
+                    end
 
                     input-token-arg input-list list64:append
 
@@ -2674,15 +2587,16 @@ in
                 // Get the output types.
                 while true do
                   // Get the token.
-                  true compiler:expect-next-token dup isn-null if
-                    log-stream fput-log-item
-                    1 exit drop
-                  else drop end
+                  true compiler:expect-next-token let log-item in
+                    log-item isn-null if drop drop drop log-item return end
+                  end
 
                   let output-token-type output-token-address output-token-arg in
                     output-token-type TOKEN-TYPE:KEYWORD = if
                       // If the token is a keyword, it must be a 'KEYWORD:IN'.
-                      output-token-arg output-token-address "after 'proc' outputs" KEYWORD:IN compile-file:check-keyword-here
+                      output-token-arg KEYWORD:IN != if
+                        LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+                      end
 
                       // Deallocate 'output-token-address'.
                       output-token-address mfree drop
@@ -2692,7 +2606,9 @@ in
                     end
 
                     // Check if the token is of type-type.
-                    output-token-type output-token-address "after '->'" TOKEN-TYPE:INT-TYPE compile-file:check-type-here
+                    output-token-type TOKEN-TYPE:INT-TYPE != if
+                      LOG-TYPE:UNXPCT-TYPE generate-log0 return
+                    end
 
                     output-token-arg output-list list64:append
 
@@ -2710,12 +2626,8 @@ in
                 end
 
                 let full-name in
-                  full-name proc-names-array proc-names-array procs-length @64 8 * + str-sorted8:available-dstr if
-                    drop
-                    LOG:ERR log-stream fputs "Procedure '" log-stream fputs full-name full-name  mlength log-stream fputs "' was already defined before.\n" log-stream fputs
-                    proc-name-token-address log-stream fput-here
-                    EXIT-CODE:ERROR exit drop
-                    return
+                  full-name proc-names-array proc-names-array procs-length @64 8 * + str-sorted8:available-dstr if drop
+                    LOG-TYPE:REDEF-GLOBAL-NAME generate-log0 return
                   end
 
                   let name-address in
@@ -2762,10 +2674,7 @@ in
                     extended-array extended-start extended-end
                     output-list list64:to-array
                     compile-procedure let max-memory log-item in
-                      log-item isn-null if
-                        log-item LOG-TYPE:ERROR-PROC generate-log1 log-stream fput-log-item
-                        1 exit drop
-                      end
+                      log-item isn-null if log-item LOG-TYPE:ERROR-PROC generate-log1 return end
                     end
 
                     output-stream
@@ -2787,61 +2696,55 @@ in
 
           else token-arg KEYWORD:NAMESPACE = if
             namespace-name @64 isn-null if
-              LOG:ERR log-stream fputs "Keyword 'namespace' can not be used inside a namespace.\n" log-stream fputs
-              token-address log-stream fput-here
-              EXIT-CODE:ERROR exit drop
+              LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
             end
 
             // Get the next token, which should be the name of the procedure.
-            false compiler:expect-next-token dup isn-null if
-               log-stream fput-log-item
-               1 exit drop
-            else drop end
+            false compiler:expect-next-token let log-item in
+              log-item isn-null if drop drop drop log-item return end
+            end
 
             let name-type name-address name-arg in
-              name-type name-address "as namespace name after 'namespace'" TOKEN-TYPE:NAME compile-file:check-type-here
+              name-type TOKEN-TYPE:NAME != if
+                LOG-TYPE:UNXPCT-TYPE generate-log0 return
+              end
 
               ':' name-arg dappend8 namespace-name !64
             end
 
-          else token-arg KEYWORD:ENDNAMESPACE = if
+          else
+            token-arg KEYWORD:ENDNAMESPACE != if
+              LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+            end
+
             namespace-name @64 is-null if
-              LOG:ERR log-stream fputs "Keyword 'endnamespace' must be used after a 'namespace' keyword.\n" log-stream fputs
-              token-address log-stream fput-here
-              EXIT-CODE:ERROR exit drop
+              LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
             end
 
             NULLPTR namespace-name !64
-
-          else
-            LOG:ERR log-stream fputs "Unexpected keyword, got '" log-stream fputs token-arg log-stream fput-keyword "'.\n" log-stream fputs
-            token-address log-stream fput-here
-            EXIT-CODE:ERROR exit drop
-          end end end end end end
+          end end end end end
         end
       end
     end
 
     source-file fclose drop
   end
-end end
+NULLPTR end end
 
 
 proc compile-nasm
-  // ptr: source-name ptr: output-name ptr: include-paths-set file-desc: log-stream ->
-  ptr ptr ptr file-desc ->
-in let source-name output-name include-paths-set log-stream in
+  // ptr: source-name ptr: output-name ptr: include-paths-set -> ptr: log-item
+  ptr ptr ptr -> ptr
+in let source-name output-name include-paths-set in
   // Create the output file.
   output-name 0o777 creat dup isn-pos if
-    LOG:ERR log-stream fputs "Could not create output file '" log-stream fputs output-name output-name cstr:len log-stream fputs "'.\n" log-stream fputs
-    EXIT-CODE:ERROR exit drop
+    drop LOG-TYPE:CANNOT-CREAT-OUT generate-log0 return
   end
 
   let output-file in
     // Check if the file is opened successfully.
     output-file isn-pos if
-      LOG:ERR log-stream fputs "Could not open output file '" log-stream fputs output-name output-name cstr:len log-stream fputs "'.\n" log-stream fputs
-      EXIT-CODE:ERROR exit drop
+      LOG-TYPE:CANNOT-OPEN-OUT generate-log0 return
     end
 
     memory output-stream OUTPUT-STREAM-SIZE in
@@ -2895,14 +2798,12 @@ in let source-name output-name include-paths-set log-stream in
         0 macros-length    !64
 
         list64:init let dynamic in
-          dynamic "creating a list dynamic object for data-definitions-list" compile-file:check-null
-
+          dynamic is-null if LOG-TYPE:MALLOC-FAILED generate-log0 return end
           dynamic data-definitions-list !64
         end
 
         list64:init let dynamic in
-          dynamic "creating a list dynamic object for libraries-set.\n" compile-file:check-null
-
+          dynamic is-null if LOG-TYPE:MALLOC-FAILED generate-log0 return end
           dynamic libraries-set !64
         end
 
@@ -2913,8 +2814,7 @@ in let source-name output-name include-paths-set log-stream in
         macro-names macro-tokens macros-length
         include-paths-set
         libraries-set
-        log-stream
-        compile-file
+        compile-file dup isn-null if return end drop
 
         // Print the data labels.
         output-stream
@@ -2997,4 +2897,4 @@ in let source-name output-name include-paths-set log-stream in
 
     output-file fclose drop
   end
-end end
+NULLPTR end end
