@@ -234,19 +234,6 @@ macro fput-here-position let _line_no_ _char_no_ _file_name_ _log_stream_ in
 end endmacro
 
 
-// proc generate-position
-//   // ptr: file int: pos -> ptr: pos
-//   ptr int -> ptr
-// in sizeof(position_) malloc let object in
-//   object isn-null if
-//     object position:pos  !64
-//     object position:file !64
-
-//     NULLPTR object position:prev !64
-//   else drop drop end
-// object end end
-
-
 // Exits with error code.
 proc unescapable -> in 1 exit drop end
 
