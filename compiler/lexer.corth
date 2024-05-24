@@ -56,7 +56,7 @@ proc parse-next-token
   file-desc ptr ptr ptr ptr ptr -> ptr
   // Gets the next token string before any newline or space and fills a buffer.
   // Keeps track of the line and char number as the bytes are read.
-  // NOTE: If buffer-end exceeds buffer + TOKEN-MAX-LENGTH, exits program.
+  // NOTE: If buffer-end exceeds buffer + TOKEN-MAX-LENGTH, creates an assertion.
 in let file file-name line-no char-no buffer buffer-end in
   while true do
     buffer-end @64 1 file fgets-keep is-zero if
@@ -143,8 +143,8 @@ proc parse-next-string
   file-desc ptr ptr ptr ptr ptr -> ptr
   // Gets the next string before a double quote.
   // Keeps track of the line and char number as the bytes are read.
-  // NOTE: If buffer-end exceeds buffer + TOKEN-MAX-LENGTH, exits program.
-  // NOTE: If EOF is reached before a double quote is found, exits program.
+  // NOTE: If buffer-end exceeds buffer + TOKEN-MAX-LENGTH, creates an assertion.
+  // NOTE: If EOF is reached before a double quote is found, creates an assertion.
   // TODO: Add escapes.
 in let file file-name line-no char-no buffer buffer-end in
   while true do buffer-end @64 let char-addr in
@@ -267,12 +267,11 @@ proc create-name-token
   // Checks if the name is a keyword or an intrinsic, and creates a new token.
   // After the keyword and intrinsic checks, macros are checked for any match. If there is any macro with the same name, the macro tokens are loaded to a buffer.
 in let
-    file-name file
-    start-line start-char
-    line-no char-no
-    buffer buffer-end
-  in
-
+  file-name file
+  start-line start-char
+  line-no char-no
+  buffer buffer-end
+in
   // Get full token.
   file file-name line-no char-no buffer buffer-end parse-next-token dup isn-null if
     let log-item in TOKEN-TYPE:UNKNOWN NULLPTR 0 log-item end return
@@ -410,7 +409,9 @@ in
 
             // Get full token.
             file file-name line-no char-no buffer buffer-end parse-next-token dup isn-null if
-              let log-item in TOKEN-TYPE:UNKNOWN NULLPTR 0 log-item false end return
+              let log-item in
+                TOKEN-TYPE:UNKNOWN NULLPTR 0 log-item false
+              end return
             end drop
 
             file-name NULLPTR start-line start-char line-no @64 char-no @64 generate-address let address in
@@ -418,7 +419,7 @@ in
 
               memory number sizeof(int) in
                 buffer buffer-end @64 buffer - number convint ! if
-
+                  TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:INV-INT-LIT generate-log0 address LOG-TYPE:SYNTAX-ERROR generate-log2 false return
                 end
 
                 TOKEN-TYPE:INTEGER address number @64
@@ -524,7 +525,7 @@ in
 
                 memory number sizeof(int) in
                   buffer buffer-end @64 buffer - number convint ! if
-                    TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:INV-INT-LIT generate-log0 false return
+                    TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:INV-INT-LIT generate-log0 address LOG-TYPE:SYNTAX-ERROR generate-log2 false return
                   end
 
                   TOKEN-TYPE:INTEGER address number @64

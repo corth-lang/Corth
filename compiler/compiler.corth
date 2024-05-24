@@ -22,6 +22,7 @@ include "collections/str_set8.corth"
 
 include "lexer.corth"
 include "debug.corth"
+
 include "enums.corth"
 include "local_stack.corth"
 
@@ -57,49 +58,55 @@ endmacro
 
 
 proc compare-stack-types
-  // ptr: old-stack ptr: local-stack ptr: local-stack-length -> bool: is-equal
-  ptr ptr ptr -> bool
+  // ptr: old-stack ptr: local-stack ptr: local-stack-length -> ptr: log-item
+  ptr ptr ptr -> ptr
+  // Checks if the local stack IS EQUAL TO the correct stack item types.
+  // NOTE: old-stack must be an array of stack items.
 in let old-stack local-stack local-stack-length in
-  local-stack-length @64 8 * old-stack mlength != if false return end
+  local-stack-length @64 8 * old-stack mlength != if LOG-TYPE:STACK-SIZE-NOT-EQ generate-log0 return end
 
   0 while dup local-stack-length @64 < do let i in
-    i old-stack array64:get stack-item:get-type i local-stack array64:get stack-item:get-type != if false return end
+    i old-stack array64:get stack-item:get-type i local-stack array64:get stack-item:get-type != if LOG-TYPE:STACK-NOT-MATCH generate-log0 return end
   i end inc end drop
-end true end
+end NULLPTR end
 
 
 proc compare-stack-types-types
-  // ptr: types-array int: types-length ptr: local-stack ptr: local-stack-length -> bool: is-equal
-  ptr int ptr ptr -> bool
+  // ptr: types-array int: types-length ptr: local-stack ptr: local-stack-length -> ptr: log-item
+  ptr int ptr ptr -> ptr
+  // Checks if the local stack IS EQUAL TO the correct stack item types.
+  // NOTE: types-array and types-length must be an array of stack item types.
 in let
   types-array types-length
   local-stack local-stack-length
 in
-  types-length local-stack-length @64 != if false return end
+  types-length local-stack-length @64 != if LOG-TYPE:STACK-SIZE-NOT-EQ generate-log0 return end
 
   0 while dup types-length < do let i in
-    i local-stack array64:get stack-item:get-type i types-array array64:get != if false return end
+    i local-stack array64:get stack-item:get-type i types-array array64:get != if LOG-TYPE:STACK-NOT-MATCH generate-log0 return end
   i end inc end drop
-end true end
+end NULLPTR end
 
 
 proc compare-sub-stack-types-types
-  // ptr: types-array int: types-length ptr: local-stack ptr: local-stack-length -> bool: is-equal
-  ptr int ptr ptr -> bool
+  // ptr: types-array int: types-length ptr: local-stack ptr: local-stack-length -> ptr: log-item
+  ptr int ptr ptr -> ptr
+  // Checks if the local stack ENDS WITH the correct stack item types.
+  // NOTE: types-array and types-length must be an array of stack item types.
 in let
   types-array types-length
   local-stack local-stack-length
 in
-  types-length local-stack-length @64 > if false return end
+  types-length local-stack-length @64 > if LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return end
 
   types-length while dup isn-zero do dec let i in
     pop-item let item in
       i types-array array64:get let expected in
-        item stack-item:get-type expected != if false return end
+        item stack-item:get-type expected != if LOG-TYPE:STACK-NOT-MATCH generate-log0 return end
       end
     end
   i end end drop
-end true end
+end NULLPTR end
 
 
 proc fput-stack-contents
@@ -1176,11 +1183,7 @@ in
       local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
       // Check if the stack is correct.
-      output-array output-length local-stack local-stack-length compare-stack-types-types ! if
-        false LOG-TYPE:STACK-NOT-MATCH generate-log0 return
-      end
-
-      true NULLPTR return
+      output-array output-length local-stack local-stack-length compare-stack-types-types dup is-null swp return
     end
 
     labels-list list64:pop-last let label in
@@ -1191,9 +1194,7 @@ in
             local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
             // Check for the stack changes.
-            start-stack local-stack local-stack-length compare-stack-types ! if
-              false LOG-TYPE:STACK-NOT-MATCH generate-log0 return
-            end
+            start-stack local-stack local-stack-length compare-stack-types dup isn-null if false swp return end drop
 
             output-stream
             start-id nasm:label
@@ -1210,9 +1211,7 @@ in
             local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
             // Check for the stack changes.
-            start-stack local-stack local-stack-length compare-stack-types ! if
-              false LOG-TYPE:STACK-NOT-MATCH generate-log0 return
-            end
+            start-stack local-stack local-stack-length compare-stack-types dup isn-null if false swp return end drop
 
             output-stream
             start-id nasm:label
@@ -1230,9 +1229,7 @@ in
             while-label-id do-address unbroken-end-id broken-end-id while-stack do-stack
           in
             // Check for the stack changes.
-            while-stack local-stack local-stack-length compare-stack-types ! if
-              false LOG-TYPE:STACK-NOT-MATCH generate-log0 return
-            end
+            while-stack local-stack local-stack-length compare-stack-types dup isn-null if false swp return end drop
 
             // Overwrite the contents of the local-stack.
             do-stack local-stack local-stack-length local-stack.overwrite
@@ -1543,9 +1540,7 @@ in
         old-keyword KEYWORD:DO = if
           label-addr @64 32 + @64 label-addr @64 24 + @64 label-addr @64 56 + @64 let broken-end-id do-address do-stack in
             // Check for the stack contents.
-            do-stack local-stack local-stack-length compare-stack-types ! if
-              false LOG-TYPE:STACK-NOT-MATCH generate-log0 return
-            end
+            do-stack local-stack local-stack-length compare-stack-types dup isn-null if false swp return end drop
 
             local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
@@ -1840,9 +1835,7 @@ in
 
     local-stack local-stack-length output-stream local-stack.convert-last-items-real
 
-    output-array output-length local-stack local-stack-length compare-stack-types-types ! if
-      false LOG-TYPE:STACK-NOT-MATCH generate-log0 return
-    end
+    output-array output-length local-stack local-stack-length compare-stack-types-types dup isn-null if false swp return end drop
 
     output-stream
     "    jmp     .return\n" ostrbuf:puts
@@ -2045,7 +2038,7 @@ in
           else drop
             token-arg proc-names-array proc-names-array procs-length @64 8 * + str-sorted8:available-dstr ! if
               // TODO: Add Levenshtein distance algoritm to show the nearest matchs; which can be definitions, macros, procedures, keywords and intrinsics.
-              drop 0 LOG-TYPE:UNDEF-NAME generate-log0 return
+              drop 0 token-address LOG-TYPE:UNDEF-NAME generate-log1 return
             end
 
             // -------- 'proc' calls --------
@@ -2056,9 +2049,7 @@ in
 
                 input-address @64 input-address @64 mlength 8 /
                 local-stack local-stack-length
-                compare-sub-stack-types-types ! if
-                  0 LOG-TYPE:STACK-NOT-MATCH generate-log0 return
-                end
+                compare-sub-stack-types-types dup isn-null if token-address LOG-TYPE:CANNOT-CALL-PROC generate-log2 0 swp return end drop
 
                 0 while dup output-address @64 mlength 8 / < do peek i in
                   i output-address @64 array64:get let output in
@@ -2096,7 +2087,7 @@ in
           local-stack local-stack-length
           peeked-item
           token-type token-arg
-          compile-intrinsic dup isn-null if 0 swp return end drop
+          compile-intrinsic dup isn-null if token-address LOG-TYPE:ERROR-INTRINSIC generate-log2 0 swp return end drop
 
         else
           token-type TOKEN-TYPE:KEYWORD != if
@@ -2235,10 +2226,10 @@ in
                             masked S_IFREG != if
                               masked S_IFDIR = if
                                 // Directory including, should include all sub paths.
-                                include-path LOG-TYPE:TODO-DIR-INCLUDE generate-log1 return
+                                include-path LOG-TYPE:TODO-DIR-INCLUDE generate-log1 token-address LOG-TYPE:CANNOT-INCLUDE generate-log2 return
                               end
 
-                              include-path LOG-TYPE:UNKNOWN-FILE-TYPE generate-log1 return
+                              include-path LOG-TYPE:UNKNOWN-FILE-TYPE generate-log1 token-address LOG-TYPE:CANNOT-INCLUDE generate-log2 return
                             end
 
                             // File including, call compile-file on the file.
@@ -2263,7 +2254,7 @@ in
 
                 // Check if any library is found.
                 found @bool ! if
-                  path-token-arg LOG-TYPE:CANNOT-FIND-SRC generate-log1 return
+                  path-token-arg LOG-TYPE:CANNOT-FIND-SRC generate-log1 token-address LOG-TYPE:CANNOT-INCLUDE generate-log2 return
                 end
               end
             end

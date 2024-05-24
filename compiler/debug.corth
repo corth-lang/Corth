@@ -329,6 +329,7 @@ macro NOT-ESCAPE-CHAR   0x21005 endmacro  //
 macro INV-STR-LIT       0x21006 endmacro  // log-item: reason
 macro INV-INT-LIT       0x21007 endmacro  //
 macro INV-CHAR-LIT      0x21008 endmacro  //
+macro SYNTAX-ERROR      0x21009 endmacro  // log-item: reason ptr: address
 
 //// Parsing errors (prefix: 22xxx)
 macro NO-TOKEN          0x22000 endmacro  // log-item: reason
@@ -336,7 +337,7 @@ macro UNXPCT-TYPE       0x22001 endmacro
 macro UNXPCT-KEYWORD    0x22002 endmacro
 
 //// Compilation errors (prefix: 23xxx)
-macro STACK-NOT-MATCH   0x23000 endmacro  // log-item: reason
+macro STACK-NOT-MATCH   0x23000 endmacro  //
 macro NOT-ENOUGH-ITEMS  0x23001 endmacro  //
 macro INV-ITEM-TYPE     0x23002 endmacro  //
 macro INV-ITEM-MODE     0x23003 endmacro  //
@@ -347,14 +348,17 @@ macro MEM-SIZE-MISMATCH 0x23007 endmacro  //
 macro UNREACHABLE       0x23008 endmacro  //
 macro REDEF-LOCAL-NAME  0x23009 endmacro  //
 macro REDEF-GLOBAL-NAME 0x2300a endmacro  //
-macro UNDEF-NAME        0x2300b endmacro  //
-macro CANNOT-OPEN-SRC   0x2300c endmacro  // ptr: source-path
-macro TODO-DIR-INCLUDE  0x2300d endmacro  // ptr: source-path
-macro UNKNOWN-FILE-TYPE 0x2300e endmacro  // ptr: source-path
-macro CANNOT-FIND-SRC   0x2300f endmacro  // ptr: include-path
+macro UNDEF-NAME        0x2300b endmacro  // address: token-address
+macro CANNOT-OPEN-SRC   0x2300c endmacro  //
+macro TODO-DIR-INCLUDE  0x2300d endmacro  //
+macro UNKNOWN-FILE-TYPE 0x2300e endmacro  //
+macro CANNOT-FIND-SRC   0x2300f endmacro  //
 macro CANNOT-OPEN-OUT   0x23010 endmacro  //
 macro CANNOT-CREAT-OUT  0x23011 endmacro  //
 macro ACCESSED-PEEKED   0x23012 endmacro  //
+macro CANNOT-INCLUDE    0x23013 endmacro  // ptr: source-path
+macro CANNOT-CALL-PROC  0x23014 endmacro  // address: token-address
+macro STACK-SIZE-NOT-EQ 0x23015 endmacro  //
 
 // -------- Assertions (prefix: 3xxxx) --------
 macro MALLOC-FAILED     0x30000 endmacro  //
@@ -413,6 +417,11 @@ in let log-item log-stream in
     else type LOG-TYPE:INV-CHAR-LIT = if
       "error: could not parse character literal\n" log-stream fputs
 
+    else type LOG-TYPE:SYNTAX-ERROR = if
+      "error: syntax error\n" log-stream fputs
+      arg2 log-stream fput-here
+      arg1 log-stream fput-log-item
+
     // Parser errors
     else type LOG-TYPE:NO-TOKEN = if
       "error: token expected but none available because:\n" log-stream fputs
@@ -440,7 +449,11 @@ in let log-item log-stream in
     else type LOG-TYPE:ERROR-INTRINSIC = if
       "error: could not compile intrinsic\n" log-stream fputs
       arg2 log-stream fput-here
-      "because\n" log-stream fputs
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:ERROR-KEYWORD = if
+      "error: could not compile keyword\n" log-stream fputs
+      arg2 log-stream fput-here
       arg1 log-stream fput-log-item
 
     else type LOG-TYPE:ERROR-PROC = if
@@ -468,6 +481,9 @@ in let log-item log-stream in
     else type LOG-TYPE:TODO-DIR-INCLUDE = if
       "error: directory including is currently not implemented\n" log-stream fputs
 
+    else type LOG-TYPE:CANNOT-FIND-SRC = if
+      "error: cannot find source file\n" log-stream fputs
+
     else type LOG-TYPE:UNKNOWN-FILE-TYPE = if
       "error: unknown file type\n" log-stream fputs
 
@@ -479,6 +495,19 @@ in let log-item log-stream in
 
     else type LOG-TYPE:ACCESSED-PEEKED = if
       "error: tried to pop peeked item\n" log-stream fputs
+
+    else type LOG-TYPE:CANNOT-INCLUDE = if
+      "error: cannot include path\n" log-stream fputs
+      arg2 log-stream fput-here
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:CANNOT-CALL-PROC = if
+      "error: cannot call name\n" log-stream fputs
+       arg2 log-stream fput-here
+       arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:STACK-SIZE-NOT-EQ = if
+      "error: stack size do not match the expected stack size\n" log-stream fputs
 
     // Assertions
     else type LOG-TYPE:MALLOC-FAILED = if
@@ -501,7 +530,7 @@ in let log-item log-stream in
 
     else
       "unknown\n" log-stream fputs
-    end end end end end end end end end end end end end end end end end end
-    end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end
   end
 end
