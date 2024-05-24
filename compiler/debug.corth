@@ -13,17 +13,6 @@ macro ADDR.END   32 endmacro
 macro POS.LINE   0  endmacro
 macro POS.CHAR   8  endmacro
 
-namespace LOG
-macro INFO  "\x1b[1;97m[INFO]\x1b[0;97m "    endmacro
-macro WARN  "\x1b[1;33m[WARNING]\x1b[0;97m " endmacro
-macro SOFT  "\x1b[1;31m[SOFT]\x1b[0;97m "    endmacro
-macro ERR   "\x1b[1;31m[ERROR]\x1b[0;97m "   endmacro
-macro BUG   "\x1b[1;31m[BUG]\x1b[0;97m "     endmacro
-macro CMD   "\x1b[1;32m[CMD]\x1b[0;97m "     endmacro
-macro TODO  "\x1b[1;35m[TODO]\x1b[0;97m "    endmacro
-macro HERE  "\x1b[1;32m[HERE]\x1b[0;97m "    endmacro
-endnamespace
-
 
 // This buffer can be used to easily write many spaces at once.
 // NOTE: Trying to write more than .-BUFFER-SIZE characters may cause problems.
@@ -32,12 +21,6 @@ memory space-buffer      SPACE-BUFFER-SIZE end
 
 macro  TILDE-BUFFER-SIZE 256               endmacro
 memory tilde-buffer      TILDE-BUFFER-SIZE end
-
-
-macro sizeof(position_) 24 endmacro
-macro position:file   0 + endmacro
-macro position:pos    8 + endmacro
-macro position:prev  16 + endmacro
 
 
 macro sizeof(log)  24 endmacro
@@ -146,8 +129,8 @@ proc fput-address
   // Prints the formatted address of a token.
 in let address log-stream in
   address ADDR.FILE + @64 let file-name in
-    "file '" log-stream fputs file-name file-name mlength log-stream fputs
-    "' [" log-stream fputs
+    "in '" log-stream fputs file-name file-name mlength log-stream fputs
+    "' between [" log-stream fputs
     address ADDR.START + POS.LINE + @64 address ADDR.START + POS.CHAR + @64 log-stream fput-position
     "]-[" log-stream fputs
     address ADDR.END + POS.LINE + @64 address ADDR.END + POS.CHAR + @64 log-stream fput-position
@@ -233,7 +216,7 @@ proc fput-here
   // ptr: address file-desc: log-stream ->
   ptr file-desc ->
 in let address log-stream in
-  LOG:HERE log-stream fputs address log-stream fput-address ":\n" log-stream fputs
+  address log-stream fput-address log-stream fputnl
   address log-stream fput-lines
 
   address ADDR.PREV + @64 let prev in
@@ -246,31 +229,22 @@ end end
 
 macro fput-here-position let _line_no_ _char_no_ _file_name_ _log_stream_ in
   // ptr: position file-desc: log-stream ->
-  LOG:HERE _log_stream_ fputs "At " _log_stream_ fputs _line_no_ _char_no_ _log_stream_ fput-position " in '" _log_stream_ fputs _file_name_ _file_name_ mlength _log_stream_ fputs "':\n" _log_stream_ fputs
+  _line_no_ _char_no_ _log_stream_ fput-position " in file " _log_stream_ fputs _file_name_ _file_name_ mlength _log_stream_ fputs _log_stream_ fputnl
   _line_no_ _char_no_ _file_name_ _log_stream_ fput-lines-position
 end endmacro
 
 
-macro fput-inside-procedure let _procedure_name_ _procedure_address_ _log_stream_ in
-  // ptr: _address_ ptr: _procedure_name_ ptr: _procedure_address_ file-desc: _log_stream_ ->
-  LOG:INFO _log_stream_ fputs "Inside procedure '" _log_stream_ fputs _procedure_name_ _procedure_name_ mlength _log_stream_ fputs "'.\n" _log_stream_ fputs
-  LOG:HERE _log_stream_ fputs _procedure_address_ _log_stream_ fput-address ":\n" _log_stream_ fputs
+// proc generate-position
+//   // ptr: file int: pos -> ptr: pos
+//   ptr int -> ptr
+// in sizeof(position_) malloc let object in
+//   object isn-null if
+//     object position:pos  !64
+//     object position:file !64
 
-  _procedure_address_ _log_stream_ fput-lines
-end endmacro
-
-
-proc generate-position
-  // ptr: file int: pos -> ptr: pos
-  ptr int -> ptr
-in sizeof(position_) malloc let object in
-  object isn-null if
-    object position:pos  !64
-    object position:file !64
-
-    NULLPTR object position:prev !64
-  else drop drop end
-object end end
+//     NULLPTR object position:prev !64
+//   else drop drop end
+// object end end
 
 
 // Exits with error code.
@@ -474,6 +448,7 @@ in let log-item log-stream in
 
     else type LOG-TYPE:UNDEF-NAME = if
       "error: name not defined locally or globally\n" log-stream fputs
+      arg1 log-stream fput-here
 
     else type LOG-TYPE:CANNOT-OPEN-SRC = if
       "error: can not open source file\n" log-stream fputs

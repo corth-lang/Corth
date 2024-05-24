@@ -273,7 +273,7 @@ in let item register-id in
     else mode STACK-MODE:@64GLOBAL   = if arg1 register-id nasm:mov-reg-@64global
     else mode STACK-MODE:DATA        = if arg1 register-id nasm:mov-reg-data
     else
-      LOG:ERR eputs "Unknown stack item mode while trying to move integer to register.\n" eputs
+      "assertion: unknown stack item mode while trying to move integer to register.\n" eputs
       unescapable
     end end end end end end end end
   end
@@ -399,7 +399,7 @@ in let item in
     else mode STACK-MODE:@8LOCAL     = if arg1 nasm:push-@8local
     else mode STACK-MODE:DATA        = if arg1 nasm:push-data
     else mode STACK-MODE:REAL       != if
-      LOG:ERR eputs "Unknown stack item mode while trying to push an item.\n" eputs
+      "assertion: unknown stack item mode while trying to push an item.\n" eputs
       unescapable
     end end end end end end end end end
   end
