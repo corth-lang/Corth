@@ -51,13 +51,10 @@ proc create
   int int -> ptr
 in let int-type mode in
   24 malloc let object in
-    object is-null if
-      "'malloc' failed while creating a stack item.\n" STDERR fputs
-      EXIT-CODE:ERROR exit drop
+    object isn-null if
+      int-type  object stack-item:set-type
+      mode      object stack-item:set-mode
     end
-
-    int-type  object stack-item:set-type
-    mode      object stack-item:set-mode
 
     object
   end

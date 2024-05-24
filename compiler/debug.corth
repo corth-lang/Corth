@@ -354,6 +354,7 @@ macro UNKNOWN-FILE-TYPE 0x2300e endmacro  // ptr: source-path
 macro CANNOT-FIND-SRC   0x2300f endmacro  // ptr: include-path
 macro CANNOT-OPEN-OUT   0x23010 endmacro  //
 macro CANNOT-CREAT-OUT  0x23011 endmacro  //
+macro ACCESSED-PEEKED   0x23012 endmacro  //
 
 // -------- Assertions (prefix: 3xxxx) --------
 macro MALLOC-FAILED     0x30000 endmacro  //
@@ -476,6 +477,9 @@ in let log-item log-stream in
     else type LOG-TYPE:CANNOT-OPEN-OUT = if
       "error: could not open output file\n" log-stream fputs
 
+    else type LOG-TYPE:ACCESSED-PEEKED = if
+      "error: tried to pop peeked item\n" log-stream fputs
+
     // Assertions
     else type LOG-TYPE:MALLOC-FAILED = if
       "assertion: malloc failed\n" log-stream fputs
@@ -498,6 +502,6 @@ in let log-item log-stream in
     else
       "unknown\n" log-stream fputs
     end end end end end end end end end end end end end end end end end end
-    end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end
   end
 end

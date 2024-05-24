@@ -136,21 +136,30 @@ in let types-array types-length log-stream in
 end end
 
 
+// int: int-type -> ptr: item ptr: log-item
+// NOTE: Must be used inside the bodies of procedures that return only the log-item and nothing else.
+// NOTE: Stack must be empty.
+macro compiler:try-pop let _type_ in
+  local-stack-length @64 is-zero if
+    LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return
+  end
+
+  local-stack-length @64 peeked-item @64 = if
+    LOG-TYPE:ACCESSED-PEEKED generate-log0 return
+  end
+
+  pop-item dup stack-item:get-type _type_ != if drop
+    LOG-TYPE:INV-ITEM-TYPE generate-log0 return
+  end
+end endmacro
+
+
 proc add-intrinsic
   // ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream -> ptr: log-item
   ptr ptr ptr ptr -> ptr
 in let local-stack local-stack-length peeked-item output-stream in
-  2 is-items-available ! if LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return end
-
-  pop-item pop-item let item2 item1 in
-    item1 stack-item:get-type INT-TYPE:INT != if
-      LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-    end
-
-    item2 stack-item:get-type INT-TYPE:INT != if
-      LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-    end
-
+  INT-TYPE:INT compiler:try-pop let item2 in
+  INT-TYPE:INT compiler:try-pop let item1 in
     item1 stack-item:get-mode STACK-MODE:IMM = if
       item2 stack-item:get-mode STACK-MODE:IMM = if
         item1 stack-item:get-arg1 item2 stack-item:get-arg1 + push-int-immediate
@@ -192,7 +201,7 @@ in let local-stack local-stack-length peeked-item output-stream in
 
     item1 stack-item:mfree
     item2 stack-item:mfree
-  end
+  end end
 NULLPTR end end
 
 
@@ -218,13 +227,7 @@ proc load-intrinsic
   int ptr ptr ptr ptr -> ptr
   // NOTE: Register is one of 'al', 'ax', 'eax', 'rax'.
 in let intrinsic local-stack local-stack-length peeked-item output-stream in
-  1 is-items-available ! if LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return end
-
-  pop-item let item in
-    item stack-item:get-type INT-TYPE:INT != if
-      LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-    end
-
+  INT-TYPE:INT compiler:try-pop let item in
     item stack-item:get-mode STACK-MODE:LOCAL = if
       intrinsic INTRINSIC:LOAD64 = if item stack-item:get-arg1 push-@64local NULLPTR return end
       intrinsic INTRINSIC:LOAD8  = if item stack-item:get-arg1 push-@8local  NULLPTR return end
@@ -336,17 +339,8 @@ proc store-intrinsic
   int ptr ptr ptr ptr -> ptr
   // NOTE: Register is one of 'bl', 'bx', 'ebx', 'rbx'.
 in let intrinsic local-stack local-stack-length peeked-item output-stream in
-  2 is-items-available ! if LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return end
-
-  pop-item pop-item let address-item value-item in
-    value-item stack-item:get-type INT-TYPE:INT != if
-      LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-    end
-
-    address-item stack-item:get-type INT-TYPE:INT != if
-      LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-    end
-
+  INT-TYPE:INT compiler:try-pop let address-item in
+  INT-TYPE:INT compiler:try-pop let value-item in
     address-item stack-item:get-mode STACK-MODE:IMM = if
       LOG-TYPE:INV-ITEM-MODE generate-log0 return
     end
@@ -386,7 +380,7 @@ in let intrinsic local-stack local-stack-length peeked-item output-stream in
       end
     end end
     drop
-  end
+  end end
 NULLPTR end end
 
 
@@ -442,17 +436,8 @@ proc multiply-intrinsic
   // bool: upper ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream -> ptr: log-item
   bool ptr ptr ptr ptr -> ptr
 in let upper local-stack local-stack-length peeked-item output-stream in
-  2 is-items-available ! if LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return end
-
-  pop-item pop-item let item2 item1 in
-    item1 stack-item:get-type INT-TYPE:INT != if
-      LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-    end
-
-    item2 stack-item:get-type INT-TYPE:INT != if
-      LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-    end
-
+  INT-TYPE:INT compiler:try-pop let item2 in
+  INT-TYPE:INT compiler:try-pop let item1 in
     item1 stack-item:get-mode STACK-MODE:IMM = if
       item2 stack-item:get-mode STACK-MODE:IMM = if
         item1 stack-item:get-arg1 item2 stack-item:get-arg1
@@ -481,7 +466,7 @@ in let upper local-stack local-stack-length peeked-item output-stream in
 
     item1 stack-item:mfree
     item2 stack-item:mfree
-  end
+  end end
 NULLPTR end end
 
 
@@ -502,17 +487,8 @@ proc divide-intrinsic
   // bool: modulo ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream -> ptr: log-item
   bool ptr ptr ptr ptr -> ptr
 in let modulo local-stack local-stack-length peeked-item output-stream in
-  2 is-items-available ! if LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return end
-
-  pop-item pop-item let item2 item1 in
-    item1 stack-item:get-type INT-TYPE:INT != if
-      LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-    end
-
-    item2 stack-item:get-type INT-TYPE:INT != if
-      LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-    end
-
+  INT-TYPE:INT compiler:try-pop let item2 in
+  INT-TYPE:INT compiler:try-pop let item1 in
     output-stream
     item2 stack-item:get-mode STACK-MODE:IMM = if
       item2 stack-item:get-arg1 get-log2 let log2 in
@@ -543,7 +519,7 @@ in let modulo local-stack local-stack-length peeked-item output-stream in
 
     item1 stack-item:mfree
     item2 stack-item:mfree
-  end
+  end end
 
   drop
 NULLPTR end end
@@ -556,10 +532,8 @@ proc compile-intrinsic
   ptr ptr
   // ptr: procedure-name ptr: procedure-address
   ptr ptr
-  // ptr: local-stack ptr: local-stack-length
-  ptr ptr
-  // ptr: peeked-item
-  ptr
+  // ptr: local-stack ptr: local-stack-length ptr: peeked-item
+  ptr ptr ptr
   // int: token-type [int|ptr]: token-arg ->
   int int ->
   // ptr: log-item
@@ -570,8 +544,7 @@ in let
   source-name source-file output-stream
   line-no char-no
   procedure-name procedure-address
-  local-stack local-stack-length
-  peeked-item
+  local-stack local-stack-length peeked-item
   token-type token-arg
 in
   token-arg INTRINSIC:ADD = if
@@ -579,18 +552,8 @@ in
 
   else token-arg INTRINSIC:SUB = if
     // -------- Intrinsic '-' --------
-    2 is-items-available ! if
-      LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return
-    end
-
-    pop-item pop-item let item2 item1 in
-      item1 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      item2 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-
+    INT-TYPE:INT compiler:try-pop let item2 in
+    INT-TYPE:INT compiler:try-pop let item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -607,22 +570,12 @@ in
 
       item1 stack-item:mfree
       item2 stack-item:mfree
-    end
+    end end
 
   else token-arg INTRINSIC:BOR = if
     // -------- Intrinsic '||' --------
-    2 is-items-available ! if
-      LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return
-    end
-
-    pop-item pop-item let item2 item1 in
-      item1 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      item2 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-
+    INT-TYPE:INT compiler:try-pop let item2 in
+    INT-TYPE:INT compiler:try-pop let item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -633,22 +586,12 @@ in
 
       item1 stack-item:mfree
       item2 stack-item:mfree
-    end
+    end end
 
   else token-arg INTRINSIC:BAND = if
     // -------- Intrinsic '&&' --------
-    2 is-items-available ! if
-      LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return
-    end
-
-    pop-item pop-item let item2 item1 in
-      item1 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      item2 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-
+    INT-TYPE:INT compiler:try-pop let item2 in
+    INT-TYPE:INT compiler:try-pop let item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -659,22 +602,12 @@ in
 
       item1 stack-item:mfree
       item2 stack-item:mfree
-    end
+    end end
 
   else token-arg INTRINSIC:BXOR = if
     // -------- Intrinsic '^^' --------
-    2 is-items-available ! if
-      LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return
-    end
-
-    pop-item pop-item let item2 item1 in
-      item1 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      item2 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-
+    INT-TYPE:INT compiler:try-pop let item2 in
+    INT-TYPE:INT compiler:try-pop let item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -685,19 +618,11 @@ in
 
       item1 stack-item:mfree
       item2 stack-item:mfree
-    end
+    end end
 
   else token-arg INTRINSIC:BNOT = if
     // -------- Intrinsic '!!' --------
-    1 is-items-available ! if
-      LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return
-    end
-
-    pop-item let item in
-      item stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-
+    INT-TYPE:INT compiler:try-pop let item in
       item stack-item:get-mode STACK-MODE:IMM = if
         item stack-item:get-arg1 !! push-int-immediate
 
@@ -751,15 +676,8 @@ in
 
   else token-arg INTRINSIC:SYSCALL0 = if
     // -------- Intrinsic 'syscall0' --------
-    1 is-items-available ! if
-      LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return
-    end
 
-    pop-item let op-item in
-      op-item stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-
+    INT-TYPE:INT compiler:try-pop let op-item in
       INT-TYPE:INT push-real
 
       output-stream
@@ -774,18 +692,8 @@ in
   else token-arg INTRINSIC:SYSCALL1 = if
     // -------- Intrinsic 'syscall1' --------
 
-    2 is-items-available ! if
-      LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return
-    end
-
-    pop-item pop-item let op-item arg-item1 in
-      arg-item1 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      op-item   stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-
+    INT-TYPE:INT compiler:try-pop let op-item in
+    INT-TYPE:INT compiler:try-pop let arg-item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -797,26 +705,14 @@ in
 
       arg-item1 stack-item:mfree
       op-item   stack-item:mfree
-    end
+    end end
 
   else token-arg INTRINSIC:SYSCALL2 = if
     // -------- Intrinsic 'syscall2' --------
 
-    3 is-items-available ! if
-      LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return
-    end
-
-    pop-item pop-item pop-item let op-item arg-item2 arg-item1 in
-      arg-item1 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      arg-item2 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      op-item   stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-
+    INT-TYPE:INT compiler:try-pop let op-item in
+    INT-TYPE:INT compiler:try-pop let arg-item2 in
+    INT-TYPE:INT compiler:try-pop let arg-item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -830,29 +726,15 @@ in
       arg-item1 stack-item:mfree
       arg-item2 stack-item:mfree
       op-item   stack-item:mfree
-    end
+    end end end
 
   else token-arg INTRINSIC:SYSCALL3 = if
     // -------- Intrinsic 'syscall3' --------
 
-    4 is-items-available ! if
-      LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return
-    end
-
-    pop-item pop-item pop-item pop-item let op-item arg-item3 arg-item2 arg-item1 in
-      arg-item1 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      arg-item2 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      arg-item3 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      op-item   stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-
+    INT-TYPE:INT compiler:try-pop let op-item in
+    INT-TYPE:INT compiler:try-pop let arg-item3 in
+    INT-TYPE:INT compiler:try-pop let arg-item2 in
+    INT-TYPE:INT compiler:try-pop let arg-item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -868,32 +750,16 @@ in
       arg-item2 stack-item:mfree
       arg-item3 stack-item:mfree
       op-item   stack-item:mfree
-    end
+    end end end end
 
   else token-arg INTRINSIC:SYSCALL4 = if
     // -------- Intrinsic 'syscall4' --------
 
-    5 is-items-available ! if
-      LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return
-    end
-
-    pop-item pop-item pop-item pop-item pop-item let op-item arg-item4 arg-item3 arg-item2 arg-item1 in
-      arg-item1 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      arg-item2 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      arg-item3 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      arg-item4 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      op-item   stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-
+    INT-TYPE:INT compiler:try-pop let op-item in
+    INT-TYPE:INT compiler:try-pop let arg-item4 in
+    INT-TYPE:INT compiler:try-pop let arg-item3 in
+    INT-TYPE:INT compiler:try-pop let arg-item2 in
+    INT-TYPE:INT compiler:try-pop let arg-item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -911,35 +777,17 @@ in
       arg-item3 stack-item:mfree
       arg-item4 stack-item:mfree
       op-item   stack-item:mfree
-    end
+    end end end end end
 
   else token-arg INTRINSIC:SYSCALL5 = if
     // -------- Intrinsic 'syscall5' --------
 
-    6 is-items-available ! if
-      LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return
-    end
-
-    pop-item pop-item pop-item pop-item pop-item pop-item let op-item arg-item5 arg-item4 arg-item3 arg-item2 arg-item1 in
-      arg-item1 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      arg-item2 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      arg-item3 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      arg-item4 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      arg-item5 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      op-item   stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-
+    INT-TYPE:INT compiler:try-pop let op-item in
+    INT-TYPE:INT compiler:try-pop let arg-item5 in
+    INT-TYPE:INT compiler:try-pop let arg-item4 in
+    INT-TYPE:INT compiler:try-pop let arg-item3 in
+    INT-TYPE:INT compiler:try-pop let arg-item2 in
+    INT-TYPE:INT compiler:try-pop let arg-item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -959,7 +807,7 @@ in
       arg-item4 stack-item:mfree
       arg-item5 stack-item:mfree
       op-item   stack-item:mfree
-    end
+    end end end end end end
 
   else
     token-arg INTRINSIC:SYSCALL6 != if
@@ -968,33 +816,13 @@ in
 
     // -------- Intrinsic 'syscall6' --------
 
-    7 is-items-available ! if
-      LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return
-    end
-
-    pop-item pop-item pop-item pop-item pop-item pop-item pop-item let op-item arg-item6 arg-item5 arg-item4 arg-item3 arg-item2 arg-item1 in
-      arg-item1 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      arg-item2 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      arg-item3 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      arg-item4 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      arg-item5 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      arg-item6 stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-      op-item   stack-item:get-type INT-TYPE:INT != if
-        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
-      end
-
+    INT-TYPE:INT compiler:try-pop let op-item in
+    INT-TYPE:INT compiler:try-pop let arg-item6 in
+    INT-TYPE:INT compiler:try-pop let arg-item5 in
+    INT-TYPE:INT compiler:try-pop let arg-item4 in
+    INT-TYPE:INT compiler:try-pop let arg-item3 in
+    INT-TYPE:INT compiler:try-pop let arg-item2 in
+    INT-TYPE:INT compiler:try-pop let arg-item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -1016,7 +844,7 @@ in
       arg-item5 stack-item:mfree
       arg-item6 stack-item:mfree
       op-item   stack-item:mfree
-    end
+    end end end end end end end
   end end end end end end end end end end end end end end end end end end
 NULLPTR end end
 
@@ -1786,6 +1614,10 @@ in
       0 while dup new-names-list list64:length < do let i in
         i new-names-list list64:get let name in
           INT-TYPE:INT STACK-MODE:LOCAL stack-item:create let replace-item in
+            replace-item is-null if
+              false LOG-TYPE:MALLOC-FAILED generate-log0 return
+            end
+
             local-memory-end @64 dup
             replace-item stack-item:set-arg1
             i new-sizes-list list64:get + local-memory-end !64
@@ -1880,6 +1712,10 @@ in
                 drop
 
                 item stack-item:get-type STACK-MODE:@LOCALCONST stack-item:create let replace-item in
+                  replace-item is-null if
+                    false LOG-TYPE:MALLOC-FAILED generate-log0 return
+                  end
+
                   local-memory-end @64 replace-item stack-item:set-arg1
 
                   replace-item
@@ -1965,6 +1801,10 @@ in
 
                 else
                   item stack-item:get-type STACK-MODE:PEEKED stack-item:create let replace-item in
+                    replace-item is-null if
+                      false LOG-TYPE:MALLOC-FAILED generate-log0 return
+                    end
+
                     item-index replace-item stack-item:set-arg1
                   replace-item end
                 end
@@ -2116,10 +1956,6 @@ in let
   extended-array extended-start extended-end
   output-types-array output-types-length
 in
-
-  // This language is driving me crazy!!!
-  "__" drop drop
-
   output-stream
   "proc_"        ostrbuf:puts
   procedure-name nasm:put-alpha
@@ -2196,6 +2032,10 @@ in
 
             let address in
               INT-TYPE:INT STACK-MODE:GLOBAL stack-item:create let item in
+                item is-null if
+                  0 LOG-TYPE:MALLOC-FAILED generate-log0 return
+                end
+
                 token-arg item stack-item:set-arg1
 
                 item push-item
@@ -2409,9 +2249,9 @@ in
                             macro-names macro-tokens macros-length
                             include-paths-set
                             libraries-set
-                            compile-file
+                            compile-file dup isn-null if return end drop
                           end
-                          break
+                          0 break
                         end
                       end
 
