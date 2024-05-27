@@ -31,7 +31,6 @@ include "local_stack.corth"
 macro compiler:get-next-token let extend-macros in
   // Calls get-next-token and checks if a token is available-dstr. If there are no tokens, prints an error message.
   source-name source-file
-  line-no char-no
   extended-array extended-start extended-end
   macro-names macro-tokens macros-length
   extend-macros get-next-token
@@ -43,7 +42,6 @@ end endmacro
 macro compiler:expect-next-token let extend-macros in
   // Calls get-next-token and checks if a token is available-dstr. If there are no tokens, prints an error message.
   source-name source-file
-  line-no char-no
   extended-array extended-start extended-end
   macro-names macro-tokens macros-length
   extend-macros expect-next-token
