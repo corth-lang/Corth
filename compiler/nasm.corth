@@ -12,57 +12,53 @@ end end
 
 proc global-label
   ptr -> ptr
+  // Returns NULLPTR if fails to generate object.
+  // TODO: This procedure should be replaced with a better object based label system.
 in let name in
-  name mlength 7 + malloc let object in
-    object is-null if
-      "'malloc' failed while allocating space for nasm:fput-alpha.\n" STDERR fputs
-      EXIT-CODE:ERROR exit drop
-    end
+  name mlength 7 + malloc peek object in
+    object isn-null if
+      "global_" drop object 7 memcpy8
 
-    "global_" drop object 7 memcpy8
-
-    0 while dup name mlength < do peek i in
-      name i + @8 let char in
-        char 'a' 'z' is-range
-        char 'A' 'Z' is-range |
-        char '1' '9' is-range | if
-          char object 7 + i + !8
-        else
-          '_' object 7 + i + !8
+      0 while dup name mlength < do peek i in
+        name i + @8 let char in
+          char 'a' 'z' is-range
+          char 'A' 'Z' is-range |
+          char '1' '9' is-range | if
+            char object 7 + i + !8
+          else
+            '_' object 7 + i + !8
+          end
         end
-      end
-    end inc end drop
-    object
+      end inc end drop
+    end
   end
 end end
 
 
 proc convert-alpha
   ptr -> ptr
+  // Returns NULLPTR if fails to generate object.
+  // TODO: This procedure should be replaced with a better object based label system.
 in let name in
-  name mlength malloc let object in
-    object is-null if
-      "'malloc' failed while allocating space for nasm:fput-alpha.\n" STDERR fputs
-      EXIT-CODE:ERROR exit drop
-    end
-
-    0 while dup name mlength < do peek i in
-      name i + @8 let char in
-        char 'a' 'z' is-range
-        char 'A' 'Z' is-range |
-        char '1' '9' is-range | if
-          char object i + !8
-        else
-          '_' object i + !8
+  name mlength malloc peek object in
+    object isn-null if
+      0 while dup name mlength < do peek i in
+        name i + @8 let char in
+          char 'a' 'z' is-range
+          char 'A' 'Z' is-range |
+          char '1' '9' is-range | if
+            char object i + !8
+          else
+            '_' object i + !8
+          end
         end
-      end
-    end inc end drop
-    object
+      end inc end drop
+    end
   end
 end end
 
 
-proc fput-alpha
+proc put-alpha
   // ptr: output-stream ptr: name -> ptr: output-stream
   ptr ptr -> ptr
 in nasm:convert-alpha let object in
@@ -191,7 +187,7 @@ in let global-name register-id in
   "    mov     " ostrbuf:puts
   register-id    nasm:put-register
   ", global_"    ostrbuf:puts
-  global-name    nasm:fput-alpha
+  global-name    nasm:put-alpha
                  ostrbuf:putnl
 end end
 
@@ -242,7 +238,7 @@ in let global register-id in
   "    mov     " ostrbuf:puts
   register-id    nasm:put-register
   ", [global_"   ostrbuf:puts
-  global         nasm:fput-alpha
+  global         nasm:put-alpha
   "]\n"          ostrbuf:puts
 end end
 
@@ -277,9 +273,8 @@ in let item register-id in
     else mode STACK-MODE:@64GLOBAL   = if arg1 register-id nasm:mov-reg-@64global
     else mode STACK-MODE:DATA        = if arg1 register-id nasm:mov-reg-data
     else
-      LOG:ERR STDERR fputs "Unknown integer mode while trying to move integer to register.\n" STDERR fputs
-      STDERR report-bug
-      EXIT-CODE:ERROR exit drop
+      "assertion: unknown stack item mode while trying to move integer to register.\n" eputs
+      unescapable
     end end end end end end end end
   end
 end end
@@ -308,7 +303,7 @@ proc push-global-address
   ptr ptr -> ptr
 in let global in
   "    push    global_" ostrbuf:puts
-  global                nasm:fput-alpha
+  global                nasm:put-alpha
                         ostrbuf:putnl
 end end
 
@@ -350,7 +345,7 @@ proc push-@64global
   ptr ptr -> ptr
 in let global in
   "    push    qword [global_" ostrbuf:puts
-  global                       nasm:fput-alpha
+  global                       nasm:put-alpha
   "]\n"                        ostrbuf:puts
 end end
 
@@ -361,7 +356,7 @@ proc push-@8global
 in let global in
   register:RAX               nasm:mov-reg-zero
   "    mov     al, [global_" ostrbuf:puts
-  global                     nasm:fput-alpha
+  global                     nasm:put-alpha
   "]\n"                      ostrbuf:puts
   register:RAX               nasm:push-register
 end end
@@ -404,9 +399,8 @@ in let item in
     else mode STACK-MODE:@8LOCAL     = if arg1 nasm:push-@8local
     else mode STACK-MODE:DATA        = if arg1 nasm:push-data
     else mode STACK-MODE:REAL       != if
-      LOG:ERR STDERR fputs "Unknown mode while trying to push an item.\n" STDERR fputs
-      STDERR report-bug
-      EXIT-CODE:ERROR exit drop
+      "assertion: unknown stack item mode while trying to push an item.\n" eputs
+      unescapable
     end end end end end end end end end
   end
 end end

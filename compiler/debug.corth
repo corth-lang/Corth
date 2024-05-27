@@ -13,17 +13,6 @@ macro ADDR.END   32 endmacro
 macro POS.LINE   0  endmacro
 macro POS.CHAR   8  endmacro
 
-namespace LOG
-macro INFO  "\x1b[1;97m[INFO]\x1b[0;97m "    endmacro
-macro WARN  "\x1b[1;33m[WARNING]\x1b[0;97m " endmacro
-macro SOFT  "\x1b[1;31m[SOFT]\x1b[0;97m "    endmacro
-macro ERR   "\x1b[1;31m[ERROR]\x1b[0;97m "   endmacro
-macro BUG   "\x1b[1;31m[BUG]\x1b[0;97m "     endmacro
-macro CMD   "\x1b[1;32m[CMD]\x1b[0;97m "     endmacro
-macro TODO  "\x1b[1;35m[TODO]\x1b[0;97m "    endmacro
-macro HERE  "\x1b[1;32m[HERE]\x1b[0;97m "    endmacro
-endnamespace
-
 
 // This buffer can be used to easily write many spaces at once.
 // NOTE: Trying to write more than .-BUFFER-SIZE characters may cause problems.
@@ -32,6 +21,12 @@ memory space-buffer      SPACE-BUFFER-SIZE end
 
 macro  TILDE-BUFFER-SIZE 256               endmacro
 memory tilde-buffer      TILDE-BUFFER-SIZE end
+
+
+macro sizeof(log)  24 endmacro
+macro log:type    0 + endmacro
+macro log:arg1    8 + endmacro
+macro log:arg2   16 + endmacro
 
 
 proc debug-init -> in
@@ -134,8 +129,8 @@ proc fput-address
   // Prints the formatted address of a token.
 in let address log-stream in
   address ADDR.FILE + @64 let file-name in
-    "file '" log-stream fputs file-name file-name mlength log-stream fputs
-    "' [" log-stream fputs
+    "in '" log-stream fputs file-name file-name mlength log-stream fputs
+    "' between [" log-stream fputs
     address ADDR.START + POS.LINE + @64 address ADDR.START + POS.CHAR + @64 log-stream fput-position
     "]-[" log-stream fputs
     address ADDR.END + POS.LINE + @64 address ADDR.END + POS.CHAR + @64 log-stream fput-position
@@ -221,7 +216,7 @@ proc fput-here
   // ptr: address file-desc: log-stream ->
   ptr file-desc ->
 in let address log-stream in
-  LOG:HERE log-stream fputs address log-stream fput-address ":\n" log-stream fputs
+  address log-stream fput-address log-stream fputnl
   address log-stream fput-lines
 
   address ADDR.PREV + @64 let prev in
@@ -234,24 +229,270 @@ end end
 
 macro fput-here-position let _line_no_ _char_no_ _file_name_ _log_stream_ in
   // ptr: position file-desc: log-stream ->
-  LOG:HERE _log_stream_ fputs "At " _log_stream_ fputs _line_no_ _char_no_ _log_stream_ fput-position " in '" _log_stream_ fputs _file_name_ _file_name_ mlength _log_stream_ fputs "':\n" _log_stream_ fputs
+  _line_no_ _char_no_ _log_stream_ fput-position " in file " _log_stream_ fputs _file_name_ _file_name_ mlength _log_stream_ fputs _log_stream_ fputnl
   _line_no_ _char_no_ _file_name_ _log_stream_ fput-lines-position
 end endmacro
 
 
-macro fput-inside-procedure let _procedure_name_ _procedure_address_ _log_stream_ in
-  // ptr: _address_ ptr: _procedure_name_ ptr: _procedure_address_ file-desc: _log_stream_ ->
-  LOG:INFO _log_stream_ fputs "Inside procedure '" _log_stream_ fputs _procedure_name_ _procedure_name_ mlength _log_stream_ fputs "'.\n" _log_stream_ fputs
-  LOG:HERE _log_stream_ fputs _procedure_address_ _log_stream_ fput-address ":\n" _log_stream_ fputs
-
-  _procedure_address_ _log_stream_ fput-lines
-end endmacro
+// Exits with error code.
+proc unescapable -> in 1 exit drop end
 
 
-proc report-bug
-  // file-desc: file-desc ->
-  file-desc ->
-in let log-stream in
-  LOG:ERR log-stream fputs "This should have been impossible to reach.\n" log-stream fputs
-  LOG:INFO log-stream fputs "This is probably caused by a bug in the compiler.\n" log-stream fputs
-end end
+proc generate-log0
+  // int: type -> ptr: log-item
+  int -> ptr
+in sizeof(log) malloc let object in
+  object isn-null if
+    object log:type !64
+  else drop end
+object end end
+
+
+proc generate-log1
+  // int: arg1 int: type -> ptr: log-item
+  int int -> ptr
+in sizeof(log) malloc let object in
+  object isn-null if
+    object log:type !64
+    object log:arg1 !64
+  else drop drop end
+object end end
+
+
+proc generate-log2
+  // int: arg1 int: arg2 int: type -> ptr: log-item
+  int int int -> ptr
+in sizeof(log) malloc let object in
+  object isn-null if
+    object log:type !64
+    object log:arg2 !64
+    object log:arg1 !64
+  else drop drop drop end
+object end end
+
+
+namespace LOG-TYPE
+// -------- Info messages (prefix: 0xxxx) --------
+
+// -------- Warnings (prefix: 1xxxx) --------
+
+// -------- Error messages (prefix: 2xxxx) --------
+
+//// General errors (prefix: 20xxx)
+
+//// Lexer errors (prefix: 21xxx)
+macro REACHED-EOF       0x21000 endmacro  //
+macro REACHED-EOL       0x21001 endmacro  //
+macro TOKEN-TOO-LONG    0x21002 endmacro  //
+macro INVALID-ESCAPE    0x21003 endmacro  // log-item: reason
+macro NOT-HEX-DIGIT     0x21004 endmacro  //
+macro NOT-ESCAPE-CHAR   0x21005 endmacro  //
+macro INV-STR-LIT       0x21006 endmacro  // log-item: reason
+macro INV-INT-LIT       0x21007 endmacro  //
+macro INV-CHAR-LIT      0x21008 endmacro  //
+macro SYNTAX-ERROR      0x21009 endmacro  // log-item: reason ptr: address
+
+//// Parsing errors (prefix: 22xxx)
+macro NO-TOKEN          0x22000 endmacro  // log-item: reason
+macro UNXPCT-TYPE       0x22001 endmacro
+macro UNXPCT-KEYWORD    0x22002 endmacro
+
+//// Compilation errors (prefix: 23xxx)
+macro STACK-NOT-MATCH   0x23000 endmacro  //
+macro NOT-ENOUGH-ITEMS  0x23001 endmacro  //
+macro INV-ITEM-TYPE     0x23002 endmacro  //
+macro INV-ITEM-MODE     0x23003 endmacro  //
+macro ERROR-INTRINSIC   0x23004 endmacro  // log-item: reason address: token-address
+macro ERROR-KEYWORD     0x23005 endmacro  // log-item: reason address: token-address
+macro ERROR-PROC        0x23006 endmacro  // log-item: reason
+macro MEM-SIZE-MISMATCH 0x23007 endmacro  //
+macro UNREACHABLE       0x23008 endmacro  //
+macro REDEF-LOCAL-NAME  0x23009 endmacro  //
+macro REDEF-GLOBAL-NAME 0x2300a endmacro  //
+macro UNDEF-NAME        0x2300b endmacro  // address: token-address
+macro CANNOT-OPEN-SRC   0x2300c endmacro  //
+macro TODO-DIR-INCLUDE  0x2300d endmacro  //
+macro UNKNOWN-FILE-TYPE 0x2300e endmacro  //
+macro CANNOT-FIND-SRC   0x2300f endmacro  //
+macro CANNOT-OPEN-OUT   0x23010 endmacro  //
+macro CANNOT-CREAT-OUT  0x23011 endmacro  //
+macro ACCESSED-PEEKED   0x23012 endmacro  //
+macro CANNOT-INCLUDE    0x23013 endmacro  // ptr: source-path
+macro CANNOT-CALL-PROC  0x23014 endmacro  // address: token-address
+macro STACK-SIZE-NOT-EQ 0x23015 endmacro  //
+
+// -------- Assertions (prefix: 3xxxx) --------
+macro MALLOC-FAILED     0x30000 endmacro  //
+macro EXT-LEN-INVALID   0x30001 endmacro  //
+macro UNKNOWN-MODE      0x30002 endmacro  //
+macro UNKNOWN-INTRINSIC 0x30003 endmacro  //
+macro UNKNOWN-KEYWORD   0x30004 endmacro  //
+macro CANNOT-FIND-VAR   0x30005 endmacro  //
+
+endnamespace
+
+
+proc fput-log-item
+  // ptr: log-item file-desc: log-stream ->
+  ptr file-desc ->
+in let log-item log-stream in
+  log-item log:type @64
+  log-item log:arg1 @64
+  log-item log:arg2 @64
+  let type arg1 arg2 in
+    "(#" log-stream fputs type log-stream fputx ") " log-stream fputs
+
+    // Information messages
+
+    // Warnings
+
+    // General errors
+
+    // Lexer errors
+    type LOG-TYPE:REACHED-EOF = if
+      "error: reached EOF\n" log-stream fputs
+
+    else type LOG-TYPE:REACHED-EOL = if
+      "error: reached EOL\n" log-stream fputs
+
+    else type LOG-TYPE:TOKEN-TOO-LONG = if
+      "error: token is too long\n" log-stream fputs
+
+    else type LOG-TYPE:INVALID-ESCAPE = if
+      "error: escape code is invalid because:\n" log-stream fputs
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:NOT-HEX-DIGIT = if
+      "error: not an hexadecimal digit\n" log-stream fputs
+
+    else type LOG-TYPE:NOT-ESCAPE-CHAR = if
+      "error: invalid escape character\n" log-stream fputs
+
+    else type LOG-TYPE:INV-STR-LIT = if
+      "error: could not parse string literal because:\n" log-stream fputs
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:INV-INT-LIT = if
+      "error: could not parse integer literal\n" log-stream fputs
+
+    else type LOG-TYPE:INV-CHAR-LIT = if
+      "error: could not parse character literal\n" log-stream fputs
+
+    else type LOG-TYPE:SYNTAX-ERROR = if
+      "error: syntax error\n" log-stream fputs
+      arg2 log-stream fput-here
+      arg1 log-stream fput-log-item
+
+    // Parser errors
+    else type LOG-TYPE:NO-TOKEN = if
+      "error: token expected but none available because:\n" log-stream fputs
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:UNXPCT-TYPE = if
+      "error: unexpected token type\n" log-stream fputs
+
+    else type LOG-TYPE:UNXPCT-KEYWORD = if
+      "error: unexpected keyword\n" log-stream fputs
+
+    // Compilation errors
+    else type LOG-TYPE:STACK-NOT-MATCH = if
+      "error: stack does not match the expected stack\n" log-stream fputs
+
+    else type LOG-TYPE:NOT-ENOUGH-ITEMS = if
+      "error: stack does not have enough items\n" log-stream fputs
+
+    else type LOG-TYPE:INV-ITEM-TYPE = if
+      "error: invalid item type\n" log-stream fputs
+
+    else type LOG-TYPE:INV-ITEM-MODE = if
+      "error: invalid item mode\n" log-stream fputs
+
+    else type LOG-TYPE:ERROR-INTRINSIC = if
+      "error: could not compile intrinsic\n" log-stream fputs
+      arg2 log-stream fput-here
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:ERROR-KEYWORD = if
+      "error: could not compile keyword\n" log-stream fputs
+      arg2 log-stream fput-here
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:ERROR-PROC = if
+      "error: could not compile procedure because:\n" log-stream fputs
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:MEM-SIZE-MISMATCH = if
+      "error: load/store size does not match\n" log-stream fputs
+
+    else type LOG-TYPE:UNREACHABLE = if
+      "error: end of procedure must be reachable\n" log-stream fputs
+
+    else type LOG-TYPE:REDEF-LOCAL-NAME = if
+      "error: local name redefined\n" log-stream fputs
+
+    else type LOG-TYPE:REDEF-GLOBAL-NAME = if
+      "error: global name redefined\n" log-stream fputs
+
+    else type LOG-TYPE:UNDEF-NAME = if
+      "error: name not defined locally or globally\n" log-stream fputs
+      arg1 log-stream fput-here
+
+    else type LOG-TYPE:CANNOT-OPEN-SRC = if
+      "error: can not open source file\n" log-stream fputs
+
+    else type LOG-TYPE:TODO-DIR-INCLUDE = if
+      "error: directory including is currently not implemented\n" log-stream fputs
+
+    else type LOG-TYPE:CANNOT-FIND-SRC = if
+      "error: cannot find source file\n" log-stream fputs
+
+    else type LOG-TYPE:UNKNOWN-FILE-TYPE = if
+      "error: unknown file type\n" log-stream fputs
+
+    else type LOG-TYPE:CANNOT-CREAT-OUT = if
+      "error: could not create output file\n" log-stream fputs
+
+    else type LOG-TYPE:CANNOT-OPEN-OUT = if
+      "error: could not open output file\n" log-stream fputs
+
+    else type LOG-TYPE:ACCESSED-PEEKED = if
+      "error: tried to pop peeked item\n" log-stream fputs
+
+    else type LOG-TYPE:CANNOT-INCLUDE = if
+      "error: cannot include path\n" log-stream fputs
+      arg2 log-stream fput-here
+      arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:CANNOT-CALL-PROC = if
+      "error: cannot call name\n" log-stream fputs
+       arg2 log-stream fput-here
+       arg1 log-stream fput-log-item
+
+    else type LOG-TYPE:STACK-SIZE-NOT-EQ = if
+      "error: stack size do not match the expected stack size\n" log-stream fputs
+
+    // Assertions
+    else type LOG-TYPE:MALLOC-FAILED = if
+      "assertion: malloc failed\n" log-stream fputs
+
+    else type LOG-TYPE:EXT-LEN-INVALID = if
+      "assertion: extended array length is not a multiple of 3\n" log-stream fputs
+
+    else type LOG-TYPE:UNKNOWN-INTRINSIC = if
+      "assertion: unknown intrinsic id\n" log-stream fputs
+
+    else type LOG-TYPE:UNKNOWN-KEYWORD = if
+      "assertion: unknown keyword id\n" log-stream fputs
+
+    else type LOG-TYPE:UNKNOWN-MODE = if
+      "assertion: unknown stack item mode\n" log-stream fputs
+
+    else type LOG-TYPE:CANNOT-FIND-VAR = if
+      "assertion: can not find variable in the name replace list\n" log-stream fputs
+
+    else
+      "unknown\n" log-stream fputs
+    end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end
+  end
+end

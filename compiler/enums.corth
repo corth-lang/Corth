@@ -19,13 +19,6 @@ macro CALL-STACK-SIZE     0x80000    endmacro
 
 macro OUTPUT-STREAM-SIZE  0x100000   endmacro
 
-// Exit codes
-namespace EXIT-CODE
-macro SUCCESS    0 endmacro
-macro ERROR      1 endmacro
-macro SOFT-ERROR 2 endmacro
-endnamespace
-
 // Type IDs
 namespace TOKEN-TYPE
 macro UNKNOWN   0 endmacro
