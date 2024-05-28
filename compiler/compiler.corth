@@ -106,40 +106,6 @@ in
 end NULLPTR end
 
 
-proc fput-stack-contents
-  // ptr: stack-ptr int: stack-length file-desc: log-stream ->
-  ptr int file-desc ->
-in let stack length log-stream in
-  length is-zero if
-    "<empty>\n" log-stream fputs
-    return
-  end
-
-  0 while dup length dec < do peek i in
-    i stack array64:get stack-item:get-type log-stream fput-int-type " " log-stream fputs
-  end inc end drop
-
-  length dec stack array64:get stack-item:get-type log-stream fput-int-type
-end end
-
-
-proc fput-types
-  // ptr: types-array int: types-length file-desc: log-stream ->
-  ptr int file-desc ->
-in let types-array types-length log-stream in
-  types-length is-zero if
-    "<empty>\n" log-stream fputs
-    return
-  end
-
-  0 while dup types-length dec < do peek i in
-    i types-array array64:get log-stream fput-int-type " " log-stream fputs
-  end inc end drop
-
-  types-length dec types-array array64:get log-stream fput-int-type
-end end
-
-
 // int: int-type -> ptr: item ptr: log-item
 // NOTE: Must be used inside the bodies of procedures that return only the log-item and nothing else.
 // NOTE: Stack must be empty.
@@ -532,8 +498,6 @@ NULLPTR end end
 proc compile-intrinsic
   // ptr: source-name file-desc: source-file ptr: output-stream
   ptr file-desc ptr
-  // ptr: line-no ptr: char-no
-  ptr ptr
   // ptr: procedure-name ptr: procedure-address
   ptr ptr
   // ptr: local-stack ptr: local-stack-length ptr: peeked-item
@@ -546,7 +510,6 @@ proc compile-intrinsic
   // Compiles an intrinsic in a Corth procedure.
 in let
   source-name source-file output-stream
-  line-no char-no
   procedure-name procedure-address
   local-stack local-stack-length peeked-item
   token-type token-arg
@@ -858,8 +821,6 @@ proc collect-let-like-names
   ptr
   // ptr: source-name file-desc: source-file
   ptr file-desc
-  // ptr: line-no ptr: char-no
-  ptr ptr
   // ptr: macro-names ptr: macro-tokens ptr: macros-length
   ptr ptr ptr
   // ptr: procedure-name ptr: procedure-address
@@ -873,7 +834,6 @@ proc collect-let-like-names
 in let
   new-names-list
   source-name source-file
-  line-no char-no
   macro-names macro-tokens macros-length
   procedure-name procedure-address
   extended-array extended-start extended-end
@@ -917,8 +877,6 @@ proc collect-memory-like-names
   ptr ptr int
   // ptr: source-name file-desc: source-file
   ptr file-desc
-  // ptr: line-no ptr: char-no
-  ptr ptr
   // ptr: macro-names ptr: macro-tokens ptr: macros-length
   ptr ptr ptr
   // ptr: extended-array ptr: extended-start ptr: extended-end
@@ -930,7 +888,6 @@ proc collect-memory-like-names
 in let
   new-names-list new-sizes-list terminator-keyword
   source-name source-file
-  line-no char-no
   macro-names macro-tokens macros-length
   extended-array extended-start extended-end
 in
@@ -996,8 +953,6 @@ NULLPTR end end
 proc compile-unreachable
   // ptr: source-name file-desc: source-file ptr: output-stream
   ptr file-desc ptr
-  // ptr: line-no ptr: char-no
-  ptr ptr
   // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
   ptr ptr ptr
   // ptr: procedure-name ptr: procedure-address
@@ -1025,7 +980,6 @@ proc compile-unreachable
   // All of the tokens must be keywords as intrinsics can not allow branches.
 in let
   source-name source-file output-stream
-  line-no char-no
   macro-names macro-tokens macros-length
   procedure-name procedure-address
   local-stack local-stack-length
@@ -1133,8 +1087,6 @@ NULLPTR end end
 proc compile-keyword
   // ptr: source-name file-desc: source-file ptr: output-stream
   ptr file-desc ptr
-  // ptr: line-no ptr: char-no
-  ptr ptr
   // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
   ptr ptr ptr
   // ptr: procedure-name ptr: procedure-address
@@ -1160,7 +1112,6 @@ proc compile-keyword
   bool ptr
 in let
   source-name source-file output-stream
-  line-no char-no
   macro-names macro-tokens macros-length
   procedure-name procedure-address
   local-stack local-stack-length peeked-item
@@ -1547,7 +1498,6 @@ in
           end
 
           source-name source-file output-stream
-          line-no char-no
           macro-names macro-tokens macros-length
           procedure-name procedure-address
           local-stack local-stack-length
@@ -1598,7 +1548,6 @@ in
 
       new-names-list new-sizes-list KEYWORD:IN
       source-name source-file
-      line-no char-no
       macro-names macro-tokens macros-length
       extended-array extended-start extended-end
       collect-memory-like-names dup isn-null if false swp return end drop
@@ -1661,7 +1610,6 @@ in
 
       new-names-list
       source-name source-file
-      line-no char-no
       macro-names macro-tokens macros-length
       procedure-name procedure-address
       extended-array extended-start extended-end
@@ -1767,7 +1715,6 @@ in
 
       new-names-list
       source-name source-file
-      line-no char-no
       macro-names macro-tokens macros-length
       procedure-name procedure-address
       extended-array extended-start extended-end
@@ -1839,7 +1786,6 @@ in
     drop
 
     source-name source-file output-stream
-    line-no char-no
     macro-names macro-tokens macros-length
     procedure-name procedure-address
     local-stack local-stack-length
@@ -1912,8 +1858,6 @@ end false NULLPTR end
 proc compile-procedure
   // ptr: source-name file-desc: source-file ptr: output-stream
   ptr file-desc ptr
-  // ptr: line-no ptr: char-no
-  ptr ptr
   // ptr: data-definitions-list
   ptr
   // ptr: global-names-array ptr: global-sizes-array ptr: globals-length
@@ -1936,7 +1880,6 @@ proc compile-procedure
   // Compiles a Corth procedure.
 in let
   source-name source-file output-stream
-  line-no char-no
   data-definitions-list
   global-names-array global-sizes-array globals-length
   proc-names-array proc-inputs-array proc-outputs-array procs-length
@@ -2079,7 +2022,6 @@ in
           // -------- Intrinsics --------
 
           source-name source-file output-stream
-          line-no char-no
           procedure-name procedure-address
           local-stack local-stack-length
           peeked-item
@@ -2094,7 +2036,6 @@ in
           // -------- Keywords --------
 
           source-name source-file output-stream
-          line-no char-no
           macro-names macro-tokens macros-length
           procedure-name procedure-address
           local-stack local-stack-length
@@ -2166,17 +2107,11 @@ in
     memory extended-array  EXTENDED-MAX-LENGTH and
            extended-start  sizeof(int)         and
            extended-end    sizeof(int)         and
-           line-no         sizeof(int)         and
-           char-no         sizeof(int)         and
            namespace-name  sizeof(ptr)         in
 
       // Reset extended-tokens.
       0 extended-start !64
       0 extended-end   !64
-
-      // Reset line-no and char-no variables.
-      1 line-no !64
-      0 char-no !64
 
       // Reset namespace.
       NULLPTR namespace-name !64
@@ -2273,7 +2208,6 @@ in
 
               new-names-list new-sizes-list KEYWORD:END
               source-name source-file
-              line-no char-no
               macro-names macro-tokens macros-length
               extended-array extended-start extended-end
               collect-memory-like-names dup isn-null if
@@ -2491,7 +2425,6 @@ in
                     end inc end drop
 
                     source-name source-file output-stream
-                    line-no char-no
                     data-definitions-list
                     global-names-array global-sizes-array globals-length
                     proc-names-array proc-inputs-array proc-outputs-array procs-length
