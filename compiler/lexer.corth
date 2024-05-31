@@ -519,8 +519,8 @@ in
                 extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64:append-first
 
                 // -- Token address --
-                // Change the ADDR.PREV of the address.
-                address token-address ADDR.PREV + !64
+                // Change the addr:prev of the address.
+                address token-address addr:prev !64
                 token-address dcopy extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64:append-first
 
                 // -- Token type --

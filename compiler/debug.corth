@@ -5,10 +5,10 @@ include "core/stack.corth"
 macro sizeof(position) 16 endmacro
 macro sizeof(address)  48 endmacro
 
-macro ADDR.FILE  0  endmacro
-macro ADDR.PREV  8  endmacro
-macro ADDR.START 16 endmacro
-macro ADDR.END   32 endmacro
+macro addr:path   0 + endmacro  // The path of the file that generated this token.
+macro addr:prev   8 + endmacro  // The previous token address which was a macro name and caused this token to be generated.
+macro addr:start 16 + endmacro  // The start position of this token.
+macro addr:end   32 + endmacro  // The end position of this token.
 
 proc generate-address
   // ptr: file-name ptr: previous int: start int: end -> ptr: address
@@ -18,10 +18,10 @@ in
   sizeof(address) malloc let address in
     address isn-null if
       // Store the arguments.
-      address ADDR.END   + !64
-      address ADDR.START + !64
-      address ADDR.PREV  + !64
-      address ADDR.FILE  + !64
+      address addr:end   !64
+      address addr:start !64
+      address addr:prev  !64
+      address addr:path  !64
     else drop drop drop drop end
 
     // Return the address.
@@ -30,11 +30,143 @@ in
 end
 
 
+proc seek-line-rev
+  // file-desc: file -> int: location
+  file-desc -> int
+in let file in
+  memory buffer 1 in
+    while
+      file -1 SEEK-WHENCE:CUR lseek
+      buffer 1 file fgets is-zero if return end inc
+    buffer @8 '\n' != do
+      drop file -1 SEEK-WHENCE:CUR lseek drop
+    end
+  end
+end end
+
+
+macro fput-file:BUFFER-SIZE 1024 endmacro
+proc fput-file
+  // file-desc: from file-desc: to ->
+  file-desc file-desc ->
+in let from to in
+  memory buffer fput-file:BUFFER-SIZE in
+    while
+      buffer fput-file:BUFFER-SIZE from fgets let read in
+        buffer read to fputs
+        read fput-file:BUFFER-SIZE =
+      end
+    do end
+  end
+end end
+
+proc fput-file-length
+  // file-desc: from int: length file-desc: to ->
+  file-desc int file-desc ->
+in let from length to in
+  memory buffer fput-file:BUFFER-SIZE in
+    length while let rem in
+      buffer fput-file:BUFFER-SIZE rem min2 from fgets let read in
+        buffer read to fputs
+        rem read -
+        read fput-file:BUFFER-SIZE =
+      end
+    end do end drop
+  end
+end end
+
+proc fput-file-line
+  // file-desc: from file-desc: to ->
+  file-desc file-desc ->
+in let from to in
+  memory buffer fput-file:BUFFER-SIZE in
+    while
+      buffer fput-file:BUFFER-SIZE from fgets let read in buffer read + let last in
+        buffer while peek i in
+          i @8 '\n' != i last < &
+        end do inc end buffer - inc let put in
+          buffer put to fputs
+          put fput-file:BUFFER-SIZE =
+        end
+      end end
+    do end
+  end
+end end
+
+
+macro get-char-line-no:BUFFER-SIZE 256 endmacro
+proc get-char-line-no
+  // int: position file-desc: file -> int: char-no int: line-no
+  int file-desc -> int int
+in let position file in
+  memory buffer  get-char-line-no:BUFFER-SIZE and
+         char-no sizeof(int)                  and
+         line-no sizeof(int)                  in
+
+    0 char-no !64
+    1 line-no !64
+
+    while
+      buffer position file ftell - get-char-line-no:BUFFER-SIZE min2 file fgets buffer + let buffer-end in
+        buffer while dup buffer-end < do peek i in
+          i @8 '\n' = if
+            0 char-no !64
+            line-no @inc64
+          else
+            char-no @inc64
+          end
+        end inc end drop
+
+        // Keep iterating if the buffer was filled.
+        buffer-end buffer get-char-line-no:BUFFER-SIZE + =
+      end
+    do end
+
+    char-no @64 line-no @64
+  end
+end end
+
+
+macro fput-here:MARK-BEG "\x1b[91m" endmacro
+macro fput-here:MARK-END "\x1b[0m"  endmacro
 proc fput-here
   // ptr: address file-desc: log-stream ->
   ptr file-desc ->
 in let address log-stream in
-  // TODO: Implement this procedure.
+  address addr:path @64 address addr:prev @64 address addr:start @64 address addr:end @64 let path prev start _end in
+    path fopen-r let file in
+      file isn-pos if
+        path path mlength log-stream fputs ":<file-unavailable>\n" log-stream fputs
+      else
+        // Print the flie path and the line number.
+        start file get-char-line-no let char-no line-no in
+          path path mlength log-stream fputs ":" log-stream fputs
+          line-no log-stream fputu ":\n" log-stream fputs
+        end
+
+        // Move the file handle to the beginning of the line.
+        file seek-line-rev let line-start in
+          // Print the part of the line that is not marked.
+          file start line-start - log-stream fput-file-length
+
+          // Print the marked part.
+          fput-here:MARK-BEG log-stream fputs
+          file _end start - log-stream fput-file-length
+          fput-here:MARK-END log-stream fputs
+
+          // Print the remaining of the line.
+          file log-stream fput-file-line
+        end
+
+        file fclose drop
+      end
+    end
+
+    // If the address was extended by a macro call, print the address of the macro call.
+    address addr:prev @64 isn-null if
+      address addr:prev @64 log-stream fput-here
+    end
+  end
 end end
 
 
@@ -89,6 +221,8 @@ namespace LOG-TYPE
 // -------- Error messages (prefix: 2xxxx) --------
 
 //// General errors (prefix: 20xxx)
+macro CANNOT-OPEN-OUT   0x20000 endmacro  //
+macro CANNOT-CREAT-OUT  0x20001 endmacro  //
 
 //// Lexer errors (prefix: 21xxx)
 macro REACHED-EOF       0x21000 endmacro  //
@@ -104,8 +238,12 @@ macro SYNTAX-ERROR      0x21009 endmacro  // log-item: reason ptr: address
 
 //// Parsing errors (prefix: 22xxx)
 macro NO-TOKEN          0x22000 endmacro  // log-item: reason
-macro UNXPCT-TYPE       0x22001 endmacro
-macro UNXPCT-KEYWORD    0x22002 endmacro
+macro UNXPCT-TYPE       0x22001 endmacro  // ptr: address
+macro UNXPCT-KEYWORD    0x22002 endmacro  // ptr: address
+macro REC-NAMESPACE     0x22003 endmacro  //
+// TODO: Add ELSE-NO-IF
+// TODO: Add DO-NO-WHILE
+// TODO: Add END-NO-START
 
 //// Compilation errors (prefix: 23xxx)
 macro STACK-NOT-MATCH   0x23000 endmacro  //
@@ -124,12 +262,10 @@ macro CANNOT-OPEN-SRC   0x2300c endmacro  //
 macro TODO-DIR-INCLUDE  0x2300d endmacro  //
 macro UNKNOWN-FILE-TYPE 0x2300e endmacro  //
 macro CANNOT-FIND-SRC   0x2300f endmacro  //
-macro CANNOT-OPEN-OUT   0x23010 endmacro  //
-macro CANNOT-CREAT-OUT  0x23011 endmacro  //
-macro ACCESSED-PEEKED   0x23012 endmacro  //
-macro CANNOT-INCLUDE    0x23013 endmacro  // ptr: source-path
-macro CANNOT-CALL-PROC  0x23014 endmacro  // address: token-address
-macro STACK-SIZE-NOT-EQ 0x23015 endmacro  //
+macro ACCESSED-PEEKED   0x23010 endmacro  //
+macro CANNOT-INCLUDE    0x23011 endmacro  // ptr: source-path
+macro CANNOT-CALL-PROC  0x23012 endmacro  // address: token-address
+macro STACK-SIZE-NOT-EQ 0x23013 endmacro  //
 
 // -------- Assertions (prefix: 3xxxx) --------
 macro MALLOC-FAILED     0x30000 endmacro  //
@@ -150,8 +286,6 @@ in let log-item log-stream in
   log-item log:arg1 @64
   log-item log:arg2 @64
   let type arg1 arg2 in
-    "(#" log-stream fputs type log-stream fputx ") " log-stream fputs
-
     // Information messages
 
     // Warnings
@@ -200,9 +334,14 @@ in let log-item log-stream in
 
     else type LOG-TYPE:UNXPCT-TYPE = if
       "error: unexpected token type\n" log-stream fputs
+      arg1 log-stream fput-here
 
     else type LOG-TYPE:UNXPCT-KEYWORD = if
       "error: unexpected keyword\n" log-stream fputs
+      arg1 log-stream fput-here
+
+    else type LOG-TYPE:REC-NAMESPACE = if
+      "error: tried to start a namespace scope inside another one\n" log-stream fputs
 
     // Compilation errors
     else type LOG-TYPE:STACK-NOT-MATCH = if
@@ -302,7 +441,7 @@ in let log-item log-stream in
 
     else
       "unknown\n" log-stream fputs
-    end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end end
     end end end end end end end end end end end end end end end end end end end end end
   end
 end
