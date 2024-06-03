@@ -20,12 +20,11 @@ end end
 
 
 proc strip-file
-  // file-desc: file ptr: line-no ptr: char-no -> bool: reached-eof
-  file-desc ptr ptr -> bool
+  // file-desc: file -> bool: reached-eof
+  file-desc -> bool
   // Removes the newline and spaces from the start of a file stream
-  // Keeps track of the line and char number as the bytes are read.
   // Also, checks if EOF is reached.
-in let file line-no char-no in
+in let file in
   memory char 1 in
     while true do
       // If EOF is reached, return immediately.
@@ -34,17 +33,11 @@ in let file line-no char-no in
       // If a null-terminator is reached, return immediately.
       char @8 is-zero if true return end
 
-      char @8 '\n' = if
-        0 char-no !64
-        line-no @inc64
-
-      else
+      char @8 '\n' != if
         char @8 ' ' != if
           file -1 SEEK-WHENCE:CUR lseek drop
           false return
         end
-
-        char-no @inc64
       end
     end
   end
@@ -52,30 +45,20 @@ end false end  // dummy return
 
 
 proc parse-next-token
-  // file-desc: file ptr: file-name ptr: line-no ptr: char-no ptr: buffer ptr: buffer-end -> ptr: log-item
-  file-desc ptr ptr ptr ptr ptr -> ptr
+  // file-desc: file ptr: buffer ptr: buffer-end -> ptr: log-item
+  file-desc ptr ptr -> ptr
   // Gets the next token string before any newline or space and fills a buffer.
-  // Keeps track of the line and char number as the bytes are read.
   // NOTE: If buffer-end exceeds buffer + TOKEN-MAX-LENGTH, creates an assertion.
-in let file file-name line-no char-no buffer buffer-end in
+in let file buffer buffer-end in
   while true do
-    buffer-end @64 1 file fgets-keep is-zero if
-      // Reached EOF.
-      char-no @inc64
-      NULLPTR return
-    end
+    // Reached EOF.
+    buffer-end @64 1 file fgets-keep is-zero if NULLPTR return end
 
-    buffer-end @64 @8 '\n' = if
-      // Reached a newline character.
-      char-no @inc64
-      NULLPTR return
-    end
+    // Reached a newline character.
+    buffer-end @64 @8 '\n' = if NULLPTR return end
 
-    buffer-end @64 @8 ' ' = if
-      // Reached a space character.
-      char-no @inc64
-      NULLPTR return
-    end
+    // Reached a space character.
+    buffer-end @64 @8 ' ' = if NULLPTR return end
 
     buffer-end @64 buffer - TOKEN-MAX-LENGTH >= if
       // Reached the end of the buffer.
@@ -85,24 +68,20 @@ in let file file-name line-no char-no buffer buffer-end in
     // There is still space in the buffer.
     file 1 SEEK-WHENCE:CUR lseek drop
     buffer-end @inc64
-    char-no    @inc64
   end
 end NULLPTR end // dummy
 
 
 proc parse-escape-sequence
-  // file-desc: file ptr: file-name ptr: line-no ptr: char-no -> int: escape-character ptr: log-item
-  file-desc ptr ptr ptr -> int ptr
-in let file file-name line-no char-no in
+  // file-desc: file -> int: escape-character ptr: log-item
+  file-desc -> int ptr
+in let file in
   // Buffer is 2 bytes because after \x, 2 new bytes are required.
   memory buffer 2 in
     // Check if we reached EOF before an escape sequence.
     buffer 1 file fgets is-zero if
       0 LOG-TYPE:REACHED-EOF generate-log0 return
     end
-
-    // Increase the char-no, as the next character should not be a newline character.
-    char-no @inc64
 
     // Get the mapping of the escape character.
          buffer @8 '0'  = if '\0'
@@ -121,9 +100,6 @@ in let file file-name line-no char-no in
         0 LOG-TYPE:REACHED-EOF generate-log0 return
       end
 
-      // Increase the char-no.
-      char-no @64 2 + char-no !64
-
       // Get the hexadecimal value after '\x'.
       memory number sizeof(int) in
         buffer 2 number convx ! if
@@ -139,14 +115,12 @@ end end
 
 
 proc parse-next-string
-  // file-desc: file ptr: file-name ptr: line-no ptr: char-no ptr: buffer ptr: buffer-end -> ptr: log-item
-  file-desc ptr ptr ptr ptr ptr -> ptr
+  // file-desc: file ptr: buffer ptr: buffer-end -> ptr: log-item
+  file-desc ptr ptr -> ptr
   // Gets the next string before a double quote.
-  // Keeps track of the line and char number as the bytes are read.
   // NOTE: If buffer-end exceeds buffer + TOKEN-MAX-LENGTH, creates an assertion.
   // NOTE: If EOF is reached before a double quote is found, creates an assertion.
-  // TODO: Add escapes.
-in let file file-name line-no char-no buffer buffer-end in
+in let file buffer buffer-end in
   while true do buffer-end @64 let char-addr in
 
     // Check if we reached EOF before an end of string.
@@ -156,7 +130,6 @@ in let file file-name line-no char-no buffer buffer-end in
 
     // Check if we reached the end of the string.
     char-addr @8 '"' = if
-      char-no @inc64
       0 buffer-end @64 !8
       buffer-end @inc64
       NULLPTR return
@@ -167,19 +140,11 @@ in let file file-name line-no char-no buffer buffer-end in
       LOG-TYPE:TOKEN-TOO-LONG generate-log0 LOG-TYPE:INV-STR-LIT generate-log1 return
     end
 
-    char-addr @8 '\n' = if
-      // Reached new line, reset char-no and increase line-no.
-      line-no   @inc64
-      0 char-no !64
-    else char-addr @8 '\\' = if
+    char-addr @8 '\\' = if
       // Reached a backslash, check for escape sequence.
-      char-no @inc64
-      file file-name line-no char-no parse-escape-sequence let log-item in log-item isn-null if drop log-item return end end
+      file parse-escape-sequence let log-item in log-item isn-null if drop log-item return end end
       char-addr !8
-    else
-      // Reached any character, increase char-no.
-      char-no @inc64
-    end end
+    end
 
     buffer-end @inc64
   end end
@@ -187,14 +152,10 @@ NULLPTR end end
 
 
 proc skip-line
-  // file-desc: file-desc ptr: file-name ptr: line-no ptr: char-no ->
-  file-desc ptr ptr file-desc ->
+  // file-desc: file-desc ->
+  file-desc ->
   // Moves the file pointer until it passes a newline, or EOF is reached.
-  // Keeps track of the line and char number as the bytes are read.
-in let file file-name line-no char-no in
-  line-no @inc64
-  0 char-no !64
-
+in let file in
   memory char 1 in
     while true do
       // If EOF is reached, return immediately.
@@ -208,11 +169,11 @@ end end
 
 
 proc skip-block-comment
-  // file-desc: file-desc ptr: file-name ptr: line-no ptr: char-no -> ptr: log-item
-  file-desc ptr ptr ptr -> ptr
+  // file-desc: file-desc -> ptr: log-item
+  file-desc -> ptr
   // Moves the file pointer until it passes a block comment end, or EOF is reached.
   // Keeps track of the line and char number as the bytes are read.
-in let file file-name line-no char-no in
+in let file in
   memory char 1 in
     while true do
       char 1 file fgets is-zero if
@@ -222,31 +183,13 @@ in let file file-name line-no char-no in
 
       char @8 '*' = if
         // Reached asterisk.
-        char 1 file fgets is-zero if
-          // Reached EOF while expecting a block comment end.
-          LOG-TYPE:REACHED-EOF generate-log0 return
-        end
 
-        char @8 '/' = if
-          // Reached block comment end.
-          char-no @inc64
-          NULLPTR return
-        end
+        // Check if reached EOF while expecting a block comment end.
+        char 1 file fgets is-zero if LOG-TYPE:REACHED-EOF generate-log0 return end
 
-        char @8 '\n' = if
-          line-no @inc64
-          0 char-no !64
-        end
-
-      else char @8 '\n' = if
-        // Reached a newline.
-        line-no @inc64
-        0 char-no !64
-
-      else
-        // Reached any other character
-        char-no @inc64
-      end end
+        // Reached block comment end.
+        char @8 '/' = if NULLPTR return end
+      end
     end
   end
 NULLPTR end end
@@ -255,10 +198,8 @@ NULLPTR end end
 proc create-name-token
   // ptr: file-name file-desc: file-desc
   ptr file-desc
-  // int: start-line int: start-char
-  int int
-  // ptr: line-no ptr: char-no
-  ptr ptr
+  // int: start-position
+  int
   // ptr: buffer ptr: buffer-end
   ptr ptr ->
   // int: token-type ptr: address [int|ptr]: arg ptr: log-item
@@ -266,14 +207,9 @@ proc create-name-token
 
   // Checks if the name is a keyword or an intrinsic, and creates a new token.
   // After the keyword and intrinsic checks, macros are checked for any match. If there is any macro with the same name, the macro tokens are loaded to a buffer.
-in let
-  file-name file
-  start-line start-char
-  line-no char-no
-  buffer buffer-end
-in
+in let file-name file start-position buffer buffer-end in
   // Get full token.
-  file file-name line-no char-no buffer buffer-end parse-next-token dup isn-null if
+  file buffer buffer-end parse-next-token dup isn-null if
     let log-item in TOKEN-TYPE:UNKNOWN NULLPTR 0 log-item end return
   end drop
 
@@ -342,14 +278,13 @@ in
 
     let token-type token-arg in
       // Return token type, address and argument.
-      file-name NULLPTR start-line start-char line-no @64 char-no @64 generate-address let address in
+      file-name NULLPTR start-position file ftell generate-address let address in
         address is-null if
           TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:MALLOC-FAILED generate-log0 return
         end
 
         token-type address token-arg NULLPTR
       end
-
     end
   end
 end end
@@ -358,8 +293,6 @@ end end
 proc get-next-token
   // ptr: file-name file-desc: file-desc
   ptr file-desc
-  // ptr: line-no ptr: char-no
-  ptr ptr
   // ptr: extended-tokens-array ptr: extended-tokens-start-index ptr: extended-tokens-end-index
   ptr ptr ptr
   // ptr: macro-names ptr: macro-tokens ptr: macros-length
@@ -374,7 +307,6 @@ proc get-next-token
   // NOTE: If there is no token available, every other parameter is either NULLPTR or invalid.
 in let
   file-name file
-  line-no char-no
   extended-array extended-start extended-end
   macro-names macro-tokens macros-length
   extend-macros
@@ -391,16 +323,16 @@ in
       extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64:pop-first
 
     else
-      memory buffer     TOKEN-MAX-LENGTH in
-      memory buffer-end sizeof(int)      in
+      memory buffer     TOKEN-MAX-LENGTH and
+             buffer-end sizeof(int)      in
 
-        file line-no char-no strip-file if
+        file strip-file if
           TOKEN-TYPE:UNKNOWN NULLPTR 0 NULLPTR false return
         end
 
         buffer buffer-end !64
 
-        line-no @64 char-no @64 let start-line start-char in
+        file ftell let start-position in
           buffer 1 file fgets drop
           buffer-end @inc64
 
@@ -408,13 +340,13 @@ in
             // -------- Integer type --------
 
             // Get full token.
-            file file-name line-no char-no buffer buffer-end parse-next-token dup isn-null if
+            file buffer buffer-end parse-next-token dup isn-null if
               let log-item in
                 TOKEN-TYPE:UNKNOWN NULLPTR 0 log-item false
               end return
             end drop
 
-            file-name NULLPTR start-line start-char line-no @64 char-no @64 generate-address let address in
+            file-name NULLPTR start-position file ftell generate-address let address in
               address is-null if TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:MALLOC-FAILED generate-log0 false return end
 
               memory number sizeof(int) in
@@ -430,14 +362,10 @@ in
             // -------- Characters --------
             // TODO: Add multpile character pushing.
 
-            char-no @inc64
-
             buffer inc 1 file fgets is-zero if
               // Reached EOF while expecting a character.
               TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:REACHED-EOF generate-log0 false return
             end
-
-            char-no @inc64
 
             // Get the character
             buffer inc @8 let character in
@@ -446,7 +374,7 @@ in
 
               character '\\' = if
                 // Return the escape sequence character.
-                file file-name line-no char-no parse-escape-sequence dup isn-null if
+                file parse-escape-sequence dup isn-null if
                   let log-item in drop TOKEN-TYPE:UNKNOWN NULLPTR 0 log-item false end return
                 end drop
               else
@@ -461,15 +389,13 @@ in
                 TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:REACHED-EOF generate-log0 false return
               end
 
-              char-no @inc64
-
               buffer @8 '\'' != if
                 // Was expecting a single quote, but found another character.
                 TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:INV-CHAR-LIT generate-log0 false return
               end
 
               // Return token type, address and argument.
-              file-name NULLPTR start-line start-char line-no @64 char-no @64 generate-address let address in
+              file-name NULLPTR start-position file ftell generate-address let address in
                 address is-null if
                   TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:MALLOC-FAILED generate-log0 false return
                 end
@@ -484,15 +410,13 @@ in
             // Move the buffer-end left once, so the quote is removed.
             buffer-end @dec64
 
-            char-no @inc64
-
             // Get full string.
-            file file-name line-no char-no buffer buffer-end parse-next-string dup isn-null if
+            file buffer buffer-end parse-next-string dup isn-null if
               let log-item in TOKEN-TYPE:UNKNOWN NULLPTR 0 log-item false end return
             end drop
 
             // Return token type, address and argument.
-            file-name NULLPTR start-line start-char line-no @64 char-no @64 generate-address let address in
+            file-name NULLPTR start-position file ftell generate-address let address in
               address is-null if
                 TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:MALLOC-FAILED generate-log0 false return
               end
@@ -507,18 +431,16 @@ in
               TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:REACHED-EOF generate-log0 false return
             end
 
-            char-no @inc64
-
             buffer-end @inc64
 
             buffer inc @8 is-ddigit if
               // Get full token.
-              file file-name line-no char-no buffer buffer-end parse-next-token dup isn-null if
+              file buffer buffer-end parse-next-token dup isn-null if
                 let log-item in TOKEN-TYPE:UNKNOWN NULLPTR 0 log-item false end return
               end drop
 
               // Return token type, address and argument.
-              file-name NULLPTR start-line start-char line-no @64 char-no @64 generate-address let address in
+              file-name NULLPTR start-position file ftell generate-address let address in
                 address is-null if
                   TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:MALLOC-FAILED generate-log0 false return
                 end
@@ -537,7 +459,7 @@ in
 
               buffer-end @dec64
 
-              file-name file start-line start-char line-no char-no buffer buffer-end create-name-token dup isn-null if false return end drop
+              file-name file start-position buffer buffer-end create-name-token dup isn-null if false return end drop
             end
 
           else buffer @8 '/' = if
@@ -551,34 +473,34 @@ in
               // -------- Single line comment --------
 
               // Skip this line.
-              file file-name line-no char-no skip-line
+              file skip-line
 
               // Get next token and return it.
-              file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length extend-macros get-next-token ! if false return end drop
+              file-name file extended-array extended-start extended-end macro-names macro-tokens macros-length extend-macros get-next-token ! if false return end drop
 
             else buffer inc @8 '*' = if
               // -------- Block comment --------
 
               // Skip the block comment.
-              file file-name line-no char-no skip-block-comment let log-item in log-item isn-null if
+              file skip-block-comment let log-item in log-item isn-null if
                 TOKEN-TYPE:UNKNOWN NULLPTR 0 log-item false return
               end end
 
               // Get next token and return it.
-              file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length extend-macros get-next-token ! if false return end drop
+              file-name file extended-array extended-start extended-end macro-names macro-tokens macros-length extend-macros get-next-token ! if false return end drop
             else
               // -------- Name and keyword types --------
               file -1 SEEK-WHENCE:CUR lseek drop
 
-              file-name file start-line start-char line-no char-no buffer buffer-end create-name-token dup isn-null if false return end drop
+              file-name file start-position buffer buffer-end create-name-token dup isn-null if false return end drop
             end end
 
           else
             // -------- Name and keyword types --------
-            file-name file start-line start-char line-no char-no buffer buffer-end create-name-token dup isn-null if false return end drop
+            file-name file start-position buffer buffer-end create-name-token dup isn-null if false return end drop
           end end end end end
         end
-      end end
+      end
     end
 
     // If macros should not be extended, return immediately.
@@ -597,8 +519,8 @@ in
                 extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64:append-first
 
                 // -- Token address --
-                // Change the ADDR.PREV of the address.
-                address token-address ADDR.PREV + !64
+                // Change the addr:prev of the address.
+                address token-address addr:prev !64
                 token-address dcopy extended-array EXTENDED-MAX-LENGTH extended-start extended-end deque64:append-first
 
                 // -- Token type --
@@ -606,7 +528,7 @@ in
               end
             i end end drop
 
-            file-name file line-no char-no extended-array extended-start extended-end macro-names macro-tokens macros-length extend-macros get-next-token
+            file-name file extended-array extended-start extended-end macro-names macro-tokens macros-length extend-macros get-next-token
 
             // Deallocate 'arg'.
             arg mfree drop
@@ -625,8 +547,6 @@ end end
 proc expect-next-token
   // ptr: file-name file-desc: file-desc
   ptr file-desc
-  // ptr: line-no ptr: char-no
-  ptr ptr
   // ptr: extended-tokens-array ptr: extended-tokens-start-index ptr: extended-tokens-end-index
   ptr ptr ptr
   // ptr: macro-names ptr: macro-tokens ptr: macros-length

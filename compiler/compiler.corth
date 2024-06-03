@@ -31,7 +31,6 @@ include "local_stack.corth"
 macro compiler:get-next-token let extend-macros in
   // Calls get-next-token and checks if a token is available-dstr. If there are no tokens, prints an error message.
   source-name source-file
-  line-no char-no
   extended-array extended-start extended-end
   macro-names macro-tokens macros-length
   extend-macros get-next-token
@@ -43,7 +42,6 @@ end endmacro
 macro compiler:expect-next-token let extend-macros in
   // Calls get-next-token and checks if a token is available-dstr. If there are no tokens, prints an error message.
   source-name source-file
-  line-no char-no
   extended-array extended-start extended-end
   macro-names macro-tokens macros-length
   extend-macros expect-next-token
@@ -106,40 +104,6 @@ in
     end
   i end end drop
 end NULLPTR end
-
-
-proc fput-stack-contents
-  // ptr: stack-ptr int: stack-length file-desc: log-stream ->
-  ptr int file-desc ->
-in let stack length log-stream in
-  length is-zero if
-    "<empty>\n" log-stream fputs
-    return
-  end
-
-  0 while dup length dec < do peek i in
-    i stack array64:get stack-item:get-type log-stream fput-int-type " " log-stream fputs
-  end inc end drop
-
-  length dec stack array64:get stack-item:get-type log-stream fput-int-type
-end end
-
-
-proc fput-types
-  // ptr: types-array int: types-length file-desc: log-stream ->
-  ptr int file-desc ->
-in let types-array types-length log-stream in
-  types-length is-zero if
-    "<empty>\n" log-stream fputs
-    return
-  end
-
-  0 while dup types-length dec < do peek i in
-    i types-array array64:get log-stream fput-int-type " " log-stream fputs
-  end inc end drop
-
-  types-length dec types-array array64:get log-stream fput-int-type
-end end
 
 
 // int: int-type -> ptr: item ptr: log-item
@@ -534,8 +498,6 @@ NULLPTR end end
 proc compile-intrinsic
   // ptr: source-name file-desc: source-file ptr: output-stream
   ptr file-desc ptr
-  // ptr: line-no ptr: char-no
-  ptr ptr
   // ptr: procedure-name ptr: procedure-address
   ptr ptr
   // ptr: local-stack ptr: local-stack-length ptr: peeked-item
@@ -548,7 +510,6 @@ proc compile-intrinsic
   // Compiles an intrinsic in a Corth procedure.
 in let
   source-name source-file output-stream
-  line-no char-no
   procedure-name procedure-address
   local-stack local-stack-length peeked-item
   token-type token-arg
@@ -860,8 +821,6 @@ proc collect-let-like-names
   ptr
   // ptr: source-name file-desc: source-file
   ptr file-desc
-  // ptr: line-no ptr: char-no
-  ptr ptr
   // ptr: macro-names ptr: macro-tokens ptr: macros-length
   ptr ptr ptr
   // ptr: procedure-name ptr: procedure-address
@@ -875,7 +834,6 @@ proc collect-let-like-names
 in let
   new-names-list
   source-name source-file
-  line-no char-no
   macro-names macro-tokens macros-length
   procedure-name procedure-address
   extended-array extended-start extended-end
@@ -889,7 +847,7 @@ in
       new-token-type TOKEN-TYPE:KEYWORD = if
         // If token is a keyword, it must be a 'in' keyword.
         new-token-arg KEYWORD:IN != if
-          LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+          new-token-address LOG-TYPE:UNXPCT-KEYWORD generate-log1 return
         end
 
         // Deallocate 'new-token-address'.
@@ -901,7 +859,7 @@ in
 
       // Check the type of the token.
       new-token-type TOKEN-TYPE:NAME != if
-        LOG-TYPE:UNXPCT-TYPE generate-log0 return
+        new-token-address LOG-TYPE:UNXPCT-TYPE generate-log1 return
       end
 
       // TODO: Change the way that the variables are stored, so that we can also store their addresses.
@@ -919,8 +877,6 @@ proc collect-memory-like-names
   ptr ptr int
   // ptr: source-name file-desc: source-file
   ptr file-desc
-  // ptr: line-no ptr: char-no
-  ptr ptr
   // ptr: macro-names ptr: macro-tokens ptr: macros-length
   ptr ptr ptr
   // ptr: extended-array ptr: extended-start ptr: extended-end
@@ -932,7 +888,6 @@ proc collect-memory-like-names
 in let
   new-names-list new-sizes-list terminator-keyword
   source-name source-file
-  line-no char-no
   macro-names macro-tokens macros-length
   extended-array extended-start extended-end
 in
@@ -945,7 +900,7 @@ in
 
     let memory-name-type memory-name-address memory-name-arg in
       memory-name-type TOKEN-TYPE:NAME != if
-        LOG-TYPE:UNXPCT-TYPE generate-log0 return
+        memory-name-address LOG-TYPE:UNXPCT-TYPE generate-log1 return
       end
 
       // Get the variable size.
@@ -956,7 +911,7 @@ in
       let memory-size-type memory-size-address memory-size-arg in
         // The token after variable name should be an 'integer'.
         memory-size-type TOKEN-TYPE:INTEGER != if
-          LOG-TYPE:UNXPCT-TYPE generate-log0 return
+          memory-size-address LOG-TYPE:UNXPCT-TYPE generate-log1 return
         end
 
         true compiler:expect-next-token let log-item in log-item isn-null if
@@ -966,7 +921,7 @@ in
         let memory-end-type memory-end-address memory-end-arg in
           // The token after variable size should be a 'keyword'.
           memory-end-type TOKEN-TYPE:KEYWORD != if
-            LOG-TYPE:UNXPCT-TYPE generate-log0 return
+            memory-end-address LOG-TYPE:UNXPCT-TYPE generate-log1 return
           end
 
           memory-name-arg new-names-list list64:append
@@ -976,7 +931,7 @@ in
           memory-end-arg terminator-keyword != dup if
             memory-end-arg KEYWORD:AND != if
               // If keyword is not the terminator, check if it is 'and'.
-              drop LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+              drop memory-end-address LOG-TYPE:UNXPCT-KEYWORD generate-log1 return
             end
           end
 
@@ -998,8 +953,6 @@ NULLPTR end end
 proc compile-unreachable
   // ptr: source-name file-desc: source-file ptr: output-stream
   ptr file-desc ptr
-  // ptr: line-no ptr: char-no
-  ptr ptr
   // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
   ptr ptr ptr
   // ptr: procedure-name ptr: procedure-address
@@ -1027,7 +980,6 @@ proc compile-unreachable
   // All of the tokens must be keywords as intrinsics can not allow branches.
 in let
   source-name source-file output-stream
-  line-no char-no
   macro-names macro-tokens macros-length
   procedure-name procedure-address
   local-stack local-stack-length
@@ -1046,10 +998,10 @@ in
 
     let token-type token-address token-arg in
       token-type TOKEN-TYPE:KEYWORD != if
-        LOG-TYPE:UNXPCT-TYPE generate-log0 return
+        token-address LOG-TYPE:UNXPCT-TYPE generate-log1 return
       end
       token-arg KEYWORD:END != if
-        LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+        token-address LOG-TYPE:UNXPCT-KEYWORD generate-log1 return
       end
       labels-list list64:length is-zero if
         LOG-TYPE:UNREACHABLE generate-log0 return
@@ -1107,7 +1059,7 @@ in
 
           else
             start-keyword KEYWORD:MEMORY != if
-              LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+              start-address LOG-TYPE:UNXPCT-KEYWORD generate-log1 return
             end
 
             label 16 + @64 label 24 + @64 let new-names old-local-memory-end in
@@ -1135,8 +1087,6 @@ NULLPTR end end
 proc compile-keyword
   // ptr: source-name file-desc: source-file ptr: output-stream
   ptr file-desc ptr
-  // ptr: line-no ptr: char-no
-  ptr ptr
   // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
   ptr ptr ptr
   // ptr: procedure-name ptr: procedure-address
@@ -1162,7 +1112,6 @@ proc compile-keyword
   bool ptr
 in let
   source-name source-file output-stream
-  line-no char-no
   macro-names macro-tokens macros-length
   procedure-name procedure-address
   local-stack local-stack-length peeked-item
@@ -1283,7 +1232,7 @@ in
 
         else
           start-keyword KEYWORD:MEMORY != if
-            false LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+            false start-address LOG-TYPE:UNXPCT-KEYWORD generate-log1 return
           end
 
           // -------- End of 'memory' --------
@@ -1373,7 +1322,7 @@ in
     // 32-39 -> Old stack
 
     labels-list list64:length is-zero if
-      false LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+      false token-address LOG-TYPE:UNXPCT-KEYWORD generate-log1 return
     end
 
     local-stack local-stack-length output-stream local-stack.convert-last-items-real
@@ -1381,7 +1330,7 @@ in
     labels-list list64:pop-last let label in
       label @64 label 8 + @64 let old-keyword old-address in
         old-keyword KEYWORD:IF != if
-          false LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+          false old-address LOG-TYPE:UNXPCT-KEYWORD generate-log1 return
         end
 
         label 16 + @64 label 24 + @64 let start-id start-stack in
@@ -1491,7 +1440,7 @@ in
       old-label @64 old-label 8 + @64 let old-keyword old-address in
         // Check if the label type is 'while'.
         old-keyword KEYWORD:WHILE != if
-          false LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+          false old-address LOG-TYPE:UNXPCT-KEYWORD generate-log1 return
         end
 
         old-label 16 + @64 old-label 24 + @64 let old-label-id old-stack in
@@ -1549,7 +1498,6 @@ in
           end
 
           source-name source-file output-stream
-          line-no char-no
           macro-names macro-tokens macros-length
           procedure-name procedure-address
           local-stack local-stack-length
@@ -1600,7 +1548,6 @@ in
 
       new-names-list new-sizes-list KEYWORD:IN
       source-name source-file
-      line-no char-no
       macro-names macro-tokens macros-length
       extended-array extended-start extended-end
       collect-memory-like-names dup isn-null if false swp return end drop
@@ -1663,7 +1610,6 @@ in
 
       new-names-list
       source-name source-file
-      line-no char-no
       macro-names macro-tokens macros-length
       procedure-name procedure-address
       extended-array extended-start extended-end
@@ -1769,7 +1715,6 @@ in
 
       new-names-list
       source-name source-file
-      line-no char-no
       macro-names macro-tokens macros-length
       procedure-name procedure-address
       extended-array extended-start extended-end
@@ -1841,7 +1786,6 @@ in
     drop
 
     source-name source-file output-stream
-    line-no char-no
     macro-names macro-tokens macros-length
     procedure-name procedure-address
     local-stack local-stack-length
@@ -1867,7 +1811,7 @@ in
     let type-type type-address type-arg in
       // The token after 'cast' should be an 'intrinsic type'.
       type-type TOKEN-TYPE:INT-TYPE != if
-        false LOG-TYPE:UNXPCT-TYPE generate-log0 return
+        false type-address LOG-TYPE:UNXPCT-TYPE generate-log1 return
       end
 
       local-stack local-stack-length output-stream local-stack.convert-last-items-real
@@ -1901,7 +1845,7 @@ in
     let type-type type-address type-arg in
       // The token afrer 'sizeof' should be an 'intrinsic type'.
       type-type TOKEN-TYPE:INT-TYPE != if
-        false LOG-TYPE:UNXPCT-TYPE generate-log0 return
+        false type-address LOG-TYPE:UNXPCT-TYPE generate-log1 return
       end
 
       // Push the size of the intrinsic type.
@@ -1914,8 +1858,6 @@ end false NULLPTR end
 proc compile-procedure
   // ptr: source-name file-desc: source-file ptr: output-stream
   ptr file-desc ptr
-  // ptr: line-no ptr: char-no
-  ptr ptr
   // ptr: data-definitions-list
   ptr
   // ptr: global-names-array ptr: global-sizes-array ptr: globals-length
@@ -1938,7 +1880,6 @@ proc compile-procedure
   // Compiles a Corth procedure.
 in let
   source-name source-file output-stream
-  line-no char-no
   data-definitions-list
   global-names-array global-sizes-array globals-length
   proc-names-array proc-inputs-array proc-outputs-array procs-length
@@ -2081,7 +2022,6 @@ in
           // -------- Intrinsics --------
 
           source-name source-file output-stream
-          line-no char-no
           procedure-name procedure-address
           local-stack local-stack-length
           peeked-item
@@ -2090,13 +2030,12 @@ in
 
         else
           token-type TOKEN-TYPE:KEYWORD != if
-            0 LOG-TYPE:UNXPCT-TYPE generate-log0 return
+            0 token-address LOG-TYPE:UNXPCT-TYPE generate-log1 return
           end
 
           // -------- Keywords --------
 
           source-name source-file output-stream
-          line-no char-no
           macro-names macro-tokens macros-length
           procedure-name procedure-address
           local-stack local-stack-length
@@ -2168,17 +2107,11 @@ in
     memory extended-array  EXTENDED-MAX-LENGTH and
            extended-start  sizeof(int)         and
            extended-end    sizeof(int)         and
-           line-no         sizeof(int)         and
-           char-no         sizeof(int)         and
            namespace-name  sizeof(ptr)         in
 
       // Reset extended-tokens.
       0 extended-start !64
       0 extended-end   !64
-
-      // Reset line-no and char-no variables.
-      1 line-no !64
-      0 char-no !64
 
       // Reset namespace.
       NULLPTR namespace-name !64
@@ -2189,7 +2122,7 @@ in
           drop drop drop log-item return
         end end drop
         let token-type token-address token-arg in
-          token-type TOKEN-TYPE:KEYWORD != if LOG-TYPE:UNXPCT-TYPE generate-log0 return end
+          token-type TOKEN-TYPE:KEYWORD != if token-address LOG-TYPE:UNXPCT-TYPE generate-log1 return end
 
           // -------- Global keywords --------
           token-arg KEYWORD:INCLUDE = if
@@ -2204,7 +2137,7 @@ in
             end
 
             let path-token-type path-token-address path-token-arg in
-              path-token-type TOKEN-TYPE:STRING != if LOG-TYPE:UNXPCT-TYPE generate-log0 return end
+              path-token-type TOKEN-TYPE:STRING != if path-token-address LOG-TYPE:UNXPCT-TYPE generate-log1 return end
 
               memory found sizeof(bool) in
                 found !reset
@@ -2275,7 +2208,6 @@ in
 
               new-names-list new-sizes-list KEYWORD:END
               source-name source-file
-              line-no char-no
               macro-names macro-tokens macros-length
               extended-array extended-start extended-end
               collect-memory-like-names dup isn-null if
@@ -2311,7 +2243,7 @@ in
 
             let macro-name-token-type macro-name-token-address macro-name-token-arg in
               macro-name-token-type TOKEN-TYPE:NAME != if
-                LOG-TYPE:UNXPCT-TYPE generate-log0 return
+                macro-name-token-address LOG-TYPE:UNXPCT-TYPE generate-log1 return
               end
 
               // macro-tokens and macro-tokens-length are used to create a STACK for macro tokens.
@@ -2371,7 +2303,7 @@ in
 
             let proc-name-token-type proc-name-token-address proc-name-token-arg in
               proc-name-token-type TOKEN-TYPE:NAME != if
-                LOG-TYPE:UNXPCT-TYPE generate-log0 return
+                proc-name-token-address LOG-TYPE:UNXPCT-TYPE generate-log1 return
               end
 
               memory input-list  sizeof(ptr) and
@@ -2392,7 +2324,7 @@ in
                     input-token-type TOKEN-TYPE:KEYWORD = if
                       // If the token was a keyword, it must be a 'KEYWORD:RETURN'.
                       input-token-arg KEYWORD:RETURNS != if
-                        LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+                        input-token-address LOG-TYPE:UNXPCT-KEYWORD generate-log1 return
                       end
 
                       // Deallocate 'input-token-address'.
@@ -2404,7 +2336,7 @@ in
 
                     // Check if the token is of type-type.
                     input-token-type TOKEN-TYPE:INT-TYPE != if
-                      LOG-TYPE:UNXPCT-TYPE generate-log0 return
+                      input-token-address LOG-TYPE:UNXPCT-TYPE generate-log1 return
                     end
 
                     input-token-arg input-list list64:append
@@ -2425,7 +2357,7 @@ in
                     output-token-type TOKEN-TYPE:KEYWORD = if
                       // If the token is a keyword, it must be a 'KEYWORD:IN'.
                       output-token-arg KEYWORD:IN != if
-                        LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+                        output-token-address LOG-TYPE:UNXPCT-KEYWORD generate-log1 return
                       end
 
                       // Deallocate 'output-token-address'.
@@ -2437,7 +2369,7 @@ in
 
                     // Check if the token is of type-type.
                     output-token-type TOKEN-TYPE:INT-TYPE != if
-                      LOG-TYPE:UNXPCT-TYPE generate-log0 return
+                      output-token-address LOG-TYPE:UNXPCT-TYPE generate-log1 return
                     end
 
                     output-token-arg output-list list64:append
@@ -2493,7 +2425,6 @@ in
                     end inc end drop
 
                     source-name source-file output-stream
-                    line-no char-no
                     data-definitions-list
                     global-names-array global-sizes-array globals-length
                     proc-names-array proc-inputs-array proc-outputs-array procs-length
@@ -2526,7 +2457,7 @@ in
 
           else token-arg KEYWORD:NAMESPACE = if
             namespace-name @64 isn-null if
-              LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+              LOG-TYPE:REC-NAMESPACE generate-log0 return
             end
 
             // Get the next token, which should be the name of the procedure.
@@ -2536,7 +2467,7 @@ in
 
             let name-type name-address name-arg in
               name-type TOKEN-TYPE:NAME != if
-                LOG-TYPE:UNXPCT-TYPE generate-log0 return
+                name-address LOG-TYPE:UNXPCT-TYPE generate-log1 return
               end
 
               ':' name-arg dappend8 namespace-name !64
@@ -2544,11 +2475,11 @@ in
 
           else
             token-arg KEYWORD:ENDNAMESPACE != if
-              LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+              token-address LOG-TYPE:UNXPCT-KEYWORD generate-log1 return
             end
 
             namespace-name @64 is-null if
-              LOG-TYPE:UNXPCT-KEYWORD generate-log0 return
+              token-address LOG-TYPE:UNXPCT-KEYWORD generate-log1 return
             end
 
             NULLPTR namespace-name !64

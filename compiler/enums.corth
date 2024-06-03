@@ -1,8 +1,6 @@
 include "linux_x86/io/output.corth"
 include "core/arithmetic.corth"
 
-include "debug.corth"
-
 // TODO: Change these arrays with vectors.
 macro GLOBALS-MAX-COUNT   0x8000     endmacro
 macro MACROS-MAX-COUNT    0x8000     endmacro

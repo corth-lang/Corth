@@ -600,9 +600,6 @@ in let argc argv in
   // Initialize malloc.
   malloc:init
 
-  // Initialize debug.
-  debug-init
-
   getopts.reset-length
 
   argv @64 executable-file-name !64
