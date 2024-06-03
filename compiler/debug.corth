@@ -2,6 +2,8 @@ include "dynamic/utils.corth"
 include "linux_x86/io/output.corth"
 include "core/stack.corth"
 
+include "enums.corth"
+
 macro sizeof(position) 16 endmacro
 macro sizeof(address)  48 endmacro
 
@@ -246,7 +248,7 @@ macro REC-NAMESPACE     0x22003 endmacro  //
 // TODO: Add END-NO-START
 
 //// Compilation errors (prefix: 23xxx)
-macro STACK-NOT-MATCH   0x23000 endmacro  //
+macro STACK-NOT-MATCH   0x23000 endmacro  // ptr: stack-types ptr: expected-types
 macro NOT-ENOUGH-ITEMS  0x23001 endmacro  //
 macro INV-ITEM-TYPE     0x23002 endmacro  //
 macro INV-ITEM-MODE     0x23003 endmacro  //
@@ -265,7 +267,7 @@ macro CANNOT-FIND-SRC   0x2300f endmacro  //
 macro ACCESSED-PEEKED   0x23010 endmacro  //
 macro CANNOT-INCLUDE    0x23011 endmacro  // ptr: source-path
 macro CANNOT-CALL-PROC  0x23012 endmacro  // address: token-address
-macro STACK-SIZE-NOT-EQ 0x23013 endmacro  //
+macro STACK-SIZE-NOT-EQ 0x23013 endmacro  // ptr: stack-types ptr: expected-types
 
 // -------- Assertions (prefix: 3xxxx) --------
 macro MALLOC-FAILED     0x30000 endmacro  //
@@ -276,6 +278,21 @@ macro UNKNOWN-KEYWORD   0x30004 endmacro  //
 macro CANNOT-FIND-VAR   0x30005 endmacro  //
 
 endnamespace
+
+
+proc fput-types
+  // ptr: types file-desc: log-stream ->
+  ptr file-desc ->
+in let types log-stream in types mlength 8 / let types-length in
+  types-length is-zero if "<empty>" log-stream fputs return end
+
+  0 while
+    dup types array64:get log-stream fput-int-type
+  inc dup types-length < do
+    " " log-stream fputs
+  end drop
+end end end
+
 
 
 proc fput-log-item
@@ -346,6 +363,8 @@ in let log-item log-stream in
     // Compilation errors
     else type LOG-TYPE:STACK-NOT-MATCH = if
       "error: stack does not match the expected stack\n" log-stream fputs
+      "expected: " log-stream fputs arg1 log-stream fput-types log-stream fputnl
+      "got: " log-stream fputs arg2 log-stream fput-types log-stream fputnl
 
     else type LOG-TYPE:NOT-ENOUGH-ITEMS = if
       "error: stack does not have enough items\n" log-stream fputs
@@ -419,6 +438,8 @@ in let log-item log-stream in
 
     else type LOG-TYPE:STACK-SIZE-NOT-EQ = if
       "error: stack size do not match the expected stack size\n" log-stream fputs
+      "expected: " log-stream fputs arg1 log-stream fput-types log-stream fputnl
+      "got: " log-stream fputs arg2 log-stream fput-types log-stream fputnl
 
     // Assertions
     else type LOG-TYPE:MALLOC-FAILED = if

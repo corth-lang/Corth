@@ -54,58 +54,6 @@ macro compile-procedure:new-label-id
 endmacro
 
 
-proc compare-stack-types
-  // ptr: old-stack ptr: local-stack ptr: local-stack-length -> ptr: log-item
-  ptr ptr ptr -> ptr
-  // Checks if the local stack IS EQUAL TO the correct stack item types.
-  // NOTE: old-stack must be an array of stack items.
-in let old-stack local-stack local-stack-length in
-  local-stack-length @64 8 * old-stack mlength != if LOG-TYPE:STACK-SIZE-NOT-EQ generate-log0 return end
-
-  0 while dup local-stack-length @64 < do let i in
-    i old-stack array64:get stack-item:get-type i local-stack array64:get stack-item:get-type != if LOG-TYPE:STACK-NOT-MATCH generate-log0 return end
-  i end inc end drop
-end NULLPTR end
-
-
-proc compare-stack-types-types
-  // ptr: types-array int: types-length ptr: local-stack ptr: local-stack-length -> ptr: log-item
-  ptr int ptr ptr -> ptr
-  // Checks if the local stack IS EQUAL TO the correct stack item types.
-  // NOTE: types-array and types-length must be an array of stack item types.
-in let
-  types-array types-length
-  local-stack local-stack-length
-in
-  types-length local-stack-length @64 != if LOG-TYPE:STACK-SIZE-NOT-EQ generate-log0 return end
-
-  0 while dup types-length < do let i in
-    i local-stack array64:get stack-item:get-type i types-array array64:get != if LOG-TYPE:STACK-NOT-MATCH generate-log0 return end
-  i end inc end drop
-end NULLPTR end
-
-
-proc compare-sub-stack-types-types
-  // ptr: types-array int: types-length ptr: local-stack ptr: local-stack-length -> ptr: log-item
-  ptr int ptr ptr -> ptr
-  // Checks if the local stack ENDS WITH the correct stack item types.
-  // NOTE: types-array and types-length must be an array of stack item types.
-in let
-  types-array types-length
-  local-stack local-stack-length
-in
-  types-length local-stack-length @64 > if LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return end
-
-  types-length while dup isn-zero do dec let i in
-    pop-item let item in
-      i types-array array64:get let expected in
-        item stack-item:get-type expected != if LOG-TYPE:STACK-NOT-MATCH generate-log0 return end
-      end
-    end
-  i end end drop
-end NULLPTR end
-
-
 // int: int-type -> ptr: item ptr: log-item
 // NOTE: Must be used inside the bodies of procedures that return only the log-item and nothing else.
 // NOTE: Stack must be empty.
@@ -315,7 +263,7 @@ in let intrinsic local-stack local-stack-length peeked-item output-stream in
       LOG-TYPE:INV-ITEM-MODE generate-log0 return
     end
 
-    local-stack local-stack-length output-stream local-stack.convert-@local-real
+    local-stack local-stack-length output-stream local-stack:convert-@local-real
 
     output-stream
     address-item stack-item:get-mode STACK-MODE:LOCAL = if
@@ -969,8 +917,8 @@ proc compile-unreachable
   ptr
   // ptr: let-names ptr: let-addresses ptr: let-vars-length
   ptr ptr ptr
-  // ptr: output-array int: output-length
-  ptr int
+  // ptr: output-types
+  ptr
   // ptr: local-memory-max
   ptr
   ->
@@ -988,7 +936,7 @@ in let
   labels-list label-id-counter
   local-memory-end
   let-names let-addresses let-vars-length
-  output-array output-length
+  output-types
   local-memory-max
 in
   while true do
@@ -1012,14 +960,14 @@ in
           start-keyword KEYWORD:IF = if
             label 16 + @64 label 24 + @64 let start-id start-stack in
               // Overwrite the contents of the local-stack with the old contents.
-              start-stack local-stack local-stack-length local-stack.overwrite
+              start-stack local-stack local-stack-length local-stack:overwrite
 
               output-stream
               start-id nasm:label
               drop
 
               // Deallocate 'start-stack'.
-              start-stack _local-stack.mfree
+              start-stack local-stack:mfree-frozen
 
               NULLPTR return
             end
@@ -1035,7 +983,7 @@ in
                 end
               end i end inc end drop
 
-              old-local-memory-end local-stack local-stack-length output-stream local-stack.convert-deleted-real
+              old-local-memory-end local-stack local-stack-length output-stream local-stack:convert-deleted-real
 
               old-local-memory-end local-memory-end !64
 
@@ -1069,7 +1017,7 @@ in
                 end
               end i end inc end drop
 
-              old-local-memory-end local-stack local-stack-length output-stream local-stack.convert-deleted-real
+              old-local-memory-end local-stack local-stack-length output-stream local-stack:convert-deleted-real
 
               old-local-memory-end local-memory-end !64
 
@@ -1103,8 +1051,8 @@ proc compile-keyword
   ptr
   // ptr: let-names ptr: let-addresses ptr: let-vars-length
   ptr ptr ptr
-  // ptr: output-array int: output-length
-  ptr int
+  // ptr: output-types
+  ptr
   // ptr: local-memory-max
   ptr
   ->
@@ -1120,7 +1068,7 @@ in let
   labels-list label-id-counter
   local-memory-end
   let-names let-addresses let-vars-length
-  output-array output-length
+  output-types
   local-memory-max
 in
   token-arg KEYWORD:END = if
@@ -1128,10 +1076,10 @@ in
 
     labels-list list64:length is-zero if
       // -------- End of 'proc' --------
-      local-stack local-stack-length output-stream local-stack.convert-last-items-real
+      local-stack local-stack-length output-stream local-stack:convert-last-items-real
 
       // Check if the stack is correct.
-      output-array output-length local-stack local-stack-length compare-stack-types-types dup is-null swp return
+      output-types local-stack local-stack-length local-stack:compare-types dup is-null swp return
     end
 
     labels-list list64:pop-last let label in
@@ -1139,27 +1087,27 @@ in
         start-keyword KEYWORD:IF = if
           // -------- End of 'if' --------
           label 16 + @64 label 24 + @64 let start-id start-stack in
-            local-stack local-stack-length output-stream local-stack.convert-last-items-real
+            local-stack local-stack-length output-stream local-stack:convert-last-items-real
 
             // Check for the stack changes.
-            start-stack local-stack local-stack-length compare-stack-types dup isn-null if false swp return end drop
+            start-stack local-stack local-stack-length local-stack:compare-frozen dup isn-null if false swp return end drop
 
             output-stream
             start-id nasm:label
             drop
 
             // Deallocate 'start-stack'.
-            start-stack _local-stack.mfree
+            start-stack local-stack:mfree-frozen
           end
 
         else start-keyword KEYWORD:ELSE = if
           // -------- End of 'else' --------
 
           label 16 + @64 label 24 + @64 label 32 + @64 let else-address start-id start-stack in
-            local-stack local-stack-length output-stream local-stack.convert-last-items-real
+            local-stack local-stack-length output-stream local-stack:convert-last-items-real
 
             // Check for the stack changes.
-            start-stack local-stack local-stack-length compare-stack-types dup isn-null if false swp return end drop
+            start-stack local-stack local-stack-length local-stack:compare-frozen dup isn-null if false swp return end drop
 
             output-stream
             start-id nasm:label
@@ -1167,7 +1115,7 @@ in
 
             // Deallocate 'else-address' and 'start-stack'.
             else-address mfree drop
-            start-stack _local-stack.mfree
+            start-stack local-stack:mfree-frozen
           end
 
         else start-keyword KEYWORD:DO = if
@@ -1177,10 +1125,10 @@ in
             while-label-id do-address unbroken-end-id broken-end-id while-stack do-stack
           in
             // Check for the stack changes.
-            while-stack local-stack local-stack-length compare-stack-types dup isn-null if false swp return end drop
+            while-stack local-stack local-stack-length local-stack:compare-frozen dup isn-null if false swp return end drop
 
-            // Overwrite the contents of the local-stack.
-            do-stack local-stack local-stack-length local-stack.overwrite
+            // Overwrite the contents of the local stack.
+            do-stack local-stack local-stack-length local-stack:overwrite
 
             output-stream
             while-label-id  nasm:jump-label
@@ -1190,8 +1138,8 @@ in
 
             // Deallocate 'do-address', 'while-stack' and 'do-stack'.
             do-address mfree drop
-            while-stack _local-stack.mfree
-            do-stack _local-stack.mfree
+            while-stack local-stack:mfree-frozen
+            do-stack local-stack:mfree-frozen
           end
 
         else start-keyword KEYWORD:LET = if
@@ -1206,7 +1154,7 @@ in
               end
             end i end inc end drop
 
-            old-local-memory-end local-stack local-stack-length output-stream local-stack.convert-deleted-real
+            old-local-memory-end local-stack local-stack-length output-stream local-stack:convert-deleted-real
 
             old-local-memory-end local-memory-end !64
 
@@ -1244,7 +1192,7 @@ in
               end
             end i end inc end drop
 
-            old-local-memory-end local-stack local-stack-length output-stream local-stack.convert-deleted-real
+            old-local-memory-end local-stack local-stack-length output-stream local-stack:convert-deleted-real
 
             old-local-memory-end local-memory-end !64
 
@@ -1289,7 +1237,7 @@ in
       item stack-item:mfree
     end
 
-    local-stack local-stack-length local-stack.copy let copy-stack in
+    local-stack local-stack-length local-stack:freeze let copy-stack in
       32 malloc let obj in
         obj is-null if false LOG-TYPE:MALLOC-FAILED generate-log0 return end
 
@@ -1325,7 +1273,7 @@ in
       false token-address LOG-TYPE:UNXPCT-KEYWORD generate-log1 return
     end
 
-    local-stack local-stack-length output-stream local-stack.convert-last-items-real
+    local-stack local-stack-length output-stream local-stack:convert-last-items-real
 
     labels-list list64:pop-last let label in
       label @64 label 8 + @64 let old-keyword old-address in
@@ -1334,9 +1282,9 @@ in
         end
 
         label 16 + @64 label 24 + @64 let start-id start-stack in
-          local-stack local-stack-length local-stack.copy let copy-stack in
-            // Overwrite the contents of the local-stack.
-            start-stack local-stack local-stack-length local-stack.overwrite
+          local-stack local-stack-length local-stack:freeze let copy-stack in
+            // Overwrite the contents of the local-stack:
+            start-stack local-stack local-stack-length local-stack:overwrite
 
             compile-procedure:new-label-id let label-id in
               output-stream
@@ -1361,7 +1309,7 @@ in
           end
 
           // Deallocate 'start-stack'.
-          start-stack _local-stack.mfree
+          start-stack local-stack:mfree-frozen
         end
       end
 
@@ -1379,11 +1327,11 @@ in
     // 16-23 -> Label ID
     // 24-31 -> Old stack
 
-    local-stack local-stack-length local-stack.copy let copy-stack in
+    local-stack local-stack-length local-stack:freeze let copy-stack in
       copy-stack is-null if false LOG-TYPE:MALLOC-FAILED generate-log0 return end
 
       compile-procedure:new-label-id let label-id in
-        local-stack local-stack-length output-stream local-stack.convert-last-items-real
+        local-stack local-stack-length output-stream local-stack:convert-last-items-real
 
         output-stream
         label-id nasm:label
@@ -1424,9 +1372,9 @@ in
     // Check if the local stack contains any item.
     1 is-items-available ! if false LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return end
 
-    local-stack local-stack-length output-stream local-stack.convert-last-items-real
+    local-stack local-stack-length output-stream local-stack:convert-last-items-real
 
-    // Remove the bool value from the local-stack.
+    // Remove the bool value from the local stack.
     pop-item let item in
       item stack-item:get-type INT-TYPE:BOOL != if
         false LOG-TYPE:INV-ITEM-TYPE generate-log0 return
@@ -1452,7 +1400,7 @@ in
               unbroken-end-id          nasm:jump-zero-label
               drop
 
-              local-stack local-stack-length local-stack.copy let copy-stack in
+              local-stack local-stack-length local-stack:freeze let copy-stack in
                 copy-stack is-null if
                   false LOG-TYPE:MALLOC-FAILED generate-log0 return
                 end
@@ -1488,9 +1436,9 @@ in
         old-keyword KEYWORD:DO = if
           label-addr @64 32 + @64 label-addr @64 24 + @64 label-addr @64 56 + @64 let broken-end-id do-address do-stack in
             // Check for the stack contents.
-            do-stack local-stack local-stack-length compare-stack-types dup isn-null if false swp return end drop
+            do-stack local-stack local-stack-length local-stack:compare-frozen dup isn-null if false swp return end drop
 
-            local-stack local-stack-length output-stream local-stack.convert-last-items-real
+            local-stack local-stack-length output-stream local-stack:convert-last-items-real
 
             output-stream
             broken-end-id nasm:jump-label
@@ -1506,7 +1454,7 @@ in
           labels-list label-id-counter
           local-memory-end
           let-names let-addresses let-vars-length
-          output-array output-length
+          output-types
           local-memory-max
           compile-unreachable dup isn-null if false swp return end drop
 
@@ -1638,7 +1586,7 @@ in
                 item stack-item:copy
 
               else
-                local-stack local-stack-length output-stream local-stack.convert-last-items-real
+                local-stack local-stack-length output-stream local-stack:convert-last-items-real
 
                 output-stream
                 item                             nasm:convert-real
@@ -1777,9 +1725,9 @@ in
   else token-arg KEYWORD:RETURN = if
     // -------- Keyword 'return' --------
 
-    local-stack local-stack-length output-stream local-stack.convert-last-items-real
+    local-stack local-stack-length output-stream local-stack:convert-last-items-real
 
-    output-array output-length local-stack local-stack-length compare-stack-types-types dup isn-null if false swp return end drop
+    output-types local-stack local-stack-length local-stack:compare-types dup isn-null if false swp return end drop
 
     output-stream
     "    jmp     .return\n" ostrbuf:puts
@@ -1794,7 +1742,7 @@ in
     labels-list label-id-counter
     local-memory-end
     let-names let-addresses let-vars-length
-    output-array output-length
+    output-types
     local-memory-max
     compile-unreachable dup isn-null if false swp return end drop
 
@@ -1814,7 +1762,7 @@ in
         false type-address LOG-TYPE:UNXPCT-TYPE generate-log1 return
       end
 
-      local-stack local-stack-length output-stream local-stack.convert-last-items-real
+      local-stack local-stack-length output-stream local-stack:convert-last-items-real
 
       // Change the type of the last item.
       local-stack-length @64 dec local-stack array64:get let item in
@@ -1872,8 +1820,9 @@ proc compile-procedure
   ptr ptr ptr
   // ptr: extended-array ptr: extended-start ptr: extended-end
   ptr ptr ptr
-  // ptr: output-array int: output-length ->
-  ptr int ->
+  // ptr: output-types
+  ptr
+  ->
   // int: local-memory-max ptr: log-item
   int ptr
 
@@ -1887,7 +1836,7 @@ in let
   procedure-name procedure-address
   local-stack local-stack-length peeked-item
   extended-array extended-start extended-end
-  output-types-array output-types-length
+  output-types
 in
   output-stream
   "proc_"        ostrbuf:puts
@@ -1985,11 +1934,11 @@ in
 
             let name-address in name-address proc-names-array - let delta in
               delta proc-inputs-array + delta proc-outputs-array + let input-address output-address in
-                local-stack local-stack-length output-stream local-stack.convert-last-items-real
+                local-stack local-stack-length output-stream local-stack:convert-last-items-real
 
-                input-address @64 input-address @64 mlength 8 /
-                local-stack local-stack-length
-                compare-sub-stack-types-types dup isn-null if token-address LOG-TYPE:CANNOT-CALL-PROC generate-log2 0 swp return end drop
+                input-address @64 local-stack local-stack-length local-stack:compare-sub-types dup isn-null if
+                  token-address LOG-TYPE:CANNOT-CALL-PROC generate-log2 0 swp return
+                end drop
 
                 0 while dup output-address @64 mlength 8 / < do peek i in
                   i output-address @64 array64:get let output in
@@ -2045,7 +1994,7 @@ in
           labels-list label-id-counter
           local-memory-end
           let-names let-addresses let-vars-length
-          output-types-array output-types-length
+          output-types
           local-memory-max
           compile-keyword let end-of-proc log-item in
             log-item isn-null if
@@ -2379,6 +2328,15 @@ in
                   end
                 end
 
+                input-list list64:copy-array
+                output-list list64:copy-array
+
+                // Deallocate input-list and output-list.
+                input-list  list64:mfree drop
+                output-list list64:mfree drop
+              end
+
+              let input-types output-types in
                 // Store the full name of the procedure, its input and outputs.
                 // Check if the procedure was defined already.
                 namespace-name @64 is-null if
@@ -2401,9 +2359,9 @@ in
                         output-address output-address 8 + procs-length @64 output-address proc-outputs-array - 8 / - memcpy64i
 
                         // Save the name, inputs and outputs of the procedure.
-                        full-name               dcopy name-address   !64
-                        input-list  list64:copy-array input-address  !64
-                        output-list list64:copy-array output-address !64
+                        full-name dcopy name-address   !64
+                        input-types     input-address  !64
+                        output-types    output-address !64
 
                         procs-length @inc64
                       end
@@ -2418,11 +2376,7 @@ in
                     0 local-stack-length !64
                     0 peeked-item        !64
 
-                    0 while dup input-list list64:length < do peek i in
-                      i input-list list64:get let type in
-                        type push-real
-                      end
-                    end inc end drop
+                    input-types local-stack local-stack-length local-stack:push-frozen-types
 
                     source-name source-file output-stream
                     data-definitions-list
@@ -2433,7 +2387,7 @@ in
                     local-stack local-stack-length
                     peeked-item
                     extended-array extended-start extended-end
-                    output-list list64:to-array
+                    output-types
                     compile-procedure let max-memory log-item in
                       log-item isn-null if log-item LOG-TYPE:ERROR-PROC generate-log1 return end
                     end
@@ -2448,10 +2402,6 @@ in
                     drop
                   end
                 end
-
-                // Deallocate input-list and output-list.
-                input-list  list64:mfree drop
-                output-list list64:mfree drop
               end
             end
 

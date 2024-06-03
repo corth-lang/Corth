@@ -89,13 +89,14 @@ end endmacro
 // int: int-type ->
 // NOTE: Does not check if stack-item:create returns a valid item.
 macro push-real let _int-type_ in
-  local-stack local-stack-length output-stream local-stack.convert-last-items-real
+  local-stack local-stack-length output-stream local-stack:convert-last-items-real
 
   _int-type_ STACK-MODE:REAL stack-item:create push-item
 end endmacro
 
 
-proc local-stack.convert-items-real
+namespace local-stack
+proc convert-items-real
   // int: start-index int: end-index ptr: local-stack ptr: local-stack-length ptr: output-stream ->
   int int ptr ptr ptr ->
 in let start-index end-index local-stack local-stack-length output-stream in
@@ -107,7 +108,7 @@ in let start-index end-index local-stack local-stack-length output-stream in
 end end
 
 
-proc local-stack.find-first-non-real
+proc find-first-non-real
   // ptr: local-stack ptr: local-stack-length -> int: index
   ptr ptr -> int
 in let local-stack local-stack-length in
@@ -117,7 +118,7 @@ in let local-stack local-stack-length in
 end end
 
 
-proc local-stack.find-last-deleted
+proc find-last-deleted
   // int: local-memory-end ptr: local-stack ptr: local-stack-length -> int: index
   int ptr ptr -> int
 in let local-memory-end local-stack local-stack-length in
@@ -133,7 +134,7 @@ in let local-memory-end local-stack local-stack-length in
 end end
 
 
-proc local-stack.find-last-@local
+proc find-last-@local
   // ptr: local-stack ptr: local-stack-length -> int: index
   ptr ptr -> int
 in let local-stack local-stack-length in
@@ -148,73 +149,77 @@ in let local-stack local-stack-length in
 end end
 
 
-proc local-stack.convert-last-items-real
+proc convert-last-items-real
   // ptr: local-stack ptr: local-stack-length ptr: output-stream ->
   ptr ptr ptr ->
 in let local-stack local-stack-length output-stream in
-  local-stack local-stack-length local-stack.find-first-non-real // Start index
+  local-stack local-stack-length local-stack:find-first-non-real // Start index
   local-stack-length @64                                         // End index
-  local-stack local-stack-length output-stream local-stack.convert-items-real
+  local-stack local-stack-length output-stream local-stack:convert-items-real
 end end
 
 
-proc local-stack.convert-deleted-real
+proc convert-deleted-real
   // int: local-memory-end ptr: local-stack ptr: local-stack-length ptr: output-stream ->
   int ptr ptr ptr ->
 in let local-memory-end local-stack local-stack-length output-stream in
-  local-stack local-stack-length local-stack.find-first-non-real                // Start index
-  local-memory-end local-stack local-stack-length local-stack.find-last-deleted // End index
-  local-stack local-stack-length output-stream local-stack.convert-items-real
+  local-stack local-stack-length local-stack:find-first-non-real                // Start index
+  local-memory-end local-stack local-stack-length local-stack:find-last-deleted // End index
+  local-stack local-stack-length output-stream local-stack:convert-items-real
 end end
 
 
-proc local-stack.convert-@local-real
+proc convert-@local-real
   // ptr: local-stack ptr: local-stack-length ptr: output-stream ->
   ptr ptr ptr ->
 in let local-stack local-stack-length output-stream in
-  local-stack local-stack-length local-stack.find-first-non-real // Start index
-  local-stack local-stack-length local-stack.find-last-@local    // End index
-  local-stack local-stack-length output-stream local-stack.convert-items-real
+  local-stack local-stack-length local-stack:find-first-non-real // Start index
+  local-stack local-stack-length local-stack:find-last-@local    // End index
+  local-stack local-stack-length output-stream local-stack:convert-items-real
 end end
 
 
-proc __local-stack.mfree-items
-  // ptrL local-stack int: local-stack-length
+proc mfree-items
+  // ptr: local-stack int: local-stack-length
   ptr int ->
 in let local-stack local-stack-length in
   // Iterate through the items and mfree them.
-  0 while dup local-stack-length < do peek i in
+  0 while dup local-stack-length @64 < do peek i in
     i local-stack array64:get stack-item:mfree
   end inc end drop
 end end
 
 
-proc _local-stack.mfree
-  // ptr: local-stack
+proc mfree-frozen
+  // ptr: frozen
   ptr ->
-  // Can be used on copies of local-stack.
-in let local-stack in
-  local-stack local-stack mlength 8 / __local-stack.mfree-items
-end end
+in let frozen in frozen mlength 8 / let frozen-length in
+  // Iterate through the items and mfree them.
+  0 while dup frozen-length < do peek i in
+    i frozen array64:get stack-item:mfree
+  end inc end drop
+
+  frozen mfree drop
+end end end
 
 
-proc local-stack.clean
+proc clean
   // ptr: local-stack ptr: local-stack-length ->
   ptr ptr ->
 in let local-stack local-stack-length in
-  local-stack local-stack-length @64 __local-stack.mfree-items
+  local-stack local-stack-length local-stack:mfree-items
 
   // Set the local-stack-length to 0.
   0 local-stack-length !64
 end end
 
 
-proc local-stack.copy
+proc freeze
   // ptr: local-stack ptr: local-stack-length -> ptr: copied
   ptr ptr -> ptr
 in let local-stack local-stack-length in
   local-stack-length @64 8 * malloc let copy-array in
-    copy-array isn-null if 
+    copy-array isn-null if
       // Copy the items from the local-stack to the copy-array.
       0 while dup local-stack-length @64 < do peek i in
         i local-stack array64:get stack-item:copy i copy-array array64:set
@@ -227,18 +232,107 @@ in let local-stack local-stack-length in
 end end
 
 
-proc local-stack.overwrite
-  // ptr: overwrite ptr: local-stack ptr: local-stack-length ->
-  ptr ptr ptr ->
-in let overwrite local-stack local-stack-length in
-  // Deallocate all of the items in the local-stack.
-  local-stack local-stack-length @64 __local-stack.mfree-items
+proc freeze-types
+  // ptr: local-stack ptr: local-stack-length -> ptr: copied
+  ptr ptr -> ptr
+in let local-stack local-stack-length in
+  local-stack-length @64 8 * malloc let copy-array in
+    copy-array isn-null if
+      // Copy the items from the local-stack to the copy-array.
+      0 while dup local-stack-length @64 < do peek i in
+        i local-stack array64:get stack-item:get-type i copy-array array64:set
+      end inc end drop
+    end
 
-  // Copy the items from the overwrite to the local-stack.
-  0 while dup overwrite mlength 8 / < do peek i in
-    i overwrite array64:get stack-item:copy i local-stack array64:set
-  end inc end drop
-
-  overwrite mlength 8 / local-stack-length !64
+    // Return copy array.
+    copy-array
+  end
 end end
 
+
+proc overwrite
+  // ptr: frozen ptr: local-stack ptr: local-stack-length ->
+  ptr ptr ptr ->
+in let frozen local-stack local-stack-length in
+  local-stack local-stack-length local-stack:mfree-items
+
+  0 while dup frozen mlength 8 / < do peek i in
+    i frozen array64:get stack-item:copy i local-stack array64:set
+  end inc end drop
+
+  frozen mlength 8 / local-stack-length !64
+end end
+
+
+proc frozen-to-types
+  // ptr: frozen -> ptr: types
+  ptr -> ptr
+in dcopy peek types in
+  types isn-null if
+    types mlength 8 / let types-length in
+    0 while dup types-length < do peek i in
+      i types array64:get stack-item:get-type i types array64:set
+    end inc end drop
+  end
+end end end
+
+
+proc push-frozen-types
+  // ptr: frozen ptr: local-stack ptr: local-stack-length ->
+  ptr ptr ptr ->
+in let frozen local-stack local-stack-length in frozen mlength 8 / let frozen-length in
+  0 while dup frozen-length < do
+    dup frozen array64:get STACK-MODE:REAL stack-item:create push-item
+  inc end drop
+end end end
+
+
+proc compare-frozen
+  // ptr: frozen ptr: local-stack ptr: local-stack-length -> ptr: log-item
+  ptr ptr ptr -> ptr
+  // Checks if the local stack IS EQUAL TO the correct stack item types.
+in let frozen local-stack local-stack-length in frozen mlength 8 / let frozen-length in
+  local-stack-length @64 frozen-length != if
+    frozen local-stack:frozen-to-types local-stack local-stack-length local-stack:freeze-types LOG-TYPE:STACK-SIZE-NOT-EQ generate-log2 return
+  end
+
+  0 while dup local-stack-length @64 < do let i in
+    i frozen array64:get stack-item:get-type i local-stack array64:get stack-item:get-type != if
+      frozen local-stack:frozen-to-types local-stack local-stack-length local-stack:freeze-types LOG-TYPE:STACK-NOT-MATCH generate-log2 return
+    end
+  i end inc end drop
+end end NULLPTR end
+
+
+proc compare-types
+  // ptr: types ptr: local-stack ptr: local-stack-length -> ptr: log-item
+  ptr ptr ptr -> ptr
+  // Checks if the local stack IS EQUAL TO the correct stack item types.
+in let types local-stack local-stack-length in types mlength 8 / let types-length in
+  local-stack-length @64 types-length != if
+    types local-stack local-stack-length local-stack:freeze-types LOG-TYPE:STACK-SIZE-NOT-EQ generate-log2 return
+  end
+
+  0 while dup types-length < do let i in
+    i local-stack array64:get stack-item:get-type i types array64:get != if
+      types local-stack local-stack-length local-stack:freeze-types LOG-TYPE:STACK-NOT-MATCH generate-log2 return
+    end
+  i end inc end drop
+end end NULLPTR end
+
+
+proc compare-sub-types
+  // ptr: types ptr: local-stack ptr: local-stack-length -> ptr: log-item
+  ptr ptr ptr -> ptr
+  // Checks if the local stack ENDS WITH the correct stack item types.
+in let types local-stack local-stack-length in types mlength 8 / let types-length in
+  local-stack-length @64 types-length < if LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return end
+
+  types-length while dup isn-zero do dec
+     dup types array64:get pop-item stack-item:get-type != if drop
+       types local-stack local-stack-length local-stack:freeze-types LOG-TYPE:STACK-NOT-MATCH generate-log2 return
+     end
+  end drop
+end end NULLPTR end
+
+endnamespace
