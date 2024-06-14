@@ -35,22 +35,26 @@ end
 proc seek-line-rev
   // file-desc: file -> int: location
   file-desc -> int
+  // Moves the file handle to the beginning of the line, or the beginning of the file if there are no newline characters before the handle.
+  // TODO: This procedure could be improved using a bigger buffer.
 in let file in
   memory buffer 1 in
-    while
+    while true do
+      file ftell is-zero if 0 return end
       file -1 SEEK-WHENCE:CUR lseek
-      buffer 1 file fgets is-zero if return end inc
-    buffer @8 '\n' != do
-      drop file -1 SEEK-WHENCE:CUR lseek drop
+      buffer 1 file fgets drop
+      buffer @8 '\n' = if inc return end drop
+      file -1 SEEK-WHENCE:CUR lseek drop
     end
   end
-end end
+end 0 end  // dummy
 
 
 macro fput-file:BUFFER-SIZE 1024 endmacro
 proc fput-file
   // file-desc: from file-desc: to ->
   file-desc file-desc ->
+  // Copies the contents of a file to another file.
 in let from to in
   memory buffer fput-file:BUFFER-SIZE in
     while
@@ -65,6 +69,8 @@ end end
 proc fput-file-length
   // file-desc: from int: length file-desc: to ->
   file-desc int file-desc ->
+  // Copies the contents of a file to another file.
+  // The total number of bytes read is less than or equal to length.
 in let from length to in
   memory buffer fput-file:BUFFER-SIZE in
     length while let rem in
@@ -80,6 +86,7 @@ end end
 proc fput-file-line
   // file-desc: from file-desc: to ->
   file-desc file-desc ->
+  // Copies the contents of a file to another file until it finds a newline character or reachs end of file.
 in let from to in
   memory buffer fput-file:BUFFER-SIZE in
     while
