@@ -1936,7 +1936,7 @@ in
               delta proc-inputs-array + delta proc-outputs-array + let input-address output-address in
                 local-stack local-stack-length output-stream local-stack:convert-last-items-real
 
-                input-address @64 local-stack local-stack-length local-stack:compare-sub-types dup isn-null if
+                input-address @64 local-stack local-stack-length peeked-item local-stack:compare-sub-types dup isn-null if
                   token-address LOG-TYPE:CANNOT-CALL-PROC generate-log2 0 swp return
                 end drop
 

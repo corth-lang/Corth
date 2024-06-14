@@ -322,11 +322,12 @@ end end NULLPTR end
 
 
 proc compare-sub-types
-  // ptr: types ptr: local-stack ptr: local-stack-length -> ptr: log-item
-  ptr ptr ptr -> ptr
+  // ptr: types ptr: local-stack ptr: local-stack-length ptr: peeked-item -> ptr: log-item
+  ptr ptr ptr ptr -> ptr
   // Checks if the local stack ENDS WITH the correct stack item types.
-in let types local-stack local-stack-length in types mlength 8 / let types-length in
+in let types local-stack local-stack-length peeked-item in types mlength 8 / let types-length in
   local-stack-length @64 types-length < if LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return end
+  local-stack-length @64 peeked-item @64 - types-length < if LOG-TYPE:ACCESSED-PEEKED generate-log0 return end
 
   types-length while dup isn-zero do dec
      dup types array64:get pop-item stack-item:get-type != if drop
