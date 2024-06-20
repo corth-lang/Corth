@@ -123,6 +123,32 @@ in let local-stack local-stack-length peeked-item output-stream in
 NULLPTR end end
 
 
+proc sub-intrinsic
+  // ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream -> ptr: log-item
+  ptr ptr ptr ptr -> ptr
+in let local-stack local-stack-length peeked-item output-stream in
+  INT-TYPE:INT compiler:try-pop let item2 in
+  INT-TYPE:INT compiler:try-pop let item1 in
+    INT-TYPE:INT push-real
+
+    output-stream
+    item2 stack-item:get-mode STACK-MODE:IMM = if
+      item1                     nasm:push
+      item2 stack-item:get-arg1 neg nasm:add-immediate
+
+    else
+      item2 register:RAX         nasm:mov-reg-item
+      item1                      nasm:push
+      "    sub     [rsp], rax\n" ostrbuf:puts
+    end
+    drop
+
+    item1 stack-item:mfree
+    item2 stack-item:mfree
+  end end
+NULLPTR end end
+
+
 proc get-register-name
   // int: intrinsic -> int: register-id
   int -> ptr
@@ -446,8 +472,6 @@ NULLPTR end end
 proc compile-intrinsic
   // ptr: source-name file-desc: source-file ptr: output-stream
   ptr file-desc ptr
-  // ptr: procedure-name ptr: procedure-address
-  ptr ptr
   // ptr: local-stack ptr: local-stack-length ptr: peeked-item
   ptr ptr ptr
   // int: token-type [int|ptr]: token-arg ->
@@ -458,7 +482,6 @@ proc compile-intrinsic
   // Compiles an intrinsic in a Corth procedure.
 in let
   source-name source-file output-stream
-  procedure-name procedure-address
   local-stack local-stack-length peeked-item
   token-type token-arg
 in
@@ -466,26 +489,7 @@ in
     local-stack local-stack-length peeked-item output-stream add-intrinsic dup isn-null if return end drop
 
   else token-arg INTRINSIC:SUB = if
-    // -------- Intrinsic '-' --------
-    INT-TYPE:INT compiler:try-pop let item2 in
-    INT-TYPE:INT compiler:try-pop let item1 in
-      INT-TYPE:INT push-real
-
-      output-stream
-      item2 stack-item:get-mode STACK-MODE:IMM = if
-        item1                     nasm:push
-        item2 stack-item:get-arg1 neg nasm:add-immediate
-
-      else
-        item2 register:RAX         nasm:mov-reg-item
-        item1                      nasm:push
-        "    sub     [rsp], rax\n" ostrbuf:puts
-      end
-      drop
-
-      item1 stack-item:mfree
-      item2 stack-item:mfree
-    end end
+    local-stack local-stack-length peeked-item output-stream sub-intrinsic dup isn-null if return end drop
 
   else token-arg INTRINSIC:BOR = if
     // -------- Intrinsic '||' --------
@@ -771,8 +775,6 @@ proc collect-let-like-names
   ptr file-desc
   // ptr: macro-names ptr: macro-tokens ptr: macros-length
   ptr ptr ptr
-  // ptr: procedure-name ptr: procedure-address
-  ptr ptr
   // ptr: extended-array ptr: extended-start ptr: extended-end
   ptr ptr ptr
   ->
@@ -783,7 +785,6 @@ in let
   new-names-list
   source-name source-file
   macro-names macro-tokens macros-length
-  procedure-name procedure-address
   extended-array extended-start extended-end
 in
   // Get the names of the 'let' variables.
@@ -903,8 +904,6 @@ proc compile-unreachable
   ptr file-desc ptr
   // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
   ptr ptr ptr
-  // ptr: procedure-name ptr: procedure-address
-  ptr ptr
   // ptr: local-stack ptr: local-stack-length
   ptr ptr
   // ptr: peeked-item
@@ -929,7 +928,6 @@ proc compile-unreachable
 in let
   source-name source-file output-stream
   macro-names macro-tokens macros-length
-  procedure-name procedure-address
   local-stack local-stack-length
   peeked-item
   extended-array extended-start extended-end
@@ -1037,8 +1035,6 @@ proc compile-keyword
   ptr file-desc ptr
   // ptr: macro-names-array ptr: macro-tokens-array ptr: macros-length
   ptr ptr ptr
-  // ptr: procedure-name ptr: procedure-address
-  ptr ptr
   // ptr: local-stack ptr: local-stack-length ptr: peeked-item
   ptr ptr ptr
   // ptr: extended-array ptr: extended-start ptr: extended-end
@@ -1061,7 +1057,6 @@ proc compile-keyword
 in let
   source-name source-file output-stream
   macro-names macro-tokens macros-length
-  procedure-name procedure-address
   local-stack local-stack-length peeked-item
   extended-array extended-start extended-end
   token-type token-address token-arg
@@ -1447,7 +1442,6 @@ in
 
           source-name source-file output-stream
           macro-names macro-tokens macros-length
-          procedure-name procedure-address
           local-stack local-stack-length
           peeked-item
           extended-array extended-start extended-end
@@ -1559,7 +1553,6 @@ in
       new-names-list
       source-name source-file
       macro-names macro-tokens macros-length
-      procedure-name procedure-address
       extended-array extended-start extended-end
       collect-let-like-names dup isn-null if false swp return end drop
 
@@ -1664,7 +1657,6 @@ in
       new-names-list
       source-name source-file
       macro-names macro-tokens macros-length
-      procedure-name procedure-address
       extended-array extended-start extended-end
       collect-let-like-names dup isn-null if false swp return end drop
 
@@ -1735,7 +1727,6 @@ in
 
     source-name source-file output-stream
     macro-names macro-tokens macros-length
-    procedure-name procedure-address
     local-stack local-stack-length
     peeked-item
     extended-array extended-start extended-end
@@ -1971,9 +1962,7 @@ in
           // -------- Intrinsics --------
 
           source-name source-file output-stream
-          procedure-name procedure-address
-          local-stack local-stack-length
-          peeked-item
+          local-stack local-stack-length peeked-item
           token-type token-arg
           compile-intrinsic dup isn-null if token-address LOG-TYPE:ERROR-INTRINSIC generate-log2 0 swp return end drop
 
@@ -1986,7 +1975,6 @@ in
 
           source-name source-file output-stream
           macro-names macro-tokens macros-length
-          procedure-name procedure-address
           local-stack local-stack-length
           peeked-item
           extended-array extended-start extended-end
