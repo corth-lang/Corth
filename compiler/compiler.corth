@@ -54,10 +54,10 @@ macro compile-procedure:new-label-id
 endmacro
 
 
-// int: int-type -> ptr: item ptr: log-item
+// -> ptr: item
 // NOTE: Must be used inside the bodies of procedures that return only the log-item and nothing else.
 // NOTE: Stack must be empty.
-macro compiler:try-pop let _type_ in
+macro compiler:try-pop
   local-stack-length @64 is-zero if
     LOG-TYPE:NOT-ENOUGH-ITEMS generate-log0 return
   end
@@ -66,7 +66,15 @@ macro compiler:try-pop let _type_ in
     LOG-TYPE:ACCESSED-PEEKED generate-log0 return
   end
 
-  pop-item dup stack-item:get-type _type_ != if drop
+  pop-item
+endmacro
+
+
+// int: int-type -> ptr: item
+// NOTE: Must be used inside the bodies of procedures that return only the log-item and nothing else.
+// NOTE: Stack must be empty.
+macro compiler:try-pop-type let _type_ in
+  compiler:try-pop dup stack-item:get-type _type_ != if drop
     LOG-TYPE:INV-ITEM-TYPE generate-log0 return
   end
 end endmacro
@@ -76,8 +84,16 @@ proc add-intrinsic
   // ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream -> ptr: log-item
   ptr ptr ptr ptr -> ptr
 in let local-stack local-stack-length peeked-item output-stream in
-  INT-TYPE:INT compiler:try-pop let item2 in
-  INT-TYPE:INT compiler:try-pop let item1 in
+  compiler:try-pop let item2 in
+  compiler:try-pop let item1 in
+    item1 stack-item:get-type item2 stack-item:get-type let type1 type2 in
+      type1 INT-TYPE:INT  !=
+      type1 INT-TYPE:UINT != &
+      type2 type1         != | if
+        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
+      end
+    end
+
     item1 stack-item:get-mode STACK-MODE:IMM = if
       item2 stack-item:get-mode STACK-MODE:IMM = if
         item1 stack-item:get-arg1 item2 stack-item:get-arg1 + push-int-immediate
@@ -127,8 +143,16 @@ proc sub-intrinsic
   // ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream -> ptr: log-item
   ptr ptr ptr ptr -> ptr
 in let local-stack local-stack-length peeked-item output-stream in
-  INT-TYPE:INT compiler:try-pop let item2 in
-  INT-TYPE:INT compiler:try-pop let item1 in
+  compiler:try-pop let item2 in
+  compiler:try-pop let item1 in
+    item1 stack-item:get-type item2 stack-item:get-type let type1 type2 in
+      type1 INT-TYPE:INT  !=
+      type1 INT-TYPE:UINT != &
+      type2 type1         != | if
+        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
+      end
+    end
+
     INT-TYPE:INT push-real
 
     output-stream
@@ -171,7 +195,7 @@ proc load-intrinsic
   int ptr ptr ptr ptr -> ptr
   // NOTE: Register is one of 'al', 'ax', 'eax', 'rax'.
 in let intrinsic local-stack local-stack-length peeked-item output-stream in
-  INT-TYPE:INT compiler:try-pop let item in
+  INT-TYPE:INT compiler:try-pop-type let item in
     item stack-item:get-mode STACK-MODE:LOCAL = if
       intrinsic INTRINSIC:LOAD64 = if item stack-item:get-arg1 push-@64local NULLPTR return end
       intrinsic INTRINSIC:LOAD8  = if item stack-item:get-arg1 push-@8local  NULLPTR return end
@@ -283,8 +307,8 @@ proc store-intrinsic
   int ptr ptr ptr ptr -> ptr
   // NOTE: Register is one of 'bl', 'bx', 'ebx', 'rbx'.
 in let intrinsic local-stack local-stack-length peeked-item output-stream in
-  INT-TYPE:INT compiler:try-pop let address-item in
-  INT-TYPE:INT compiler:try-pop let value-item in
+  INT-TYPE:INT compiler:try-pop-type let address-item in
+  INT-TYPE:INT compiler:try-pop-type let value-item in
     address-item stack-item:get-mode STACK-MODE:IMM = if
       LOG-TYPE:INV-ITEM-MODE generate-log0 return
     end
@@ -380,8 +404,8 @@ proc multiply-intrinsic
   // bool: upper ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream -> ptr: log-item
   bool ptr ptr ptr ptr -> ptr
 in let upper local-stack local-stack-length peeked-item output-stream in
-  INT-TYPE:INT compiler:try-pop let item2 in
-  INT-TYPE:INT compiler:try-pop let item1 in
+  INT-TYPE:INT compiler:try-pop-type let item2 in
+  INT-TYPE:INT compiler:try-pop-type let item1 in
     item1 stack-item:get-mode STACK-MODE:IMM = if
       item2 stack-item:get-mode STACK-MODE:IMM = if
         item1 stack-item:get-arg1 item2 stack-item:get-arg1
@@ -431,8 +455,8 @@ proc divide-intrinsic
   // bool: modulo ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream -> ptr: log-item
   bool ptr ptr ptr ptr -> ptr
 in let modulo local-stack local-stack-length peeked-item output-stream in
-  INT-TYPE:INT compiler:try-pop let item2 in
-  INT-TYPE:INT compiler:try-pop let item1 in
+  INT-TYPE:INT compiler:try-pop-type let item2 in
+  INT-TYPE:INT compiler:try-pop-type let item1 in
     output-stream
     item2 stack-item:get-mode STACK-MODE:IMM = if
       item2 stack-item:get-arg1 get-log2 let log2 in
@@ -493,8 +517,8 @@ in
 
   else token-arg INTRINSIC:BOR = if
     // -------- Intrinsic '||' --------
-    INT-TYPE:INT compiler:try-pop let item2 in
-    INT-TYPE:INT compiler:try-pop let item1 in
+    INT-TYPE:INT compiler:try-pop-type let item2 in
+    INT-TYPE:INT compiler:try-pop-type let item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -509,8 +533,8 @@ in
 
   else token-arg INTRINSIC:BAND = if
     // -------- Intrinsic '&&' --------
-    INT-TYPE:INT compiler:try-pop let item2 in
-    INT-TYPE:INT compiler:try-pop let item1 in
+    INT-TYPE:INT compiler:try-pop-type let item2 in
+    INT-TYPE:INT compiler:try-pop-type let item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -525,8 +549,8 @@ in
 
   else token-arg INTRINSIC:BXOR = if
     // -------- Intrinsic '^^' --------
-    INT-TYPE:INT compiler:try-pop let item2 in
-    INT-TYPE:INT compiler:try-pop let item1 in
+    INT-TYPE:INT compiler:try-pop-type let item2 in
+    INT-TYPE:INT compiler:try-pop-type let item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -541,7 +565,7 @@ in
 
   else token-arg INTRINSIC:BNOT = if
     // -------- Intrinsic '!!' --------
-    INT-TYPE:INT compiler:try-pop let item in
+    INT-TYPE:INT compiler:try-pop-type let item in
       item stack-item:get-mode STACK-MODE:IMM = if
         item stack-item:get-arg1 !! push-int-immediate
 
@@ -596,7 +620,7 @@ in
   else token-arg INTRINSIC:SYSCALL0 = if
     // -------- Intrinsic 'syscall0' --------
 
-    INT-TYPE:INT compiler:try-pop let op-item in
+    INT-TYPE:INT compiler:try-pop-type let op-item in
       INT-TYPE:INT push-real
 
       output-stream
@@ -611,8 +635,8 @@ in
   else token-arg INTRINSIC:SYSCALL1 = if
     // -------- Intrinsic 'syscall1' --------
 
-    INT-TYPE:INT compiler:try-pop let op-item in
-    INT-TYPE:INT compiler:try-pop let arg-item1 in
+    INT-TYPE:INT compiler:try-pop-type let op-item in
+    INT-TYPE:INT compiler:try-pop-type let arg-item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -629,9 +653,9 @@ in
   else token-arg INTRINSIC:SYSCALL2 = if
     // -------- Intrinsic 'syscall2' --------
 
-    INT-TYPE:INT compiler:try-pop let op-item in
-    INT-TYPE:INT compiler:try-pop let arg-item2 in
-    INT-TYPE:INT compiler:try-pop let arg-item1 in
+    INT-TYPE:INT compiler:try-pop-type let op-item in
+    INT-TYPE:INT compiler:try-pop-type let arg-item2 in
+    INT-TYPE:INT compiler:try-pop-type let arg-item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -650,10 +674,10 @@ in
   else token-arg INTRINSIC:SYSCALL3 = if
     // -------- Intrinsic 'syscall3' --------
 
-    INT-TYPE:INT compiler:try-pop let op-item in
-    INT-TYPE:INT compiler:try-pop let arg-item3 in
-    INT-TYPE:INT compiler:try-pop let arg-item2 in
-    INT-TYPE:INT compiler:try-pop let arg-item1 in
+    INT-TYPE:INT compiler:try-pop-type let op-item in
+    INT-TYPE:INT compiler:try-pop-type let arg-item3 in
+    INT-TYPE:INT compiler:try-pop-type let arg-item2 in
+    INT-TYPE:INT compiler:try-pop-type let arg-item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -674,11 +698,11 @@ in
   else token-arg INTRINSIC:SYSCALL4 = if
     // -------- Intrinsic 'syscall4' --------
 
-    INT-TYPE:INT compiler:try-pop let op-item in
-    INT-TYPE:INT compiler:try-pop let arg-item4 in
-    INT-TYPE:INT compiler:try-pop let arg-item3 in
-    INT-TYPE:INT compiler:try-pop let arg-item2 in
-    INT-TYPE:INT compiler:try-pop let arg-item1 in
+    INT-TYPE:INT compiler:try-pop-type let op-item in
+    INT-TYPE:INT compiler:try-pop-type let arg-item4 in
+    INT-TYPE:INT compiler:try-pop-type let arg-item3 in
+    INT-TYPE:INT compiler:try-pop-type let arg-item2 in
+    INT-TYPE:INT compiler:try-pop-type let arg-item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -701,12 +725,12 @@ in
   else token-arg INTRINSIC:SYSCALL5 = if
     // -------- Intrinsic 'syscall5' --------
 
-    INT-TYPE:INT compiler:try-pop let op-item in
-    INT-TYPE:INT compiler:try-pop let arg-item5 in
-    INT-TYPE:INT compiler:try-pop let arg-item4 in
-    INT-TYPE:INT compiler:try-pop let arg-item3 in
-    INT-TYPE:INT compiler:try-pop let arg-item2 in
-    INT-TYPE:INT compiler:try-pop let arg-item1 in
+    INT-TYPE:INT compiler:try-pop-type let op-item in
+    INT-TYPE:INT compiler:try-pop-type let arg-item5 in
+    INT-TYPE:INT compiler:try-pop-type let arg-item4 in
+    INT-TYPE:INT compiler:try-pop-type let arg-item3 in
+    INT-TYPE:INT compiler:try-pop-type let arg-item2 in
+    INT-TYPE:INT compiler:try-pop-type let arg-item1 in
       INT-TYPE:INT push-real
 
       output-stream
@@ -735,13 +759,13 @@ in
 
     // -------- Intrinsic 'syscall6' --------
 
-    INT-TYPE:INT compiler:try-pop let op-item in
-    INT-TYPE:INT compiler:try-pop let arg-item6 in
-    INT-TYPE:INT compiler:try-pop let arg-item5 in
-    INT-TYPE:INT compiler:try-pop let arg-item4 in
-    INT-TYPE:INT compiler:try-pop let arg-item3 in
-    INT-TYPE:INT compiler:try-pop let arg-item2 in
-    INT-TYPE:INT compiler:try-pop let arg-item1 in
+    INT-TYPE:INT compiler:try-pop-type let op-item in
+    INT-TYPE:INT compiler:try-pop-type let arg-item6 in
+    INT-TYPE:INT compiler:try-pop-type let arg-item5 in
+    INT-TYPE:INT compiler:try-pop-type let arg-item4 in
+    INT-TYPE:INT compiler:try-pop-type let arg-item3 in
+    INT-TYPE:INT compiler:try-pop-type let arg-item2 in
+    INT-TYPE:INT compiler:try-pop-type let arg-item1 in
       INT-TYPE:INT push-real
 
       output-stream

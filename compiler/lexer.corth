@@ -265,15 +265,16 @@ in let file-name file start-position buffer buffer-end in
     else buffer buffer-size INTRINSIC-NAME:SYSCALL5    memcmp8-wl is-zero if TOKEN-TYPE:INTRINSIC INTRINSIC:SYSCALL5
     else buffer buffer-size INTRINSIC-NAME:SYSCALL6    memcmp8-wl is-zero if TOKEN-TYPE:INTRINSIC INTRINSIC:SYSCALL6
 
-    else buffer buffer-size INT-TYPE-NAME:INT          memcmp8-wl is-zero if TOKEN-TYPE:INT-TYPE INT-TYPE:INT
     else buffer buffer-size INT-TYPE-NAME:BOOL         memcmp8-wl is-zero if TOKEN-TYPE:INT-TYPE INT-TYPE:BOOL
+    else buffer buffer-size INT-TYPE-NAME:INT          memcmp8-wl is-zero if TOKEN-TYPE:INT-TYPE INT-TYPE:INT
+    else buffer buffer-size INT-TYPE-NAME:UINT         memcmp8-wl is-zero if TOKEN-TYPE:INT-TYPE INT-TYPE:UINT
 
     else
       // Return token type and argument.
       TOKEN-TYPE:NAME buffer buffer-size to-dynamic8
 
     // This is nightmare fuel.
-    end end end end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end end end end end
     end end end end end end end end end end end end end end end end end end end end end end end end
 
     let token-type token-arg in

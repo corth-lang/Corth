@@ -153,22 +153,25 @@ endnamespace
 
 // Intrinsic type IDs
 namespace INT-TYPE
-macro INT     1 endmacro
-macro BOOL    2 endmacro
+macro BOOL    1 endmacro
+macro INT     2 endmacro
+macro UINT    3 endmacro
 endnamespace
 
 // Intrinsic type strings
 namespace INT-TYPE-NAME
 macro UNKNOWN "<unknown>" endmacro
-macro INT     "int"       endmacro
 macro BOOL    "bool"      endmacro
+macro INT     "int"       endmacro
+macro UINT    "uint"      endmacro
 endnamespace
 
 // Intrinsic type sizes
 namespace INT-TYPE-SIZE
 macro UNKNOWN    -1 endmacro
-macro INT         8 endmacro
 macro BOOL        8 endmacro
+macro INT         8 endmacro
+macro UINT        8 endmacro
 endnamespace
 
 proc get-type-name
@@ -249,20 +252,22 @@ proc get-int-type-name
   // int: int-type -> ptr: int-type-name-ptr int: int-type-name-length
   int -> ptr int
 in let int-type in
-       int-type INT-TYPE:INT  = if INT-TYPE-NAME:INT
-  else int-type INT-TYPE:BOOL = if INT-TYPE-NAME:BOOL
+       int-type INT-TYPE:BOOL = if INT-TYPE-NAME:BOOL
+  else int-type INT-TYPE:INT  = if INT-TYPE-NAME:INT
+  else int-type INT-TYPE:UINT = if INT-TYPE-NAME:UINT
   else                             INT-TYPE-NAME:UNKNOWN
-  end end
+  end end end
 end end
 
 proc get-int-type-sizeof
   // int: int-type -> int: int-type-sizeof
   int -> int
 in let int-type in
-       int-type INT-TYPE:INT  = if INT-TYPE-SIZE:INT
-  else int-type INT-TYPE:BOOL = if INT-TYPE-SIZE:BOOL
+       int-type INT-TYPE:BOOL = if INT-TYPE-SIZE:BOOL
+  else int-type INT-TYPE:INT  = if INT-TYPE-SIZE:INT
+  else int-type INT-TYPE:UINT = if INT-TYPE-SIZE:UINT
   else                             INT-TYPE-SIZE:UNKNOWN
-  end end
+  end end end
 end end
 
 macro fput-type let type file in
