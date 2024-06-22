@@ -195,7 +195,12 @@ proc load-intrinsic
   int ptr ptr ptr ptr -> ptr
   // NOTE: Register is one of 'al', 'ax', 'eax', 'rax'.
 in let intrinsic local-stack local-stack-length peeked-item output-stream in
-  INT-TYPE:INT compiler:try-pop-type let item in
+  compiler:try-pop let item in
+    item stack-item:get-type INT-TYPE:INT  !=
+    item stack-item:get-type INT-TYPE:UINT != & if
+      LOG-TYPE:INV-ITEM-MODE generate-log0 return
+    end
+
     item stack-item:get-mode STACK-MODE:LOCAL = if
       intrinsic INTRINSIC:LOAD64 = if item stack-item:get-arg1 push-@64local NULLPTR return end
       intrinsic INTRINSIC:LOAD8  = if item stack-item:get-arg1 push-@8local  NULLPTR return end
@@ -307,8 +312,15 @@ proc store-intrinsic
   int ptr ptr ptr ptr -> ptr
   // NOTE: Register is one of 'bl', 'bx', 'ebx', 'rbx'.
 in let intrinsic local-stack local-stack-length peeked-item output-stream in
-  INT-TYPE:INT compiler:try-pop-type let address-item in
-  INT-TYPE:INT compiler:try-pop-type let value-item in
+  compiler:try-pop let address-item in
+  compiler:try-pop let value-item in
+    address-item stack-item:get-type INT-TYPE:INT  !=
+    address-item stack-item:get-type INT-TYPE:UINT != &
+    value-item stack-item:get-type INT-TYPE:INT    !=
+    value-item stack-item:get-type INT-TYPE:UINT   != & | if
+      LOG-TYPE:INV-ITEM-MODE generate-log0 return
+    end
+
     address-item stack-item:get-mode STACK-MODE:IMM = if
       LOG-TYPE:INV-ITEM-MODE generate-log0 return
     end
