@@ -386,26 +386,34 @@ in let upper immediate item local-stack local-stack-length peeked-item output-st
     // TODO: Multiplication by numbers that are not whole powers of 2 without using the 'mul' instruction is possible.
     output-stream
     log2 is-neg if
-      item      register:RAX        nasm:mov-reg-item
-      immediate register:RBX        nasm:mov-reg-immediate
+      item      register:RAX          nasm:mov-reg-item
+      immediate register:RBX          nasm:mov-reg-immediate
 
-      "    imul    rbx\n"           ostrbuf:puts
+      item stack-item:get-type INT-TYPE:UINT = if
+        "    mul     rbx\n"           ostrbuf:puts
+      else
+        "    imul    rbx\n"           ostrbuf:puts
+      end
 
       upper if register:RDX else register:RAX end nasm:push-register
 
     else
-      item                          nasm:push
+      item                            nasm:push
 
       upper if
-        "    sar     qword [rsp], " ostrbuf:puts
-        64 log2 -                   ostrbuf:putu
-
+        item stack-item:get-type INT-TYPE:UINT = if
+          "    sar     qword [rsp], " ostrbuf:puts
+        else
+          "    shr     qword [rsp], " ostrbuf:puts
+        end
+        64 log2 -                     ostrbuf:putu
+                                      ostrbuf:putnl
       else
-        "    sal     qword [rsp], " ostrbuf:puts
-        log2                        ostrbuf:putu
+        // Arithmetic and logic left shifts are equivalent.
+        "    sal     qword [rsp], "   ostrbuf:puts
+        log2                          ostrbuf:putu
+                                      ostrbuf:putnl
       end
-
-                                    ostrbuf:putnl
     end
     drop
   end
@@ -416,15 +424,28 @@ proc multiply-intrinsic
   // bool: upper ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream -> ptr: log-item
   bool ptr ptr ptr ptr -> ptr
 in let upper local-stack local-stack-length peeked-item output-stream in
-  INT-TYPE:INT compiler:try-pop-type let item2 in
-  INT-TYPE:INT compiler:try-pop-type let item1 in
+  compiler:try-pop let item2 in
+  compiler:try-pop let item1 in
+    item1 stack-item:get-type item2 stack-item:get-type let type1 type2 in
+      type1 INT-TYPE:INT  !=
+      type1 INT-TYPE:UINT != &
+      type2 type1         != | if
+        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
+      end
+    end
+
     item1 stack-item:get-mode STACK-MODE:IMM = if
       item2 stack-item:get-mode STACK-MODE:IMM = if
-        item1 stack-item:get-arg1 item2 stack-item:get-arg1
+        item1 stack-item:get-type INT-TYPE:UINT = if
+          item1 stack-item:get-arg1 item2 stack-item:get-arg1
+          upper if *2 else * end
+          push-int-immediate
+        else
+          item1 stack-item:get-arg1 cast uint item2 stack-item:get-arg1 cast uint
+          upper if *2 else * end
+          push-int-immediate
+        end
 
-        upper if *2 else * end
-
-        push-int-immediate
       else
         upper item1 stack-item:get-arg1 item2 local-stack local-stack-length peeked-item output-stream multiply-immediate-any
       end
@@ -433,12 +454,16 @@ in let upper local-stack local-stack-length peeked-item output-stream in
       item2 stack-item:get-mode STACK-MODE:IMM = if
         upper item2 stack-item:get-arg1 item1 local-stack local-stack-length peeked-item output-stream multiply-immediate-any
       else
-        INT-TYPE:INT push-real
+        item1 stack-item:get-type push-real
 
         output-stream
         item2 register:RBX  nasm:mov-reg-item
         item1 register:RAX  nasm:mov-reg-item
-        "    imul    rbx\n" ostrbuf:puts
+        item1 stack-item:get-type INT-TYPE:UINT = if
+          "    mul     rbx\n" ostrbuf:puts
+        else
+          "    imul    rbx\n" ostrbuf:puts
+        end
         upper if register:RDX else register:RAX end nasm:push-register
         drop
       end
@@ -467,8 +492,16 @@ proc divide-intrinsic
   // bool: modulo ptr: local-stack ptr: local-stack-length ptr: peeked-item ptr: output-stream -> ptr: log-item
   bool ptr ptr ptr ptr -> ptr
 in let modulo local-stack local-stack-length peeked-item output-stream in
-  INT-TYPE:INT compiler:try-pop-type let item2 in
-  INT-TYPE:INT compiler:try-pop-type let item1 in
+  compiler:try-pop let item2 in
+  compiler:try-pop let item1 in
+    item1 stack-item:get-type item2 stack-item:get-type let type1 type2 in
+      type1 INT-TYPE:INT  !=
+      type1 INT-TYPE:UINT != &
+      type2 type1         != | if
+        LOG-TYPE:INV-ITEM-TYPE generate-log0 return
+      end
+    end
+
     output-stream
     item2 stack-item:get-mode STACK-MODE:IMM = if
       item2 stack-item:get-arg1 get-log2 let log2 in
@@ -482,18 +515,26 @@ in let modulo local-stack local-stack-length peeked-item output-stream in
           item2 register:RBX  nasm:mov-reg-item
           item1 register:RAX  nasm:mov-reg-item
                 register:RDX  nasm:mov-reg-zero
-          "    idiv    rbx\n" ostrbuf:puts
+          item1 stack-item:get-type INT-TYPE:UINT = if
+            "    div     rbx\n" ostrbuf:puts
+          else
+            "    idiv    rbx\n" ostrbuf:puts
+          end
           modulo if register:RDX else register:RAX end nasm:push-register
         end
       end
 
     else
-      INT-TYPE:INT push-real
+      item1 stack-item:get-type push-real
 
       item2 register:RBX  nasm:mov-reg-item
       item1 register:RAX  nasm:mov-reg-item
             register:RDX  nasm:mov-reg-zero
-      "    idiv    rbx\n" ostrbuf:puts
+      item1 stack-item:get-type INT-TYPE:UINT = if
+        "    div     rbx\n" ostrbuf:puts
+      else
+        "    idiv    rbx\n" ostrbuf:puts
+      end
       modulo if register:RDX else register:RAX end nasm:push-register
     end
 
