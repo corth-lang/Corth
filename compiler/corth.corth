@@ -28,19 +28,45 @@ macro main.unknown-command
 endmacro
 
 macro main.show-usage
-  "usage: " puts put-exe " [OPTIONS]... <command> [OPTIONS]...\n" puts
+  "usage: " puts put-exe " [OPTIONS]... <command> [OPTIONS]...\n"                                   puts
+  "options:\n"                                                                                      puts
+  "    -h, --help                       Show this message\n"                                        puts
+  "commands:\n"                                                                                     puts
+  "    compile <source>                 Compile a .corth source file\n"                             puts
+  "    quick-test <sources>...          Try compiling SOURCES\n"                                    puts
+  "    bootstrap <source>               Compile Corth executable from source\n"                     puts
 endmacro
 
 macro command.quick-test-show-usage
-  "usage: " puts put-exe " [OPTIONS]... quick-test [OPTIONS]... [TEST-FILES]...\n" puts
+  "usage: " puts put-exe " quick-test [OPTIONS]... [PATHS]...\n"                                    puts
+  "Tries to compile the source files (or subpaths of directories).\n"                               puts
+  "options:\n"                                                                                      puts
+  "    -h, --help                       Show this message\n"                                        puts
+  "    --full                           Try compiling all files to executable instead of asm\n"     puts
+  "    -i <directory>                   Add DIRECTORY to the set of include paths\n"                puts
 endmacro
 
 macro command.compile-show-usage
-   "usage: " puts put-exe " [OPTIONS]... compile <source-file> [OPTIONS]...\n" puts
+  "usage: " puts put-exe " compile <source-file> [OPTIONS]...\n"                                    puts
+  "Compiles a Corth source code into assembly or executable. Uses NASM to assemble the resulting\n" puts
+  "assembly file.\n"                                                                                puts
+  "options:\n"                                                                                      puts
+  "    -h, --help                       Show this message\n"                                        puts
+  "    -i <directory>                   Add DIRECTORY to the set of include paths\n"                puts
+  "    -o, --output <path>              Create the executable file at PATH\n"                       puts
+  "    --asm                            Compile source file to asm instead of executable\n"         puts
 endmacro
 
 macro command.bootstrap-show-usage
-   "usage: " puts put-exe " [OPTIONS]... bootstrap <source-directory> [OPTIONS]...\n" puts
+   "usage: " puts put-exe " bootstrap <source-directory> [OPTIONS]...\n"                            puts
+   "Compiles the Corth source code iteratively, until the output file has no changes. After the\n"  puts
+   "compilation is over, does quick tests on the example files.\n"                                  puts
+   "options:\n"                                                                                     puts
+   "    -h, --help                      Show this message\n"                                        puts
+   "    --once                          Compile the source file exactly once, without iteration\n"  puts
+   "    --std <path>                    Set PATH of the standard library, must be included\n"       puts
+   "    -e, --executable <path>         Set PATH of the Corth executable\n"                         puts
+   "    -n, --no-test                   Do not test the examples directory\n"                       puts
 endmacro
 
 
@@ -263,7 +289,7 @@ proc command.quick-test -> in
 
   getopts.reset-length
 
-  "h#help#full#i$inc$" drop getopts.generate ! if
+  "h#help#full#i$" drop getopts.generate ! if
     "error: 'getopts.generate' failed\n" eputs
     EXIT-ERROR exit drop
   end
@@ -312,8 +338,7 @@ proc command.quick-test -> in
             else EXIT-ERROR exit drop end end
 
         else type O-ARGUMENT = if
-          arg1 arg1-length "i"            memcmp8-wl is-zero
-          arg1 arg1-length "include-path" memcmp8-wl is-zero | if
+          arg1 arg1-length "i"            memcmp8-wl is-zero if
             arg2 arg2-length inc to-dynamic8 include-paths-set str-set8:add drop
 
           else EXIT-ERROR exit drop end
@@ -341,7 +366,7 @@ end
 proc command.bootstrap -> in
   getopts.clear
 
-  "h#help#once#e$executable$std$ignore-examples#" drop getopts.generate ! if
+  "h#help#once#e$executable$std$n#no-test#" drop getopts.generate ! if
     "error: 'getopts.generate' failed\n" eputs
     EXIT-ERROR exit drop
   end
@@ -390,9 +415,10 @@ proc command.bootstrap -> in
 
             once !set
 
-          else arg1 arg1-length "ignore-examples" memcmp8-wl is-zero if
+          else arg1 arg1-length "n"       memcmp8-wl is-zero
+               arg1 arg1-length "no-test" memcmp8-wl is-zero | if
             ignore-examples @bool if
-              "error: '--ignore-examples' can not be used more than once\n" puts
+              "error: '--no-test' can not be used more than once\n" puts
               EXIT-ERROR exit drop
             end
 
@@ -509,7 +535,7 @@ end
 proc command.compile -> in
   getopts.clear
 
-  "h#help#i$include-path$o$output-path$asm#" drop getopts.generate ! if
+  "h#help#i$o$output$asm#" drop getopts.generate ! if
     "error: 'getopts.generate' failed\n" eputs
     EXIT-ERROR exit drop
   end
@@ -561,12 +587,11 @@ proc command.compile -> in
           else EXIT-ERROR exit drop end end // impossible
 
         else type O-ARGUMENT = if
-          arg1 arg1-length "i"            memcmp8-wl is-zero
-          arg1 arg1-length "include-path" memcmp8-wl is-zero | if
+          arg1 arg1-length "i"            memcmp8-wl is-zero if
             arg2 arg2-length inc to-dynamic8 include-paths-set str-set8:add drop
 
-          else arg1 arg1-length "o"           memcmp8-wl is-zero
-               arg1 arg1-length "output-path" memcmp8-wl is-zero | if
+          else arg1 arg1-length "o"      memcmp8-wl is-zero
+               arg1 arg1-length "output" memcmp8-wl is-zero | if
             arg2 output-file !64
 
           else EXIT-ERROR exit drop end end // impossible
