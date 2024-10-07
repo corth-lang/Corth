@@ -3,17 +3,20 @@ include "core/stack.corth"
 
 macro malloc:ARRAY-SIZE       0x4000 endmacro
 macro malloc:AVAIL-STACK-SIZE 0x100  endmacro
-include "dynamic/malloc.corth"
 include "dynamic/debug_malloc.corth"
+
+memory index sizeof(int) end
 
 proc allocate-space
   int -> ptr
 in let size in
-  size malloc let object in
+  size index @64 malloc let object in
     object mlength size != if
       "[INFO] Size does not match.\n" puts
+      1 exit drop
     else
-      "[INFO] Successfully allocated object.\n" puts
+      "[INFO] Successfully allocated object with index " puts index @64 puti ".\n" puts
+      index @inc64
     end
 
     STDOUT debug-dynamic-memory
@@ -24,10 +27,13 @@ end end
 proc deallocate-space
   ptr ->
 in let container in
-  container mfree if
-    "[INFO] Successfully deallocated object.\n" puts
-  else
-    "[INFO] Could not deallocate object.\n" puts
+  container debug-malloc:get-tag let tag in
+    container mfree if
+      "[INFO] Successfully deallocated object with index " puts tag puti ".\n" puts
+    else
+      "[INFO] Could not deallocate object.\n" puts
+      1 exit drop
+    end
   end
 
   STDOUT debug-dynamic-memory
@@ -37,6 +43,7 @@ proc main
   int int -> int
 in let argc argv in
   malloc:init
+  0 index !64
 
   STDOUT debug-dynamic-memory
 
