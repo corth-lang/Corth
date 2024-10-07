@@ -1,6 +1,6 @@
 include "linux_x86/sys.corth"
 include "linux_x86/io/output.corth"
-include "dynamic/malloc.corth"
+include "dynamic/_malloc.corth"
 
 
 // Can be used to debug malloc segments.
@@ -54,7 +54,7 @@ in
 true end
 
 
-// Can bu used to see how much space is available and to check memory leaks.
+// Can be used to check the space available and to check memory leaks.
 proc get-available-dynamic-memory
   -> int
 in
@@ -68,3 +68,19 @@ in
     sum @64
   end
 end
+
+macro malloc:init malloc:_init endmacro
+
+// This returns a shifted pointer.
+// The created dynamicly-placed object contains debug tag information which is hidden from the user.
+macro malloc let _size_ _debug_ in
+  size 8 + _malloc peek _obj_ in _obj_ isn-null if
+    _debug_ _obj_ !64
+  end end 8 +
+end endmacro
+macro mfree       8 - _mfree       endmacro
+macro mfree-deep  _mfree-deep      endmacro
+macro mlength     8 - _mlength 8 - endmacro
+
+macro debug-malloc:get-tag 8 - @64 endmacro
+macro debug-malloc:set-tag 8 - !64 endmacro
