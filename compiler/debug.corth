@@ -444,7 +444,7 @@ in let log-item log-stream in
        arg1 log-stream fput-log-item
 
     else type LOG-TYPE:STACK-SIZE-NOT-EQ = if
-      "error: stack size do not match the expected stack size\n" log-stream fputs
+      "error: the current local stack size does not match the expected stack size\n" log-stream fputs
       "expected: " log-stream fputs arg1 log-stream fput-types log-stream fputnl
       "got: " log-stream fputs arg2 log-stream fput-types log-stream fputnl
 
