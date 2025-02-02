@@ -206,7 +206,6 @@ proc create-name-token
   int ptr int ptr
 
   // Checks if the name is a keyword or an intrinsic, and creates a new token.
-  // After the keyword and intrinsic checks, macros are checked for any match. If there is any macro with the same name, the macro tokens are loaded to a buffer.
 in let file-name file start-position buffer buffer-end in
   // Get full token.
   file buffer buffer-end parse-next-token dup isn-null if
@@ -290,6 +289,57 @@ in let file-name file start-position buffer buffer-end in
 end end
 
 
+proc create-preprocessor-token
+  // ptr: file-name file-desc: file-desc
+  ptr file-desc
+  // int: start-position
+  int
+  // ptr: buffer ptr: buffer-end
+  ptr ptr ->
+  // int: token-type ptr: address [int|ptr]: arg ptr: log-item
+  int ptr int ptr
+
+  // Checks if the name is a preprocessor and creates a new preprocessor token.
+  // After the keyword and intrinsic checks, macros are checked for any match. If there is any macro with the same name, the macro tokens are loaded to a buffer.
+in let file-name file start-position buffer buffer-end in
+  // Get full token.
+  file buffer buffer-end parse-next-token dup isn-null if
+    let log-item in TOKEN-TYPE:UNKNOWN NULLPTR 0 log-item end return
+  end drop
+
+  buffer-end @64 buffer - let buffer-size in
+    // Check if the token is a preprocessor directive.
+         buffer buffer-size PREPROC-NAME:END   memcmp8-wl is-zero if PREPROC:END
+    else buffer buffer-size PREPROC-NAME:IFDEF memcmp8-wl is-zero if PREPROC:IFDEF
+    else
+      // FUCKING UNREACHABLE CODE EXCEPTIONS!!!
+      true if
+        // Generate the address of the token.
+        file-name NULLPTR start-position file ftell generate-address let address in
+          address is-null if
+            TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:MALLOC-FAILED generate-log0 return
+          end
+
+          // Return error as the token string was not a preprocessor directive.
+          TOKEN-TYPE:UNKNOWN NULLPTR 0 address LOG-TYPE:NOT-A-PREPROC generate-log1 return
+        end
+      end PREPROC:UNKNOWN
+    end end
+
+    let token-arg in
+      // Return token type, address and argument.
+      file-name NULLPTR start-position file ftell generate-address let address in
+        address is-null if
+          TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:MALLOC-FAILED generate-log0 return
+        end
+
+        TOKEN-TYPE:PREPROC address token-arg NULLPTR
+      end
+    end
+  end
+end end
+
+
 proc get-next-token
   // ptr: file-name file-desc: file-desc
   ptr file-desc
@@ -336,7 +386,26 @@ in
           buffer 1 file fgets drop
           buffer-end @inc64
 
-          buffer @8 is-ddigit if
+          buffer @8 '#' = if
+            // -------- Preprocessor directive type --------
+
+            // Get the full token.
+            file buffer buffer-end parse-next-token dup isn-null if
+              let log-item in
+                TOKEN-TYPE:UNKNOWN NULLPTR 0 log-item false
+              end return
+            end drop
+
+            // Generate the address object.
+            file-name NULLPTR start-position file ftell generate-address let address in
+              address is-null if TOKEN-TYPE:UNKNOWN NULLPTR 0 LOG-TYPE:MALLOC-FAILED generate-log0 false return end
+
+              // Create the preprocessor token.
+              // NOTE: Remove the first character (#) by shifting the buffer pointer once.
+              file-name file start-position buffer inc buffer-end create-preprocessor-token dup isn-null if false return end drop
+            end
+
+          else buffer @8 is-ddigit if
             // -------- Integer type --------
 
             // Get full token.
@@ -498,7 +567,7 @@ in
           else
             // -------- Name and keyword types --------
             file-name file start-position buffer buffer-end create-name-token dup isn-null if false return end drop
-          end end end end end
+          end end end end end end
         end
       end
     end

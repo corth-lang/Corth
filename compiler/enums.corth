@@ -20,23 +20,39 @@ macro OUTPUT-STREAM-SIZE  0x100000   endmacro
 // Type IDs
 namespace TOKEN-TYPE
 macro UNKNOWN   0 endmacro
-macro NAME      1 endmacro
-macro INTEGER   2 endmacro
-macro KEYWORD   3 endmacro
-macro INTRINSIC 4 endmacro
-macro STRING    5 endmacro
-macro INT-TYPE  6 endmacro
+macro PREPROC   1 endmacro
+macro NAME      2 endmacro
+macro INTEGER   3 endmacro
+macro KEYWORD   4 endmacro
+macro INTRINSIC 5 endmacro
+macro STRING    6 endmacro
+macro INT-TYPE  7 endmacro
 endnamespace
 
 // Type strings
 namespace TOKEN-TYPE-NAME
 macro UNKNOWN   "<unknown>" endmacro
+macro PREPROC   "preproc"   endmacro
 macro NAME      "name"      endmacro
 macro INTEGER   "integer"   endmacro
 macro KEYWORD   "keyword"   endmacro
 macro INTRINSIC "intrinsic" endmacro
 macro STRING    "string"    endmacro
 macro INT-TYPE  "int-type"  endmacro
+endnamespace
+
+// Preprocessor directive IDs
+namespace PREPROC
+macro UNKNOWN 0 endmacro
+macro END     1 endmacro
+macro IFDEF   2 endmacro
+endnamespace
+
+// Preprocessor directive strings
+namespace PREPROC-NAME
+macro UNKNOWN "<unknown>" endmacro
+macro END     "end"       endmacro
+macro IFDEF   "ifdef"     endmacro
 endnamespace
 
 // Keyword IDs

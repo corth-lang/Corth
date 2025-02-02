@@ -250,6 +250,7 @@ macro NO-TOKEN          0x22000 endmacro  // log-item: reason
 macro UNXPCT-TYPE       0x22001 endmacro  // ptr: address
 macro UNXPCT-KEYWORD    0x22002 endmacro  // ptr: address
 macro REC-NAMESPACE     0x22003 endmacro  //
+macro NOT-A-PREPROC     0x22004 endmacro  // ptr: address
 // TODO: Add ELSE-NO-IF
 // TODO: Add DO-NO-WHILE
 // TODO: Add END-NO-START
@@ -367,6 +368,10 @@ in let log-item log-stream in
     else type LOG-TYPE:REC-NAMESPACE = if
       "error: tried to start a namespace scope inside another one\n" log-stream fputs
 
+    else type LOG-TYPE:NOT-A-PREPROC = if
+      "error: not a preprocessor directive\n" log-stream fputs
+      arg1 log-stream fput-here
+
     // Compilation errors
     else type LOG-TYPE:STACK-NOT-MATCH = if
       "error: stack does not match the expected stack\n" log-stream fputs
@@ -470,6 +475,6 @@ in let log-item log-stream in
     else
       "unknown\n" log-stream fputs
     end end end end end end end end end end end end end end end end end end end end end end
-    end end end end end end end end end end end end end end end end end end end end end
+    end end end end end end end end end end end end end end end end end end end end end end
   end
 end
